@@ -2,9 +2,10 @@
 
 ## Current phase
 
-Phase 4 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 5 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
-and the React/Tiptap workspace shell has focused frontend tests.
+and the React/Tiptap workspace shell has focused frontend tests. The Phase 5
+audit is recorded in `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include durable documents, product research or
 analysis workflows, release automation, or packaging. Those belong to later
