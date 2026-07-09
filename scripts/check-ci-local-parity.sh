@@ -4,7 +4,8 @@ set -euo pipefail
 # Verifies that GitHub Actions delegates to the same bootstrap and verification
 # scripts used locally and does not add privileged or publishing behavior.
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIRECTORY}/lib/common.sh"
 

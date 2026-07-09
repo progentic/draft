@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Formats supported source files. Optional formatters are reported when absent.
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIRECTORY}/lib/common.sh"
 

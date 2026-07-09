@@ -4,7 +4,8 @@ set -euo pipefail
 # Enforces invariant boundaries that exist in the current source tree. Feature
 # invariants remain explicit future checks until their owning modules exist.
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIRECTORY}/lib/common.sh"
 

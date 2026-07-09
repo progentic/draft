@@ -4,7 +4,8 @@ set -euo pipefail
 # Runs the complete Phase 2 local health check. It writes only ignored compiler
 # and test output inside the repository plus standard tool-managed caches.
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIRECTORY}/lib/common.sh"
 

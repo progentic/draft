@@ -4,7 +4,8 @@ set -euo pipefail
 # Installs locked frontend dependencies, fetches locked Rust crates, and checks
 # the Python package. It is safe to run locally and writes no project source.
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIRECTORY}/lib/common.sh"
 

@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Performs offline documentation sanity checks without validating external URLs.
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
@@ -73,7 +74,7 @@ check_machine_specific_links() {
   local status
 
   if matches="$(rg --line-number --glob '*.md' \
-    'file://|/Users/[^/[:space:]]+/|[A-Za-z]:\\Users\\' .)"; then
+    "file://|/Users/[^/[:space:]]+/|[A-Za-z]:\\\\Users\\\\" .)"; then
     printf '%s\n' "${matches}" >&2
     echo "Documentation contains a machine-specific path" >&2
     return 1
