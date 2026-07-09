@@ -6,9 +6,12 @@ import { DocumentOutline } from "../components/DocumentOutline";
 import { WorkspaceHeader } from "../components/WorkspaceHeader";
 import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
 import { EditorToolbar } from "../editor/EditorToolbar";
+import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
+import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 
 export function DraftWorkspace() {
   const editor = useDraftEditor();
+  const runtimeStatus = useRuntimeStatus();
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
 
   return (
@@ -17,7 +20,11 @@ export function DraftWorkspace() {
         isOutlineOpen={isOutlineOpen}
         onToggleOutline={() => setIsOutlineOpen((isOpen) => !isOpen)}
       />
-      <WorkspaceBody editor={editor} isOutlineOpen={isOutlineOpen} />
+      <WorkspaceBody
+        editor={editor}
+        isOutlineOpen={isOutlineOpen}
+        runtimeStatus={runtimeStatus}
+      />
     </main>
   );
 }
@@ -25,6 +32,7 @@ export function DraftWorkspace() {
 function WorkspaceBody(props: {
   editor: Editor | null;
   isOutlineOpen: boolean;
+  runtimeStatus: RuntimeConnectionState;
 }) {
   return (
     <div className={workspaceBodyClassName(props.isOutlineOpen)} data-testid="workspace-body">
@@ -33,7 +41,7 @@ function WorkspaceBody(props: {
         <EditorToolbar editor={props.editor} />
         <DraftEditor editor={props.editor} />
       </section>
-      <DocumentInspector editor={props.editor} />
+      <DocumentInspector editor={props.editor} runtimeStatus={props.runtimeStatus} />
     </div>
   );
 }

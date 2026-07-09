@@ -431,9 +431,42 @@ button:focus-visible,
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6d4b22;
+  color: #4e5652;
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+.inspector-status-list {
+  display: grid;
+  gap: 10px;
+}
+
+.inspector-status--unsaved {
+  color: #6d4b22;
+}
+
+.inspector-status--checking {
+  color: #68706d;
+}
+
+.inspector-status--checking .inspector-status__dot {
+  background: #8a918d;
+}
+
+.inspector-status--ready {
+  color: #12675e;
+}
+
+.inspector-status--ready .inspector-status__dot {
+  background: var(--accent);
+}
+
+.inspector-status--unavailable {
+  color: #9b3f32;
+}
+
+.inspector-status--unavailable .inspector-status__dot {
+  background: #bb5142;
 }
 
 .metric-list {

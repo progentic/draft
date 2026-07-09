@@ -32,6 +32,12 @@ closed on larger screens to leave more room for writing.
 The document panel reports the current word, character, and heading counts.
 These values are session information only.
 
+The session area also reports the desktop core connection. `Core v<version>`
+means the workspace reached the trusted Rust runtime and validated its status
+response. `Core unavailable` means the command transport or response was not
+available. A standalone browser preview has no Tauri core and shows the
+unavailable state; the desktop application provides the command connection.
+
 ## Saving and reopening
 
 Do not use the current workspace for document storage. Reloading or closing the

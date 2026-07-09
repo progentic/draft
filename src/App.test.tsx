@@ -1,11 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const getRuntimeStatusMock = vi.hoisted(() => vi.fn());
+
+vi.mock("./ipc/runtimeStatus", () => ({
+  getRuntimeStatus: getRuntimeStatusMock,
+}));
 
 import { App } from "./App";
 
 describe("DRAFT workspace shell", () => {
-  it("renders the editor, navigation, and session state", () => {
+  beforeEach(() => {
+    getRuntimeStatusMock.mockReset();
+    getRuntimeStatusMock.mockResolvedValue({ status: "ready", version: "0.1.0" });
+  });
+
+  it("renders the editor, navigation, and session state", async () => {
     render(<App />);
 
     expect(screen.getByRole("main", { name: "DRAFT workspace" })).toBeTruthy();
@@ -14,7 +25,8 @@ describe("DRAFT workspace shell", () => {
     expect(screen.getByRole("complementary", { name: "Document outline" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document details" })).toBeTruthy();
     expect(screen.getAllByText("Untitled document").length).toBeGreaterThan(1);
-    expect(screen.getByRole("status").textContent).toContain("Not saved");
+    expect(screen.getByText("Not saved")).toBeTruthy();
+    expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
   });
 
   it("toggles the document outline without changing document state", async () => {
@@ -47,5 +59,16 @@ describe("DRAFT workspace shell", () => {
     await user.click(boldButton);
 
     expect(boldButton.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("shows a bounded unavailable state when the command client fails", async () => {
+    getRuntimeStatusMock.mockResolvedValueOnce({
+      status: "error",
+      error: { type: "transport" },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("Core unavailable")).toBeTruthy();
   });
 });

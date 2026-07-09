@@ -35,6 +35,7 @@ check_required_documents() {
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/COMMAND_BOUNDARY.md
+    docs/maintainers/FRONTEND_COMMAND_CLIENT.md
     docs/maintainers/REALIGNMENT.md
     docs/maintainers/TOOLCHAIN.md
     docs/user/WORKSPACE.md

@@ -34,6 +34,16 @@ check_frontend_boundary() {
   assert_no_matches "INV-03 frontend trusted APIs" \
     'fetch\s*\(|\baxios\b|\bXMLHttpRequest\b|\bWebSocket\s*\(|\bEventSource\s*\(|navigator\.sendBeacon\s*\(|\bnode:fs\b|@tauri-apps/plugin-fs|@tauri-apps/plugin-store|\blocalStorage\b' \
     src
+
+  check_frontend_ipc_boundary
+}
+
+check_frontend_ipc_boundary() {
+  require_file src/ipc/client.ts
+  require_file src/ipc/runtimeStatus.ts
+  assert_no_matches "INV-03 untyped Tauri IPC outside src/ipc" \
+    '@tauri-apps/api/core|\binvoke\s*\(|\binvokeCommand\s*\(' \
+    --glob '!src/ipc/**' src
 }
 
 check_python_boundary() {

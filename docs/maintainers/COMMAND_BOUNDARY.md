@@ -96,7 +96,8 @@ bash scripts/check-invariants.sh
 
 ## Deferred boundary work
 
-- Phase 7 adds the only allowed TypeScript command wrapper surface.
+- Phase 7 adds the TypeScript wrapper described in
+  `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
 - Phase 8 adds typed Rust-to-frontend events.
 - Phase 9 adds cancellation behavior for long-running user-initiated work.
 - Product commands are introduced only in their owning phases with their

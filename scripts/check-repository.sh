@@ -40,6 +40,9 @@ check_required_sources() {
     .github/workflows/verify.yml
     index.html
     package-lock.json
+    src/ipc/client.ts
+    src/ipc/runtimeStatus.test.ts
+    src/ipc/runtimeStatus.ts
     src-tauri/Cargo.lock
     src-tauri/icons/icon.png
   )

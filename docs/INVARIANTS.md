@@ -63,7 +63,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 2 scans implemented source surfaces for denied credential fields. Full secret, schema, helper-input, and log checks remain open. | The Phase 3 `verify` job runs the current source scan. Full secret, schema, helper-input, and log checks remain open. |
 | `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phase 6 adds a typed runtime-status command with request, signature, and serialization tests. The invariant scan rejects generic errors and requires matching command registration and contract-test counts. | The `verify` job runs the same Rust tests and command-contract scan. |
-| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct network, filesystem, secret-store, and local-storage APIs in frontend source. | The Phase 3 `verify` job runs the same frontend boundary scan. |
+| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct trusted APIs and raw Tauri IPC outside `src/ipc/`. Phase 7 wrapper tests pin request, response, command-error, and transport behavior. | The `verify` job runs the same frontend tests and boundary scans. |
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | No citation module exists yet. Schema enforcement begins in Phase 18. | Planned after the citation surface exists. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | No background-job module exists yet. Resumability tests begin in Phase 26. | Planned after the job surface exists. |
 | `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | No document registry exists yet. Registry tests begin in Phase 12. | Planned after the registry exists. |
@@ -182,9 +182,17 @@ EventSource(
 navigator.sendBeacon(
 localStorage secret usage
 filesystem access APIs
+@tauri-apps/api/core outside src/ipc
+raw invoke(...) outside src/ipc
+generic invokeCommand(...) outside src/ipc
 ```
 
 Exception: frontend may subscribe to Tauri events because those events are local IPC, not external network calls.
+
+Phase 7 establishes `src/ipc/client.ts` as the only raw command invocation
+adapter. Command-specific wrappers validate unknown response data and classify
+command or transport failures before React receives them. Components and
+feature hooks do not import Tauri command APIs directly.
 
 ---
 
@@ -532,11 +540,12 @@ bash scripts/verify.sh
 bash scripts/check-invariants.sh
 ```
 
-Current scans cover credential-field names, frontend trusted APIs, Python
-network and process imports, generic Rust command errors, typed command
-contract coverage, ad hoc Rust network clients, and Bash invocation from
-product runtime. The verifier also checks locked offline builds, tests,
-required source visibility, generated-file hygiene, and documentation sanity.
+Current scans cover credential-field names, frontend trusted APIs, raw Tauri
+IPC placement, Python network and process imports, generic Rust command errors,
+typed command contract coverage, ad hoc Rust network clients, and Bash
+invocation from product runtime. The verifier also checks locked offline
+builds, tests, required source visibility, generated-file hygiene, and
+documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 

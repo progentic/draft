@@ -390,6 +390,11 @@ Phase 6 documents the first typed Tauri command in
 error enum, domain status type, and boundary entry points. Rust tests and the
 invariant script enforce the documented signature and serialization pattern.
 
+Phase 7 documents the only raw frontend command adapter, typed runtime-status
+wrapper, error classification, and transient connection hook in
+`docs/maintainers/FRONTEND_COMMAND_CLIENT.md`. Wrapper tests and the invariant
+scan enforce the documented IPC placement and boundary shapes.
+
 Recommended checks:
 
 - Markdown formatting
