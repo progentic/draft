@@ -17,7 +17,7 @@ main() {
   check_machine_specific_links
   check_changelog_shape
 
-  printf 'INFO External URLs and Markdown anchor targets are not checked in Phase 2.\n'
+  printf 'INFO External URLs and Markdown anchor targets are not checked.\n'
   printf 'Documentation sanity checks passed.\n'
 }
 

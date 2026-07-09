@@ -17,5 +17,8 @@ check-invariants:
 docs-check:
     bash scripts/check-docs.sh
 
+check-ci-parity:
+    bash scripts/check-ci-local-parity.sh
+
 build:
     bash scripts/build.sh

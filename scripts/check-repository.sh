@@ -36,6 +36,7 @@ check_repository_root() {
 
 check_required_sources() {
   local required_paths=(
+    .github/workflows/verify.yml
     index.html
     package-lock.json
     src-tauri/Cargo.lock
@@ -77,7 +78,7 @@ check_source_whitespace() {
   local status
 
   if whitespace_matches="$(rg --line-number '[[:blank:]]+$' \
-    --glob '*.{css,json,py,rs,sh,toml,ts,tsx}' .)"; then
+    --glob '*.{css,json,py,rs,sh,toml,ts,tsx,yaml,yml}' .)"; then
     printf '%s\n' "${whitespace_matches}" >&2
     echo "Source files contain trailing whitespace" >&2
     return 1

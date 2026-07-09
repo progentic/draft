@@ -22,6 +22,7 @@ main() {
   run_step "Bash syntax" find scripts -type f -name "*.sh" -exec bash -n "{}" +
   run_optional_checks
   run_step "Invariant boundaries" bash scripts/check-invariants.sh
+  run_step "CI/local parity" bash scripts/check-ci-local-parity.sh
   run_step "Documentation sanity" bash scripts/check-docs.sh
   run_step "Repository hygiene" bash scripts/check-repository.sh
 

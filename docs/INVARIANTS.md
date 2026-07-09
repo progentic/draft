@@ -27,17 +27,21 @@ Required invariant-specific local command:
 just check-invariants
 ```
 
-Required GitHub Actions workflow:
+Current GitHub Actions baseline:
 
 ```text
-.github/workflows/invariants.yml
+.github/workflows/verify.yml
 ```
 
-Required GitHub Actions job name:
+Current GitHub Actions job name:
 
 ```text
-invariants
+verify
 ```
+
+The production target still includes a dedicated `invariants` workflow and job.
+Phase 3 uses the aggregate `verify` job while the current repository has only
+one small implementation surface.
 
 Local checks and CI checks should use the same scripts where possible. CI-only behavior is allowed only when the check depends on GitHub metadata, such as PR age or labels.
 
@@ -57,19 +61,19 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 
 | ID | Status | Invariant | Protects | Local development enforcement | GitHub Actions enforcement |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 2 scans implemented source surfaces for denied credential fields. Full secret, schema, helper-input, and log checks remain open. | Planned for Phase 3 after the local checks exist. |
-| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phase 2 scans Rust source for generic error types. Command-specific tests begin when commands are introduced in Phase 6. | Planned for Phase 3, then expanded in Phase 6. |
-| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct network, filesystem, secret-store, and local-storage APIs in frontend source. | Planned for Phase 3. |
+| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 2 scans implemented source surfaces for denied credential fields. Full secret, schema, helper-input, and log checks remain open. | The Phase 3 `verify` job runs the current source scan. Full secret, schema, helper-input, and log checks remain open. |
+| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phase 2 scans Rust source for generic error types. Command-specific tests begin when commands are introduced in Phase 6. | The Phase 3 `verify` job runs the generic error scan. Command-specific tests begin in Phase 6. |
+| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct network, filesystem, secret-store, and local-storage APIs in frontend source. | The Phase 3 `verify` job runs the same frontend boundary scan. |
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | No citation module exists yet. Schema enforcement begins in Phase 18. | Planned after the citation surface exists. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | No background-job module exists yet. Resumability tests begin in Phase 26. | Planned after the job surface exists. |
 | `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | No document registry exists yet. Registry tests begin in Phase 12. | Planned after the registry exists. |
 | `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | No long-running worker exists yet. Cancellation enforcement begins in Phase 9. | Planned after the worker surface exists. |
 | `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | No watched-folder importer exists yet. Stable-write tests begin in Phase 24. | Planned after the import surface exists. |
 | `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | No document-save path exists yet. Atomic-save enforcement begins in Phase 14. | Planned after the save surface exists. |
-| `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | `scripts/check-invariants.sh` scans current frontend, Rust, and Python source for denied clients. | Planned for Phase 3. |
-| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Phase 2 runs Python tests and denied-import scans. Typed protocol, allowlist, timeout, and output validation begin in Phase 28. | Planned for Phase 3 and expanded in Phase 28. |
-| `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | Planned for Phase 3. |
-| `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | GitHub Actions parity begins in Phase 3. |
+| `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | `scripts/check-invariants.sh` scans current frontend, Rust, and Python source for denied clients. | The Phase 3 `verify` job runs the same frontend, Rust, and Python scans. |
+| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Phase 2 runs Python tests and denied-import scans. Typed protocol, allowlist, timeout, and output validation begin in Phase 28. | The Phase 3 `verify` job runs current Python tests and scans. Typed worker enforcement expands in Phase 28. |
+| `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | The Phase 3 `verify` job runs Bash syntax and runtime-boundary checks. Optional tools run when present. |
+| `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
 
 ---
 
@@ -498,11 +502,16 @@ build:
 
 GitHub Actions should call `just` targets or repository scripts, not duplicate large logic inside YAML.
 
+Phase 3 implements `.github/workflows/verify.yml` with the required `verify`
+job. It aggregates all currently implemented checks through
+`bash scripts/verify.sh`. The dedicated `invariants.yml` and `build.yml`
+workflows remain production targets rather than Phase 3 baseline requirements.
+
 ---
 
-## 7. Phase 2 Local Enforcement
+## 7. Current Local and CI Enforcement
 
-Phase 2 provides the first local enforcement layer:
+Phase 2 provides the local enforcement layer:
 
 ```bash
 just verify
@@ -522,17 +531,26 @@ clients, and Bash invocation from product runtime. The verifier also checks
 locked offline builds, tests, required source visibility, generated-file
 hygiene, and documentation sanity.
 
+Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
+
+```bash
+bash scripts/verify.sh
+```
+
+`scripts/check-ci-local-parity.sh` runs inside the verifier and rejects workflow
+drift from the local bootstrap and verification scripts.
+
 The policy status of the invariants is unchanged. Mechanical enforcement is
-still incomplete until Phase 3 adds GitHub Actions and later phases add tests
-for modules that do not yet exist. The repository must not claim full dual
-enforcement before those checks are present.
+still incomplete for feature modules that do not yet exist and for the future
+dedicated `invariants` and `build` jobs. The repository must not claim full
+production enforcement before those checks are present.
 
 ---
 
 ## 8. Open Enforcement Items
 
-- Add `verify.yml`, `invariants.yml`, and `build.yml` in Phase 3.
-- Add CI/local parity validation after workflow files exist.
+- Add dedicated `invariants.yml` and `build.yml` workflows as their complete
+  enforcement surfaces mature.
 - Add a full secret scanner plus config, log-field, and helper-input tests.
 - Add command-signature tests when Tauri commands exist.
 - Add citation, document, job, cancellation, import, and save invariant tests

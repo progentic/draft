@@ -286,6 +286,12 @@ invariants
 build
 ```
 
+Phase 3 begins this target shape with the aggregate `verify` job in
+`.github/workflows/verify.yml`. That job runs all current build, test,
+documentation, and invariant checks through `scripts/verify.sh`. Dedicated
+`invariants` and `build` workflows remain required as those surfaces mature;
+the baseline workflow does not make them complete by implication.
+
 The `justfile` is the stable command surface. It may call Cargo, the JavaScript package manager, Tauri CLI, Python tools, or Bash scripts underneath. Developers should not need to remember every low-level command.
 
 ### 8.1 Required Verification Coverage
@@ -373,8 +379,9 @@ Every architecture PR must answer:
 
 - Add `.github/pull_request_template.md` with the architecture checklist.
 - Add `CODEOWNERS` for governed files once team size is greater than one.
-- Add `verify.yml`, `invariants.yml`, and `build.yml` in Phase 3 using the
-  repository scripts behind the root `justfile`.
+- Add dedicated `invariants.yml` and `build.yml` workflows as their full
+  enforcement surfaces mature. Phase 3 provides the aggregate `verify.yml`
+  baseline.
 - Decide and pin the Python dependency manager before adding a third-party
   helper dependency.
 - Create the first contract drafts for citation node schema, document envelope schema, Python helper worker interface, and formatting rules.

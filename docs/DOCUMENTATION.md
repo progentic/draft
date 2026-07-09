@@ -377,7 +377,9 @@ rule. External URLs, Markdown anchor targets, ADR filenames, and contract
 frontmatter are not checked yet because those surfaces do not exist or would
 require broader tooling.
 
-GitHub Actions should run the same documentation checks as local development.
+The Phase 3 `Verify` workflow runs `bash scripts/verify.sh`, which invokes
+`scripts/check-docs.sh`. Documentation sanity therefore uses the same script
+locally and in GitHub Actions rather than duplicating checks in workflow YAML.
 
 Recommended checks:
 

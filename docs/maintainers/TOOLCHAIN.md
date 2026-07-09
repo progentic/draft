@@ -2,12 +2,12 @@
 
 ## Current phase
 
-Phase 2 is complete at the current checkpoint. The Phase 1 toolchain remains
-locked, and one local command now checks the build, tests, formatting,
-boundaries, documentation, and repository hygiene.
+Phase 3 is complete at the current checkpoint. The Phase 1 toolchain remains
+locked, and the Phase 2 verification command now runs locally and in the
+GitHub Actions baseline.
 
-This checkpoint does not include GitHub Actions, the launched desktop shell,
-or product workflows. Those belong to later phases.
+This checkpoint does not include the launched desktop shell, product workflows,
+release automation, or packaging. Those belong to later phases.
 
 ## Toolchain decisions
 
@@ -93,7 +93,61 @@ required.
 | `just format` | `bash scripts/format.sh` | Format supported source files. |
 | `just check-invariants` | `bash scripts/check-invariants.sh` | Scan implemented trust boundaries. |
 | `just docs-check` | `bash scripts/check-docs.sh` | Run offline documentation sanity checks. |
+| `just check-ci-parity` | `bash scripts/check-ci-local-parity.sh` | Verify that CI delegates to local scripts. |
 | `just build` | `bash scripts/build.sh` | Typecheck/build the frontend and check Rust. |
 
-Phase 3 must call these same scripts from GitHub Actions. It must not duplicate
-their logic inside workflow YAML.
+## GitHub Actions baseline
+
+`.github/workflows/verify.yml` defines the `Verify` workflow and `verify` job.
+It runs for pull requests targeting `main` and pushes to `main`.
+
+The job performs environment setup, then runs the same repository commands used
+locally:
+
+```bash
+bash scripts/bootstrap.sh
+bash scripts/verify.sh
+```
+
+The workflow uses these pinned runtime assumptions:
+
+- `ubuntu-24.04`
+- `actions/checkout@v7` with persisted credentials disabled
+- `actions/setup-node@v6` with Node.js 24 and npm's download cache
+- `actions/setup-python@v6` with Python 3.12
+- `dtolnay/rust-toolchain@1.96.0` with Clippy and rustfmt
+
+Each action is pinned to the verified commit currently referenced by that
+version selector. The comments in `verify.yml` retain the readable version.
+
+The npm cache contains package-manager downloads, not `node_modules` or other
+project-controlled output.
+
+Tauri compile checks on Ubuntu require the current Debian development packages:
+
+```text
+build-essential
+file
+libayatana-appindicator3-dev
+librsvg2-dev
+libssl-dev
+libwebkit2gtk-4.1-dev
+libxdo-dev
+```
+
+These packages follow Tauri's Linux prerequisites. The exact Ubuntu job cannot
+be executed on a macOS workstation, so the first GitHub Actions run remains the
+authoritative validation of the Linux package set.
+
+The workflow has read-only repository permission, uses no secrets, publishes
+nothing, and uploads no artifacts. Optional tools remain environment-dependent
+and are reported by `scripts/verify.sh`; all required Phase 2 checks run in both
+environments.
+
+`scripts/check-ci-local-parity.sh` prevents the workflow from bypassing the
+local verifier or adding publishing, deployment, write permissions, secrets,
+or failure masking.
+
+The dedicated `invariants` and `build` workflows in the production architecture
+remain future work. Phase 3 intentionally provides one aggregate baseline job
+for all checks that exist today.
