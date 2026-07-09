@@ -42,9 +42,10 @@ provides:
 - `DocumentEnvelopeError`, a bounded serializable failure enum
 - `DocumentEnvelope::from_json_value`, the untrusted JSON entry point
 
-No TypeScript envelope type or guard exists at this checkpoint because the
-frontend does not send or receive the envelope yet. A later frontend mirror
-may protect display code, but it cannot replace Rust validation.
+Phase 11 did not expose the envelope to TypeScript. Phase 13 adds a mirrored
+response guard and request type under `src/ipc/` because open/save commands now
+cross the bridge. The mirror protects UI code from malformed responses; it
+does not replace Rust validation.
 
 ## Validation Order
 

@@ -7,8 +7,8 @@ The workspace contains a document outline, a formatting toolbar, the writing
 surface, and live document statistics.
 
 This is a pre-release workspace. The header and document panel show `Not saved`
-and `Unsaved` because file creation, save, open, and recovery are not available
-at this checkpoint.
+and `Unsaved` because the current UI does not expose the new Rust document file
+commands yet. Autosave and recovery are not available at this checkpoint.
 
 ## Editing
 
@@ -43,15 +43,16 @@ the desktop application provides the command and event connection.
 ## Saving and reopening
 
 Do not use the current workspace for document storage. Reloading or closing the
-application discards edits. DRAFT does not yet create, open, save, or reopen
-document files.
+application discards edits. DRAFT does not yet let users create, open, save, or
+reopen document files from the workspace controls.
 
-The durable document model, Rust-owned document registry, save/load path, and
-atomic save protection are implemented in later document-core phases. The UI
-does not present inactive file commands before those protections exist.
+The Rust core now has a validated envelope, single-live-handle registry, native
+file dialog commands, explicit snapshot save path, and minimum atomic
+replacement primitive. These backend boundaries are not presented as a user
+workflow until Phase 14 hardening and later workspace integration are complete.
 
 ## Local behavior
 
-The current workspace does not call external services, read local files, or
+The visible workspace does not call external services, read local files, or
 write application data. Editor state remains transient inside the application
-WebView.
+WebView until file controls are integrated.

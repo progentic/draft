@@ -2,24 +2,28 @@
 
 ## Current phase
 
-Phase 12 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 13 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
-envelope and a process-local single-live-handle registry with typed errors and
-focused tests. The Phase 5 and Phase 10 audits remain recorded in
-`docs/maintainers/REALIGNMENT.md`.
+envelope, a process-local single-live-handle registry, typed native-dialog
+open/save commands, and a minimum atomic replacement path. The Phase 5 and
+Phase 10 audits remain recorded in `docs/maintainers/REALIGNMENT.md`.
 
-This checkpoint does not include document commands, a file lifecycle, durable
-documents, product research or analysis workflows, release automation, or
-packaging. Those belong to later phases.
+This checkpoint does not include workspace file controls, a close command,
+autosave, recovery, Phase 14 interruption hardening, product research or
+analysis workflows, release automation, or packaging.
 
 ## Toolchain decisions
 
 - Rust uses Cargo with `Cargo.lock` committed for the desktop application.
 - Serde provides explicit command, error, and document-envelope serialization.
 - `serde_json` preserves structured Tiptap JSON inside the validated envelope.
+- `tauri-plugin-dialog` keeps native open/save path selection inside Rust.
+- `atomic-write-file` provides same-directory temporary replacement and parent
+  directory synchronization where supported; DRAFT calls `sync_all` before
+  commit.
 - A Rust `Mutex<HashMap<...>>` serializes process-local document handle
   ownership without introducing persistence.
 - `tokio-util` provides cooperative cancellation tokens for Rust-owned workers.
@@ -87,9 +91,8 @@ The verifier runs:
 
 - npm dependency-tree validation
 - React/Tiptap workspace plus typed command, event, and cancellation client tests
-- Rust formatting, Clippy, compile checks,
-  command/event/cancellation/envelope/registry scans, cross-bridge name parity,
-  and tests
+- Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
+  registry/persistence/atomic-write scans, cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

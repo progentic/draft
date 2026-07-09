@@ -20,6 +20,8 @@ transport failures out of presentation components.
 | Mid | `useRuntimeStatus` | Resolves the command result into transient connection state. |
 | Mid | `getRuntimeStatus` | Owns the command name, request envelope, response validation, and error classification. |
 | Mid | `cancelWorker` | Owns the cancellation command contract and bounded result mapping. |
+| Mid | `openDocument` | Validates Rust-loaded envelopes without receiving a path. |
+| Mid | `saveDocument` | Sends one explicit snapshot and validates save outcomes. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -97,6 +99,21 @@ A standalone Vite browser does not have a Tauri runtime and therefore reports
 the core as unavailable. The desktop application resolves the registered Rust
 command.
 
+## Document file wrappers
+
+Phase 13 adds `openDocument` and `saveDocument` under `src/ipc/`.
+`openDocument` sends an empty request because Rust owns native path selection.
+It validates opened envelopes, cancellation, nested domain failures, and
+transport failures.
+
+`saveDocument` sends exactly one typed envelope snapshot. It sends no path and
+does not inspect Tiptap live state. The caller must construct the immutable
+snapshot explicitly. No React component invokes these wrappers yet because the
+visible workspace file workflow remains gated on Phase 14 hardening.
+
+Nested registry failures include source-path ownership conflicts. The wrapper
+preserves the bounded code without exposing the selected path.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -114,6 +131,8 @@ Frontend tests prove:
 - unknown transport error classification without detail leakage
 - cancellation-request and already-ended response validation
 - cancellation command errors and exact request arguments
+- document open/save command names and exact request arguments
+- envelope, cancellation, nested error, and malformed-response handling
 - workspace rendering of the connected Rust version
 
 Run the focused evidence with:
@@ -137,4 +156,5 @@ bash scripts/check-invariants.sh
 Phase 8 event transport is documented in
 `docs/maintainers/EVENT_BOUNDARY.md`. It remains separate from this
 request/response abstraction. Phase 9 worker lifecycle rules are documented in
-`docs/maintainers/CANCELLATION_BOUNDARY.md`.
+`docs/maintainers/CANCELLATION_BOUNDARY.md`. Phase 13 file lifecycle rules are
+documented in `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.

@@ -73,6 +73,7 @@ lock, a cross-process lock, or a multi-user synchronization model.
 | :--- | :--- |
 | `AlreadyOpen` | The document ID already owns one live handle. |
 | `NotOpen` | A close request named a document with no live handle. |
+| `SourcePathInUse` | Another live document already owns the selected source path. |
 | `RegistryUnavailable` | The registry mutex is poisoned and state cannot be trusted. |
 
 These errors do not cross IPC in Phase 12. A future command must map them into
@@ -104,8 +105,12 @@ module. `scripts/check-repository.sh` requires the source file to remain visible
 to Git. Both checks run through `scripts/verify.sh` locally and in the GitHub
 Actions `verify` job.
 
-## Next Boundary
+## Save/Load Integration
 
-Phase 13 may add the save/load path and the command integration that retains
-registry ownership while a document is open. That phase must preserve typed
-duplicate behavior and must not implement the Phase 14 atomic writer early.
+Phase 13 retains Rust-selected source paths inside each live handle. Validated
+loads call `open_from_path`; saves replace the existing snapshot while retaining
+or attaching that path; close and reopen still release and recreate exactly one
+handle. One path cannot back two live document IDs, and failed writes do not
+advance the handle snapshot or attach a path. The minimum atomic writer is
+pulled forward because a direct target write would violate `INV-09`. Phase 14
+remains mandatory hardening.

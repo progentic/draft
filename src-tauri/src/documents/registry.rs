@@ -2,8 +2,11 @@ use std::{
     collections::{HashMap, hash_map::Entry},
     error::Error,
     fmt,
+    path::{Path, PathBuf},
     sync::{Mutex, MutexGuard},
 };
+
+use serde::Serialize;
 
 use crate::documents::envelope::{DocumentEnvelope, DocumentId};
 
@@ -14,15 +17,18 @@ pub struct DocumentRegistry {
 }
 
 /// Bounded failures produced by live document-handle operations.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(tag = "code", rename_all = "snake_case")]
 pub enum DocumentRegistryError {
     AlreadyOpen,
     NotOpen,
+    SourcePathInUse,
     RegistryUnavailable,
 }
 
 struct LiveDocumentHandle {
     envelope: DocumentEnvelope,
+    source_path: Option<PathBuf>,
 }
 
 impl DocumentRegistry {
@@ -34,7 +40,52 @@ impl DocumentRegistry {
     /// Takes ownership of one validated envelope while its document is open.
     pub fn open(&self, envelope: DocumentEnvelope) -> Result<(), DocumentRegistryError> {
         let mut handles = self.lock_handles()?;
-        register_handle(&mut handles, envelope)
+        register_handle(&mut handles, envelope, None)
+    }
+
+    /// Opens a validated envelope with a Rust-selected source path.
+    pub fn open_from_path(
+        &self,
+        envelope: DocumentEnvelope,
+        source_path: PathBuf,
+    ) -> Result<(), DocumentRegistryError> {
+        let mut handles = self.lock_handles()?;
+        register_handle(&mut handles, envelope, Some(source_path))
+    }
+
+    /// Returns the source path retained by Rust for one open document.
+    pub fn source_path(
+        &self,
+        document_id: DocumentId,
+    ) -> Result<Option<PathBuf>, DocumentRegistryError> {
+        let handles = self.lock_handles()?;
+        source_path_for(&handles, document_id)
+    }
+
+    /// Confirms that no other live document owns a Rust-selected source path.
+    pub fn ensure_source_path_available(
+        &self,
+        document_id: DocumentId,
+        source_path: &Path,
+    ) -> Result<(), DocumentRegistryError> {
+        let handles = self.lock_handles()?;
+        reject_source_path_conflict(&handles, document_id, Some(source_path))
+    }
+
+    /// Replaces the validated snapshot while preserving its existing source path.
+    pub fn update(&self, envelope: DocumentEnvelope) -> Result<(), DocumentRegistryError> {
+        let mut handles = self.lock_handles()?;
+        update_handle(&mut handles, envelope)
+    }
+
+    /// Replaces the validated snapshot and records its Rust-selected source path.
+    pub fn update_source(
+        &self,
+        envelope: DocumentEnvelope,
+        source_path: PathBuf,
+    ) -> Result<(), DocumentRegistryError> {
+        let mut handles = self.lock_handles()?;
+        update_handle_source(&mut handles, envelope, source_path)
     }
 
     /// Releases one live handle and returns its validated in-memory envelope.
@@ -69,14 +120,35 @@ impl DocumentRegistryError {
         match self {
             Self::AlreadyOpen => "document already has a live editing handle",
             Self::NotOpen => "document does not have a live editing handle",
+            Self::SourcePathInUse => "document source path already has a live editing handle",
             Self::RegistryUnavailable => "document registry is unavailable",
         }
     }
 }
 
 impl LiveDocumentHandle {
-    fn new(envelope: DocumentEnvelope) -> Self {
-        Self { envelope }
+    fn new(envelope: DocumentEnvelope, source_path: Option<PathBuf>) -> Self {
+        Self {
+            envelope,
+            source_path,
+        }
+    }
+
+    fn source_path(&self) -> Option<PathBuf> {
+        self.source_path.clone()
+    }
+
+    fn owns_source_path(&self, source_path: &Path) -> bool {
+        self.source_path.as_deref() == Some(source_path)
+    }
+
+    fn update(&mut self, envelope: DocumentEnvelope) {
+        self.envelope = envelope;
+    }
+
+    fn update_source(&mut self, envelope: DocumentEnvelope, source_path: PathBuf) {
+        self.envelope = envelope;
+        self.source_path = Some(source_path);
     }
 
     fn into_envelope(self) -> DocumentEnvelope {
@@ -87,14 +159,77 @@ impl LiveDocumentHandle {
 fn register_handle(
     handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
     envelope: DocumentEnvelope,
+    source_path: Option<PathBuf>,
 ) -> Result<(), DocumentRegistryError> {
-    match handles.entry(envelope.document_id()) {
+    let document_id = envelope.document_id();
+    reject_source_path_conflict(handles, document_id, source_path.as_deref())?;
+
+    match handles.entry(document_id) {
         Entry::Occupied(_) => Err(DocumentRegistryError::AlreadyOpen),
         Entry::Vacant(entry) => {
-            entry.insert(LiveDocumentHandle::new(envelope));
+            entry.insert(LiveDocumentHandle::new(envelope, source_path));
             Ok(())
         }
     }
+}
+
+fn source_path_for(
+    handles: &HashMap<DocumentId, LiveDocumentHandle>,
+    document_id: DocumentId,
+) -> Result<Option<PathBuf>, DocumentRegistryError> {
+    handles
+        .get(&document_id)
+        .map(LiveDocumentHandle::source_path)
+        .ok_or(DocumentRegistryError::NotOpen)
+}
+
+fn update_handle(
+    handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
+    envelope: DocumentEnvelope,
+) -> Result<(), DocumentRegistryError> {
+    let handle = handle_for_update(handles, envelope.document_id())?;
+    handle.update(envelope);
+    Ok(())
+}
+
+fn update_handle_source(
+    handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
+    envelope: DocumentEnvelope,
+    source_path: PathBuf,
+) -> Result<(), DocumentRegistryError> {
+    let document_id = envelope.document_id();
+    reject_source_path_conflict(handles, document_id, Some(&source_path))?;
+    let handle = handle_for_update(handles, document_id)?;
+    handle.update_source(envelope, source_path);
+    Ok(())
+}
+
+fn reject_source_path_conflict(
+    handles: &HashMap<DocumentId, LiveDocumentHandle>,
+    document_id: DocumentId,
+    source_path: Option<&Path>,
+) -> Result<(), DocumentRegistryError> {
+    let Some(source_path) = source_path else {
+        return Ok(());
+    };
+    let path_in_use = handles
+        .iter()
+        .any(|(open_id, handle)| *open_id != document_id && handle.owns_source_path(source_path));
+
+    if path_in_use {
+        Err(DocumentRegistryError::SourcePathInUse)
+    } else {
+        Ok(())
+    }
+}
+
+fn handle_for_update(
+    handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
+    document_id: DocumentId,
+) -> Result<&mut LiveDocumentHandle, DocumentRegistryError> {
+    handles
+        .get_mut(&document_id)
+        .ok_or(DocumentRegistryError::NotOpen)
 }
 
 fn remove_handle(
@@ -201,6 +336,61 @@ mod tests {
         assert_eq!(
             registry.open(envelope(FIRST_DOCUMENT_ID, "Unavailable")),
             Err(DocumentRegistryError::RegistryUnavailable),
+        );
+    }
+
+    #[test]
+    fn source_path_cannot_back_two_live_handles() {
+        let registry = DocumentRegistry::new();
+        let source_path = PathBuf::from("shared-document.draft");
+        registry
+            .open_from_path(envelope(FIRST_DOCUMENT_ID, "First"), source_path.clone())
+            .expect("first document should open");
+
+        assert_eq!(
+            registry.open_from_path(envelope(SECOND_DOCUMENT_ID, "Second"), source_path),
+            Err(DocumentRegistryError::SourcePathInUse),
+        );
+    }
+
+    #[test]
+    fn source_path_conflict_preserves_unattached_handle() {
+        let registry = DocumentRegistry::new();
+        let source_path = PathBuf::from("owned-document.draft");
+        let second = envelope(SECOND_DOCUMENT_ID, "Second");
+        let second_id = second.document_id();
+        registry
+            .open_from_path(envelope(FIRST_DOCUMENT_ID, "First"), source_path.clone())
+            .expect("first document should open");
+        registry
+            .open(second.clone())
+            .expect("second document should open");
+
+        assert_eq!(
+            registry.update_source(envelope(SECOND_DOCUMENT_ID, "Replacement"), source_path,),
+            Err(DocumentRegistryError::SourcePathInUse),
+        );
+        assert_eq!(registry.source_path(second_id), Ok(None));
+        assert_eq!(registry.close(second_id), Ok(second));
+    }
+
+    #[test]
+    fn registry_failure_shape_is_stable() {
+        let errors = [
+            DocumentRegistryError::AlreadyOpen,
+            DocumentRegistryError::NotOpen,
+            DocumentRegistryError::SourcePathInUse,
+            DocumentRegistryError::RegistryUnavailable,
+        ];
+
+        assert_eq!(
+            serde_json::to_value(errors).expect("errors should serialize"),
+            json!([
+                { "code": "already_open" },
+                { "code": "not_open" },
+                { "code": "source_path_in_use" },
+                { "code": "registry_unavailable" }
+            ]),
         );
     }
 

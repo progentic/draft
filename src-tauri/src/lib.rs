@@ -8,9 +8,12 @@ pub mod workers;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(documents::registry::DocumentRegistry::new())
         .manage(workers::cancellation::WorkerCancellationRegistry::new())
         .invoke_handler(tauri::generate_handler![
+            commands::document_open::open_document,
+            commands::document_save::save_document,
             commands::runtime_status::get_runtime_status,
             commands::worker_cancellation::cancel_worker
         ])

@@ -428,6 +428,13 @@ enforce one live handle per document, typed duplicate and unknown-close
 failures, close/reopen behavior, independent documents, and concurrent-open
 serialization without introducing a file or frontend lifecycle.
 
+Phase 13 documents the Rust-owned native-dialog, validated load, explicit
+snapshot save, registry source-path, and atomic replacement flow in
+`docs/maintainers/DOCUMENT_SAVE_LOAD.md`. Rust and frontend tests plus the
+invariant scan enforce typed command shapes, malformed-file rejection,
+round-trip behavior, Rust-only path authority, and the absence of direct
+write-to-target calls.
+
 Recommended checks:
 
 - Markdown formatting

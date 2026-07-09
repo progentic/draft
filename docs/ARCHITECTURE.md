@@ -41,27 +41,32 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 12 is deliberately smaller than the
+The implemented application through Phase 13 is deliberately smaller than the
 full system described in this architecture:
 
-- Rust exposes typed `get_runtime_status` and `cancel_worker` commands with
-  command-specific request, response, and error types.
+- Rust exposes typed runtime-status, worker-cancellation, document-open, and
+  document-save commands with command-specific request, response, and error
+  types.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
 - Rust emits the typed finite `draft://runtime-status` event, and the frontend
   validates it before React displays connection state.
 - Rust owns a process-local worker cancellation registry and cooperative token.
   No product worker starts yet, so no cancellation control is displayed.
 - Rust owns the version 1 document envelope, UUID identity parsing, root-shape
-  validation, typed failures, and Serde round trips. The envelope remains an
-  in-memory domain type and is not exposed through a Tauri command.
+  validation, typed failures, and Serde round trips. Typed open/save commands
+  now carry that envelope, while Rust remains the validation authority.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
+- Rust opens native file dialogs, validates selected files before registration,
+  retains one exclusive source path per live document, and atomically writes
+  only the explicit immutable snapshot submitted by the frontend. Registry
+  state advances only after the write succeeds.
 - React and Tiptap own only the transient writing surface and presentation
   state. Reloading still discards the current document.
-- No document command, save/load path, atomic writer, reference library,
-  citation behavior, network client, analysis worker, formatter, export path,
-  or durable persistence is implemented yet.
+- The current workspace does not expose open/save controls yet. No close command,
+  autosave, recovery, reference library, citation behavior, network client,
+  analysis worker, formatter, export path, or durable database is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -408,8 +413,15 @@ as a Rust domain type with `schema_version`, `document_id`, `title`, and
 `document` fields. The exact implemented checkpoint is documented in
 `maintainers/DOCUMENT_ENVELOPE.md`; it is not yet an accepted contract.
 
-Phase 11 does not connect the envelope to a file or application lifecycle. The
-save rules below remain target architecture for Phases 13 and 14.
+Phase 13 connects the envelope to typed Rust open/save commands. Rust selects
+paths through native dialogs, validates loaded bytes before registry entry,
+and receives an explicit immutable frontend snapshot for save. TypeScript only
+mirrors the envelope for response safety and command requests.
+
+The minimum atomic writer is included in Phase 13 because implementing a direct
+write-to-target path would violate `INV-09`. Phase 14 remains mandatory for
+injected interruption, replacement-failure, temporary-file cleanup, and
+concurrent-save tests.
 
 The saved source document contains:
 

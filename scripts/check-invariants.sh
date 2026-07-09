@@ -22,6 +22,7 @@ main() {
   check_worker_cancellation_contract
   check_document_envelope_contract
   check_document_registry_contract
+  check_document_file_contract
   check_bridge_name_parity
   check_future_feature_absence_gates
   check_rust_network_boundary
@@ -39,7 +40,7 @@ check_credential_fields() {
 
 check_frontend_boundary() {
   assert_no_matches "INV-03 frontend trusted APIs" \
-    'fetch\s*\(|\baxios\b|\bXMLHttpRequest\b|\bWebSocket\s*\(|\bEventSource\s*\(|navigator\.sendBeacon\s*\(|\bnode:fs\b|@tauri-apps/plugin-fs|@tauri-apps/plugin-store|\blocalStorage\b' \
+    'fetch\s*\(|\baxios\b|\bXMLHttpRequest\b|\bWebSocket\s*\(|\bEventSource\s*\(|navigator\.sendBeacon\s*\(|\bnode:fs\b|@tauri-apps/plugin-(?:dialog|fs|store)|\blocalStorage\b' \
     src
 
   check_frontend_ipc_boundary
@@ -238,9 +239,101 @@ check_document_registry_contract() {
     require_rust_test "${test_name}" "${source_path}"
   done
   assert_no_matches "Phase 12 registry runtime I/O" \
-    '(?:std|tokio)::fs|\b(?:File|OpenOptions|Path|PathBuf)\b|#\[tauri::command\]' \
+    '(?:std|tokio)::fs|\b(?:File|OpenOptions)\b|#\[tauri::command\]' \
     "${source_path}"
   printf 'PASS INV-06 document registry contract\n'
+}
+
+check_document_file_contract() {
+  local persistence_path="src-tauri/src/documents/persistence.rs"
+  local atomic_writer_path="src-tauri/src/documents/atomic_write.rs"
+  local required_tests=(
+    document_round_trip_preserves_updated_snapshot
+    malformed_json_fails_before_registry_entry
+    unsupported_schema_version_fails_explicitly
+    duplicate_load_returns_already_open
+    save_uses_explicit_snapshot_and_retained_path
+    save_new_snapshot_uses_rust_selected_path
+    cancelled_first_save_does_not_register_document
+    invalid_snapshot_fails_before_path_selection
+    save_does_not_reopen_dialog_for_loaded_document
+    failed_first_save_does_not_register_document
+    failed_attach_preserves_registry_state
+    failed_existing_save_preserves_registry_snapshot
+    save_rejects_source_path_owned_by_another_document
+  )
+  local test_name
+
+  require_document_file_sources
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${persistence_path}"
+  done
+  require_rust_test source_path_cannot_back_two_live_handles \
+    src-tauri/src/documents/registry.rs
+  require_rust_test source_path_conflict_preserves_unattached_handle \
+    src-tauri/src/documents/registry.rs
+  require_rust_test registry_failure_shape_is_stable \
+    src-tauri/src/documents/registry.rs
+  require_atomic_writer_tests "${atomic_writer_path}"
+  check_document_write_boundary "${atomic_writer_path}"
+  check_frontend_document_file_boundary
+  printf 'PASS INV-03/06/09 document file contract\n'
+}
+
+require_document_file_sources() {
+  require_file src-tauri/src/commands/document_open.rs
+  require_file src-tauri/src/commands/document_save.rs
+  require_file src-tauri/src/documents/atomic_write.rs
+  require_file src-tauri/src/documents/dialog.rs
+  require_file src-tauri/src/documents/persistence.rs
+  require_file src/ipc/documentEnvelope.test.ts
+  require_file src/ipc/documentEnvelope.ts
+  require_file src/ipc/documentErrors.ts
+  require_file src/ipc/documentOpen.ts
+  require_file src/ipc/documentOpen.test.ts
+  require_file src/ipc/documentSave.ts
+  require_file src/ipc/documentSave.test.ts
+}
+
+require_atomic_writer_tests() {
+  local source_path="$1"
+  local required_tests=(
+    atomic_writer_creates_complete_document
+    atomic_writer_replaces_complete_document
+    atomic_writer_rejects_missing_parent
+  )
+  local test_name
+
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${source_path}"
+  done
+}
+
+check_document_write_boundary() {
+  local atomic_writer_path="$1"
+
+  assert_no_matches "INV-09 direct document target writes" \
+    '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
+    --glob "!${atomic_writer_path}" src-tauri/src
+  require_source_pattern 'AtomicWriteFile::open' "${atomic_writer_path}"
+  require_source_pattern '.sync_all()' "${atomic_writer_path}"
+  require_source_pattern '.commit()' "${atomic_writer_path}"
+}
+
+check_frontend_document_file_boundary() {
+  assert_no_matches "frontend document path authority" \
+    '\b(?:path|filePath|file_path)\s*:' \
+    src/ipc/documentOpen.ts src/ipc/documentSave.ts
+}
+
+require_source_pattern() {
+  local pattern="$1"
+  local source_path="$2"
+
+  if ! rg --quiet --fixed-strings "${pattern}" "${source_path}"; then
+    printf 'FAILED missing source pattern %s in %s\n' "${pattern}" "${source_path}" >&2
+    return 1
+  fi
 }
 
 require_document_registry_state() {
@@ -324,9 +417,6 @@ check_future_feature_absence_gates() {
     src src-tauri/src
   assert_no_matches "INV-08 watched import before Phase 24" \
     '\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' src src-tauri/src
-  assert_no_matches "INV-09 save surface before Phase 13" \
-    '\bsave_document\b|\bAtomicWriter\b|\batomic_write\b|\bfsync\b' \
-    src src-tauri/src
   assert_no_matches "INV-11 helper protocol before Phase 28" \
     '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
     python/draft_helpers

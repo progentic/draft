@@ -6,14 +6,19 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 12 are complete. Phase 13 is
-the next implementation phase; save/load implementation has not started.
+**Current execution checkpoint:** Phases 0 through 13 are complete. Phase 14 is
+the next implementation phase; interrupted-save hardening has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
-`docs/maintainers/DOCUMENT_ENVELOPE.md`, and the Phase 12 registry behavior is
-recorded in `docs/maintainers/DOCUMENT_REGISTRY.md`. These implementation guides
-are not accepted contracts under the governance lifecycle.
+`docs/maintainers/DOCUMENT_ENVELOPE.md`, Phase 12 registry behavior in
+`docs/maintainers/DOCUMENT_REGISTRY.md`, and Phase 13 file behavior in
+`docs/maintainers/DOCUMENT_SAVE_LOAD.md`. These implementation guides are not
+accepted contracts under the governance lifecycle.
+
+Phase 13 pulls the minimum atomic replacement primitive forward because a
+direct write-to-target save would violate `INV-09`. Phase 14 remains mandatory
+for interrupted-write, replacement-failure, cleanup, and concurrency hardening.
 
 ---
 

@@ -67,6 +67,18 @@ distinguish an invalid UUID, an unknown worker, and an unavailable registry.
 The complete lifecycle is documented in
 `docs/maintainers/CANCELLATION_BOUNDARY.md`.
 
+## Document file commands
+
+Phase 13 adds `open_document` and `save_document`. `open_document` accepts an
+empty request because Rust owns native file selection. `save_document` accepts
+one untrusted `snapshot` value; Rust validates the envelope before registry or
+filesystem work.
+
+Both commands return typed opened/saved/cancelled responses and bounded nested
+errors. They expose no path field to the frontend. The full lifecycle and
+atomic-write behavior are documented in
+`docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -74,6 +86,8 @@ The complete lifecycle is documented in
 | High | `run` | Registers commands and starts the Tauri runtime. |
 | Mid | `get_runtime_status` | Coordinates domain status construction and maps the result to command DTOs. |
 | Mid | `cancel_worker` | Validates the worker ID and maps cancellation outcomes to command DTOs. |
+| Mid | `open_document` | Selects a file in Rust and delegates validated loading. |
+| Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -105,8 +119,8 @@ must make the result observable to the frontend.
 ## Enforcement
 
 Rust tests cover valid and blank version inputs, exact command signatures,
-bounded request deserialization, stable JSON for success and error values, and
-the cancellation lifecycle outcomes required by Phase 9.
+bounded request deserialization, stable JSON for success and error values,
+cancellation lifecycle outcomes, and Phase 13 document command contracts.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -129,5 +143,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/EVENT_BOUNDARY.md`.
 - Phase 9 establishes worker cancellation behavior described in
   `docs/maintainers/CANCELLATION_BOUNDARY.md`.
+- Phase 13 establishes document file behavior described in
+  `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

@@ -42,6 +42,13 @@ check_required_sources() {
     package-lock.json
     src/ipc/eventClient.ts
     src/ipc/client.ts
+    src/ipc/documentEnvelope.test.ts
+    src/ipc/documentEnvelope.ts
+    src/ipc/documentErrors.ts
+    src/ipc/documentOpen.test.ts
+    src/ipc/documentOpen.ts
+    src/ipc/documentSave.test.ts
+    src/ipc/documentSave.ts
     src/ipc/runtimeStatus.test.ts
     src/ipc/runtimeStatus.ts
     src/ipc/runtimeStatusEvents.test.ts
@@ -50,8 +57,13 @@ check_required_sources() {
     src/ipc/workerCancellation.ts
     src-tauri/Cargo.lock
     src-tauri/capabilities/main.json
+    src-tauri/src/commands/document_open.rs
+    src-tauri/src/commands/document_save.rs
     src-tauri/src/commands/worker_cancellation.rs
+    src-tauri/src/documents/atomic_write.rs
+    src-tauri/src/documents/dialog.rs
     src-tauri/src/documents/envelope.rs
+    src-tauri/src/documents/persistence.rs
     src-tauri/src/documents/registry.rs
     src-tauri/src/events/runtime_status.rs
     src-tauri/src/workers/cancellation.rs
