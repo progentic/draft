@@ -2,18 +2,21 @@
 
 ## Current phase
 
-Phase 3 is complete at the current checkpoint. The Phase 1 toolchain remains
-locked, and the Phase 2 verification command now runs locally and in the
-GitHub Actions baseline.
+Phase 4 is complete at the current checkpoint. The Phase 1 toolchain remains
+locked, the Phase 2 verification command runs locally and in GitHub Actions,
+and the React/Tiptap workspace shell has focused frontend tests.
 
-This checkpoint does not include the launched desktop shell, product workflows,
-release automation, or packaging. Those belong to later phases.
+This checkpoint does not include durable documents, product research or
+analysis workflows, release automation, or packaging. Those belong to later
+phases.
 
 ## Toolchain decisions
 
 - Rust uses Cargo with `Cargo.lock` committed for the desktop application.
 - Frontend dependencies use npm with `package-lock.json` committed.
 - TypeScript, React, and Tiptap run inside the Tauri WebView.
+- Lucide React provides the workspace's interface icons.
+- Vitest, Testing Library, and jsdom provide frontend component tests.
 - Python currently uses the standard library only. Third-party helper
   dependencies will be pinned when a concrete helper contract requires them.
 - Bash is limited to local and CI orchestration.
@@ -68,6 +71,7 @@ frontend dependencies fail with an actionable message.
 The verifier runs:
 
 - npm dependency-tree validation
+- React/Tiptap workspace component tests
 - Rust formatting, Clippy, compile checks, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
@@ -81,9 +85,15 @@ The local `AGENTS.md` is checked when present but is not required by clean
 checkout verification because repository policy intentionally ignores it.
 
 `shellcheck`, `shfmt`, and Ruff add checks when installed. Their absence is
-reported and does not hide any required Phase 2 check. Frontend formatting and
-ESLint are not configured yet; TypeScript and production-build checks remain
-required.
+reported and does not hide any required check. Frontend formatting and ESLint
+are not configured yet; frontend tests, TypeScript, and production-build checks
+remain required.
+
+Run the focused frontend suite directly with:
+
+```bash
+npm test
+```
 
 ## Command surface
 

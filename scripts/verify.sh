@@ -15,6 +15,7 @@ main() {
   require_bootstrapped_dependencies
 
   run_step "Frontend dependency tree" npm ls --depth=0
+  run_step "Frontend tests" npm test
   run_step "Rust formatting" cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
   run_step "Rust lint" cargo clippy --locked --offline --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
   run_step "Locked application builds" bash scripts/build.sh
@@ -52,7 +53,7 @@ run_optional_checks() {
   run_optional_shfmt "${script_files[@]}"
   run_optional_ruff
   report_optional_just
-  report_skip "frontend formatter/linter" "not configured; TypeScript and production-build checks are required"
+  report_skip "frontend formatter/linter" "not configured; tests, TypeScript, and production builds are required"
 }
 
 run_optional_shellcheck() {

@@ -381,6 +381,10 @@ The Phase 3 `Verify` workflow runs `bash scripts/verify.sh`, which invokes
 `scripts/check-docs.sh`. Documentation sanity therefore uses the same script
 locally and in GitHub Actions rather than duplicating checks in workflow YAML.
 
+Phase 4 adds the user-facing workspace guide at `docs/user/WORKSPACE.md` and
+React/Tiptap component tests through `npm test`. The aggregate verifier runs
+that frontend suite before the language-specific build checks.
+
 Recommended checks:
 
 - Markdown formatting

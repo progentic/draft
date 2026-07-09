@@ -35,6 +35,7 @@ check_required_documents() {
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/TOOLCHAIN.md
+    docs/user/WORKSPACE.md
   )
   local document_path
 
