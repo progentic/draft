@@ -400,6 +400,12 @@ ordering, finite lifecycle, and cleanup in
 `docs/maintainers/EVENT_BOUNDARY.md`. Rust and frontend tests plus the invariant
 scan enforce the event name, payload, placement, and lifecycle claims.
 
+Phase 9 documents the process-local worker registry, cooperative cancellation
+token, idempotent cancel command, typed frontend wrapper, and future worker
+integration rules in `docs/maintainers/CANCELLATION_BOUNDARY.md`. Rust and
+frontend tests plus the invariant scan enforce requested, repeated,
+already-ended, malformed, unknown-worker, teardown, and shutdown behavior.
+
 Recommended checks:
 
 - Markdown formatting

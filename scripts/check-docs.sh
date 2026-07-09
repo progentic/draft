@@ -34,6 +34,7 @@ check_required_documents() {
     docs/INVARIANTS.md
     docs/PHASEMAP.md
     docs/ROADMAP.md
+    docs/maintainers/CANCELLATION_BOUNDARY.md
     docs/maintainers/COMMAND_BOUNDARY.md
     docs/maintainers/EVENT_BOUNDARY.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md

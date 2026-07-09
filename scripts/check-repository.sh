@@ -46,9 +46,13 @@ check_required_sources() {
     src/ipc/runtimeStatus.ts
     src/ipc/runtimeStatusEvents.test.ts
     src/ipc/runtimeStatusEvents.ts
+    src/ipc/workerCancellation.test.ts
+    src/ipc/workerCancellation.ts
     src-tauri/Cargo.lock
     src-tauri/capabilities/main.json
+    src-tauri/src/commands/worker_cancellation.rs
     src-tauri/src/events/runtime_status.rs
+    src-tauri/src/workers/cancellation.rs
     src-tauri/icons/icon.png
   )
   local file_path

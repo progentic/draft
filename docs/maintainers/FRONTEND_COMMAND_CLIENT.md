@@ -16,6 +16,7 @@ transport failures out of presentation components.
 | High | `DraftWorkspace` | Coordinates transient editor and runtime-status UI state. |
 | Mid | `useRuntimeStatus` | Resolves the command result into transient connection state. |
 | Mid | `getRuntimeStatus` | Owns the command name, request envelope, response validation, and error classification. |
+| Mid | `cancelWorker` | Owns the cancellation command contract and bounded result mapping. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -55,6 +56,24 @@ Unknown transport failures are classified without retaining or displaying raw
 error details. This prevents implementation or environment details from
 leaking into the UI.
 
+## Worker cancellation wrapper
+
+`cancelWorker` sends a Rust-generated worker UUID to `cancel_worker`:
+
+```json
+{
+  "request": {
+    "workerId": "00000000-0000-4000-8000-000000000001"
+  }
+}
+```
+
+The wrapper validates `cancellation_requested` and `already_ended`, preserves
+the three command-specific error codes, and maps malformed responses or raw
+transport failures to bounded client errors. No component calls the wrapper
+until a product phase introduces a real long-running worker and visible cancel
+action.
+
 ## UI behavior
 
 Phase 8 registers the typed runtime-status event listener before invoking this
@@ -66,8 +85,9 @@ one of three transient states:
 - `ready` with the Rust application version
 - `unavailable` with a bounded reason category
 
-The document inspector displays `Connecting to core`, `Core v<version>`, or
-`Core unavailable`. This state is not persisted and does not make the frontend
+The document inspector displays `Connecting to core`, `Core v<version>`, or a
+bounded unavailable label for transport, event-delivery, or invalid-contract
+failure. This state is not persisted and does not make the frontend
 authoritative for runtime metadata.
 
 A standalone Vite browser does not have a Tauri runtime and therefore reports
@@ -88,6 +108,8 @@ Frontend tests prove:
 - invalid response rejection
 - command-specific error preservation
 - unknown transport error classification without detail leakage
+- cancellation-request and already-ended response validation
+- cancellation command errors and exact request arguments
 - workspace rendering of the connected Rust version
 
 Run the focused evidence with:
@@ -110,4 +132,5 @@ bash scripts/check-invariants.sh
 
 Phase 8 event transport is documented in
 `docs/maintainers/EVENT_BOUNDARY.md`. It remains separate from this
-request/response abstraction.
+request/response abstraction. Phase 9 worker lifecycle rules are documented in
+`docs/maintainers/CANCELLATION_BOUNDARY.md`.

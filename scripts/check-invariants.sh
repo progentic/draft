@@ -19,6 +19,7 @@ main() {
   check_command_errors
   check_event_contract_coverage
   check_event_capability
+  check_worker_cancellation_contract
   check_rust_network_boundary
   check_bash_runtime_boundary
   report_deferred_feature_invariants
@@ -149,6 +150,40 @@ check_event_capability() {
   printf 'PASS Phase 8 event listener capability\n'
 }
 
+check_worker_cancellation_contract() {
+  local required_tests=(
+    cancellation_requests_active_worker
+    repeated_cancellation_is_idempotent
+    cancellation_of_ended_worker_is_idempotent
+    cancellation_of_unknown_worker_returns_error
+  )
+  local test_name
+
+  require_file src-tauri/src/workers/cancellation.rs
+  require_file src-tauri/src/commands/worker_cancellation.rs
+  require_file src/ipc/workerCancellation.ts
+  require_file src/ipc/workerCancellation.test.ts
+
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" src-tauri/src/commands/worker_cancellation.rs
+  done
+
+  assert_no_matches "INV-07 unmanaged Rust worker spawn" \
+    '(?:tokio(?:::task)?|tauri::async_runtime)::spawn\s*\(' \
+    --glob '!src-tauri/src/workers/**' src-tauri/src
+  printf 'PASS INV-07 worker cancellation contract\n'
+}
+
+require_rust_test() {
+  local test_name="$1"
+  local source_path="$2"
+
+  if ! rg --quiet --fixed-strings "fn ${test_name}" "${source_path}"; then
+    printf 'FAILED missing Rust test: %s\n' "${test_name}" >&2
+    return 1
+  fi
+}
+
 require_capability_permission() {
   local permission="$1"
   local capability_path="$2"
@@ -234,7 +269,7 @@ report_command_surface() {
 
 report_deferred_feature_invariants() {
   printf '%s\n' \
-    'INFO Citation, job, document-handle, cancellation, import, and atomic-save checks are deferred until their owning phases.'
+    'INFO Citation, job, document-handle, import, and atomic-save checks are deferred until their owning phases.'
 }
 
 main "$@"

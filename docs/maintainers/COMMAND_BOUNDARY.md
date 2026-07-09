@@ -3,13 +3,12 @@
 ## Purpose
 
 Phase 6 establishes the Tauri request/response boundary used by trusted Rust
-work. It provides one registered command and the enforcement pattern every
-later command must follow.
+work. It provides the enforcement pattern every later command must follow.
 
 Phase 6 did not add a frontend command client. The current typed wrapper is
 documented in `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
 
-## Current command
+## Runtime status command
 
 `get_runtime_status` confirms that the Rust process has valid application
 metadata compiled into it.
@@ -47,13 +46,33 @@ event cannot reach current frontend listeners.
 No generic string, `anyhow::Error`, `serde_json::Value`, or boxed error crosses
 the IPC boundary.
 
+## Worker cancellation command
+
+Phase 9 adds `cancel_worker`, which accepts a Rust-generated UUID in a bounded
+camel-case request:
+
+```json
+{
+  "request": {
+    "workerId": "00000000-0000-4000-8000-000000000001"
+  }
+}
+```
+
+It returns either `cancellation_requested` or `already_ended`. Its typed errors
+distinguish an invalid UUID, an unknown worker, and an unavailable registry.
+The complete lifecycle is documented in
+`docs/maintainers/CANCELLATION_BOUNDARY.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
 | :--- | :--- | :--- |
 | High | `run` | Registers commands and starts the Tauri runtime. |
 | Mid | `get_runtime_status` | Coordinates domain status construction and maps the result to command DTOs. |
+| Mid | `cancel_worker` | Validates the worker ID and maps cancellation outcomes to command DTOs. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
+| Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
 
 The command module owns only Tauri-facing DTOs and error mapping. The
@@ -82,9 +101,9 @@ must make the result observable to the frontend.
 
 ## Enforcement
 
-Rust tests cover valid and blank version inputs, the exact command signature,
-bounded request deserialization, and stable JSON for both success and error
-values.
+Rust tests cover valid and blank version inputs, exact command signatures,
+bounded request deserialization, stable JSON for success and error values, and
+the cancellation lifecycle outcomes required by Phase 9.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -99,12 +118,13 @@ cargo test --locked --offline --manifest-path src-tauri/Cargo.toml
 bash scripts/check-invariants.sh
 ```
 
-## Deferred boundary work
+## Related boundaries
 
-- Phase 7 adds the TypeScript wrapper described in
+- Phase 7 establishes the TypeScript wrapper pattern described in
   `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
-- Phase 8 adds the typed event path described in
+- Phase 8 establishes the typed event path described in
   `docs/maintainers/EVENT_BOUNDARY.md`.
-- Phase 9 adds cancellation behavior for long-running user-initiated work.
+- Phase 9 establishes worker cancellation behavior described in
+  `docs/maintainers/CANCELLATION_BOUNDARY.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

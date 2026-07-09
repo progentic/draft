@@ -647,6 +647,8 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
+ "tokio-util",
+ "uuid",
 ]
 
 [[package]]
@@ -3277,6 +3279,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
+ "futures-util",
  "pin-project-lite",
  "tokio",
 ]

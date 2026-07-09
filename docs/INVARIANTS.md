@@ -67,7 +67,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | No citation module exists yet. Schema enforcement begins in Phase 18. | Planned after the citation surface exists. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | No background-job module exists yet. Resumability tests begin in Phase 26. | Planned after the job surface exists. |
 | `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | No document registry exists yet. Registry tests begin in Phase 12. | Planned after the registry exists. |
-| `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | No long-running worker exists yet. Cancellation enforcement begins in Phase 9. | Planned after the worker surface exists. |
+| `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | Phase 9 provides the Rust cancellation registry/token, typed cancel command and wrapper, lifecycle tests, and a scan that confines worker spawning to `src-tauri/src/workers/`. No product worker starts yet. | The `verify` job runs the same Rust/frontend tests and cancellation-boundary scan. Worker-specific terminal-event tests are required when start commands are introduced. |
 | `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | No watched-folder importer exists yet. Stable-write tests begin in Phase 24. | Planned after the import surface exists. |
 | `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | No document-save path exists yet. Atomic-save enforcement begins in Phase 14. | Planned after the save surface exists. |
 | `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | `scripts/check-invariants.sh` scans current frontend, Rust, and Python source for denied clients. | The Phase 3 `verify` job runs the same frontend, Rust, and Python scans. |
@@ -279,6 +279,23 @@ listener is registered before `get_runtime_status`, Rust emits one `ready`
 payload during the command, and no work continues after the command returns.
 If that producer becomes asynchronous or persistent, cancellation enforcement
 must be added before the change is accepted.
+
+Phase 9 establishes the reusable transient-worker cancellation contract:
+
+- Rust generates an opaque UUID and returns it from the future start command.
+- The worker retains a registration guard and observes its cancellation token.
+- `cancel_worker` returns `cancellation_requested` for an active worker.
+- Repeated requests remain successful while the worker is active.
+- A known terminal worker returns `already_ended` instead of an error.
+- Malformed and unknown worker IDs return distinct typed errors.
+- Dropping the application registry cancels every active token.
+- The owning feature must emit its typed terminal event before its worker exits.
+
+The registry is process-local and is not the persistent job state machine from
+Phase 26. No long-running product worker exists at this checkpoint. A future
+start command may not ship until it retains the registration guard, observes
+the token, exposes the typed frontend cancel action, and tests its terminal
+event.
 
 A worker may be documented as non-cancelable only if it is idempotent, short-lived, and safe to complete.
 
