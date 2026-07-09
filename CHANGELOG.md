@@ -12,31 +12,11 @@ DRAFT uses pre-1.0 versioning while the application is taking shape.
 - Breaking changes before `v1.0.0` are allowed under semantic versioning, but they must be called out clearly in the release entry.
 - This changelog does not use an `[Unreleased]` section. Add changes directly under the next release heading when preparing a release.
 
-## [v0.0.0] - YYYY-MM-DD
+## Release status
 
-### Added
+No versioned DRAFT release has been published yet.
 
-- New capabilities, files, workflows, or supported use cases.
-
-### Changed
-
-- Existing behavior, structure, wording, architecture, or workflows that changed.
-
-### Fixed
-
-- Bugs, regressions, broken links, incorrect references, failing checks, or incorrect behavior.
-
-### Removed
-
-- Deleted files, deprecated behavior, removed dependencies, or retired workflows.
-
-### Security
-
-- Changes that protect data, credentials, local files, network behavior, execution boundaries, or supply chain integrity.
-
-### Breaking Changes
-
-- Any change that requires migration, changes a public contract, invalidates saved data, changes command behavior, or breaks existing workflows.
-
-
-[0.0.0]: https://github.com/progentic/changelog/compare/v0.0.0...v0.0.1
+The `0.1.0` values in development manifests identify the current pre-release
+compatibility line; they do not imply that a tag or packaged release exists.
+The first release entry will be added only when its version, date, contents,
+and repository tag are prepared together.

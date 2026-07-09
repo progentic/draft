@@ -1,5 +1,8 @@
 # Typed Event Boundary
 
+**Status:** Implemented checkpoint guide; not an accepted contract under
+`GOVERNANCE.md` §7.
+
 ## Purpose
 
 Phase 8 establishes the Rust-to-frontend event pattern used for ongoing or

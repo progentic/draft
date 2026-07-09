@@ -15,7 +15,7 @@ main() {
   run_step "Rust format" cargo fmt --all --manifest-path src-tauri/Cargo.toml
   format_bash_if_available
   format_python_if_available
-  report_skip "frontend formatter" "not configured in Phase 2"
+  report_skip "frontend formatter" "not configured"
 }
 
 format_bash_if_available() {

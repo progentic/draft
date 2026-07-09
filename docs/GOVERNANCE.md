@@ -286,7 +286,7 @@ invariants
 build
 ```
 
-Phase 3 begins this target shape with the aggregate `verify` job in
+Phase 3 established this target shape with the aggregate `verify` job in
 `.github/workflows/verify.yml`. That job runs all current build, test,
 documentation, and invariant checks through `scripts/verify.sh`. Dedicated
 `invariants` and `build` workflows remain required as those surfaces mature;
@@ -384,4 +384,6 @@ Every architecture PR must answer:
   baseline.
 - Decide and pin the Python dependency manager before adding a third-party
   helper dependency.
-- Create the first contract drafts for citation node schema, document envelope schema, Python helper worker interface, and formatting rules.
+- Refine the Phase 10 document-envelope readiness draft during Phase 11 and
+  promote it only after the contract lifecycle permits acceptance. Create
+  citation-node, Python-helper, and formatting drafts in their owning phases.

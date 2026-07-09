@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Enforces invariant boundaries that exist in the current source tree. Feature
-# invariants remain explicit future checks until their owning modules exist.
+# Enforces implemented invariant boundaries and blocks future feature surfaces
+# until their owning phases replace absence gates with behavioral checks.
 
 SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIRECTORY
@@ -11,7 +11,7 @@ source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
 main() {
   cd "$(repository_root)"
-  require_tools rg wc
+  require_tools rg sort wc
 
   check_credential_fields
   check_frontend_boundary
@@ -20,9 +20,11 @@ main() {
   check_event_contract_coverage
   check_event_capability
   check_worker_cancellation_contract
+  check_bridge_name_parity
+  check_future_feature_absence_gates
   check_rust_network_boundary
   check_bash_runtime_boundary
-  report_deferred_feature_invariants
+  report_deferred_behavior_checks
 
   printf 'Invariant boundary scans passed.\n'
 }
@@ -184,6 +186,79 @@ require_rust_test() {
   fi
 }
 
+check_bridge_name_parity() {
+  local rust_commands
+  local frontend_commands
+  local rust_events
+  local frontend_events
+
+  rust_commands="$(extract_values \
+    'commands::[[:alnum:]_]+::([[:alnum:]_]+)' src-tauri/src/lib.rs)"
+  frontend_commands="$(extract_values \
+    'const COMMAND_NAME = "([^"]+)"' --glob '!*.test.ts' src/ipc)"
+  rust_events="$(extract_values \
+    'const [A-Z_]*EVENT_NAME: &str = "([^"]+)"' src-tauri/src/events)"
+  frontend_events="$(extract_values \
+    'const EVENT_NAME = "([^"]+)"' --glob '!*.test.ts' src/ipc)"
+
+  require_matching_values "command names" "${rust_commands}" "${frontend_commands}"
+  require_matching_values "event names" "${rust_events}" "${frontend_events}"
+  require_documented_values "${rust_commands}"
+  require_documented_values "${rust_events}"
+  printf 'PASS Phase 10 bridge name parity\n'
+}
+
+extract_values() {
+  local pattern="$1"
+  shift
+
+  rg --only-matching --no-filename --replace '$1' "${pattern}" "$@" | sort
+}
+
+require_matching_values() {
+  local label="$1"
+  local rust_values="$2"
+  local frontend_values="$3"
+
+  if [[ -z "${rust_values}" || "${rust_values}" != "${frontend_values}" ]]; then
+    printf 'FAILED Phase 10 %s parity\nRust:\n%s\nFrontend:\n%s\n' \
+      "${label}" "${rust_values}" "${frontend_values}" >&2
+    return 1
+  fi
+}
+
+require_documented_values() {
+  local values="$1"
+  local value
+
+  while IFS= read -r value; do
+    if [[ -n "${value}" ]] && ! rg --quiet --fixed-strings \
+      "${value}" docs/maintainers; then
+      printf 'FAILED undocumented bridge name: %s\n' "${value}" >&2
+      return 1
+    fi
+  done <<<"${values}"
+}
+
+check_future_feature_absence_gates() {
+  assert_no_matches "INV-04 citation surface before Phase 18" \
+    '\bCitationNode\b|\bcitation_node\b|\binsert_citation\b' src src-tauri/src
+  assert_no_matches "INV-05 persistent job surface before Phase 26" \
+    '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
+    src src-tauri/src
+  assert_no_matches "INV-06 document registry before Phase 12" \
+    '\bDocumentRegistry\b|\bopen_document\b|\bdocument_handle\b' src src-tauri/src
+  assert_no_matches "INV-08 watched import before Phase 24" \
+    '\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' src src-tauri/src
+  assert_no_matches "INV-09 save surface before Phase 13" \
+    '\bsave_document\b|\bAtomicWriter\b|\batomic_write\b|\bfsync\b' \
+    src src-tauri/src
+  assert_no_matches "INV-11 helper protocol before Phase 28" \
+    '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
+    python/draft_helpers
+  printf 'PASS future feature absence gates\n'
+}
+
 require_capability_permission() {
   local permission="$1"
   local capability_path="$2"
@@ -264,12 +339,12 @@ report_command_surface() {
     return "${status}"
   fi
 
-  printf 'INFO No Tauri commands exist yet; command-specific tests begin in Phase 6.\n'
+  printf 'INFO No Tauri commands exist; command contract checks have no active surface.\n'
 }
 
-report_deferred_feature_invariants() {
+report_deferred_behavior_checks() {
   printf '%s\n' \
-    'INFO Citation, job, document-handle, import, and atomic-save checks are deferred until their owning phases.'
+    'INFO Future feature absence gates are active; behavioral checks replace them in each owning phase.'
 }
 
 main "$@"

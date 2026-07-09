@@ -17,6 +17,7 @@ main() {
   check_docs_have_headings
   check_machine_specific_links
   check_changelog_shape
+  check_phase_checkpoint
 
   printf 'INFO External URLs and Markdown anchor targets are not checked.\n'
   printf 'Documentation sanity checks passed.\n'
@@ -30,6 +31,7 @@ check_required_documents() {
     docs/ARCHITECTURE.md
     docs/CODING_STYLE.md
     docs/DOCUMENTATION.md
+    docs/drafts/DOCUMENT_ENVELOPE.md
     docs/GOVERNANCE.md
     docs/INVARIANTS.md
     docs/PHASEMAP.md
@@ -107,6 +109,21 @@ check_changelog_shape() {
   if [[ "${status}" -ne 1 ]]; then
     echo "Changelog shape scan could not run" >&2
     return "${status}"
+  fi
+
+  if rg --quiet 'YYYY-MM-DD|github\.com/progentic/changelog' CHANGELOG.md; then
+    echo "CHANGELOG.md contains placeholder or foreign-repository release data" >&2
+    return 1
+  fi
+}
+
+check_phase_checkpoint() {
+  local checkpoint='Phases 0 through 10 are complete'
+
+  if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
+    ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
+    echo "ROADMAP.md and PHASEMAP.md must agree on the completed phase checkpoint" >&2
+    return 1
   fi
 }
 

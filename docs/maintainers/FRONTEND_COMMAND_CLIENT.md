@@ -1,5 +1,8 @@
 # Frontend Command Client
 
+**Status:** Implemented checkpoint guide; not an accepted contract under
+`GOVERNANCE.md` §7.
+
 ## Purpose
 
 Phase 7 establishes the only frontend path to trusted Rust commands. React
@@ -98,8 +101,9 @@ command.
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
 `invoke(...)` calls, and generic `invokeCommand(...)` calls outside `src/ipc/`.
-`scripts/check-repository.sh` requires the low-level client, runtime-status
-wrapper, and wrapper tests to remain tracked.
+`scripts/check-repository.sh` requires the low-level client, command wrappers,
+and wrapper tests to remain tracked. The invariant scan also compares every
+registered Rust command and emitted Rust event name with its frontend wrapper.
 
 Frontend tests prove:
 

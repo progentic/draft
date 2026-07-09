@@ -858,17 +858,20 @@ Good:
 
 ```rust
 pub async fn start_text_analysis(
+    worker_registry: &WorkerCancellationRegistry,
     request: StartTextAnalysisRequest,
 ) -> Result<StartTextAnalysisResponse, StartTextAnalysisError> {
-    let worker_id = WorkerId::new();
-    spawn_text_analysis_worker(worker_id, request).await?;
+    let registration = worker_registry.register()?;
+    let worker_id = registration.worker_id();
+    spawn_text_analysis_worker(registration, request)?;
     Ok(StartTextAnalysisResponse { worker_id })
 }
 
-pub async fn cancel_text_analysis(
+pub fn cancel_text_analysis(
+    worker_registry: &WorkerCancellationRegistry,
     worker_id: WorkerId,
-) -> Result<CancelWorkerResponse, CancelWorkerError> {
-    worker_registry.cancel(worker_id).await
+) -> Result<CancelWorkerOutcome, WorkerCancellationError> {
+    worker_registry.cancel(worker_id)
 }
 ```
 
@@ -1065,7 +1068,7 @@ useEffect(() => {
 
   let unlisten: (() => void) | undefined;
 
-  listen("analysis-progress", onProgress).then((cleanup) => {
+  listenToAnalysisProgress(onProgress).then((cleanup) => {
     unlisten = cleanup;
   });
 

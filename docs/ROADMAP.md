@@ -2,7 +2,15 @@
 
 **Purpose:** Guide DRAFT from a blank repository to a production-ready `v1.0.0` release.
 
-This roadmap describes the intended development path. It is not a changelog, release note, governance record, or status report. Completed work is recorded in `CHANGELOG.md`. Architecture changes are governed by `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
+This roadmap describes the intended development path. It is not a changelog,
+release note, governance record, or detailed status report. Released work is
+recorded in `CHANGELOG.md`; phase evidence is recorded in
+`docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
+`GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
+
+**Current execution checkpoint:** Phases 0 through 10 are complete. Phase 11 is
+the next implementation phase; document-envelope implementation has not
+started.
 
 ---
 

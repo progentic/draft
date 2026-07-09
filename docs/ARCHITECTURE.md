@@ -39,6 +39,27 @@ Borderline state is resolved with one question: if the WebView reloads, should t
 
 Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.md`.
 
+### 2.1 Current implementation checkpoint
+
+The implemented application through Phase 9 is deliberately smaller than the
+full system described in this architecture:
+
+- Rust exposes typed `get_runtime_status` and `cancel_worker` commands with
+  command-specific request, response, and error types.
+- TypeScript calls those commands only through typed wrappers under `src/ipc/`.
+- Rust emits the typed finite `draft://runtime-status` event, and the frontend
+  validates it before React displays connection state.
+- Rust owns a process-local worker cancellation registry and cooperative token.
+  No product worker starts yet, so no cancellation control is displayed.
+- React and Tiptap own only the transient writing surface and presentation
+  state. Reloading still discards the current document.
+- No document envelope, document registry, save/load path, atomic writer,
+  reference library, citation behavior, network client, analysis worker,
+  formatter, export path, or durable persistence is implemented yet.
+
+Sections below define the accepted target ownership and safety rules. They do
+not imply that their product capabilities already exist.
+
 ---
 
 ## 3. Capability Ownership
@@ -501,4 +522,3 @@ These must be resolved before granular contract docs become binding:
 - Python helper contract: allowed helpers, package management, pinned dependencies, timeout defaults, and output schemas.
 - Network client interface: queue structure, backoff parameters, retry policy, and per-service limits.
 - Watched-folder debounce window and stable-size threshold.
-

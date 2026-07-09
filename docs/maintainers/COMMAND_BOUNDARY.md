@@ -1,12 +1,15 @@
 # Rust Command Boundary
 
+**Status:** Implemented checkpoint guide; not an accepted contract under
+`GOVERNANCE.md` §7.
+
 ## Purpose
 
 Phase 6 establishes the Tauri request/response boundary used by trusted Rust
 work. It provides the enforcement pattern every later command must follow.
 
-Phase 6 did not add a frontend command client. The current typed wrapper is
-documented in `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
+The Phase 7 typed frontend wrappers are documented in
+`docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
 
 ## Runtime status command
 
@@ -48,7 +51,7 @@ the IPC boundary.
 
 ## Worker cancellation command
 
-Phase 9 adds `cancel_worker`, which accepts a Rust-generated UUID in a bounded
+Phase 9 established `cancel_worker`, which accepts a Rust-generated UUID in a bounded
 camel-case request:
 
 ```json

@@ -6,6 +6,13 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
+**Current execution checkpoint:** Phases 0 through 10 are complete. Phase 11 is
+the next implementation phase; document-envelope implementation has not
+started.
+
+The non-binding entry requirements are recorded in
+`docs/drafts/DOCUMENT_ENVELOPE.md`; that draft does not implement Phase 11.
+
 ---
 
 ## 1. Phase Rules

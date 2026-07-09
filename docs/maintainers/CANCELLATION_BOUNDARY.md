@@ -1,5 +1,8 @@
 # Worker Cancellation Boundary
 
+**Status:** Implemented checkpoint guide; not an accepted contract under
+`GOVERNANCE.md` §7.
+
 ## Purpose
 
 Phase 9 establishes the reusable cancellation shape for user-initiated Rust

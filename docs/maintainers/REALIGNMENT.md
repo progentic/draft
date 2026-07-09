@@ -80,3 +80,123 @@ entry point.
 
 No known documentation, architecture, invariant, build, or workflow drift
 remains at this checkpoint.
+
+## Phase 10 - 2026-07-09
+
+The audited implementation baseline is commit `81b9fb7`, the completed Phase 9
+worker-cancellation boundary. Its hosted verification run passed:
+
+<https://github.com/progentic/draft/actions/runs/29052618027>
+
+### Surfaces reviewed
+
+- `README.md`, `CHANGELOG.md`, and the local `AGENTS.md`
+- architecture, governance, invariants, coding style, and documentation policy
+- roadmap and phasemap sequencing through the Phase 10 gate
+- command, frontend command-client, event, and cancellation implementation guides
+- all current Rust command/event/worker modules and TypeScript IPC wrappers
+- frontend and Rust contract/lifecycle tests
+- user workspace documentation and actual rendered workspace behavior
+- manifests, local scripts, `justfile`, GitHub Actions, and hosted run history
+- tracked, ignored, generated, and untracked repository state
+
+### Drift corrected
+
+- Documentation policy now reflects the actual repository layout: public entry
+  documents remain at the root, while governance and execution guides live in
+  `/docs`. The ignored local `AGENTS.md` is no longer described as required in
+  a clean checkout.
+- The changelog no longer presents a fake dated release template or a link to a
+  different repository. It states that no versioned release exists and keeps
+  manifest versions distinct from release evidence.
+- Coding-style examples now use the implemented registry-generated worker ID,
+  synchronous cancellation API, registration guard, and typed frontend event
+  listener instead of obsolete or boundary-bypassing calls.
+- Bridge guides are explicitly labeled as implemented checkpoint notes rather
+  than accepted contracts. Governance requires a PR lifecycle and two-week
+  stability window before promotion under `docs/contracts/`.
+- Local and CI invariant scans now compare registered Rust command names and
+  Rust event names against frontend wrapper names, then require those names to
+  appear in maintainer documentation.
+- Script comments and optional-formatting messages no longer describe the
+  aggregate verifier as frozen at Phase 2.
+- `ROADMAP.md` and `PHASEMAP.md` now agree that Phases 0 through 10 are complete
+  and Phase 11 has not started.
+- `ARCHITECTURE.md` now separates implemented Phase 9 boundaries from future
+  persistence, document, reference, analysis, formatting, and export targets.
+- The invariant enforcement table now records cancellation lifecycle coverage
+  and the Phase 10 command/event name parity check used locally and in CI.
+- Accepted future invariants no longer point only to planned enforcement.
+  Phase-gate scans now reject premature citation, persistent-job,
+  document-registry, watched-import, save, and Python-helper protocol surfaces;
+  each owning phase must replace its absence gate with behavioral tests.
+
+### Contract reconciliation
+
+The audited bridge names match across implementation, tests, and guides:
+
+```text
+commands: cancel_worker, get_runtime_status
+events: draft://runtime-status
+```
+
+Rust and frontend tests pin the request, response, payload, and error shapes.
+The cancellation lifecycle tests pin active, repeated, already-ended,
+malformed, unknown-worker, registration-drop, and registry-shutdown behavior.
+No command, event, or cancellation example claims a product worker or durable
+job state that does not exist.
+
+### Governance decisions
+
+- Architecture and invariant ownership rules remain semantically unchanged;
+  current-checkpoint and enforcement wording now reflects actual code.
+- No ADR is required because this checkpoint does not alter trust, ownership,
+  persistence, network, worker, or verification architecture.
+- `docs/adr`, `docs/contracts`, and `docs/wiki` remain absent intentionally.
+  No architecture change, stable accepted contract, or recurring user-support
+  topic has completed the relevant governance lifecycle.
+- `ROADMAP.md` and `PHASEMAP.md` retain their execution-guide role while a
+  narrow current-checkpoint line prevents phase-sequence ambiguity.
+- `docs/user/WORKSPACE.md` remains accurate and did not need a wording change.
+- `docs/drafts/DOCUMENT_ENVELOPE.md` defines the non-binding Phase 11 readiness
+  gate without implementing persistence or promoting an accepted contract.
+
+### Constrained and external state
+
+- `README.md` was reviewed but not modified, following the explicit user
+  instruction. Its "initial application toolchain scaffold" status sentence is
+  narrower than the implemented Phase 9 boundary and remains a documented
+  exception rather than a hidden claim of full alignment.
+- `src/App 2.tsx` and `src/styles 2.css` were confirmed as the obsolete minimal
+  Phase 4 shell, were not imported, and were still scanned by TypeScript's
+  `src` include. They were deleted as stale local artifacts.
+- Generated `dist`, Cargo, Vite, TypeScript, and operating-system files remain
+  ignored. No generated output became tracked.
+
+### Planned gaps, not Phase 10 drift
+
+- Durable document schemas, registry, save/load, and atomic writes begin in
+  Phases 11 through 14.
+- Accepted bridge contracts remain deferred until the governance stability and
+  review requirements are satisfied.
+- Dedicated `invariants` and `build` workflows, frontend formatting/linting,
+  required `shfmt`, and required Ruff remain documented future hardening work.
+- The frontend build still reports Vite's advisory bundle-size warning. It is
+  not a correctness failure and remains visible for packaging/performance work.
+
+### Verification evidence
+
+The checkpoint uses these executable gates:
+
+```bash
+npm test
+cargo test --locked --offline --manifest-path src-tauri/Cargo.toml
+bash scripts/check-invariants.sh
+bash scripts/check-docs.sh
+bash scripts/verify.sh
+git diff --check
+```
+
+All Phase 10 bridge, documentation, invariant, build, and workflow drift within
+the permitted scope is reconciled. The README status exception remains explicit
+and the stale untracked alternate files are removed.

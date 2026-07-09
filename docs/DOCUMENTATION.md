@@ -41,14 +41,11 @@ Required root documents:
 - `README.md` — public-facing product description.
 - `LICENSE` — MIT license text.
 - `CHANGELOG.md` — released notable changes only.
-- `AGENTS.md` — agent operating rules.
-- `DOCUMENTATION.md` — documentation maintenance rules.
-- `CODING_STYLE.md` — code shape, syntax, comments, and examples.
-- `ARCHITECTURE.md` — current system shape.
-- `GOVERNANCE.md` — how architectural decisions change.
-- `INVARIANTS.md` — non-negotiable rules and enforcement.
 
 Root documents must stay plain enough for a new maintainer to understand before reading source code.
+
+`AGENTS.md` contains local agent operating rules when present. Repository
+policy intentionally ignores it, so a clean checkout does not require it.
 
 ### `/docs`
 
@@ -56,6 +53,8 @@ The `/docs` folder is the long-term knowledge base.
 
 Use `/docs` for:
 
+- `ARCHITECTURE.md`, `GOVERNANCE.md`, `INVARIANTS.md`, `CODING_STYLE.md`,
+  `DOCUMENTATION.md`, `ROADMAP.md`, and `PHASEMAP.md`
 - architecture notes that are too detailed for `ARCHITECTURE.md`
 - accepted contract documents
 - ADRs
@@ -75,14 +74,19 @@ Recommended structure:
 
 ```text
 docs/
-  README.md
-  adr/
-  contracts/
-  guides/
+  ARCHITECTURE.md
+  CODING_STYLE.md
+  DOCUMENTATION.md
+  GOVERNANCE.md
+  INVARIANTS.md
+  PHASEMAP.md
+  ROADMAP.md
   maintainers/
-  public/
-  reference/
-  wiki/
+  user/
+  adr/          # when an ADR is required
+  contracts/    # after the accepted-contract lifecycle
+  drafts/       # while a contract is exploratory
+  wiki/         # when a recurring support topic exists
 ```
 
 ## 4. Architecture Decisions
@@ -381,30 +385,36 @@ The Phase 3 `Verify` workflow runs `bash scripts/verify.sh`, which invokes
 `scripts/check-docs.sh`. Documentation sanity therefore uses the same script
 locally and in GitHub Actions rather than duplicating checks in workflow YAML.
 
-Phase 4 adds the user-facing workspace guide at `docs/user/WORKSPACE.md` and
+Phase 4 established the user-facing workspace guide at `docs/user/WORKSPACE.md` and
 React/Tiptap component tests through `npm test`. The aggregate verifier runs
 that frontend suite before the language-specific build checks.
 
-Phase 6 documents the first typed Tauri command in
+Phase 6 documented the first typed Tauri command in
 `docs/maintainers/COMMAND_BOUNDARY.md`. Rustdoc describes the command DTOs,
 error enum, domain status type, and boundary entry points. Rust tests and the
 invariant script enforce the documented signature and serialization pattern.
 
-Phase 7 documents the only raw frontend command adapter, typed runtime-status
+Phase 7 documented the only raw frontend command adapter, typed runtime-status
 wrapper, error classification, and transient connection hook in
 `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`. Wrapper tests and the invariant
 scan enforce the documented IPC placement and boundary shapes.
 
-Phase 8 documents Rust event emission, frontend payload validation, listener
+Phase 8 documented Rust event emission, frontend payload validation, listener
 ordering, finite lifecycle, and cleanup in
 `docs/maintainers/EVENT_BOUNDARY.md`. Rust and frontend tests plus the invariant
 scan enforce the event name, payload, placement, and lifecycle claims.
 
-Phase 9 documents the process-local worker registry, cooperative cancellation
+Phase 9 documented the process-local worker registry, cooperative cancellation
 token, idempotent cancel command, typed frontend wrapper, and future worker
 integration rules in `docs/maintainers/CANCELLATION_BOUNDARY.md`. Rust and
 frontend tests plus the invariant scan enforce requested, repeated,
 already-ended, malformed, unknown-worker, teardown, and shutdown behavior.
+
+Phase 10 reconciles the bridge implementation guides, code examples,
+repository layout, changelog state, invariant scripts, and CI-visible bridge
+name parity. The checkpoint evidence is recorded in
+`docs/maintainers/REALIGNMENT.md`. The current bridge guides are implementation
+notes, not accepted contracts under the governance lifecycle.
 
 Recommended checks:
 
