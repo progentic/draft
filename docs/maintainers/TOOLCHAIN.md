@@ -133,10 +133,12 @@ librsvg2-dev
 libssl-dev
 libwebkit2gtk-4.1-dev
 libxdo-dev
+ripgrep
 ```
 
-These packages follow Tauri's Linux prerequisites. The exact Ubuntu job cannot
-be executed on a macOS workstation, so the first GitHub Actions run remains the
+The development libraries follow Tauri's Linux prerequisites. The `ripgrep`
+package satisfies DRAFT's repository scan prerequisite. The exact Ubuntu job
+cannot be executed on a macOS workstation, so GitHub Actions remains the
 authoritative validation of the Linux package set.
 
 The workflow has read-only repository permission, uses no secrets, publishes

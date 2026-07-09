@@ -50,6 +50,7 @@ check_workflow_contract() {
     'libssl-dev'
     'libwebkit2gtk-4.1-dev'
     'libxdo-dev'
+    'ripgrep'
     'run: bash scripts/bootstrap.sh'
     'run: bash scripts/verify.sh'
   )
