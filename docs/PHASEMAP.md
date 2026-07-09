@@ -6,12 +6,14 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 10 are complete. Phase 11 is
-the next implementation phase; document-envelope implementation has not
+**Current execution checkpoint:** Phases 0 through 11 are complete. Phase 12 is
+the next implementation phase; document-registry implementation has not
 started.
 
-The non-binding entry requirements are recorded in
-`docs/drafts/DOCUMENT_ENVELOPE.md`; that draft does not implement Phase 11.
+The non-binding Phase 11 requirements remain in
+`docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
+`docs/maintainers/DOCUMENT_ENVELOPE.md`; neither document is an accepted
+contract under the governance lifecycle.
 
 ---
 
@@ -50,7 +52,7 @@ Do not weaken an invariant to finish a phase. If an invariant is wrong, change i
 | 8 | Event stream pattern | Rust-to-frontend event pattern exists. | Event payloads are typed. |
 | 9 | Cancellation pattern | Long-running user-initiated worker cancellation shape exists. | Cancellation has success, already-ended, and error tests. |
 | 10 | Documentation and drift realignment | Bridge docs, invariants, and examples are reconciled. | IPC and event contracts match docs. |
-| 11 | Document envelope | Saved document envelope schema is defined. | Malformed envelope tests fail safely. |
+| 11 | Document envelope | A versioned in-memory document envelope is defined. | Malformed envelope tests fail safely. |
 | 12 | Document registry | Rust owns open-document handles. | Double-open returns focus or `AlreadyOpen`, not a second handle. |
 | 13 | Save/load | Tiptap JSON save and reload path exists. | Round-trip tests pass. |
 | 14 | Atomic save | Write-temp, fsync, rename save path exists. | Interrupted-save test never leaves a partial source document. |

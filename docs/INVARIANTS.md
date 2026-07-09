@@ -570,9 +570,10 @@ bash scripts/check-invariants.sh
 Current scans cover credential-field names, frontend trusted APIs, raw Tauri
 command and event placement, typed event contract coverage, Python network and
 process imports, generic Rust command errors, typed command contract coverage,
-ad hoc Rust network clients, and Bash invocation from product runtime. The
-verifier also checks locked offline builds, tests, required source visibility,
-generated-file hygiene, and documentation sanity.
+the Phase 11 document-envelope schema and malformed-shape tests, ad hoc Rust
+network clients, and Bash invocation from product runtime. The verifier also
+checks locked offline builds, tests, required source visibility, generated-file
+hygiene, and documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 
@@ -597,8 +598,8 @@ production enforcement before those checks are present.
 - Add a full secret scanner plus config, log-field, and helper-input tests.
 - Extend typed signature and serialization coverage with every new Tauri
   command.
-- Add citation, document, job, cancellation, import, and save invariant tests
-  in their owning phases.
+- Add citation, document-registry, job, product-worker cancellation, import,
+  and save invariant tests in their owning phases.
 - Make `shellcheck`, `shfmt`, Ruff, frontend formatting, and frontend linting
   required once their versions and CI installation paths are pinned.
 - Add local-link, ADR filename, contract frontmatter, and invariant-reference

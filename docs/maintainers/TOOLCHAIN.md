@@ -2,23 +2,26 @@
 
 ## Current phase
 
-Phase 10 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 11 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
-boundaries are enforced. The Phase 5 audit remains recorded in
-`docs/maintainers/REALIGNMENT.md`.
+boundaries are enforced. Rust also owns a validated version 1 document
+envelope with typed errors and structured round-trip tests. The Phase 5 and
+Phase 10 audits remain recorded in `docs/maintainers/REALIGNMENT.md`.
 
-This checkpoint does not include durable documents, product research or
-analysis workflows, release automation, or packaging. Those belong to later
-phases.
+This checkpoint does not include a document registry, file lifecycle, durable
+documents, product research or analysis workflows, release automation, or
+packaging. Those belong to later phases.
 
 ## Toolchain decisions
 
 - Rust uses Cargo with `Cargo.lock` committed for the desktop application.
-- Serde provides explicit command response and error serialization.
+- Serde provides explicit command, error, and document-envelope serialization.
+- `serde_json` preserves structured Tiptap JSON inside the validated envelope.
 - `tokio-util` provides cooperative cancellation tokens for Rust-owned workers.
-- UUID v4 values identify transient workers without frontend-generated IDs.
+- UUID values identify validated documents; UUID v4 values identify transient
+  workers without frontend-generated IDs.
 - Frontend dependencies use npm with `package-lock.json` committed.
 - TypeScript, React, and Tiptap run inside the Tauri WebView.
 - `@tauri-apps/api/core` is isolated behind typed wrappers in `src/ipc/`.
@@ -81,8 +84,8 @@ The verifier runs:
 
 - npm dependency-tree validation
 - React/Tiptap workspace plus typed command, event, and cancellation client tests
-- Rust formatting, Clippy, compile checks, command/event/cancellation scans,
-  cross-bridge name parity, and tests
+- Rust formatting, Clippy, compile checks, command/event/cancellation/envelope
+  scans, cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

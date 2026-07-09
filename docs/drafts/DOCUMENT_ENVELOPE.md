@@ -2,7 +2,7 @@
 
 **Status:** Draft, non-binding
 
-**Target phase:** Phase 11
+**Implementation checkpoint:** Phase 11 complete
 
 **Owners:** Rust core, with frontend snapshots as untrusted input
 
@@ -10,14 +10,15 @@
 
 ## Purpose
 
-This draft fixes the entry requirements for Phase 11 before implementation
-begins. It is not an accepted contract and does not authorize persistence,
+This draft records the requirements used for Phase 11. The implemented
+checkpoint is documented in `docs/maintainers/DOCUMENT_ENVELOPE.md`. This file
+remains a non-binding requirement draft and does not authorize persistence,
 save/load, filesystem access, document registry behavior, citation behavior,
 or export.
 
 ## Candidate version 1 shape
 
-Phase 11 will begin with this minimum envelope candidate:
+Phase 11 implements this minimum envelope shape:
 
 ```json
 {
@@ -40,7 +41,7 @@ Later fields require their owning phase and migration decision.
 Rust is the validation authority for the envelope. The frontend may construct
 or display a snapshot, but a TypeScript type assertion is not validation.
 
-Phase 11 must enforce:
+Phase 11 enforces:
 
 - `schema_version` is an integer and only version `1` is accepted
 - unknown top-level fields are rejected rather than ignored
@@ -57,14 +58,19 @@ not citation resolution or editor extension behavior.
 
 ## Invalid-shape behavior
 
-Invalid input must fail closed with bounded domain errors. Phase 11 should
-define variants equivalent to:
+Invalid input fails closed with the bounded `DocumentEnvelopeError` variants:
 
 ```text
-unsupported_schema_version
+invalid_envelope_object
 unknown_envelope_field
+missing_schema_version
+invalid_schema_version
+unsupported_schema_version
+missing_document_id
 invalid_document_id
+missing_title
 invalid_title
+missing_document
 invalid_document_root
 invalid_document_content
 ```
@@ -74,7 +80,7 @@ enter explicit migration handling in a later migration phase.
 
 ## Serialization rules
 
-Phase 11 serialization must:
+Phase 11 serialization does:
 
 - use Serde-owned Rust types instead of hand-built JSON strings
 - serialize field names exactly as shown in the candidate shape
@@ -87,9 +93,9 @@ Phase 11 serialization must:
 The schema version constant and serialized DTO must have rustdoc because they
 control future migration behavior.
 
-## Required Phase 11 tests
+## Implemented Phase 11 tests
 
-Phase 11 is incomplete until tests cover:
+Phase 11 tests cover:
 
 - minimal valid envelope deserialization
 - stable serialization of the candidate shape
@@ -104,12 +110,12 @@ Phase 11 is incomplete until tests cover:
 - missing or non-array `document.content`
 - nested Unicode and structured Tiptap JSON preservation
 
-The malformed-envelope gate must run through `scripts/verify.sh` locally and in
-the existing GitHub Actions `Verify` job.
+The malformed-envelope gate runs through `scripts/verify.sh` locally and in the
+existing GitHub Actions `Verify` job.
 
 ## Explicit Phase 11 non-goals
 
-Phase 11 must not add:
+Phase 11 does not add:
 
 - create, open, close, focus, or double-open behavior
 - a live document registry or Tauri document handle

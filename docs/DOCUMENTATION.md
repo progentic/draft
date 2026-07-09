@@ -416,6 +416,12 @@ name parity. The checkpoint evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. The current bridge guides are implementation
 notes, not accepted contracts under the governance lifecycle.
 
+Phase 11 documents the implemented Rust-owned version 1 envelope in
+`docs/maintainers/DOCUMENT_ENVELOPE.md`. The readiness requirements remain in
+`docs/drafts/DOCUMENT_ENVELOPE.md` until the governance lifecycle permits an
+accepted contract. Rust tests and the invariant scan enforce schema version,
+required fields, typed failures, root shape, and structured JSON round trips.
+
 Recommended checks:
 
 - Markdown formatting

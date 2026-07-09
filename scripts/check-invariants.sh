@@ -20,6 +20,7 @@ main() {
   check_event_contract_coverage
   check_event_capability
   check_worker_cancellation_contract
+  check_document_envelope_contract
   check_bridge_name_parity
   check_future_feature_absence_gates
   check_rust_network_boundary
@@ -174,6 +175,47 @@ check_worker_cancellation_contract() {
     '(?:tokio(?:::task)?|tauri::async_runtime)::spawn\s*\(' \
     --glob '!src-tauri/src/workers/**' src-tauri/src
   printf 'PASS INV-07 worker cancellation contract\n'
+}
+
+check_document_envelope_contract() {
+  local source_path="src-tauri/src/documents/envelope.rs"
+  local required_tests=(
+    minimal_envelope_deserializes
+    envelope_serialization_is_stable
+    envelope_round_trip_is_stable
+    missing_required_fields_fail_predictably
+    non_object_envelope_fails
+    unknown_top_level_fields_fail
+    unsupported_schema_versions_fail
+    malformed_schema_versions_fail
+    malformed_document_id_fails
+    blank_title_fails
+    invalid_document_root_fails
+    invalid_document_content_fails
+    unicode_and_nested_tiptap_json_round_trip
+    envelope_failure_shape_is_stable
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_envelope_schema_version "${source_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${source_path}"
+  done
+  assert_no_matches "Phase 11 envelope runtime I/O" \
+    '(?:std|tokio)::fs|\b(?:File|OpenOptions|PathBuf)\b|#\[tauri::command\]' \
+    "${source_path}"
+  printf 'PASS Phase 11 document envelope contract\n'
+}
+
+require_envelope_schema_version() {
+  local source_path="$1"
+  local declaration='pub const DOCUMENT_ENVELOPE_SCHEMA_VERSION: u64 = 1;'
+
+  if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
+    printf 'FAILED Phase 11 schema version declaration\n' >&2
+    return 1
+  fi
 }
 
 require_rust_test() {

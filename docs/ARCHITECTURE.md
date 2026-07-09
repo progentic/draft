@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 9 is deliberately smaller than the
+The implemented application through Phase 11 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed `get_runtime_status` and `cancel_worker` commands with
@@ -51,11 +51,14 @@ full system described in this architecture:
   validates it before React displays connection state.
 - Rust owns a process-local worker cancellation registry and cooperative token.
   No product worker starts yet, so no cancellation control is displayed.
+- Rust owns the version 1 document envelope, UUID identity parsing, root-shape
+  validation, typed failures, and Serde round trips. The envelope remains an
+  in-memory domain type and is not exposed through a Tauri command.
 - React and Tiptap own only the transient writing surface and presentation
   state. Reloading still discards the current document.
-- No document envelope, document registry, save/load path, atomic writer,
-  reference library, citation behavior, network client, analysis worker,
-  formatter, export path, or durable persistence is implemented yet.
+- No document registry, save/load path, atomic writer, reference library,
+  citation behavior, network client, analysis worker, formatter, export path,
+  or durable persistence is implemented yet.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -390,7 +393,14 @@ Relevant invariants: `INV-05` and `INV-08` in `INVARIANTS.md`.
 
 ## 11. Save Lifecycle, Document Mutation, and Export
 
-The document's working representation is Tiptap JSON wrapped in an application-level envelope. The envelope schema is deferred to a downstream data-model contract.
+The document's working representation is Tiptap JSON wrapped in an
+application-level envelope. Phase 11 implements the minimum version 1 envelope
+as a Rust domain type with `schema_version`, `document_id`, `title`, and
+`document` fields. The exact implemented checkpoint is documented in
+`maintainers/DOCUMENT_ENVELOPE.md`; it is not yet an accepted contract.
+
+Phase 11 does not connect the envelope to a file or application lifecycle. The
+save rules below remain target architecture for Phases 13 and 14.
 
 The saved source document contains:
 
@@ -515,7 +525,8 @@ Relevant invariant: `INV-13` in `INVARIANTS.md`.
 These must be resolved before granular contract docs become binding:
 
 - Reference-record schema: fields, provenance, resolution states, reliability scoring inputs, and source merge behavior.
-- Document envelope schema: exact saved-file structure beyond Tiptap JSON and citekey references.
+- Document-envelope evolution: fields and migrations beyond the implemented
+  version 1 minimum.
 - AI context-window assembly policy: token budget, truncation strategy, source prioritization, and user-visible disclosure.
 - Formatting contract: exact APA, MLA, Chicago, heading, and export rules.
 - Text-analysis contract: grammar, syntax, tone, clarity, cohesion, and voice-validation issue model.
