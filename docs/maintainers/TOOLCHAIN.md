@@ -2,14 +2,15 @@
 
 ## Current phase
 
-Phase 14 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 15 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
-open/save commands, and a hardened atomic replacement path. The Phase 5 and
-Phase 10 audits remain recorded in `docs/maintainers/REALIGNMENT.md`.
+open/save commands, and a hardened atomic replacement path. The Phase 5,
+Phase 10, and Phase 15 audits are recorded in
+`docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include workspace file controls, a close command,
 autosave, recovery, product research or analysis workflows, release
@@ -26,6 +27,8 @@ automation, or packaging.
   parent directory on Unix.
 - A Rust `Mutex<HashMap<...>>` serializes process-local document handle
   ownership without introducing persistence.
+- A separate Rust `Mutex<()>` serializes document open/save lifecycle
+  coordination so disk and registry snapshots cannot be reordered.
 - `tokio-util` provides cooperative cancellation tokens for Rust-owned workers.
 - UUID values identify validated documents; UUID v4 values identify transient
   workers without frontend-generated IDs.

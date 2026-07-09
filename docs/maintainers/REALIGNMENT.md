@@ -200,3 +200,119 @@ git diff --check
 All Phase 10 bridge, documentation, invariant, build, and workflow drift within
 the permitted scope is reconciled. The README status exception remains explicit
 and the stale untracked alternate files are removed.
+
+## Phase 15 - 2026-07-09
+
+The audited implementation baseline is commit `2f2e669`, the completed Phase 14
+atomic-save hardening checkpoint. Its hosted verification run passed:
+
+<https://github.com/progentic/draft/actions/runs/29057687404>
+
+### Surfaces reviewed
+
+- `README.md`, `CHANGELOG.md`, `.gitignore`, and the local `AGENTS.md`
+- architecture, governance, invariants, coding style, and documentation policy
+- roadmap and phasemap sequencing through the Phase 15 gate
+- envelope, registry, save/load, command, event, cancellation, frontend-client,
+  toolchain, workspace, and prior realignment guides
+- Rust document, command, registry, worker, event, and application modules
+- TypeScript IPC wrappers, runtime-status feature code, React/Tiptap workspace,
+  and all current frontend tests
+- Cargo, npm, Python, Tauri, TypeScript, and Rust toolchain manifests
+- local scripts, `justfile`, GitHub Actions, and hosted run history
+- tracked, ignored, generated, duplicate, and untracked repository state
+
+### Drift corrected
+
+- The registry guide no longer says its errors are only a future IPC concern;
+  Phase 13 open/save commands already expose them as typed nested causes.
+- Architecture now records the Phase 14 registry-owned file-operation lock
+  separately from the handle map mutex and keeps filesystem calls outside the
+  registry module.
+- Governance no longer lists Phase 11 envelope-draft refinement as unfinished.
+- Command, toolchain, save/load, documentation-policy, roadmap, and phasemap
+  checkpoint text now describes the completed Phase 14 behavior and Phase 15
+  audit without implying that Phase 16 has started.
+- Documentation sanity now requires the Phase 16 readiness draft and requires
+  roadmap/phasemap agreement through Phase 15.
+- The future-feature scan now rejects a reference store before Phase 17 while
+  still allowing the Phase 16 in-memory reference type.
+
+### Document-core truth
+
+- Rust owns the version 1 document envelope and remains its validation
+  authority. The TypeScript mirror validates IPC data for display/request
+  safety only.
+- Rust owns one process-local live handle and one exclusive source path per open
+  document. Duplicate IDs and path aliases fail with typed errors.
+- Rust owns native file selection, validated load, explicit-snapshot save,
+  same-directory temporary writes, content sync, atomic replacement, and Unix
+  parent-directory sync.
+- Open/save lifecycle coordination is process-local and serialized so
+  concurrent saves cannot leave disk and registry snapshots out of order.
+- Failures before replacement preserve the prior complete source and clean up
+  temporary files. A parent-sync failure after replacement returns
+  `durability_uncertain` while retaining the new complete registry snapshot.
+- React and Tiptap remain presentation and transient editor state only. The
+  workspace does not invoke open/save, so reload or exit still discards visible
+  edits.
+- No reference record, reference store, citation node, bibliography, network
+  client, import pipeline, persistent job, Python-helper protocol, export path,
+  autosave, recovery, or close command exists yet.
+
+### Next-phase readiness
+
+`docs/drafts/REFERENCE_RECORD.md` bounds Phase 16 to a version 1 in-memory Rust
+record with explicit identity, citekey, bibliographic fields, contributor
+shape, partial date, identifiers, provenance, typed failures, and serialization
+tests. It explicitly defers storage, uniqueness, IPC, document embedding,
+citations, network lookup, import, merge, and reliability scoring.
+
+The document envelope remains unchanged. Reference records are future
+reference-library source data and must not be embedded as full citation
+metadata in a document or citation node.
+
+### Governance decisions
+
+- No trust, ownership, persistence, network, worker, or invariant decision
+  changed, so no ADR is required.
+- The current implementation guides and readiness drafts remain non-binding.
+  `docs/adr`, `docs/contracts`, and `docs/wiki` remain absent intentionally.
+- Local and CI verification continue to use `scripts/verify.sh`; the aggregate
+  GitHub Actions `verify` job remains the only implemented hosted workflow.
+
+### Constrained and external state
+
+- `README.md` was reviewed and left unchanged under the explicit user
+  instruction. Its "initial application toolchain scaffold" status phrase is
+  stale relative to the implemented document core and remains a documented
+  exception rather than being turned into a phase status report.
+- No `src/App 2.tsx`, `src/styles 2.css`, or other duplicate source artifact is
+  present or tracked.
+- Current GitHub Actions validates Ubuntu. The platform-neutral replacement
+  test also passes locally on macOS; supported-platform package validation
+  remains assigned to Phase 42.
+- The frontend production build still reports Vite's advisory bundle-size
+  warning. It remains a visible performance/packaging concern, not a hidden
+  correctness failure.
+
+### Verification evidence
+
+The checkpoint uses these executable gates:
+
+```bash
+npm test
+cargo test --locked --offline --manifest-path src-tauri/Cargo.toml
+bash scripts/check-invariants.sh
+bash scripts/check-docs.sh
+bash scripts/check-ci-local-parity.sh
+bash scripts/check-repository.sh
+bash scripts/verify.sh
+npm run tauri -- dev --no-watch
+git diff --check
+```
+
+All Phase 15 documentation, document-core, repository-shape, and verification
+drift within the permitted scope is reconciled. Phase 16 may begin only within
+the bounded readiness draft; Phase 17 persistence and Phase 18 citation gates
+remain intact.

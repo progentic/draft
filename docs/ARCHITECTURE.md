@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 14 is deliberately smaller than the
+The implemented application through Phase 15 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open, and
@@ -289,9 +289,10 @@ Each open document gets its own independent Tiptap editor instance and its own R
 
 Phase 12 implements the Rust-side registry and chooses the typed `AlreadyOpen`
 result until a frontend view identity exists. The registry owns validated
-in-memory envelopes, serializes open and close operations with a mutex, and
-returns the envelope when its handle closes. It does not open files, save data,
-or expose a Tauri command.
+in-memory envelopes and returns the envelope when its handle closes. Phase 14
+adds a separate registry-owned lock that serializes persistence open/save
+coordination around disk and handle updates. The registry module does not call
+filesystem or Tauri APIs itself.
 
 Relevant invariant: `INV-06` in `INVARIANTS.md`.
 

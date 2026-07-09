@@ -155,8 +155,13 @@ name parity, rejects frontend path/dialog authority, and rejects direct target
 writes. The same script runs through `scripts/verify.sh` locally and in the
 GitHub Actions `verify` job.
 
-## Phase 15 Gate
+## Phase 15 Audit
 
-Phase 15 must audit this implementation guide, `ARCHITECTURE.md`, `INVARIANTS.md`,
-the document envelope and registry guides, user workspace claims, local
-verification, and GitHub Actions before reference-schema work begins.
+Phase 15 audits this guide, `ARCHITECTURE.md`, `INVARIANTS.md`, the document
+envelope and registry guides, user workspace claims, local verification, and
+GitHub Actions. The evidence is recorded in
+`docs/maintainers/REALIGNMENT.md`.
+
+Phase 16 may define and validate an in-memory reference record. It must not
+extend the document envelope or add reference persistence, citation nodes,
+network lookup, imports, bibliography behavior, or workspace file controls.

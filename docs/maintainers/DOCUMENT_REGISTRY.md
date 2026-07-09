@@ -76,8 +76,9 @@ lock, a cross-process lock, or a multi-user synchronization model.
 | `SourcePathInUse` | Another live document already owns the selected source path. |
 | `RegistryUnavailable` | The registry mutex is poisoned and state cannot be trusted. |
 
-These errors do not cross IPC in Phase 12. A future command must map them into
-its own deliberate serialized error type.
+These errors did not cross IPC in Phase 12. Phase 13 open/save commands now map
+them as the typed nested `cause` of command-specific registry failures rather
+than returning an untyped blob.
 
 ## Abstraction Hierarchy
 

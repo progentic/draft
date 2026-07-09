@@ -122,7 +122,8 @@ must make the result observable to the frontend.
 
 Rust tests cover valid and blank version inputs, exact command signatures,
 bounded request deserialization, stable JSON for success and error values,
-cancellation lifecycle outcomes, and Phase 13 document command contracts.
+cancellation lifecycle outcomes, Phase 13 document commands, and Phase 14
+atomic-write failure shapes.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,

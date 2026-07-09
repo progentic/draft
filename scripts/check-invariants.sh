@@ -425,6 +425,9 @@ check_future_feature_absence_gates() {
     src src-tauri/src
   assert_no_matches "INV-08 watched import before Phase 24" \
     '\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' src src-tauri/src
+  assert_no_matches "Phase 17 reference store before persistence phase" \
+    '\bReference(?:Store|Repository)\b|\breference_(?:store|repository|records)\b' \
+    src src-tauri/src
   assert_no_matches "INV-11 helper protocol before Phase 28" \
     '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
     python/draft_helpers

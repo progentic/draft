@@ -440,6 +440,12 @@ cleanup, serialized file lifecycle operations, typed write-stage failures, and
 disk/registry concurrency behavior. The invariant scan requires the matching
 Rust and frontend tests locally and in GitHub Actions.
 
+Phase 15 reconciles document-core guides, architecture, invariant enforcement,
+user-facing workspace truth, tracked repository shape, and local/CI parity.
+The checkpoint evidence is recorded in `docs/maintainers/REALIGNMENT.md`, and
+the bounded Phase 16 readiness requirements live in the non-binding
+`docs/drafts/REFERENCE_RECORD.md`.
+
 Recommended checks:
 
 - Markdown formatting
