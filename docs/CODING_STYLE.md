@@ -1428,6 +1428,10 @@ just verify
 
 `just verify` should be the broad local command that approximates GitHub Actions.
 
+When `just` is not installed, `bash scripts/verify.sh` is the required
+equivalent. The `justfile` delegates to repository scripts so local development
+and future GitHub Actions can use the same implementation.
+
 ---
 
 ## 9. Documentation Comments

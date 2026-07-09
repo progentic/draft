@@ -27,6 +27,8 @@ DRAFT is a desktop application for people who write serious documents with sourc
 
 It is built for research papers, literature reviews, reports, policy drafts, technical documents, and long-form writing where accuracy and formatting both matter.
 
+> **Development status:** DRAFT is in active pre-1.0 development. The repository currently contains the initial application toolchain scaffold. The product capabilities below describe the intended application and are not yet production-ready features.
+
 DRAFT brings four writing jobs into one workspace:
 
 **Document Research** helps organize scholarly sources, citations, bibliographies, and a structured reference library.
@@ -68,7 +70,7 @@ It is designed around a simple idea: writing support should make the author more
 
 That means the app should help surface problems, preserve source context, show what changed, and keep human judgment in control. The goal is not to hide the work. The goal is to make the work easier to inspect.
 
-## How DRAFT It Works
+## How DRAFT Works
 
 DRAFT separates the writing surface from the trusted engine underneath it.
 
@@ -82,9 +84,9 @@ Bash is used for developer automation, formatting commands, and GitHub Actions w
 
 This structure keeps the app understandable. The user interface presents the work. The Rust core protects the work. Helper tools assist the work without taking ownership away from the core.
 
-## What DRAFT Does It Support?
+## What DRAFT Plans to Support
 
-DRAFT focuses on the full writing pipeline:
+DRAFT is designed to support the full writing pipeline:
 
 - Finding and organizing scholarly sources.
 - Managing citation records and bibliographies.
@@ -114,6 +116,18 @@ The result is a desktop app shaped around reliability first, with a modern writi
 - **Tiptap** for the document editor.
 - **Python** for controlled formatting and text-analysis helpers.
 - **Bash** for local development and GitHub Actions automation.
+
+## Development
+
+The current scaffold requires Rust 1.96.0, Node.js 22.12.0 or newer with npm, Python 3.12 or newer, and Bash.
+
+Bootstrap the locked dependency trees from the repository root:
+
+```bash
+bash scripts/bootstrap.sh
+```
+
+See `docs/maintainers/TOOLCHAIN.md` for the current toolchain scope and supported commands.
 
 ## License
 

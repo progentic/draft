@@ -155,6 +155,9 @@ id_ed25519.*
 *.html
 *.epub
 
+# Vite application entry point is source, not a generated export.
+!/index.html
+
 # Allow committed test fixtures when intentionally added.
 !tests/fixtures/**/*.docx
 !tests/fixtures/**/*.pdf
@@ -212,6 +215,10 @@ Icon?
 ehthumbs.db
 Thumbs.db
 Desktop.ini
+
+# Tauri requires the application icon as tracked source.
+!/src-tauri/icons/
+!/src-tauri/icons/icon.png
 
 # -----------------------------------------------------------------------------
 # GitHub Actions / local verification caches

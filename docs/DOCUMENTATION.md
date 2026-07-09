@@ -365,6 +365,18 @@ Local verification should include:
 just docs-check
 ```
 
+When `just` is unavailable, use the equivalent offline command:
+
+```bash
+bash scripts/check-docs.sh
+```
+
+The Phase 2 check verifies required document presence, top-level headings in
+`/docs`, machine-specific path absence, and the changelog's no-`Unreleased`
+rule. External URLs, Markdown anchor targets, ADR filenames, and contract
+frontmatter are not checked yet because those surfaces do not exist or would
+require broader tooling.
+
 GitHub Actions should run the same documentation checks as local development.
 
 Recommended checks:

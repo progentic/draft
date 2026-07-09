@@ -373,9 +373,8 @@ Every architecture PR must answer:
 
 - Add `.github/pull_request_template.md` with the architecture checklist.
 - Add `CODEOWNERS` for governed files once team size is greater than one.
-- Add `verify.yml`, `invariants.yml`, and `build.yml` once repository layout exists.
-- Add the root `justfile` once package managers and workspace layout are chosen.
-- Decide the JavaScript package manager by ADR or initial repository decision.
-- Decide the Python dependency manager by ADR or initial repository decision.
+- Add `verify.yml`, `invariants.yml`, and `build.yml` in Phase 3 using the
+  repository scripts behind the root `justfile`.
+- Decide and pin the Python dependency manager before adding a third-party
+  helper dependency.
 - Create the first contract drafts for citation node schema, document envelope schema, Python helper worker interface, and formatting rules.
-

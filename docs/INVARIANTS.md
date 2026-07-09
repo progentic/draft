@@ -57,19 +57,19 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 
 | ID | Status | Invariant | Protects | Local development enforcement | GitHub Actions enforcement |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | `just check-invariants` runs secret scanning, config-schema checks, log-field checks, helper-input checks, and credential-field denylist checks. | `invariants` runs secret scanning, schema tests, log-field checks, helper-input checks, and credential-field denylist checks on every PR and push to `main`. |
-| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | `cargo clippy`, `cargo test`, and `scripts/check-command-errors.sh`. | `invariants` runs Rust lint, command-signature checks, and command-error tests. |
-| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | Frontend lint rules and `scripts/check-frontend-boundary.sh` block network, filesystem, and secret-store access in frontend code. | `invariants` runs frontend boundary checks. |
-| `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | Unit tests for citation parsing, schema tests, and property/fuzz tests for invalid attrs. | `invariants` runs citation schema tests and property/fuzz tests. |
-| `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | Integration test kills a job mid-run, restarts, and verifies resume from persisted checkpoint rather than checkpoint zero. | `invariants` runs resumability integration tests. Nightly CI may run extended fault injection. |
-| `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | Unit test for `DocumentRegistry.open()` returning `AlreadyOpen` for a second live handle. | `invariants` runs document-registry tests. |
-| `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | `scripts/check-cancellation-pairs.sh` checks stream and worker registrations against cancel command declarations. Unit tests verify idempotent cancellation. | `invariants` runs cancellation-pair checks and cancellation unit tests. |
-| `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | Tempfs test writes a file in chunks and asserts no import starts until debounce and stable-size checks pass. | `invariants` runs watched-folder stable-write tests. |
-| `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | Crash-safety test interrupts save mid-flush and verifies checksum-valid prior or new file. Static check ensures save path uses the atomic writer. | `invariants` runs save crash-safety tests and atomic-writer boundary checks. |
-| `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | `scripts/check-rust-network-boundary.sh`, `scripts/check-frontend-boundary.sh`, and `scripts/check-python-network-boundary.sh`. | `invariants` runs Rust, frontend, and Python network-boundary checks. |
-| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Python lint/tests plus `scripts/check-python-helper-boundary.sh` validate allowlist, typed I/O, timeout, dependency pinning, and denied imports. | `invariants` runs Python helper boundary checks and helper worker tests. |
-| `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | `shellcheck`, `shfmt`, script smoke tests, and `scripts/check-bash-runtime-boundary.sh`. | `invariants` runs Bash formatting/linting and runtime-boundary checks. |
-| `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | `just verify` and `just check-invariants` call the same scripts used by CI. `scripts/check-ci-local-parity.sh` verifies workflow/script mapping. | `invariants` runs CI/local parity checks. |
+| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 2 scans implemented source surfaces for denied credential fields. Full secret, schema, helper-input, and log checks remain open. | Planned for Phase 3 after the local checks exist. |
+| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phase 2 scans Rust source for generic error types. Command-specific tests begin when commands are introduced in Phase 6. | Planned for Phase 3, then expanded in Phase 6. |
+| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct network, filesystem, secret-store, and local-storage APIs in frontend source. | Planned for Phase 3. |
+| `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | No citation module exists yet. Schema enforcement begins in Phase 18. | Planned after the citation surface exists. |
+| `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | No background-job module exists yet. Resumability tests begin in Phase 26. | Planned after the job surface exists. |
+| `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | No document registry exists yet. Registry tests begin in Phase 12. | Planned after the registry exists. |
+| `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | No long-running worker exists yet. Cancellation enforcement begins in Phase 9. | Planned after the worker surface exists. |
+| `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | No watched-folder importer exists yet. Stable-write tests begin in Phase 24. | Planned after the import surface exists. |
+| `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | No document-save path exists yet. Atomic-save enforcement begins in Phase 14. | Planned after the save surface exists. |
+| `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | `scripts/check-invariants.sh` scans current frontend, Rust, and Python source for denied clients. | Planned for Phase 3. |
+| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Phase 2 runs Python tests and denied-import scans. Typed protocol, allowlist, timeout, and output validation begin in Phase 28. | Planned for Phase 3 and expanded in Phase 28. |
+| `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | Planned for Phase 3. |
+| `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | GitHub Actions parity begins in Phase 3. |
 
 ---
 
@@ -500,21 +500,44 @@ GitHub Actions should call `just` targets or repository scripts, not duplicate l
 
 ---
 
-## 7. Open Enforcement Items
+## 7. Phase 2 Local Enforcement
 
-These are required before the invariants are truly enforceable in a repository:
+Phase 2 provides the first local enforcement layer:
 
-- Create the root `justfile`.
-- Create `scripts/check-command-errors.sh`.
-- Create `scripts/check-frontend-boundary.sh`.
-- Create `scripts/check-rust-network-boundary.sh`.
-- Create `scripts/check-python-network-boundary.sh`.
-- Create `scripts/check-python-helper-boundary.sh`.
-- Create `scripts/check-bash-runtime-boundary.sh`.
-- Create `scripts/check-cancellation-pairs.sh`.
-- Create `scripts/check-ci-local-parity.sh`.
-- Add `verify.yml`, `invariants.yml`, and `build.yml`.
-- Add first-pass Rust, TypeScript, Python, Bash, and Tauri smoke tests.
+```bash
+just verify
+just check-invariants
+```
 
-Until these are implemented, the invariant text is the target control model. The repository should not claim enforcement is complete.
+Equivalent direct commands are available when `just` is not installed:
 
+```bash
+bash scripts/verify.sh
+bash scripts/check-invariants.sh
+```
+
+Current scans cover credential-field names, frontend trusted APIs, Python
+network and process imports, generic Rust command errors, ad hoc Rust network
+clients, and Bash invocation from product runtime. The verifier also checks
+locked offline builds, tests, required source visibility, generated-file
+hygiene, and documentation sanity.
+
+The policy status of the invariants is unchanged. Mechanical enforcement is
+still incomplete until Phase 3 adds GitHub Actions and later phases add tests
+for modules that do not yet exist. The repository must not claim full dual
+enforcement before those checks are present.
+
+---
+
+## 8. Open Enforcement Items
+
+- Add `verify.yml`, `invariants.yml`, and `build.yml` in Phase 3.
+- Add CI/local parity validation after workflow files exist.
+- Add a full secret scanner plus config, log-field, and helper-input tests.
+- Add command-signature tests when Tauri commands exist.
+- Add citation, document, job, cancellation, import, and save invariant tests
+  in their owning phases.
+- Make `shellcheck`, `shfmt`, Ruff, frontend formatting, and frontend linting
+  required once their versions and CI installation paths are pinned.
+- Add local-link, ADR filename, contract frontmatter, and invariant-reference
+  documentation checks when those documentation surfaces exist.
