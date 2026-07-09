@@ -29,10 +29,29 @@ require_file() {
 
 run_step() {
   local label="$1"
+  local status
   shift
 
   printf '\n==> %s\n' "${label}"
-  "$@"
+  if "$@"; then
+    return
+  else
+    status=$?
+  fi
+
+  report_step_failure "${label}" "${status}"
+  return "${status}"
+}
+
+report_step_failure() {
+  local label="$1"
+  local status="$2"
+
+  printf 'FAILED %s (exit %s)\n' "${label}" "${status}" >&2
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    printf '::error title=Verification failed::%s failed with exit code %s\n' \
+      "${label}" "${status}"
+  fi
 }
 
 report_skip() {
