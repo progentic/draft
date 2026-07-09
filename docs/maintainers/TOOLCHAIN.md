@@ -2,10 +2,11 @@
 
 ## Current phase
 
-Phase 5 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 6 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
-and the React/Tiptap workspace shell has focused frontend tests. The Phase 5
-audit is recorded in `docs/maintainers/REALIGNMENT.md`.
+the React/Tiptap workspace shell has focused frontend tests, and the first
+typed Tauri command boundary is enforced. The Phase 5 audit remains recorded
+in `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include durable documents, product research or
 analysis workflows, release automation, or packaging. Those belong to later
@@ -14,6 +15,7 @@ phases.
 ## Toolchain decisions
 
 - Rust uses Cargo with `Cargo.lock` committed for the desktop application.
+- Serde provides explicit command response and error serialization.
 - Frontend dependencies use npm with `package-lock.json` committed.
 - TypeScript, React, and Tiptap run inside the Tauri WebView.
 - Lucide React provides the workspace's interface icons.
@@ -73,7 +75,7 @@ The verifier runs:
 
 - npm dependency-tree validation
 - React/Tiptap workspace component tests
-- Rust formatting, Clippy, compile checks, and tests
+- Rust formatting, Clippy, compile checks, command-contract scans, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

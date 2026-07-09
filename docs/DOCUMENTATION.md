@@ -385,6 +385,11 @@ Phase 4 adds the user-facing workspace guide at `docs/user/WORKSPACE.md` and
 React/Tiptap component tests through `npm test`. The aggregate verifier runs
 that frontend suite before the language-specific build checks.
 
+Phase 6 documents the first typed Tauri command in
+`docs/maintainers/COMMAND_BOUNDARY.md`. Rustdoc describes the command DTOs,
+error enum, domain status type, and boundary entry points. Rust tests and the
+invariant script enforce the documented signature and serialization pattern.
+
 Recommended checks:
 
 - Markdown formatting

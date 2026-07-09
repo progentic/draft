@@ -11,7 +11,7 @@ source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
 main() {
   cd "$(repository_root)"
-  require_tools rg
+  require_tools rg wc
 
   check_credential_fields
   check_frontend_boundary
@@ -47,7 +47,78 @@ check_command_errors() {
     '\banyhow::Error\b|Box\s*<\s*dyn\s+(?:std::)?error::Error|Result\s*<[^;\n]+,\s*(?:String|serde_json::Value)\s*>' \
     src-tauri/src
 
+  check_command_contract_coverage
   report_command_surface
+}
+
+check_command_contract_coverage() {
+  local command_count
+
+  command_count="$(count_tauri_commands)"
+  check_command_registrations "${command_count}"
+  check_command_signature_tests "${command_count}"
+  check_command_request_tests "${command_count}"
+  check_command_response_tests "${command_count}"
+  check_command_error_tests "${command_count}"
+  printf 'PASS INV-02 typed command contract coverage\n'
+}
+
+count_tauri_commands() {
+  count_pattern_matches '#\[tauri::command\]' src-tauri/src
+}
+
+check_command_registrations() {
+  local expected_count="$1"
+  local actual_count
+  actual_count="$(count_pattern_matches 'commands::[[:alnum:]_]+::[[:alnum:]_]+' src-tauri/src/lib.rs)"
+  require_matching_count "registered commands" "${expected_count}" "${actual_count}"
+}
+
+check_command_signature_tests() {
+  local expected_count="$1"
+  local actual_count
+  actual_count="$(count_pattern_matches 'fn command_signature_is_typed' src-tauri/src)"
+  require_matching_count "typed command signature tests" "${expected_count}" "${actual_count}"
+}
+
+check_command_request_tests() {
+  local expected_count="$1"
+  local actual_count
+  actual_count="$(count_pattern_matches 'fn request_deserialization_is_stable' src-tauri/src)"
+  require_matching_count "command request tests" "${expected_count}" "${actual_count}"
+}
+
+check_command_response_tests() {
+  local expected_count="$1"
+  local actual_count
+  actual_count="$(count_pattern_matches 'fn response_serialization_is_stable' src-tauri/src)"
+  require_matching_count "command response tests" "${expected_count}" "${actual_count}"
+}
+
+check_command_error_tests() {
+  local expected_count="$1"
+  local actual_count
+  actual_count="$(count_pattern_matches 'fn error_serialization_is_stable' src-tauri/src)"
+  require_matching_count "command error tests" "${expected_count}" "${actual_count}"
+}
+
+count_pattern_matches() {
+  local pattern="$1"
+  shift
+
+  rg --only-matching --no-filename --pcre2 "${pattern}" "$@" | wc -l
+}
+
+require_matching_count() {
+  local label="$1"
+  local expected_count="$2"
+  local actual_count="$3"
+
+  if [[ "${actual_count}" -ne "${expected_count}" ]]; then
+    printf 'FAILED INV-02 %s: expected %s, found %s\n' \
+      "${label}" "${expected_count}" "${actual_count}" >&2
+    return 1
+  fi
 }
 
 check_rust_network_boundary() {

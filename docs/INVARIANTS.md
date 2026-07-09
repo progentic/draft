@@ -62,7 +62,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | ID | Status | Invariant | Protects | Local development enforcement | GitHub Actions enforcement |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 2 scans implemented source surfaces for denied credential fields. Full secret, schema, helper-input, and log checks remain open. | The Phase 3 `verify` job runs the current source scan. Full secret, schema, helper-input, and log checks remain open. |
-| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phase 2 scans Rust source for generic error types. Command-specific tests begin when commands are introduced in Phase 6. | The Phase 3 `verify` job runs the generic error scan. Command-specific tests begin in Phase 6. |
+| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phase 6 adds a typed runtime-status command with request, signature, and serialization tests. The invariant scan rejects generic errors and requires matching command registration and contract-test counts. | The `verify` job runs the same Rust tests and command-contract scan. |
 | `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct network, filesystem, secret-store, and local-storage APIs in frontend source. | The Phase 3 `verify` job runs the same frontend boundary scan. |
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | No citation module exists yet. Schema enforcement begins in Phase 18. | Planned after the citation surface exists. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | No background-job module exists yet. Resumability tests begin in Phase 26. | Planned after the job surface exists. |
@@ -157,6 +157,13 @@ Result<T, RunFormattingCheckError>
 ```
 
 Local and CI checks must inspect command signatures, not just compile the project.
+
+Phase 6 establishes the enforced command pattern with `get_runtime_status`.
+Its request rejects unknown fields, and its response and error enum serialize
+to stable JSON shapes. Rust tests pin the function signature and all three
+boundary forms. `scripts/check-invariants.sh` also requires every discovered
+Tauri command to have a registered handler and matching request, signature,
+response, and error tests.
 
 ---
 
@@ -526,10 +533,10 @@ bash scripts/check-invariants.sh
 ```
 
 Current scans cover credential-field names, frontend trusted APIs, Python
-network and process imports, generic Rust command errors, ad hoc Rust network
-clients, and Bash invocation from product runtime. The verifier also checks
-locked offline builds, tests, required source visibility, generated-file
-hygiene, and documentation sanity.
+network and process imports, generic Rust command errors, typed command
+contract coverage, ad hoc Rust network clients, and Bash invocation from
+product runtime. The verifier also checks locked offline builds, tests,
+required source visibility, generated-file hygiene, and documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 
@@ -552,7 +559,8 @@ production enforcement before those checks are present.
 - Add dedicated `invariants.yml` and `build.yml` workflows as their complete
   enforcement surfaces mature.
 - Add a full secret scanner plus config, log-field, and helper-input tests.
-- Add command-signature tests when Tauri commands exist.
+- Extend typed signature and serialization coverage with every new Tauri
+  command.
 - Add citation, document, job, cancellation, import, and save invariant tests
   in their owning phases.
 - Make `shellcheck`, `shfmt`, Ruff, frontend formatting, and frontend linting
