@@ -1,0 +1,395 @@
+# DOCUMENTATION.md
+
+## 1. Purpose
+
+This document defines how the DRAFT app keeps documentation accurate, useful, and reviewable.
+
+Documentation is part of the product. It protects future maintainers from guessing why code exists, protects users from unclear behavior, and protects the project from silent drift between implementation, architecture, and public claims.
+
+This file does not replace `README.md`, `GOVERNANCE.md`, `INVARIANTS.md`, `ARCHITECTURE.md`, `CODING_STYLE.md`, or `CHANGELOG.md`. It explains how documentation is maintained across the repository.
+
+## 2. Core Rule
+
+Every meaningful change must leave the documentation in a true state.
+
+If a change adds, removes, renames, or changes behavior in code, the author must check whether documentation also needs to change.
+
+This applies to:
+
+- public-facing behavior
+- architecture boundaries
+- invariants
+- major functions
+- major types
+- important variables and constants
+- user workflows
+- source and citation workflows
+- formatting behavior
+- text-analysis behavior
+- build and verification commands
+- known limitations
+- wiki knowledge articles
+
+## 3. Documentation Surfaces
+
+### Root public documents
+
+Root documents are for readers who arrive at the repository without context.
+
+Required root documents:
+
+- `README.md` — public-facing product description.
+- `LICENSE` — MIT license text.
+- `CHANGELOG.md` — released notable changes only.
+- `AGENTS.md` — agent operating rules.
+- `DOCUMENTATION.md` — documentation maintenance rules.
+- `CODING_STYLE.md` — code shape, syntax, comments, and examples.
+- `ARCHITECTURE.md` — current system shape.
+- `GOVERNANCE.md` — how architectural decisions change.
+- `INVARIANTS.md` — non-negotiable rules and enforcement.
+
+Root documents must stay plain enough for a new maintainer to understand before reading source code.
+
+### `/docs`
+
+The `/docs` folder is the long-term knowledge base.
+
+Use `/docs` for:
+
+- architecture notes that are too detailed for `ARCHITECTURE.md`
+- accepted contract documents
+- ADRs
+- wiki knowledge articles
+- user guides
+- maintainer guides
+- troubleshooting pages
+- workflow explanations
+- source and citation handling notes
+- formatting and export behavior
+- research-library behavior
+- text-analysis behavior
+
+Agents and maintainers must review `/docs` before making architectural, workflow, or user-facing changes.
+
+Recommended structure:
+
+```text
+docs/
+  README.md
+  adr/
+  contracts/
+  guides/
+  maintainers/
+  public/
+  reference/
+  wiki/
+```
+
+## 4. Architecture Decisions
+
+Architecture decisions are tracked through ADRs.
+
+Use an ADR when a change alters:
+
+- trust boundaries
+- data ownership
+- persistence behavior
+- network behavior
+- citation or source handling
+- document save/export behavior
+- Python helper authority
+- Bash orchestration authority
+- local/GitHub Actions verification
+- user-data handling
+- any invariant
+
+ADRs belong in:
+
+```text
+docs/adr/
+```
+
+An ADR must explain:
+
+- the problem
+- the decision
+- alternatives considered
+- consequences
+- enforcement
+- affected docs
+
+Do not use `ARCHITECTURE.md` as a history log. It describes the current accepted shape. ADRs explain why the shape changed.
+
+## 5. Major Functions and Types
+
+Major functions and types must be documented where a maintainer will look first.
+
+A function is major when it:
+
+- crosses the Tauri IPC boundary
+- reads or writes files
+- reads or writes SQLite
+- calls the network client
+- starts, stops, resumes, or cancels background work
+- changes citation records
+- changes document structure
+- performs formatting or export work
+- invokes a Python helper
+- touches user-imported files or metadata
+- enforces an invariant
+
+A type is major when it:
+
+- crosses a process boundary
+- is serialized or persisted
+- represents user data
+- represents citation or source metadata
+- represents command input or output
+- represents an error returned to the frontend
+- appears in a contract document
+
+Required documentation:
+
+- Rust: use `///` rustdoc for public functions, public structs, public enums, and command handlers.
+- TypeScript: use explicit interfaces and TSDoc for exported types, Tauri command wrappers, and Tiptap extensions.
+- Python: use docstrings for helper entry points and any function that reads, writes, transforms, or scores document text.
+- Bash: use a short header comment explaining what the script does, what it writes, and whether it is safe to run locally.
+
+Comments must explain why the operation exists, what boundary it protects, or what failure it prevents. Do not restate obvious syntax.
+
+## 6. Important Variables and Constants
+
+Important variables and constants must have names that explain their role.
+
+Document a variable or constant when it controls:
+
+- debounce windows
+- retry counts
+- timeout values
+- rate limits
+- token budgets
+- text-analysis thresholds
+- formatting rules
+- citation style behavior
+- export behavior
+- file-size limits
+- path allowlists
+- schema versions
+- invariant enforcement
+
+Example:
+
+```rust
+/// Current citation-node schema accepted by the renderer.
+/// Documents with a different version must enter migration handling.
+pub const CITATION_NODE_SCHEMA_VERSION: u16 = 1;
+```
+
+Bad:
+
+```rust
+const V: u16 = 1;
+```
+
+## 7. User-Facing Documentation
+
+User-facing documentation must describe what the app does in plain language.
+
+It should answer:
+
+- what the feature does
+- what problem it solves
+- what the user provides
+- what DRAFT does automatically
+- what DRAFT does not do
+- what data stays local
+- what requires network access
+- what requires user action
+- what happens when something fails
+
+Do not expose internal terms unless they help the user understand a real action.
+
+Prefer:
+
+```text
+DRAFT opens the source page in your browser. You sign in there. DRAFT never sees your school or publisher password.
+```
+
+Avoid:
+
+```text
+The external-service boundary prevents credential ingress into the core process.
+```
+
+## 8. Wiki Knowledge Articles
+
+Wiki articles explain concepts, workflows, and recurring decisions.
+
+Use wiki articles for knowledge that future contributors may need more than once.
+
+Examples:
+
+- how citation metadata is resolved
+- how imported PDFs enter the pipeline
+- how APA formatting is validated
+- how text-analysis scoring works
+- how offline behavior works
+- how source reliability scoring is interpreted
+- how document export differs from document save
+
+Recommended article shape:
+
+```markdown
+# Title
+
+## What this is
+
+## Problem it solves
+
+## How DRAFT handles it
+
+## What can go wrong
+
+## Related files
+
+## Related ADRs
+```
+
+Wiki articles belong in:
+
+```text
+docs/wiki/
+```
+
+## 9. Contract Documents
+
+Contract documents define exact behavior that code may rely on.
+
+Use contract documents for:
+
+- IPC command input/output
+- error enums
+- persisted schemas
+- citation node schema
+- reference-record schema
+- document envelope schema
+- network-client behavior
+- Python helper input/output
+- formatting output expectations
+- text-analysis score formats
+
+Accepted contracts belong in:
+
+```text
+docs/contracts/
+```
+
+Draft contracts may live in:
+
+```text
+docs/drafts/
+```
+
+A contract document must include:
+
+- purpose
+- scope
+- non-goals
+- normative requirements
+- schema or type shape
+- examples
+- failure behavior
+- invariants upheld
+- enforcement
+
+## 10. Public Claims
+
+Public documentation must not overstate the product.
+
+Do not claim DRAFT can do something unless the repository contains the implementation or the statement is clearly framed as a design goal.
+
+Do not use public docs as a changelog.
+
+Do not use public docs as a governance document.
+
+Do not make security, privacy, citation, formatting, or AI-quality claims that are stronger than the architecture and tests support.
+
+## 11. Documentation Update Triggers
+
+Update documentation when a change affects:
+
+- command names
+- command inputs or outputs
+- error variants
+- saved file format
+- citation node schema
+- reference-record schema
+- document export behavior
+- source import behavior
+- network-service behavior
+- Python helper behavior
+- Bash verification behavior
+- local development commands
+- GitHub Actions workflows
+- user-visible labels or flows
+- public-facing claims
+- invariants
+- architecture boundaries
+
+When unsure, update the smallest relevant document.
+
+## 12. Review Checklist
+
+A documentation review should ask:
+
+- Does the implementation still match `ARCHITECTURE.md`?
+- Does the change affect an invariant in `INVARIANTS.md`?
+- Does the change require an ADR?
+- Does `/docs` need a new or updated article?
+- Did any public-facing behavior change?
+- Did any command, schema, or error type change?
+- Did any setup, build, or verification command change?
+- Are examples still accurate?
+- Are links and file paths still valid?
+- Are public claims still supported by code or tests?
+
+A pull request should not merge when documentation is knowingly false.
+
+## 13. Local and CI Verification
+
+Documentation must be checkable where practical.
+
+Local verification should include:
+
+```bash
+just docs-check
+```
+
+GitHub Actions should run the same documentation checks as local development.
+
+Recommended checks:
+
+- Markdown formatting
+- dead-link detection for local links
+- heading style validation
+- required root-document presence
+- required `/docs` structure presence
+- ADR filename validation
+- contract frontmatter validation
+- invariant reference validation
+
+Documentation checks must not require network access unless the check is explicitly marked as external-link validation.
+
+## 14. Documentation Tone
+
+Use plain language.
+
+Prefer short sentences.
+
+Define technical terms the first time they matter.
+
+Use examples when a rule affects behavior.
+
+Explain what a rule protects or prevents.
+
+Do not write decorative documentation. Write documentation that helps the next reader make the correct change safely.
