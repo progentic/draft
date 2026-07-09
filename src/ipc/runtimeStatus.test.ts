@@ -32,11 +32,11 @@ describe("getRuntimeStatus", () => {
   });
 
   it("preserves the command-specific error code", async () => {
-    invokeMock.mockRejectedValue({ code: "invalid_application_version" });
+    invokeMock.mockRejectedValue({ code: "event_delivery_failed" });
 
     await expect(getRuntimeStatus()).resolves.toEqual({
       status: "error",
-      error: { type: "command", code: "invalid_application_version" },
+      error: { type: "command", code: "event_delivery_failed" },
     });
   });
 

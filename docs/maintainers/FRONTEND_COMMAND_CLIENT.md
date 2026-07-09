@@ -46,6 +46,7 @@ The wrapper returns a discriminated result instead of throwing:
 ```text
 ready(version)
 error(command: invalid_application_version)
+error(command: event_delivery_failed)
 error(invalid-response)
 error(transport)
 ```
@@ -56,7 +57,10 @@ leaking into the UI.
 
 ## UI behavior
 
-`useRuntimeStatus` maps the wrapper result to one of three transient states:
+Phase 8 registers the typed runtime-status event listener before invoking this
+wrapper. A successful command response confirms contract integrity, while the
+validated event drives the ready-state transition. `useRuntimeStatus` exposes
+one of three transient states:
 
 - `checking`
 - `ready` with the Rust application version
@@ -104,5 +108,6 @@ bash scripts/check-invariants.sh
    tests.
 7. Let React own display state only; durable decisions remain in Rust.
 
-Phase 8 adds typed Rust-emitted event subscriptions. Event transport must not
-be collapsed into this request/response abstraction.
+Phase 8 event transport is documented in
+`docs/maintainers/EVENT_BOUNDARY.md`. It remains separate from this
+request/response abstraction.

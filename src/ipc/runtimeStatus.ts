@@ -7,7 +7,10 @@ export interface GetRuntimeStatusResponse {
 }
 
 export type RuntimeStatusClientError =
-  | { type: "command"; code: "invalid_application_version" }
+  | {
+      type: "command";
+      code: "invalid_application_version" | "event_delivery_failed";
+    }
   | { type: "invalid-response" }
   | { type: "transport" };
 
@@ -41,11 +44,15 @@ function resultFromResponse(response: unknown): RuntimeStatusResult {
 }
 
 function clientErrorFrom(error: unknown): RuntimeStatusClientError {
-  if (isRecord(error) && error.code === "invalid_application_version") {
+  if (isRecord(error) && isCommandErrorCode(error.code)) {
     return { type: "command", code: error.code };
   }
 
   return { type: "transport" };
+}
+
+function isCommandErrorCode(value: unknown) {
+  return value === "invalid_application_version" || value === "event_delivery_failed";
 }
 
 function isRuntimeStatusResponse(value: unknown): value is GetRuntimeStatusResponse {

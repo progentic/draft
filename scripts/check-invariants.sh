@@ -17,6 +17,8 @@ main() {
   check_frontend_boundary
   check_python_boundary
   check_command_errors
+  check_event_contract_coverage
+  check_event_capability
   check_rust_network_boundary
   check_bash_runtime_boundary
   report_deferred_feature_invariants
@@ -36,6 +38,7 @@ check_frontend_boundary() {
     src
 
   check_frontend_ipc_boundary
+  check_frontend_event_boundary
 }
 
 check_frontend_ipc_boundary() {
@@ -43,6 +46,14 @@ check_frontend_ipc_boundary() {
   require_file src/ipc/runtimeStatus.ts
   assert_no_matches "INV-03 untyped Tauri IPC outside src/ipc" \
     '@tauri-apps/api/core|\binvoke\s*\(|\binvokeCommand\s*\(' \
+    --glob '!src/ipc/**' src
+}
+
+check_frontend_event_boundary() {
+  require_file src/ipc/eventClient.ts
+  require_file src/ipc/runtimeStatusEvents.ts
+  assert_no_matches "raw or generic Tauri events outside src/ipc" \
+    '@tauri-apps/api/event|\blisten\s*\(|\blistenToEvent\s*\(' \
     --glob '!src/ipc/**' src
 }
 
@@ -81,35 +92,71 @@ check_command_registrations() {
   local expected_count="$1"
   local actual_count
   actual_count="$(count_pattern_matches 'commands::[[:alnum:]_]+::[[:alnum:]_]+' src-tauri/src/lib.rs)"
-  require_matching_count "registered commands" "${expected_count}" "${actual_count}"
+  require_matching_count "INV-02" "registered commands" "${expected_count}" "${actual_count}"
 }
 
 check_command_signature_tests() {
   local expected_count="$1"
   local actual_count
   actual_count="$(count_pattern_matches 'fn command_signature_is_typed' src-tauri/src)"
-  require_matching_count "typed command signature tests" "${expected_count}" "${actual_count}"
+  require_matching_count "INV-02" "typed command signature tests" "${expected_count}" "${actual_count}"
 }
 
 check_command_request_tests() {
   local expected_count="$1"
   local actual_count
   actual_count="$(count_pattern_matches 'fn request_deserialization_is_stable' src-tauri/src)"
-  require_matching_count "command request tests" "${expected_count}" "${actual_count}"
+  require_matching_count "INV-02" "command request tests" "${expected_count}" "${actual_count}"
 }
 
 check_command_response_tests() {
   local expected_count="$1"
   local actual_count
   actual_count="$(count_pattern_matches 'fn response_serialization_is_stable' src-tauri/src)"
-  require_matching_count "command response tests" "${expected_count}" "${actual_count}"
+  require_matching_count "INV-02" "command response tests" "${expected_count}" "${actual_count}"
 }
 
 check_command_error_tests() {
   local expected_count="$1"
   local actual_count
   actual_count="$(count_pattern_matches 'fn error_serialization_is_stable' src-tauri/src)"
-  require_matching_count "command error tests" "${expected_count}" "${actual_count}"
+  require_matching_count "INV-02" "command error tests" "${expected_count}" "${actual_count}"
+}
+
+check_event_contract_coverage() {
+  local event_count
+  local event_name_test_count
+  local event_payload_test_count
+
+  require_file src-tauri/src/events/runtime_status.rs
+  event_count="$(count_pattern_matches 'pub\(crate\) enum [[:alnum:]_]+Event' src-tauri/src/events)"
+  event_name_test_count="$(count_pattern_matches 'fn event_name_is_stable' src-tauri/src/events)"
+  event_payload_test_count="$(count_pattern_matches 'fn event_payload_serialization_is_stable' src-tauri/src/events)"
+
+  require_matching_count "Phase 8" "event name tests" "${event_count}" "${event_name_test_count}"
+  require_matching_count "Phase 8" "event payload tests" "${event_count}" "${event_payload_test_count}"
+  printf 'PASS typed event contract coverage\n'
+}
+
+check_event_capability() {
+  local capability_path="src-tauri/capabilities/main.json"
+
+  require_file "${capability_path}"
+  require_capability_permission "core:event:allow-listen" "${capability_path}"
+  require_capability_permission "core:event:allow-unlisten" "${capability_path}"
+  assert_no_matches "frontend event emission permissions" \
+    'core:event:(?:default|allow-emit)' "${capability_path}"
+  printf 'PASS Phase 8 event listener capability\n'
+}
+
+require_capability_permission() {
+  local permission="$1"
+  local capability_path="$2"
+
+  if ! rg --quiet --fixed-strings "${permission}" "${capability_path}"; then
+    printf 'FAILED missing capability permission: %s\n' "${permission}" >&2
+    return 1
+  fi
 }
 
 count_pattern_matches() {
@@ -120,13 +167,14 @@ count_pattern_matches() {
 }
 
 require_matching_count() {
-  local label="$1"
-  local expected_count="$2"
-  local actual_count="$3"
+  local rule="$1"
+  local label="$2"
+  local expected_count="$3"
+  local actual_count="$4"
 
   if [[ "${actual_count}" -ne "${expected_count}" ]]; then
-    printf 'FAILED INV-02 %s: expected %s, found %s\n' \
-      "${label}" "${expected_count}" "${actual_count}" >&2
+    printf 'FAILED %s %s: expected %s, found %s\n' \
+      "${rule}" "${label}" "${expected_count}" "${actual_count}" >&2
     return 1
   fi
 }

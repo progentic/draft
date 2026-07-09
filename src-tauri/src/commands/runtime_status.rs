@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use crate::application::runtime_status::{
     RuntimeStatus, RuntimeStatusError, current_runtime_status,
 };
+use crate::events::runtime_status::{
+    EmitRuntimeStatusError, RuntimeStatusEvent, emit_runtime_status,
+};
 
 /// Bounded request envelope for `get_runtime_status`.
 #[derive(Debug, Deserialize, Eq, PartialEq)]
@@ -21,16 +24,32 @@ pub(crate) struct GetRuntimeStatusResponse {
 #[serde(tag = "code", rename_all = "snake_case")]
 pub(crate) enum GetRuntimeStatusError {
     InvalidApplicationVersion,
+    EventDeliveryFailed,
 }
 
 /// Reports whether the trusted Rust runtime has valid compiled application metadata.
 #[tauri::command]
 pub(crate) fn get_runtime_status(
+    app_handle: tauri::AppHandle,
+    request: GetRuntimeStatusRequest,
+) -> Result<GetRuntimeStatusResponse, GetRuntimeStatusError> {
+    let response = runtime_status_response(request)?;
+    emit_runtime_status(&app_handle, response.runtime_event())?;
+    Ok(response)
+}
+
+fn runtime_status_response(
     request: GetRuntimeStatusRequest,
 ) -> Result<GetRuntimeStatusResponse, GetRuntimeStatusError> {
     let GetRuntimeStatusRequest {} = request;
     let status = current_runtime_status().map_err(GetRuntimeStatusError::from)?;
     Ok(GetRuntimeStatusResponse::from(status))
+}
+
+impl GetRuntimeStatusResponse {
+    fn runtime_event(&self) -> RuntimeStatusEvent {
+        RuntimeStatusEvent::ready(self.version.clone())
+    }
 }
 
 impl From<RuntimeStatus> for GetRuntimeStatusResponse {
@@ -49,6 +68,14 @@ impl From<RuntimeStatusError> for GetRuntimeStatusError {
     }
 }
 
+impl From<EmitRuntimeStatusError> for GetRuntimeStatusError {
+    fn from(error: EmitRuntimeStatusError) -> Self {
+        match error {
+            EmitRuntimeStatusError::DeliveryFailed => Self::EventDeliveryFailed,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -56,15 +83,21 @@ mod tests {
     use super::*;
 
     const TYPED_COMMAND: fn(
+        tauri::AppHandle,
         GetRuntimeStatusRequest,
     ) -> Result<GetRuntimeStatusResponse, GetRuntimeStatusError> = get_runtime_status;
 
     #[test]
     fn command_signature_is_typed() {
-        let response = TYPED_COMMAND(GetRuntimeStatusRequest {})
-            .expect("compiled version should produce runtime status");
-
-        assert_eq!(response.version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(
+            std::any::type_name_of_val(&TYPED_COMMAND),
+            std::any::type_name::<
+                fn(
+                    tauri::AppHandle,
+                    GetRuntimeStatusRequest,
+                ) -> Result<GetRuntimeStatusResponse, GetRuntimeStatusError>,
+            >(),
+        );
     }
 
     #[test]
@@ -82,8 +115,8 @@ mod tests {
 
     #[test]
     fn response_serialization_is_stable() {
-        let response =
-            get_runtime_status(GetRuntimeStatusRequest {}).expect("runtime status should succeed");
+        let response = runtime_status_response(GetRuntimeStatusRequest {})
+            .expect("runtime status should succeed");
 
         assert_eq!(
             serde_json::to_value(response).expect("response should serialize"),
@@ -93,11 +126,17 @@ mod tests {
 
     #[test]
     fn error_serialization_is_stable() {
-        let error = GetRuntimeStatusError::from(RuntimeStatusError::MissingVersion);
+        let errors = [
+            GetRuntimeStatusError::from(RuntimeStatusError::MissingVersion),
+            GetRuntimeStatusError::from(EmitRuntimeStatusError::DeliveryFailed),
+        ];
 
         assert_eq!(
-            serde_json::to_value(error).expect("error should serialize"),
-            json!({ "code": "invalid_application_version" }),
+            serde_json::to_value(errors).expect("errors should serialize"),
+            json!([
+                { "code": "invalid_application_version" },
+                { "code": "event_delivery_failed" }
+            ]),
         );
     }
 }

@@ -1,5 +1,6 @@
 mod application;
 mod commands;
+mod events;
 
 /// Starts the DRAFT desktop runtime.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

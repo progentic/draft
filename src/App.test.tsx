@@ -2,18 +2,18 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const getRuntimeStatusMock = vi.hoisted(() => vi.fn());
+const useRuntimeStatusMock = vi.hoisted(() => vi.fn());
 
-vi.mock("./ipc/runtimeStatus", () => ({
-  getRuntimeStatus: getRuntimeStatusMock,
+vi.mock("./features/runtime-status/useRuntimeStatus", () => ({
+  useRuntimeStatus: useRuntimeStatusMock,
 }));
 
 import { App } from "./App";
 
 describe("DRAFT workspace shell", () => {
   beforeEach(() => {
-    getRuntimeStatusMock.mockReset();
-    getRuntimeStatusMock.mockResolvedValue({ status: "ready", version: "0.1.0" });
+    useRuntimeStatusMock.mockReset();
+    useRuntimeStatusMock.mockReturnValue({ phase: "ready", version: "0.1.0" });
   });
 
   it("renders the editor, navigation, and session state", async () => {
@@ -61,14 +61,15 @@ describe("DRAFT workspace shell", () => {
     expect(boldButton.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("shows a bounded unavailable state when the command client fails", async () => {
-    getRuntimeStatusMock.mockResolvedValueOnce({
-      status: "error",
-      error: { type: "transport" },
-    });
+  it.each([
+    ["transport", "Core unavailable"],
+    ["command", "Core event failed"],
+    ["invalid-payload", "Core status invalid"],
+  ] as const)("shows the bounded %s failure state", (reason, expectedLabel) => {
+    useRuntimeStatusMock.mockReturnValueOnce({ phase: "unavailable", reason });
 
     render(<App />);
 
-    expect(await screen.findByText("Core unavailable")).toBeTruthy();
+    expect(screen.getByText(expectedLabel)).toBeTruthy();
   });
 });

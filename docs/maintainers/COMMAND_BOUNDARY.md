@@ -6,8 +6,8 @@ Phase 6 establishes the Tauri request/response boundary used by trusted Rust
 work. It provides one registered command and the enforcement pattern every
 later command must follow.
 
-This checkpoint does not add a frontend command client. React must not call
-Tauri directly before the typed wrapper introduced in Phase 7.
+Phase 6 did not add a frontend command client. The current typed wrapper is
+documented in `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
 
 ## Current command
 
@@ -34,13 +34,15 @@ returns:
 The response version comes from Rust package metadata. The frontend does not
 supply or decide it.
 
-The command-specific error shape is:
+The command-specific error codes are:
 
 ```json
-{
-  "code": "invalid_application_version"
-}
+{ "code": "invalid_application_version" }
+{ "code": "event_delivery_failed" }
 ```
+
+The delivery error is returned when the documented Phase 8 runtime-status
+event cannot reach current frontend listeners.
 
 No generic string, `anyhow::Error`, `serde_json::Value`, or boxed error crosses
 the IPC boundary.
@@ -75,6 +77,9 @@ Every Tauri command added after this checkpoint must have:
 Commands must not hide durable side effects. A response or documented event
 must make the result observable to the frontend.
 
+`get_runtime_status` emits the finite event documented in
+`docs/maintainers/EVENT_BOUNDARY.md` before returning its response.
+
 ## Enforcement
 
 Rust tests cover valid and blank version inputs, the exact command signature,
@@ -98,7 +103,8 @@ bash scripts/check-invariants.sh
 
 - Phase 7 adds the TypeScript wrapper described in
   `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`.
-- Phase 8 adds typed Rust-to-frontend events.
+- Phase 8 adds the typed event path described in
+  `docs/maintainers/EVENT_BOUNDARY.md`.
 - Phase 9 adds cancellation behavior for long-running user-initiated work.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

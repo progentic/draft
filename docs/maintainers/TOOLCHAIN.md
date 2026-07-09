@@ -2,11 +2,11 @@
 
 ## Current phase
 
-Phase 7 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 8 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
-typed Tauri command and frontend IPC boundaries are enforced. The Phase 5 audit
-remains recorded in `docs/maintainers/REALIGNMENT.md`.
+typed Tauri command, frontend IPC, and finite event boundaries are enforced.
+The Phase 5 audit remains recorded in `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include durable documents, product research or
 analysis workflows, release automation, or packaging. Those belong to later
@@ -19,6 +19,8 @@ phases.
 - Frontend dependencies use npm with `package-lock.json` committed.
 - TypeScript, React, and Tiptap run inside the Tauri WebView.
 - `@tauri-apps/api/core` is isolated behind typed wrappers in `src/ipc/`.
+- `@tauri-apps/api/event` is isolated behind typed listeners in `src/ipc/`.
+- Tauri capabilities grant the main WebView event listen/unlisten access only.
 - Lucide React provides the workspace's interface icons.
 - Vitest, Testing Library, and jsdom provide frontend component tests.
 - Python currently uses the standard library only. Third-party helper
@@ -75,8 +77,8 @@ frontend dependencies fail with an actionable message.
 The verifier runs:
 
 - npm dependency-tree validation
-- React/Tiptap workspace and typed IPC client tests
-- Rust formatting, Clippy, compile checks, command-contract scans, and tests
+- React/Tiptap workspace plus typed command and event client tests
+- Rust formatting, Clippy, compile checks, command/event contract scans, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

@@ -75,7 +75,21 @@ function runtimeStatusView(status: RuntimeConnectionState) {
     return { label: `Core v${status.version}`, modifier: "ready" };
   }
 
-  return { label: "Core unavailable", modifier: "unavailable" };
+  return { label: runtimeUnavailableLabel(status.reason), modifier: "unavailable" };
+}
+
+function runtimeUnavailableLabel(
+  reason: Extract<RuntimeConnectionState, { phase: "unavailable" }>["reason"],
+) {
+  if (reason === "command") {
+    return "Core event failed";
+  }
+
+  if (reason === "invalid-payload" || reason === "invalid-response") {
+    return "Core status invalid";
+  }
+
+  return "Core unavailable";
 }
 
 function StatisticsSection(props: { metrics: DocumentMetrics }) {

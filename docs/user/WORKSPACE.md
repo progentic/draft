@@ -34,9 +34,11 @@ These values are session information only.
 
 The session area also reports the desktop core connection. `Core v<version>`
 means the workspace reached the trusted Rust runtime and validated its status
-response. `Core unavailable` means the command transport or response was not
-available. A standalone browser preview has no Tauri core and shows the
-unavailable state; the desktop application provides the command connection.
+event. `Core unavailable` means the desktop transport was not available. `Core
+event failed` means Rust could not deliver the status update. `Core status
+invalid` means the app rejected an unexpected response or event payload. A
+standalone browser preview has no Tauri core and shows the unavailable state;
+the desktop application provides the command and event connection.
 
 ## Saving and reopening
 

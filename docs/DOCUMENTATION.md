@@ -395,6 +395,11 @@ wrapper, error classification, and transient connection hook in
 `docs/maintainers/FRONTEND_COMMAND_CLIENT.md`. Wrapper tests and the invariant
 scan enforce the documented IPC placement and boundary shapes.
 
+Phase 8 documents Rust event emission, frontend payload validation, listener
+ordering, finite lifecycle, and cleanup in
+`docs/maintainers/EVENT_BOUNDARY.md`. Rust and frontend tests plus the invariant
+scan enforce the event name, payload, placement, and lifecycle claims.
+
 Recommended checks:
 
 - Markdown formatting

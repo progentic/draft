@@ -1,41 +1,40 @@
 import { useEffect, useState } from "react";
 
 import {
-  getRuntimeStatus,
-  type RuntimeStatusClientError,
-  type RuntimeStatusResult,
-} from "../../ipc/runtimeStatus";
+  startRuntimeStatusSession,
+  type RuntimeConnectionState,
+} from "./runtimeStatusSession";
 
-export type RuntimeConnectionState =
-  | { phase: "checking" }
-  | { phase: "ready"; version: string }
-  | { phase: "unavailable"; reason: RuntimeStatusClientError["type"] };
+export type { RuntimeConnectionState } from "./runtimeStatusSession";
 
 const CHECKING_STATE: RuntimeConnectionState = { phase: "checking" };
 
 export function useRuntimeStatus() {
   const [state, setState] = useState<RuntimeConnectionState>(CHECKING_STATE);
 
-  useEffect(() => {
-    let isActive = true;
-    void getRuntimeStatus().then((result) => {
-      if (isActive) {
-        setState(connectionStateFrom(result));
-      }
-    });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
+  useEffect(() => attachRuntimeStatusSession(setState), []);
 
   return state;
 }
 
-function connectionStateFrom(result: RuntimeStatusResult): RuntimeConnectionState {
-  if (result.status === "ready") {
-    return { phase: "ready", version: result.version };
-  }
+function attachRuntimeStatusSession(onState: (state: RuntimeConnectionState) => void) {
+  let isActive = true;
+  let stopSession: (() => void) | undefined;
 
-  return { phase: "unavailable", reason: result.error.type };
+  void startRuntimeStatusSession((state) => {
+    if (isActive) {
+      onState(state);
+    }
+  }).then((stop) => {
+    if (isActive) {
+      stopSession = stop;
+    } else {
+      stop();
+    }
+  });
+
+  return () => {
+    isActive = false;
+    stopSession?.();
+  };
 }
