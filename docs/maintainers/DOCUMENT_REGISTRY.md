@@ -111,6 +111,7 @@ Phase 13 retains Rust-selected source paths inside each live handle. Validated
 loads call `open_from_path`; saves replace the existing snapshot while retaining
 or attaching that path; close and reopen still release and recreate exactly one
 handle. One path cannot back two live document IDs, and failed writes do not
-advance the handle snapshot or attach a path. The minimum atomic writer is
-pulled forward because a direct target write would violate `INV-09`. Phase 14
-remains mandatory hardening.
+advance the handle snapshot or attach a path. Phase 14 adds a registry-owned
+file-operation lock around open/save lifecycle coordination. This serializes
+disk replacement with the corresponding handle update so concurrent saves
+cannot leave the registry and source file on different snapshots.

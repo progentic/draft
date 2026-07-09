@@ -261,6 +261,8 @@ check_document_file_contract() {
     failed_attach_preserves_registry_state
     failed_existing_save_preserves_registry_snapshot
     save_rejects_source_path_owned_by_another_document
+    durability_failure_advances_registry_to_complete_source
+    concurrent_saves_keep_disk_and_registry_consistent
   )
   local test_name
 
@@ -299,8 +301,13 @@ require_atomic_writer_tests() {
   local source_path="$1"
   local required_tests=(
     atomic_writer_creates_complete_document
-    atomic_writer_replaces_complete_document
+    platform_replacement_preserves_complete_document
     atomic_writer_rejects_missing_parent
+    interrupted_save_preserves_complete_source
+    interrupted_save_cleans_temporary_file
+    failed_replacement_cleans_temporary_file
+    parent_sync_failure_leaves_new_complete_source
+    atomic_write_failure_shape_is_stable
   )
   local test_name
 
@@ -315,9 +322,10 @@ check_document_write_boundary() {
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" src-tauri/src
-  require_source_pattern 'AtomicWriteFile::open' "${atomic_writer_path}"
+  require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
-  require_source_pattern '.commit()' "${atomic_writer_path}"
+  require_source_pattern '.persist(target_path)' "${atomic_writer_path}"
+  require_source_pattern 'sync_directory(parent)' "${atomic_writer_path}"
 }
 
 check_frontend_document_file_boundary() {

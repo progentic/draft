@@ -47,9 +47,10 @@ application discards edits. DRAFT does not yet let users create, open, save, or
 reopen document files from the workspace controls.
 
 The Rust core now has a validated envelope, single-live-handle registry, native
-file dialog commands, explicit snapshot save path, and minimum atomic
-replacement primitive. These backend boundaries are not presented as a user
-workflow until Phase 14 hardening and later workspace integration are complete.
+file dialog commands, explicit snapshot save path, and hardened atomic
+replacement path. The backend save path is tested against interruption and
+concurrent saves, but these boundaries are not presented as a user workflow
+until workspace file controls are integrated.
 
 ## Local behavior
 

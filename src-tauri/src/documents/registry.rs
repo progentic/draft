@@ -14,6 +14,7 @@ use crate::documents::envelope::{DocumentEnvelope, DocumentId};
 #[derive(Default)]
 pub struct DocumentRegistry {
     handles: Mutex<HashMap<DocumentId, LiveDocumentHandle>>,
+    file_operations: Mutex<()>,
 }
 
 /// Bounded failures produced by live document-handle operations.
@@ -95,6 +96,12 @@ impl DocumentRegistry {
     ) -> Result<DocumentEnvelope, DocumentRegistryError> {
         let mut handles = self.lock_handles()?;
         remove_handle(&mut handles, document_id)
+    }
+
+    pub(crate) fn lock_file_operations(&self) -> Result<MutexGuard<'_, ()>, DocumentRegistryError> {
+        self.file_operations
+            .lock()
+            .map_err(|_| DocumentRegistryError::RegistryUnavailable)
     }
 
     fn lock_handles(

@@ -33,6 +33,7 @@ mod tests {
 
     use super::*;
     use crate::documents::{
+        atomic_write::AtomicDocumentWriteError,
         envelope::{DocumentEnvelope, DocumentEnvelopeError},
         registry::DocumentRegistryError,
     };
@@ -92,7 +93,10 @@ mod tests {
             SaveDocumentError::Registry {
                 cause: DocumentRegistryError::RegistryUnavailable,
             },
-            SaveDocumentError::WriteFailed,
+            SaveDocumentError::WriteFailed {
+                cause: AtomicDocumentWriteError::ReplaceTarget,
+            },
+            SaveDocumentError::DurabilityUncertain,
         ];
 
         assert_eq!(
@@ -108,7 +112,11 @@ mod tests {
                     "code": "registry",
                     "cause": { "code": "registry_unavailable" }
                 },
-                { "code": "write_failed" }
+                {
+                    "code": "write_failed",
+                    "cause": { "code": "replace_target" }
+                },
+                { "code": "durability_uncertain" }
             ]),
         );
     }

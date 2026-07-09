@@ -8,13 +8,24 @@ export type DocumentRegistryError = {
   code: "already_open" | "not_open" | "source_path_in_use" | "registry_unavailable";
 };
 
+export type AtomicDocumentWriteError = {
+  code:
+    | "open_temporary_file"
+    | "write_temporary_file"
+    | "sync_temporary_file"
+    | "replace_target"
+    | "cleanup_temporary_file"
+    | "sync_parent_directory";
+};
+
 export type OpenDocumentCommandError =
   | { code: "unsupported_file_location" | "file_not_found" | "read_failed" | "malformed_json" }
   | { code: "invalid_envelope"; cause: DocumentEnvelopeError }
   | { code: "registry"; cause: DocumentRegistryError };
 
 export type SaveDocumentCommandError =
-  | { code: "unsupported_file_location" | "serialization_failed" | "write_failed" }
+  | { code: "unsupported_file_location" | "serialization_failed" | "durability_uncertain" }
+  | { code: "write_failed"; cause: AtomicDocumentWriteError }
   | { code: "invalid_envelope"; cause: DocumentEnvelopeError }
   | { code: "registry"; cause: DocumentRegistryError };
 
@@ -37,6 +48,7 @@ export function isSaveDocumentCommandError(value: unknown): value is SaveDocumen
 
   return (
     isFieldlessSaveError(value) ||
+    isWriteFailure(value) ||
     isInvalidEnvelopeError(value) ||
     isRegistryCommandError(value)
   );
@@ -57,7 +69,28 @@ function isFieldlessSaveError(value: Record<string, unknown>): boolean {
     hasOnlyCode(value) &&
     (value.code === "unsupported_file_location" ||
       value.code === "serialization_failed" ||
-      value.code === "write_failed")
+      value.code === "durability_uncertain")
+  );
+}
+
+function isWriteFailure(
+  value: Record<string, unknown>,
+): value is { code: "write_failed"; cause: AtomicDocumentWriteError } {
+  return (
+    value.code === "write_failed" && hasCodeAndCause(value) && isAtomicWriteError(value.cause)
+  );
+}
+
+function isAtomicWriteError(value: unknown): value is AtomicDocumentWriteError {
+  return (
+    isRecord(value) &&
+    hasOnlyCode(value) &&
+    (value.code === "open_temporary_file" ||
+      value.code === "write_temporary_file" ||
+      value.code === "sync_temporary_file" ||
+      value.code === "replace_target" ||
+      value.code === "cleanup_temporary_file" ||
+      value.code === "sync_parent_directory")
   );
 }
 

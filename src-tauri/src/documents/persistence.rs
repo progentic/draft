@@ -7,7 +7,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::documents::{
-    atomic_write::write_document_atomically,
+    atomic_write::{AtomicDocumentWriteError, write_document_atomically},
     envelope::{DocumentEnvelope, DocumentEnvelopeError, DocumentId},
     registry::{DocumentRegistry, DocumentRegistryError},
 };
@@ -30,7 +30,8 @@ pub(crate) enum SaveDocumentError {
     InvalidEnvelope { cause: DocumentEnvelopeError },
     SerializationFailed,
     Registry { cause: DocumentRegistryError },
-    WriteFailed,
+    WriteFailed { cause: AtomicDocumentWriteError },
+    DurabilityUncertain,
 }
 
 #[derive(Debug, PartialEq, Serialize)]
@@ -65,6 +66,7 @@ pub(crate) fn open_document(
     let Some(source_path) = selected_path else {
         return Ok(OpenDocumentOutcome::Cancelled);
     };
+    let _file_operation = lock_file_operation(registry).map_err(map_open_registry_error)?;
     let envelope = load_envelope(&source_path)?;
     registry
         .open_from_path(envelope.clone(), source_path)
@@ -80,10 +82,38 @@ pub(crate) fn save_document<SelectPath>(
 where
     SelectPath: FnOnce() -> Result<Option<PathBuf>, SaveDocumentError>,
 {
+    save_document_with_writer(registry, snapshot, select_path, write_document_atomically)
+}
+
+fn save_document_with_writer<SelectPath, WriteDocument>(
+    registry: &DocumentRegistry,
+    snapshot: Value,
+    select_path: SelectPath,
+    write_document: WriteDocument,
+) -> Result<SaveDocumentOutcome, SaveDocumentError>
+where
+    SelectPath: FnOnce() -> Result<Option<PathBuf>, SaveDocumentError>,
+    WriteDocument: FnOnce(&Path, &[u8]) -> Result<(), AtomicDocumentWriteError>,
+{
     let envelope = validate_snapshot(snapshot)?;
     let contents = serialize_envelope(&envelope)?;
+    let _file_operation = lock_file_operation(registry).map_err(map_save_registry_error)?;
     let plan = plan_save(registry, envelope.document_id(), select_path)?;
-    apply_save_plan(registry, envelope, contents, plan)
+    apply_save_plan(registry, envelope, contents, plan, write_document)
+}
+
+fn lock_file_operation(
+    registry: &DocumentRegistry,
+) -> Result<std::sync::MutexGuard<'_, ()>, DocumentRegistryError> {
+    registry.lock_file_operations()
+}
+
+fn map_open_registry_error(cause: DocumentRegistryError) -> OpenDocumentError {
+    OpenDocumentError::Registry { cause }
+}
+
+fn map_save_registry_error(cause: DocumentRegistryError) -> SaveDocumentError {
+    SaveDocumentError::Registry { cause }
 }
 
 fn load_envelope(source_path: &Path) -> Result<DocumentEnvelope, OpenDocumentError> {
@@ -149,20 +179,38 @@ where
     })
 }
 
-fn apply_save_plan(
+fn apply_save_plan<WriteDocument>(
     registry: &DocumentRegistry,
     envelope: DocumentEnvelope,
     contents: Vec<u8>,
     plan: SavePlan,
-) -> Result<SaveDocumentOutcome, SaveDocumentError> {
+    write_document: WriteDocument,
+) -> Result<SaveDocumentOutcome, SaveDocumentError>
+where
+    WriteDocument: FnOnce(&Path, &[u8]) -> Result<(), AtomicDocumentWriteError>,
+{
     let document_id = envelope.document_id();
     let Some(target_path) = save_target_path(&plan) else {
         return Ok(SaveDocumentOutcome::Cancelled);
     };
-    write_document_atomically(target_path, &contents)
-        .map_err(|_| SaveDocumentError::WriteFailed)?;
+    if let Err(cause) = write_document(target_path, &contents) {
+        return handle_write_failure(registry, envelope, plan, cause);
+    }
     commit_registry_update(registry, envelope, plan)?;
     Ok(SaveDocumentOutcome::Saved { document_id })
+}
+
+fn handle_write_failure(
+    registry: &DocumentRegistry,
+    envelope: DocumentEnvelope,
+    plan: SavePlan,
+    cause: AtomicDocumentWriteError,
+) -> Result<SaveDocumentOutcome, SaveDocumentError> {
+    if cause.target_was_replaced() {
+        commit_registry_update(registry, envelope, plan)?;
+        return Err(SaveDocumentError::DurabilityUncertain);
+    }
+    Err(SaveDocumentError::WriteFailed { cause })
 }
 
 fn validate_target_ownership(
@@ -201,7 +249,13 @@ fn commit_registry_update(
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::Path};
+    use std::{
+        fs,
+        path::Path,
+        sync::{Arc, mpsc},
+        thread,
+        time::Duration,
+    };
 
     use super::*;
     use crate::documents::test_support::TestDocumentPath;
@@ -344,7 +398,7 @@ mod tests {
 
         assert_eq!(
             save_document(&registry, snapshot, || Ok(Some(target.path().to_owned()))),
-            Err(SaveDocumentError::WriteFailed),
+            Err(write_failure(AtomicDocumentWriteError::OpenTemporaryFile)),
         );
         assert_eq!(
             registry.source_path(document_id),
@@ -366,7 +420,10 @@ mod tests {
             Ok(Some(target.path().to_owned()))
         });
 
-        assert_eq!(result, Err(SaveDocumentError::WriteFailed));
+        assert_eq!(
+            result,
+            Err(write_failure(AtomicDocumentWriteError::OpenTemporaryFile))
+        );
         assert_eq!(registry.source_path(document_id), Ok(None));
         assert_eq!(registry.close(document_id), Ok(original));
     }
@@ -383,7 +440,7 @@ mod tests {
 
         assert_eq!(
             save_document(&registry, envelope_value("Updated"), no_path_selection),
-            Err(SaveDocumentError::WriteFailed),
+            Err(write_failure(AtomicDocumentWriteError::OpenTemporaryFile)),
         );
         assert_eq!(registry.close(document_id), Ok(original));
     }
@@ -443,6 +500,112 @@ mod tests {
             panic!("loaded document must retain its Rust-owned path")
         })
         .expect("document should save");
+    }
+
+    #[test]
+    fn durability_failure_advances_registry_to_complete_source() {
+        let target = TestDocumentPath::new("durability-state");
+        target.write(&serialized_envelope("Original"));
+        let registry = DocumentRegistry::new();
+        open_document(&registry, Some(target.path().to_owned())).expect("document should open");
+        let updated = envelope_value("Updated");
+
+        let result = save_document_with_writer(
+            &registry,
+            updated.clone(),
+            no_path_selection,
+            write_then_report_uncertain,
+        );
+
+        assert_eq!(result, Err(SaveDocumentError::DurabilityUncertain));
+        assert_eq!(read_json(target.path()), updated.clone());
+        assert_eq!(
+            registry.close(document_id(&updated)),
+            Ok(validated_envelope(updated))
+        );
+    }
+
+    #[test]
+    fn concurrent_saves_keep_disk_and_registry_consistent() {
+        let target = TestDocumentPath::new("concurrent-save");
+        target.write(&serialized_envelope("Original"));
+        let registry = Arc::new(DocumentRegistry::new());
+        open_document(&registry, Some(target.path().to_owned())).expect("document should open");
+        let first = envelope_value("First");
+        let second = envelope_value("Second");
+
+        run_ordered_concurrent_saves(&registry, first, second.clone());
+
+        assert_eq!(read_json(target.path()), second.clone());
+        assert_eq!(
+            registry.close(document_id(&second)),
+            Ok(validated_envelope(second))
+        );
+    }
+
+    fn run_ordered_concurrent_saves(registry: &Arc<DocumentRegistry>, first: Value, second: Value) {
+        let (first_entered_tx, first_entered_rx) = mpsc::channel();
+        let (release_first_tx, release_first_rx) = mpsc::channel();
+        let (second_started_tx, second_started_rx) = mpsc::channel();
+        let (second_entered_tx, second_entered_rx) = mpsc::channel();
+
+        thread::scope(|scope| {
+            let first_registry = Arc::clone(registry);
+            let first_save = scope.spawn(move || {
+                save_document_with_writer(
+                    &first_registry,
+                    first,
+                    no_path_selection,
+                    |path, contents| {
+                        write_document_atomically(path, contents)?;
+                        first_entered_tx.send(()).unwrap();
+                        release_first_rx.recv().unwrap();
+                        Ok(())
+                    },
+                )
+            });
+            first_entered_rx.recv().unwrap();
+            let second_registry = Arc::clone(registry);
+            let second_save = scope.spawn(move || {
+                second_started_tx.send(()).unwrap();
+                save_document_with_writer(
+                    &second_registry,
+                    second,
+                    no_path_selection,
+                    |path, contents| {
+                        second_entered_tx.send(()).unwrap();
+                        write_document_atomically(path, contents)
+                    },
+                )
+            });
+            second_started_rx.recv().unwrap();
+            assert!(
+                second_entered_rx
+                    .recv_timeout(Duration::from_millis(100))
+                    .is_err()
+            );
+            release_first_tx.send(()).unwrap();
+            first_save
+                .join()
+                .unwrap()
+                .expect("first save should finish");
+            second_save
+                .join()
+                .unwrap()
+                .expect("second save should finish");
+        });
+    }
+
+    fn write_then_report_uncertain(
+        path: &Path,
+        contents: &[u8],
+    ) -> Result<(), AtomicDocumentWriteError> {
+        write_document_atomically(path, contents)?;
+        Err(AtomicDocumentWriteError::SyncParentDirectory)
+    }
+
+    fn write_failure(cause: AtomicDocumentWriteError) -> SaveDocumentError {
+        SaveDocumentError::WriteFailed { cause }
     }
 
     fn no_path_selection() -> Result<Option<PathBuf>, SaveDocumentError> {

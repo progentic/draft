@@ -75,8 +75,10 @@ one untrusted `snapshot` value; Rust validates the envelope before registry or
 filesystem work.
 
 Both commands return typed opened/saved/cancelled responses and bounded nested
-errors. They expose no path field to the frontend. The full lifecycle and
-atomic-write behavior are documented in
+errors. Phase 14 adds typed atomic-write stages and a distinct
+`durability_uncertain` failure after a complete replacement whose parent sync
+fails. The commands expose no path field to the frontend. The full lifecycle
+and atomic-write behavior are documented in
 `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
 
 ## Ownership layers
@@ -143,7 +145,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/EVENT_BOUNDARY.md`.
 - Phase 9 establishes worker cancellation behavior described in
   `docs/maintainers/CANCELLATION_BOUNDARY.md`.
-- Phase 13 establishes document file behavior described in
+- Phases 13 and 14 establish document file behavior described in
   `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

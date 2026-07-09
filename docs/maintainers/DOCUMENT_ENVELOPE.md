@@ -106,4 +106,4 @@ stable typed errors, and nested Unicode JSON preservation.
 
 Phase 12 stores this validated domain type behind one Rust-owned live handle per
 document. `docs/maintainers/DOCUMENT_REGISTRY.md` records that behavior. File
-lifecycle and atomic writes remain assigned to Phases 13 and 14.
+lifecycle and atomic writes are implemented by Phases 13 and 14.

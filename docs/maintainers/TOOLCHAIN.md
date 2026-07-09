@@ -2,18 +2,18 @@
 
 ## Current phase
 
-Phase 13 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 14 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
-open/save commands, and a minimum atomic replacement path. The Phase 5 and
+open/save commands, and a hardened atomic replacement path. The Phase 5 and
 Phase 10 audits remain recorded in `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include workspace file controls, a close command,
-autosave, recovery, Phase 14 interruption hardening, product research or
-analysis workflows, release automation, or packaging.
+autosave, recovery, product research or analysis workflows, release
+automation, or packaging.
 
 ## Toolchain decisions
 
@@ -21,9 +21,9 @@ analysis workflows, release automation, or packaging.
 - Serde provides explicit command, error, and document-envelope serialization.
 - `serde_json` preserves structured Tiptap JSON inside the validated envelope.
 - `tauri-plugin-dialog` keeps native open/save path selection inside Rust.
-- `atomic-write-file` provides same-directory temporary replacement and parent
-  directory synchronization where supported; DRAFT calls `sync_all` before
-  commit.
+- `tempfile` provides owned same-directory temporary files and platform-specific
+  atomic replacement. DRAFT synchronizes content before replacement and the
+  parent directory on Unix.
 - A Rust `Mutex<HashMap<...>>` serializes process-local document handle
   ownership without introducing persistence.
 - `tokio-util` provides cooperative cancellation tokens for Rust-owned workers.

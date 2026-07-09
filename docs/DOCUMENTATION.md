@@ -435,6 +435,11 @@ invariant scan enforce typed command shapes, malformed-file rejection,
 round-trip behavior, Rust-only path authority, and the absence of direct
 write-to-target calls.
 
+Phase 14 extends that guide with interruption checkpoints, replacement-failure
+cleanup, serialized file lifecycle operations, typed write-stage failures, and
+disk/registry concurrency behavior. The invariant scan requires the matching
+Rust and frontend tests locally and in GitHub Actions.
+
 Recommended checks:
 
 - Markdown formatting

@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 13 are complete. Phase 14 is
-the next implementation phase; interrupted-save hardening has not started.
+**Current execution checkpoint:** Phases 0 through 14 are complete. Phase 15 is
+the next phase and is reserved for documentation and drift realignment.
 
 ---
 

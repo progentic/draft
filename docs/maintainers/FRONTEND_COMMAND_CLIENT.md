@@ -101,18 +101,22 @@ command.
 
 ## Document file wrappers
 
-Phase 13 adds `openDocument` and `saveDocument` under `src/ipc/`.
+Phase 13 adds `openDocument` and `saveDocument` under `src/ipc/`; Phase 14
+extends the save error guard with typed atomic-write and durability failures.
 `openDocument` sends an empty request because Rust owns native path selection.
 It validates opened envelopes, cancellation, nested domain failures, and
 transport failures.
 
 `saveDocument` sends exactly one typed envelope snapshot. It sends no path and
 does not inspect Tiptap live state. The caller must construct the immutable
-snapshot explicitly. No React component invokes these wrappers yet because the
-visible workspace file workflow remains gated on Phase 14 hardening.
+snapshot explicitly. No React component invokes these wrappers yet because
+workspace file controls have not been integrated.
 
-Nested registry failures include source-path ownership conflicts. The wrapper
-preserves the bounded code without exposing the selected path.
+Nested registry failures include source-path ownership conflicts. Atomic-write
+failures identify the failed stage, while `durability_uncertain` means a
+complete replacement occurred but parent-directory synchronization failed.
+The wrapper preserves these bounded codes without exposing a selected path or
+raw filesystem detail.
 
 ## Enforcement
 
@@ -156,5 +160,5 @@ bash scripts/check-invariants.sh
 Phase 8 event transport is documented in
 `docs/maintainers/EVENT_BOUNDARY.md`. It remains separate from this
 request/response abstraction. Phase 9 worker lifecycle rules are documented in
-`docs/maintainers/CANCELLATION_BOUNDARY.md`. Phase 13 file lifecycle rules are
+`docs/maintainers/CANCELLATION_BOUNDARY.md`. Phase 13/14 file lifecycle rules are
 documented in `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.

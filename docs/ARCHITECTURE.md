@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 13 is deliberately smaller than the
+The implemented application through Phase 14 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open, and
@@ -60,8 +60,10 @@ full system described in this architecture:
   duplicate or concurrent open request.
 - Rust opens native file dialogs, validates selected files before registration,
   retains one exclusive source path per live document, and atomically writes
-  only the explicit immutable snapshot submitted by the frontend. Registry
-  state advances only after the write succeeds.
+  only the explicit immutable snapshot submitted by the frontend. File
+  lifecycle operations are serialized, failures before replacement preserve
+  prior state, and a post-replacement durability failure advances the registry
+  to the complete on-disk snapshot while returning a typed error.
 - React and Tiptap own only the transient writing surface and presentation
   state. Reloading still discards the current document.
 - The current workspace does not expose open/save controls yet. No close command,
@@ -418,10 +420,13 @@ paths through native dialogs, validates loaded bytes before registry entry,
 and receives an explicit immutable frontend snapshot for save. TypeScript only
 mirrors the envelope for response safety and command requests.
 
-The minimum atomic writer is included in Phase 13 because implementing a direct
-write-to-target path would violate `INV-09`. Phase 14 remains mandatory for
-injected interruption, replacement-failure, temporary-file cleanup, and
-concurrent-save tests.
+Phase 14 hardens the atomic writer. Rust creates a same-directory temporary
+file, writes and synchronizes its bytes, atomically replaces the target, then
+synchronizes the parent directory on Unix. Deterministic checkpoints prove
+that failures before replacement preserve the prior complete source and clean
+up temporary files. One Rust lifecycle lock serializes open/save operations so
+disk replacement and registry mutation cannot be reordered by concurrent
+saves.
 
 The saved source document contains:
 

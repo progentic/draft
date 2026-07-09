@@ -62,6 +62,35 @@ describe("saveDocument", () => {
     });
   });
 
+  it("preserves typed atomic-write failures", async () => {
+    const error = { code: "write_failed", cause: { code: "replace_target" } };
+    invokeMock.mockRejectedValue(error);
+
+    await expect(saveDocument(envelope())).resolves.toEqual({
+      status: "error",
+      error: { type: "command", error },
+    });
+  });
+
+  it("preserves uncertain durability failures", async () => {
+    const error = { code: "durability_uncertain" };
+    invokeMock.mockRejectedValue(error);
+
+    await expect(saveDocument(envelope())).resolves.toEqual({
+      status: "error",
+      error: { type: "command", error },
+    });
+  });
+
+  it("rejects malformed atomic-write failures", async () => {
+    invokeMock.mockRejectedValue({ code: "write_failed", cause: { code: "unknown_stage" } });
+
+    await expect(saveDocument(envelope())).resolves.toEqual({
+      status: "error",
+      error: { type: "transport" },
+    });
+  });
+
   it("classifies unknown failures without leaking details", async () => {
     invokeMock.mockRejectedValue(new Error("private filesystem detail"));
 
