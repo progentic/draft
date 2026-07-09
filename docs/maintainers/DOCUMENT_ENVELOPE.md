@@ -101,8 +101,8 @@ round trips, every missing field, unknown fields, malformed and unsupported
 versions, malformed identity and title metadata, invalid root/content shapes,
 stable typed errors, and nested Unicode JSON preservation.
 
-## Next Boundary
+## Registry Integration
 
-Phase 12 may add a Rust-owned live document registry. It must use the validated
-domain type without adding file persistence or save/load behavior. File
+Phase 12 stores this validated domain type behind one Rust-owned live handle per
+document. `docs/maintainers/DOCUMENT_REGISTRY.md` records that behavior. File
 lifecycle and atomic writes remain assigned to Phases 13 and 14.

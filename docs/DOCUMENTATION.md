@@ -422,6 +422,12 @@ Phase 11 documents the implemented Rust-owned version 1 envelope in
 accepted contract. Rust tests and the invariant scan enforce schema version,
 required fields, typed failures, root shape, and structured JSON round trips.
 
+Phase 12 documents the process-local Rust document registry in
+`docs/maintainers/DOCUMENT_REGISTRY.md`. Rust tests and the invariant scan
+enforce one live handle per document, typed duplicate and unknown-close
+failures, close/reopen behavior, independent documents, and concurrent-open
+serialization without introducing a file or frontend lifecycle.
+
 Recommended checks:
 
 - Markdown formatting

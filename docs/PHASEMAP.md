@@ -6,14 +6,14 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 11 are complete. Phase 12 is
-the next implementation phase; document-registry implementation has not
-started.
+**Current execution checkpoint:** Phases 0 through 12 are complete. Phase 13 is
+the next implementation phase; save/load implementation has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
-`docs/maintainers/DOCUMENT_ENVELOPE.md`; neither document is an accepted
-contract under the governance lifecycle.
+`docs/maintainers/DOCUMENT_ENVELOPE.md`, and the Phase 12 registry behavior is
+recorded in `docs/maintainers/DOCUMENT_REGISTRY.md`. These implementation guides
+are not accepted contracts under the governance lifecycle.
 
 ---
 

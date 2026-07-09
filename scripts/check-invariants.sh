@@ -21,6 +21,7 @@ main() {
   check_event_capability
   check_worker_cancellation_contract
   check_document_envelope_contract
+  check_document_registry_contract
   check_bridge_name_parity
   check_future_feature_absence_gates
   check_rust_network_boundary
@@ -218,6 +219,39 @@ require_envelope_schema_version() {
   fi
 }
 
+check_document_registry_contract() {
+  local source_path="src-tauri/src/documents/registry.rs"
+  local required_tests=(
+    open_document_twice_returns_already_open
+    rejected_duplicate_does_not_replace_live_document
+    closing_document_releases_live_handle
+    closing_unknown_document_returns_not_open
+    distinct_documents_open_independently
+    concurrent_open_allows_one_live_handle
+    poisoned_registry_returns_unavailable
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_document_registry_state
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${source_path}"
+  done
+  assert_no_matches "Phase 12 registry runtime I/O" \
+    '(?:std|tokio)::fs|\b(?:File|OpenOptions|Path|PathBuf)\b|#\[tauri::command\]' \
+    "${source_path}"
+  printf 'PASS INV-06 document registry contract\n'
+}
+
+require_document_registry_state() {
+  local registration='.manage(documents::registry::DocumentRegistry::new())'
+
+  if ! rg --quiet --fixed-strings "${registration}" src-tauri/src/lib.rs; then
+    printf 'FAILED Phase 12 document registry runtime state\n' >&2
+    return 1
+  fi
+}
+
 require_rust_test() {
   local test_name="$1"
   local source_path="$2"
@@ -288,8 +322,6 @@ check_future_feature_absence_gates() {
   assert_no_matches "INV-05 persistent job surface before Phase 26" \
     '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
     src src-tauri/src
-  assert_no_matches "INV-06 document registry before Phase 12" \
-    '\bDocumentRegistry\b|\bopen_document\b|\bdocument_handle\b' src src-tauri/src
   assert_no_matches "INV-08 watched import before Phase 24" \
     '\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' src src-tauri/src
   assert_no_matches "INV-09 save surface before Phase 13" \

@@ -33,7 +33,7 @@ pub struct DocumentEnvelope {
 }
 
 /// Opaque document identity parsed and serialized by the Rust core.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(transparent)]
 pub struct DocumentId(Uuid);
 

@@ -52,6 +52,7 @@ check_required_sources() {
     src-tauri/capabilities/main.json
     src-tauri/src/commands/worker_cancellation.rs
     src-tauri/src/documents/envelope.rs
+    src-tauri/src/documents/registry.rs
     src-tauri/src/events/runtime_status.rs
     src-tauri/src/workers/cancellation.rs
     src-tauri/icons/icon.png

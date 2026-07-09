@@ -8,9 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 11 are complete. Phase 12 is
-the next implementation phase; document-registry implementation has not
-started.
+**Current execution checkpoint:** Phases 0 through 12 are complete. Phase 13 is
+the next implementation phase; save/load implementation has not started.
 
 ---
 

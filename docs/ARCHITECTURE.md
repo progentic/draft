@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 11 is deliberately smaller than the
+The implemented application through Phase 12 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed `get_runtime_status` and `cancel_worker` commands with
@@ -54,9 +54,12 @@ full system described in this architecture:
 - Rust owns the version 1 document envelope, UUID identity parsing, root-shape
   validation, typed failures, and Serde round trips. The envelope remains an
   in-memory domain type and is not exposed through a Tauri command.
+- Rust owns a process-local document registry. It stores each validated
+  envelope behind one private live handle and returns `AlreadyOpen` for a
+  duplicate or concurrent open request.
 - React and Tiptap own only the transient writing surface and presentation
   state. Reloading still discards the current document.
-- No document registry, save/load path, atomic writer, reference library,
+- No document command, save/load path, atomic writer, reference library,
   citation behavior, network client, analysis worker, formatter, export path,
   or durable persistence is implemented yet.
 
@@ -276,6 +279,12 @@ This avoids a multi-actor conflict-resolution problem instead of pretending it h
 If real-time multi-user collaboration becomes a goal, this section and the downstream synchronization model must be revisited by ADR before implementation starts.
 
 Each open document gets its own independent Tiptap editor instance and its own Rust-side document handle. Documents do not share editor state. They may share the reference library, which is a separate cross-document resource by design.
+
+Phase 12 implements the Rust-side registry and chooses the typed `AlreadyOpen`
+result until a frontend view identity exists. The registry owns validated
+in-memory envelopes, serializes open and close operations with a mutex, and
+returns the envelope when its handle closes. It does not open files, save data,
+or expose a Tauri command.
 
 Relevant invariant: `INV-06` in `INVARIANTS.md`.
 

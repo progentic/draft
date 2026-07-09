@@ -66,7 +66,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct trusted APIs plus raw command and event APIs outside `src/ipc/`. Typed tests pin request, response, payload, error, ordering, and cleanup behavior; Phase 10 compares Rust bridge names with frontend wrappers. | The `verify` job runs the same frontend tests, boundary scans, and bridge-name parity check. |
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | The Phase 10 absence gate rejects citation implementation before Phase 18. Phase 18 must replace it with schema behavior tests. | The `verify` job runs the same absence gate; schema tests become required with the citation surface. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | The Phase 10 absence gate rejects persistent-job implementation before Phase 26. Phase 26 must replace it with resumability tests. | The `verify` job runs the same absence gate; persistence tests become required with the job surface. |
-| `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | The Phase 10 absence gate rejects a document registry before Phase 12. Phase 12 must replace it with double-open behavior tests. | The `verify` job runs the same absence gate; registry tests become required with the handle surface. |
+| `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | Phase 12 registers the Rust document registry as runtime state. The invariant scan requires duplicate, non-replacement, close/reopen, unknown-close, independent-document, concurrent-open, and poisoned-state tests while rejecting filesystem or Tauri command APIs in the registry module. | The `verify` job runs the same Phase 12 registry tests and invariant scan. Command/view integration tests become required when that surface exists. |
 | `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | Phase 9 provides the Rust cancellation registry/token, typed cancel command and wrapper, active/repeated/already-ended/error/shutdown tests, and a scan that confines worker spawning to `src-tauri/src/workers/`. No product worker starts yet. | The `verify` job runs the same Rust/frontend tests, cancellation-boundary scan, and Phase 10 bridge-name parity check. Worker-specific terminal-event tests are required when start commands are introduced. |
 | `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | The Phase 10 absence gate rejects watched import before Phase 24. Phase 24 must replace it with stable-write tests. | The `verify` job runs the same absence gate; importer behavior tests become required with the surface. |
 | `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | The Phase 10 absence gate rejects save implementation before Phase 13. Phase 13 adds round-trip behavior; Phase 14 must replace the gate with interrupted-save tests. | The `verify` job runs the same absence gate until save behavior and atomic-write tests exist. |
@@ -570,10 +570,11 @@ bash scripts/check-invariants.sh
 Current scans cover credential-field names, frontend trusted APIs, raw Tauri
 command and event placement, typed event contract coverage, Python network and
 process imports, generic Rust command errors, typed command contract coverage,
-the Phase 11 document-envelope schema and malformed-shape tests, ad hoc Rust
-network clients, and Bash invocation from product runtime. The verifier also
-checks locked offline builds, tests, required source visibility, generated-file
-hygiene, and documentation sanity.
+the Phase 11 document-envelope schema and malformed-shape tests, the Phase 12
+single-live-handle registry contract, ad hoc Rust network clients, and Bash
+invocation from product runtime. The verifier also checks locked offline
+builds, tests, required source visibility, generated-file hygiene, and
+documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 
@@ -598,8 +599,10 @@ production enforcement before those checks are present.
 - Add a full secret scanner plus config, log-field, and helper-input tests.
 - Extend typed signature and serialization coverage with every new Tauri
   command.
-- Add citation, document-registry, job, product-worker cancellation, import,
-  and save invariant tests in their owning phases.
+- Extend registry coverage when document commands and frontend view identity
+  exist.
+- Add citation, job, product-worker cancellation, import, and save invariant
+  tests in their owning phases.
 - Make `shellcheck`, `shfmt`, Ruff, frontend formatting, and frontend linting
   required once their versions and CI installation paths are pinned.
 - Add local-link, ADR filename, contract frontmatter, and invariant-reference
