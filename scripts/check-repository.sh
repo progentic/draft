@@ -72,6 +72,8 @@ check_required_sources() {
     src-tauri/src/documents/envelope.rs
     src-tauri/src/documents/persistence.rs
     src-tauri/src/documents/registry.rs
+    src-tauri/src/citations/bibliography.rs
+    src-tauri/src/citations/bibliography_tests.rs
     src-tauri/src/citations/node.rs
     src-tauri/src/citations/node_tests.rs
     src-tauri/src/citations/resolution.rs

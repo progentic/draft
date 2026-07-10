@@ -155,15 +155,18 @@ suppression.
 
 `scripts/check-invariants.sh` requires these sources and named Rust tests,
 checks schema/version and Tiptap fail-closed markers, rejects embedded metadata,
-and replaces the former citation absence gate. It keeps the Phase 19
-bibliography, network, import, job, and helper absence gates active.
+and replaces the former citation absence gate. Phase 19 replaces the former
+bibliography absence gate with the consistency behavior documented in
+`docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md`; network, import, job, and helper
+absence gates remain active.
 
 The same tests and scans run through `scripts/verify.sh` locally and the GitHub
 Actions `verify` job.
 
-## Phase 19 Gate
+## Phase 19 Integration
 
-Phase 19 may add consistency analysis across citation nodes and local reference
-records. It must define missing, orphaned, and duplicate citekey semantics
-before implementation. It must not turn document nodes into metadata authority,
-embed full records, add network lookup, or silently rewrite source documents.
+Phase 19 reuses the fallible document citation collector to compare one
+validated document with an explicit candidate bibliography of validated
+reference records. It does not turn document nodes into metadata authority,
+embed records, read the complete store, add network lookup, or rewrite source
+documents.

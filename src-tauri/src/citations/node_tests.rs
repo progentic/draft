@@ -98,6 +98,27 @@ fn nested_document_citations_validate() {
 }
 
 #[test]
+fn document_citations_are_collected_in_order() {
+    let mut second_attrs = valid_attrs();
+    second_attrs[CITEKEY_FIELD] = json!("jones2024");
+    let document = json!({
+        "type": "doc",
+        "content": [
+            citation_node(),
+            { "type": "citation", "attrs": second_attrs }
+        ]
+    });
+
+    let citekeys = document_citations(&document)
+        .unwrap()
+        .into_iter()
+        .map(|citation| citation.citekey().to_owned())
+        .collect::<Vec<_>>();
+
+    assert_eq!(citekeys, ["smith2025", "jones2024"]);
+}
+
+#[test]
 fn invalid_nested_citation_reports_path_and_cause() {
     let mut node = citation_node();
     node["content"] = json!([]);

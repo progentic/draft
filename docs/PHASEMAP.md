@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 18 are complete. Phase 19 is
-the next implementation phase; bibliography-consistency work has not started.
+**Current execution checkpoint:** Phases 0 through 19 are complete. Phase 20 is
+the next documentation and drift realignment phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -36,6 +36,14 @@ Phase 18 requirements remain in the non-binding
 and Tiptap behavior is recorded in `docs/maintainers/CITATION_NODE.md`. The
 reference store now initializes as Rust-managed state for exact citekey
 resolution, but CRUD controls and full citation formatting remain absent.
+
+Phase 19 requirements remain in the non-binding
+`docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md`, and the implemented pure Rust check
+is recorded in `docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md`. It compares
+validated citation nodes with an explicit candidate bibliography, reports
+unique sorted missing, orphaned, and duplicate citekeys, and treats repeated
+in-text citations as valid. It adds no persistence, IPC, formatting, or visible
+workflow.
 
 ---
 

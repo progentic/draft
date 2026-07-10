@@ -24,6 +24,7 @@ main() {
   check_reference_record_contract
   check_reference_store_contract
   check_citation_node_contract
+  check_bibliography_consistency_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -230,6 +231,7 @@ check_citation_node_contract() {
     malformed_citation_citekeys_fail
     unsupported_render_styles_fail
     nested_document_citations_validate
+    document_citations_are_collected_in_order
     invalid_nested_citation_reports_path_and_cause
     unrelated_tiptap_nodes_remain_opaque
     citation_failure_shape_is_stable
@@ -258,6 +260,36 @@ check_citation_node_contract() {
     '\b(?:title|contributors|issued|identifiers|csl_json)\s*:' \
     src/citations src/editor/CitationNode.ts
   printf 'PASS INV-04 citation node contract\n'
+}
+
+check_bibliography_consistency_contract() {
+  local source_path="src-tauri/src/citations/bibliography.rs"
+  local test_path="src-tauri/src/citations/bibliography_tests.rs"
+  local required_tests=(
+    matching_citations_and_records_are_consistent
+    missing_citekeys_are_reported
+    orphaned_citekeys_are_reported
+    duplicate_bibliography_citekeys_are_reported
+    repeated_in_text_citations_are_not_duplicates
+    orphaned_duplicate_categories_are_independent
+    consistency_results_are_sorted_and_case_sensitive
+    empty_document_and_bibliography_are_consistent
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_file "${test_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_source_pattern 'BTreeMap<String, usize>' "${source_path}"
+  require_source_pattern 'BTreeSet<String>' "${source_path}"
+  assert_no_matches "Phase 19 bibliography side effects" \
+    '(?:std|tokio)::fs|\b(?:ReferenceStore|rusqlite|tauri)::|#\[tauri::command\]' \
+    "${source_path}"
+  assert_no_matches "Phase 19 frontend bibliography authority" \
+    '\bBibliographyConsistency\b|\bbibliography_' src
+  printf 'PASS Phase 19 bibliography consistency contract\n'
 }
 
 require_citation_sources() {
@@ -612,8 +644,6 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "Phase 19 bibliography surface" \
-    '\bBibliography\b|\bbibliography_' src src-tauri/src
   assert_no_matches "INV-05 persistent job surface before Phase 26" \
     '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
     src src-tauri/src

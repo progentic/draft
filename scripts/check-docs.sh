@@ -31,6 +31,7 @@ check_required_documents() {
     docs/ARCHITECTURE.md
     docs/CODING_STYLE.md
     docs/DOCUMENTATION.md
+    docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md
     docs/drafts/DOCUMENT_ENVELOPE.md
     docs/drafts/CITATION_NODE.md
     docs/drafts/REFERENCE_RECORD.md
@@ -40,6 +41,7 @@ check_required_documents() {
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/CANCELLATION_BOUNDARY.md
+    docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md
     docs/maintainers/CITATION_NODE.md
     docs/maintainers/COMMAND_BOUNDARY.md
     docs/maintainers/DOCUMENT_ENVELOPE.md
@@ -127,7 +129,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 18 are complete'
+  local checkpoint='Phases 0 through 19 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

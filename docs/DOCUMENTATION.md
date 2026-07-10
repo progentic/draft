@@ -463,6 +463,12 @@ enforce exact attrs, nested envelope validation, pre-mutation open/save
 rejection, managed-store resolution, typed IPC, fail-closed Tiptap states,
 stale-response suppression, and the absence of embedded reference metadata.
 
+Phase 19 documents the Rust-owned bibliography-consistency check in
+`docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md`. The non-binding semantics remain
+in `docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md`. Rust tests and invariant scans
+enforce missing, orphaned, duplicate, repeated-citation, case-sensitive,
+deterministic, no-side-effect, and no-frontend-authority behavior.
+
 Recommended checks:
 
 - Markdown formatting

@@ -121,28 +121,46 @@ impl CitationNodeError {
 
 /// Validates every citation node reachable through Tiptap `content` arrays.
 pub(crate) fn validate_document_citations(document: &Value) -> Result<(), LocatedCitationError> {
-    validate_document_node(document, "document")
+    document_citations(document).map(drop)
 }
 
-fn validate_document_node(value: &Value, path: &str) -> Result<(), LocatedCitationError> {
+/// Returns validated citation attrs in document order.
+pub(crate) fn document_citations(
+    document: &Value,
+) -> Result<Vec<CitationNodeAttributes>, LocatedCitationError> {
+    let mut citations = Vec::new();
+    collect_document_node(document, "document", &mut citations)?;
+    Ok(citations)
+}
+
+fn collect_document_node(
+    value: &Value,
+    path: &str,
+    citations: &mut Vec<CitationNodeAttributes>,
+) -> Result<(), LocatedCitationError> {
     let Some(node) = value.as_object() else {
         return Ok(());
     };
     if is_citation_node(node) {
-        validate_citation_node(node).map_err(|cause| LocatedCitationError {
+        let citation = validate_citation_node(node).map_err(|cause| LocatedCitationError {
             path: path.to_owned(),
             cause,
         })?;
+        citations.push(citation);
     }
-    validate_child_nodes(node, path)
+    collect_child_nodes(node, path, citations)
 }
 
-fn validate_child_nodes(node: &Map<String, Value>, path: &str) -> Result<(), LocatedCitationError> {
+fn collect_child_nodes(
+    node: &Map<String, Value>,
+    path: &str,
+    citations: &mut Vec<CitationNodeAttributes>,
+) -> Result<(), LocatedCitationError> {
     let Some(Value::Array(children)) = node.get(NODE_CONTENT_FIELD) else {
         return Ok(());
     };
     for (index, child) in children.iter().enumerate() {
-        validate_document_node(child, &child_path(path, index))?;
+        collect_document_node(child, &child_path(path, index), citations)?;
     }
     Ok(())
 }
@@ -155,13 +173,15 @@ fn is_citation_node(node: &Map<String, Value>) -> bool {
     node.get(NODE_TYPE_FIELD).and_then(Value::as_str) == Some(CITATION_NODE_TYPE)
 }
 
-fn validate_citation_node(node: &Map<String, Value>) -> Result<(), CitationNodeError> {
+fn validate_citation_node(
+    node: &Map<String, Value>,
+) -> Result<CitationNodeAttributes, CitationNodeError> {
     reject_unknown_node_fields(node)?;
     let attrs = node
         .get(NODE_ATTRS_FIELD)
         .cloned()
         .ok_or(CitationNodeError::MissingCitationAttrs)?;
-    CitationNodeAttributes::from_json_value(attrs).map(|_| ())
+    CitationNodeAttributes::from_json_value(attrs)
 }
 
 fn reject_unknown_node_fields(node: &Map<String, Value>) -> Result<(), CitationNodeError> {

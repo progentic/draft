@@ -194,5 +194,9 @@ record schema or bypass `ReferenceRecord::from_json_value` on reads.
 
 Phase 18 citation nodes resolve only a validated citekey through the store, as
 documented in `docs/maintainers/CITATION_NODE.md`. Full record metadata remains
-absent from document nodes and frontend state. Bibliography rendering, network
-lookup, PDF import, and document-envelope metadata fields remain absent.
+absent from document nodes and frontend state.
+
+Phase 19 accepts borrowed validated records only after a caller selects the
+candidate bibliography for one document. The pure consistency check reads only
+their citekeys. Bibliography rendering, network lookup, PDF import, and
+document-envelope metadata fields remain absent.

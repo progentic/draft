@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 18 is deliberately smaller than the
+The implemented application through Phase 19 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -67,6 +67,10 @@ full system described in this architecture:
 - Rust validates exact version 1 citation attrs inside document JSON before
   open/save mutation and resolves citekeys through the local store. The typed
   response contains only a disposable display marker, not reference metadata.
+- Rust can compare those validated citation nodes with an explicit candidate
+  bibliography of validated reference records. The pure check reports missing,
+  orphaned, and duplicate citekeys without reading the complete shared library
+  or mutating either input.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -81,9 +85,9 @@ full system described in this architecture:
   resolving, resolved, unavailable, or failed states. Reloading still discards
   the current document.
 - The current workspace does not expose open/save controls yet. No close command,
-  autosave, recovery, reference CRUD UI, citation insertion, bibliography,
-  network client, analysis worker, formatter, export path, or non-reference
-  durable database is implemented.
+  autosave, recovery, reference CRUD UI, citation insertion, rendered
+  bibliography workflow, network client, analysis worker, formatter, export
+  path, or non-reference durable database is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -338,6 +342,11 @@ Phase 18 initializes that store as managed Tauri state solely for the typed
 `resolve_citation` path documented in `maintainers/CITATION_NODE.md`. The
 frontend receives no full record data, and no reference CRUD command exists.
 
+Phase 19 adds the pure comparison documented in
+`maintainers/BIBLIOGRAPHY_CONSISTENCY.md`. A caller supplies the validated
+records selected for one candidate bibliography. The checker does not treat the
+complete cross-document reference library as one document's bibliography.
+
 ---
 
 ## 8. Citation Node Contract
@@ -368,8 +377,10 @@ Rules:
 Phase 18 implements this boundary with exact Rust attrs validation, nested
 document scanning, local-store resolution, typed IPC, and explicit Tiptap
 display states. The current `[@citekey]` marker confirms resolution for the
-editor only; it is not complete APA output. Citation insertion, bibliography
-generation, consistency checks, and export remain later work.
+editor only; it is not complete APA output. Phase 19 reuses the Rust scanner to
+check citekey consistency against an explicit candidate bibliography. Citation
+insertion, bibliography generation and formatting, and export remain later
+work.
 
 Relevant invariant: `INV-04` in `INVARIANTS.md`.
 

@@ -137,8 +137,9 @@ concurrent create, poisoned state, and stable typed failures.
 `scripts/check-invariants.sh` requires the store source, schema constant,
 bundled dependency, transaction/schema primitives, and all 27 named tests. It
 rejects SQLite use outside the store boundary and rejects Tauri APIs inside the
-store. Phase 18 replaces the citation absence gate with behavior checks; the
-bibliography, network, import, job, and helper gates remain active.
+store. Phase 18 replaces the citation absence gate with behavior checks. Phase
+19 replaces the bibliography absence gate with a pure consistency check;
+network, import, job, and helper gates remain active.
 
 `scripts/check-repository.sh` requires the production store and test support to
 remain visible to Git. The same checks run through `scripts/verify.sh` locally
@@ -150,3 +151,8 @@ Phase 18 defines the versioned Tiptap citation node and exact store-backed
 resolution path documented in `docs/maintainers/CITATION_NODE.md`. It does not
 change the store schema, expose CRUD, embed full record metadata, add network
 lookup, or turn display markers into source data.
+
+Phase 19 does not call `ReferenceStore::list`, because the complete shared
+library is not one document's bibliography. A future caller must select the
+candidate records explicitly before invoking the consistency module documented
+in `docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md`.
