@@ -184,7 +184,7 @@ check_coverage_matrix() {
   require_document_text "${matrix}" "${header}"
   check_matrix_subsystems "${matrix}"
   require_document_text "${matrix}" '457 granular lint findings remain'
-  require_document_text "${matrix}" 'Wiki is enabled but its page repository is not initialized'
+  require_document_text "${matrix}" 'Live Wiki publication verified'
 }
 
 check_matrix_subsystems() {

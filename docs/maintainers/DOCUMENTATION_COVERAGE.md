@@ -50,7 +50,7 @@ The Gap column uses these coverage states:
 | Subsystem | Code Surface | Maintainer Doc | User Doc | ADR | Invariant | Tests | Gap |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Desktop runtime and managed state | `src-tauri/src/lib.rs`; `application::{network_client,reference_store,job_store,runtime_status}`; `run` | `TOOLCHAIN.md`, `COMMAND_BOUNDARY.md`, `CONFIGURATION.md` | `docs/wiki/Workspace.md`, `docs/wiki/Current-Limitations.md` | Baseline stack decision | `INV-03`, `INV-10`, `INV-13` | Rust application, command, store, and parity tests | Implemented and documented. |
-| Workspace shell and editor | `DraftWorkspace`, `WorkspaceHeader`, `DocumentOutline`, `DocumentInspector`, `DraftEditor`, `EditorToolbar` | `WORKSPACE_UI.md`, `PERFORMANCE_MEASUREMENT.md` | `docs/wiki/Workspace.md` | None | `INV-03` | `src/App.test.tsx`, editor and benchmark tests | Implemented and documented; live Wiki publication remains a separate row. |
+| Workspace shell and editor | `DraftWorkspace`, `WorkspaceHeader`, `DocumentOutline`, `DocumentInspector`, `DraftEditor`, `EditorToolbar` | `WORKSPACE_UI.md`, `PERFORMANCE_MEASUREMENT.md` | `docs/wiki/Workspace.md` | None | `INV-03` | `src/App.test.tsx`, editor and benchmark tests | Implemented and documented; live publication evidence is recorded separately. |
 | Runtime status and visible failures | `get_runtime_status`; `draft://runtime-status`; `startRuntimeStatusSession`; `useRuntimeStatus`; `RUNTIME_COMMAND_FAILURE_LABELS` | `COMMAND_BOUNDARY.md`, `EVENT_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md`, `ERROR_MESSAGES.md` | `docs/wiki/Troubleshooting.md` | None | `INV-02`, `INV-03` | Rust command/event tests and runtime-status frontend suites | Implemented and documented in canonical sources; `docs/user/WORKSPACE.md` still uses an older event-failure label. PR #1 also edits that file, so reconciliation waits for rebase. |
 | Typed Tauri command client | Six registered Rust commands and matching wrappers under `src/ipc/` | `COMMAND_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md` | No direct user surface | None | `INV-02`, `INV-03` | Command serialization tests, wrapper tests, bridge-name parity scan | Intentionally internal and not user-facing. |
 | Transient worker cancellation | `WorkerCancellationRegistry`, `WorkerRegistration`, `WorkerCancellation`, `cancel_worker` | `CANCELLATION_BOUNDARY.md`, `COMMAND_BOUNDARY.md` | `docs/wiki/Current-Limitations.md` | None | `INV-07` | Cancellation registry, command, helper, and analysis tests | Intentionally internal and not user-facing; no visible worker exists. |
@@ -76,7 +76,7 @@ The Gap column uses these coverage states:
 | Packaging and application icons | `src-tauri/icons/**`; five explicit `bundle.icon` paths; inactive bundle setting | `PACKAGING.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-13` for verification parity | Tauri info, unsigned `.app` build, embedded-icon and format audit | Implemented and documented as groundwork, not Phase 42. |
 | PDF export decision | No dependency, command, runtime path, control, or generated PDF | ADR-001 proposed in PR #1 and its proposal documents | `docs/wiki/Current-Limitations.md` | ADR-001 proposed | Current PDF absence scan; named proposal guard remains in PR #1 | Absence scan and full verifier | Proposed and blocked by governance: PR #1 must finish cooling before its wording and guard can become `main` truth. |
 | Public Rust API comments | Externally reachable modules, types, functions, methods, variants, and fields | Owning subsystem guides and this matrix | No user surface | None | None | `cargo rustdoc -- -D missing_docs` audit probe | Documented but enforcement missing: 457 granular lint findings remain, mostly variants, fields, accessors, and module exports. A focused source-documentation change is required before enabling the lint. |
-| Live GitHub Wiki | Canonical pages under `docs/wiki/` | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks plus external publication review | Implemented but user documentation absent from the live surface: Wiki is enabled but its page repository is not initialized. |
+| Live GitHub Wiki | Canonical pages under `docs/wiki/`; <https://github.com/progentic/draft/wiki> | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks, remote-tree/hash comparison, and rendered navigation review | Implemented and documented: live Wiki commit `5a2b12f` mirrors the four canonical pages byte-for-byte. |
 
 ## Detected Drift And Resolution
 
@@ -86,16 +86,33 @@ The audit detected these concrete gaps:
 - app-icon generation and explicit bundle paths had no packaging guide;
 - significant defaults and limits were spread across implementation guides
   without one source-name index;
-- the live GitHub Wiki was enabled but had no initialized page repository;
+- the live GitHub Wiki was enabled but had no initialized page repository,
+  resolved by publishing the four canonical pages at live commit `5a2b12f`;
 - visible runtime failures had copy mappings but no user recovery article; and
 - documentation verification did not enforce subsystem, configuration,
   recovery, Wiki-source, or README-scope coverage.
 
-The new guides, canonical Wiki source, and `scripts/check-docs.sh` checks close
-the repository-owned coverage gaps. The matrix keeps the remaining public-API
-comment debt and live-Wiki publication state explicit instead of treating
-presence checks as proof of completion. Publishing the canonical pages must use
-the same page contents without creating a second source of truth.
+The new guides, canonical Wiki source, live publication, and
+`scripts/check-docs.sh` checks close the repository-owned and user-publication
+gaps. The matrix keeps the remaining public-API comment debt explicit instead
+of treating presence checks as proof of completion. Future Wiki publication
+must continue to use the same page contents without creating a second source
+of truth.
+
+## Live Publication Evidence
+
+Live Wiki publication verified at commit `5a2b12f`:
+
+- the remote Wiki tree contains only `Home.md`, `Workspace.md`,
+  `Troubleshooting.md`, and `Current-Limitations.md`;
+- each remote file has the same SHA-256 digest as its merged `docs/wiki/`
+  source;
+- Home opens Workspace, Troubleshooting, and Current Limitations;
+- Workspace links to Troubleshooting and Current Limitations;
+- every non-Home page returns to Home;
+- rendered headings and lists preserve the canonical structure; and
+- no `.md` navigation target, initialization placeholder, or live-only wording
+  remains.
 
 ## Audit Boundaries
 
