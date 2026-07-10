@@ -32,10 +32,10 @@ function HeaderBrand(props: WorkspaceHeaderProps) {
       >
         <OutlineIcon aria-hidden="true" size={18} strokeWidth={1.8} />
       </button>
-      <div className="wordmark" aria-label="DRAFT">
-        <span className="wordmark__mark">D</span>
+      <h1 className="wordmark">
+        <span className="wordmark__mark" aria-hidden="true">D</span>
         <span className="wordmark__name">DRAFT</span>
-      </div>
+      </h1>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -38,6 +38,22 @@ describe("DRAFT workspace shell", () => {
     expect(screen.getAllByText("Untitled document").length).toBeGreaterThan(1);
     expect(screen.getByText("Not saved")).toBeTruthy();
     expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
+  });
+
+  it("places the workspace title before panel headings", () => {
+    render(<App />);
+
+    const workspaceTitles = screen.getAllByRole("heading", { level: 1, name: "DRAFT" });
+    const outlineTitle = screen.getByRole("heading", { level: 2, name: "Outline" });
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+
+    expect(workspaceTitles).toHaveLength(1);
+    expect(workspaceTitles[0]?.compareDocumentPosition(outlineTitle)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(
+      within(editor).getByRole("heading", { level: 1, name: "Untitled document" }),
+    ).toBeTruthy();
   });
 
   it("toggles the document outline without changing document state", async () => {
