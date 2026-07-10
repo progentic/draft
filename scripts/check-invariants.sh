@@ -23,6 +23,7 @@ main() {
   check_python_helper_contract
   check_text_analysis_contract
   check_formatting_contract
+  check_docx_export_contract
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -432,6 +433,90 @@ check_formatting_authority() {
     '\bFormattingFinding\b|\bFormattingSnapshot\b|\brun_formatting_checks\b' src
   assert_no_matches "Phase 31 Python formatting authority" \
     '\bFormattingFinding\b|\bFormattingSnapshot\b|\brun_formatting_checks\b' python
+}
+
+check_docx_export_contract() {
+  local policy_path="src-tauri/src/exports/docx.rs"
+  local model_path="src-tauri/src/exports/docx_model.rs"
+  local package_path="src-tauri/src/exports/docx_package.rs"
+  local test_path="src-tauri/src/exports/docx_tests.rs"
+  local required_tests=(
+    package_has_stable_safe_entries_and_reopens
+    equal_documents_compile_to_equal_bytes
+    every_package_xml_part_is_well_formed
+    unicode_headings_breaks_and_marks_render_without_raw_markup
+    empty_paragraphs_and_headings_are_preserved
+    unknown_fields_nodes_and_marks_fail_without_silent_omission
+    malformed_nested_shapes_and_xml_controls_fail_typed
+    citation_nodes_fail_instead_of_exporting_editor_markers
+    source_byte_node_and_depth_limits_fail_before_parsing
+    compiled_artifact_limit_fails_before_filesystem_work
+    target_validation_precedes_compilation_and_write
+    uppercase_docx_extension_is_accepted_for_rust_owned_targets
+    atomic_export_creates_and_replaces_target_without_changing_source
+    compilation_failure_preserves_prior_complete_export
+    atomic_write_failures_map_to_closed_export_stages
+    post_replacement_sync_failure_is_durability_uncertain
+    errors_are_content_free_and_structural_paths_are_bounded
+    relationships_contain_no_external_targets_or_active_content
+  )
+  local test_name
+
+  require_file "${policy_path}"
+  require_file "${model_path}"
+  require_file "${package_path}"
+  require_file "${test_path}"
+  require_file docs/drafts/DOCX_EXPORT.md
+  require_file docs/maintainers/DOCX_EXPORT.md
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_docx_contract_markers "${policy_path}" "${package_path}"
+  check_docx_export_authority "${model_path}" "${package_path}"
+  printf 'PASS INV-09 Phase 32 atomic DOCX export contract\n'
+}
+
+require_docx_contract_markers() {
+  local policy_path="$1"
+  local package_path="$2"
+
+  require_source_pattern 'MAX_DOCX_SOURCE_BYTES: usize = 8 * 1024 * 1024' "${policy_path}"
+  require_source_pattern 'MAX_DOCX_NODES: usize = 100_000' "${policy_path}"
+  require_source_pattern 'MAX_DOCX_NESTING_DEPTH: usize = 16' "${policy_path}"
+  require_source_pattern 'MAX_DOCX_ARTIFACT_BYTES: usize = 16 * 1024 * 1024' "${policy_path}"
+  require_source_pattern 'pub fn compile_docx' "${policy_path}"
+  require_source_pattern 'pub fn export_docx' "${policy_path}"
+  require_source_pattern 'write_document_atomically' "${policy_path}"
+  require_source_pattern '[Content_Types].xml' "${package_path}"
+  require_source_pattern 'word/_rels/document.xml.rels' "${package_path}"
+  require_source_pattern 'SimpleFileOptions::DEFAULT' "${package_path}"
+  require_source_pattern 'CompressionMethod::Stored' "${package_path}"
+  require_source_pattern 'BytesText::new(value)' "${package_path}"
+  require_source_pattern 'quick-xml = "0.41.0"' src-tauri/Cargo.toml
+  require_source_pattern 'zip = { version = "8.6.0", default-features = false }' src-tauri/Cargo.toml
+}
+
+check_docx_export_authority() {
+  local model_path="$1"
+  local package_path="$2"
+
+  assert_no_matches "Phase 32 persistence or direct filesystem authority" \
+    '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
+    src-tauri/src/exports --glob '!docx_tests.rs'
+  assert_no_matches "Phase 32 Tauri, network, Python, or worker authority" \
+    '#\[tauri::command\]|\btauri::|\breqwest\b|\bNetworkClient\b|\bPythonHelper\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
+    src-tauri/src/exports
+  assert_no_matches "Phase 32 unsafe package content" \
+    '\bTargetMode\b|vbaProject|macroEnabled|\.bin["\x27]' "${package_path}"
+  assert_no_matches "Phase 32 manual XML interpolation" \
+    'format!\s*\(' "${model_path}" "${package_path}"
+  assert_no_matches "Phase 32 application or command export authority" \
+    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
+    src-tauri/src/application src-tauri/src/commands
+  assert_no_matches "Phase 32 frontend DOCX authority" \
+    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' src
+  assert_no_matches "Phase 32 Python DOCX authority" \
+    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' python
 }
 
 check_document_envelope_contract() {
@@ -1096,14 +1181,16 @@ check_document_write_boundary() {
   local atomic_writer_path="$1"
 
   # These exact test files write only temporary fixtures. The Python runner's
-  # write_all targets piped child stdin, not a filesystem path. Production
-  # document, intake, and job mutation remain denied by separate source scans.
+  # write_all targets piped child stdin, and the DOCX package writer targets an
+  # in-memory ZipWriter. Neither writes a filesystem path. Production document,
+  # intake, job, and export mutation remain denied by separate source scans.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
     --glob '!src-tauri/src/imports/pdf_tests.rs' \
     --glob '!src-tauri/src/jobs/store_tests.rs' \
     --glob '!src-tauri/src/references/store_tests.rs' \
+    --glob '!src-tauri/src/exports/docx_package.rs' \
     --glob '!src-tauri/src/workers/python/runner.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
@@ -1201,8 +1288,8 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "Phase 32 DOCX export behavior" \
-    '\b(?:DocxExport|DocxPackage|DocumentCompiler|export_docx|compile_docx)\b' \
+  assert_no_matches "Phase 33 PDF export behavior" \
+    '\b(?:PdfExport|PdfArtifact|export_pdf|compile_pdf|print_to_pdf)\b' \
     python/draft_helpers src-tauri/src src
   printf 'PASS future feature absence gates\n'
 }

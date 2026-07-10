@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 31 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 32 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -38,6 +38,11 @@ heading and citation-style consistency findings, and fixed content-free review
 wording. It has no document integration, complete style rules, persistence,
 filesystem access, Python, IPC, frontend, or export authority.
 
+Rust also owns a strict DOCX compiler and atomic export service. It uses
+`quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
+features disabled for deterministic stored package entries. Compilation is
+bounded and completes before the shared atomic writer touches a `.docx` target.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
@@ -46,14 +51,19 @@ filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
 visible text-analysis or formatting controls, finding persistence or
 accepted-edit workflow, document-integrated formatting, citation rendering,
-DOCX/PDF export, packaged Python runtime discovery, release automation, or
-packaging.
+DOCX export controls, PDF export, packaged Python runtime discovery, release
+automation, or packaging.
 
 ## Toolchain decisions
 
 - Rust uses Cargo with `Cargo.lock` committed for the desktop application.
 - Serde provides explicit command, error, and document-envelope serialization.
 - `serde_json` preserves structured Tiptap JSON inside the validated envelope.
+- `quick-xml` 0.41.0 writes escaped Office Open XML events without manual
+  interpolation or XML serialization features.
+- `zip` 8.6.0 with default features disabled creates deterministic stored DOCX
+  entries without compression, encryption, or time features. DRAFT's package
+  policy separately emits no active content.
 - `tauri-plugin-dialog` keeps native open/save path selection inside Rust.
 - `tempfile` provides owned same-directory temporary files and platform-specific
   atomic replacement. DRAFT synchronizes content before replacement and the
@@ -147,8 +157,8 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake/job/AI/Python-helper/text-analysis/formatting scans, cross-bridge name
-  parity, and tests
+  intake/job/AI/Python-helper/text-analysis/formatting/DOCX scans, cross-bridge
+  name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

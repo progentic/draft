@@ -4,6 +4,7 @@ pub mod citations;
 mod commands;
 pub mod documents;
 pub mod events;
+pub mod exports;
 pub mod formatting;
 pub mod imports;
 pub mod jobs;

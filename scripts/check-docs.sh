@@ -41,6 +41,7 @@ check_required_documents() {
     docs/drafts/CITATION_NODE.md
     docs/drafts/NETWORK_CLIENT.md
     docs/drafts/PDF_IMPORT.md
+    docs/drafts/PDF_EXPORT_DECISION.md
     docs/drafts/PYTHON_HELPERS.md
     docs/drafts/TEXT_ANALYSIS.md
     docs/drafts/METADATA_LOOKUP.md
@@ -59,6 +60,7 @@ check_required_documents() {
     docs/maintainers/DOCUMENT_ENVELOPE.md
     docs/maintainers/DOCUMENT_REGISTRY.md
     docs/maintainers/DOCUMENT_SAVE_LOAD.md
+    docs/maintainers/DOCX_EXPORT.md
     docs/maintainers/EVENT_BOUNDARY.md
     docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md
@@ -148,7 +150,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 31 are complete'
+  local checkpoint='Phases 0 through 32 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

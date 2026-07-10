@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 31 is deliberately smaller than the
+The implemented application through Phase 32 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -104,6 +104,10 @@ full system described in this architecture:
   It compares APA 7, MLA 9, or Chicago 17 author-date declarations and checks
   heading-level structure without parsing or mutating a document. These are
   consistency checks, not complete style-manual conformance.
+- Rust compiles a strict bounded Tiptap subset into deterministic in-memory DOCX
+  packages and atomically replaces only Rust-owned `.docx` targets. Unsupported
+  nodes, marks, fields, and citations fail explicitly; no source document or
+  registry state is changed.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -123,7 +127,8 @@ full system described in this architecture:
   model provider, analysis start command, frontend analysis listener, visible
   analysis workflow, visible text-analysis issue cards or controls, PDF import
   control or watcher, job scheduler or processing worker, document-integrated
-  formatting workflow, citation renderer, or export path is implemented.
+  formatting workflow, citation renderer, visible DOCX export control, or PDF
+  export path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -180,6 +185,12 @@ one closed style, ordered heading levels, and ordered citation styles. Findings
 identify a non-level-one first heading, skipped heading level, or citation-style
 mismatch by index. No document extraction, style rendering, persistence, IPC,
 frontend workflow, or source mutation is present.
+
+Phase 32 adds a separate Rust-only DOCX foundation. It validates a strict
+paragraph, heading, text, hard-break, and inline-mark subset; builds fixed
+escaped XML parts in a deterministic stored ZIP; and reuses the atomic writer
+for `.docx` targets. It adds no citation rendering, application state, Tauri
+command, frontend control, PDF path, or source mutation.
 
 ### 3.4 Text-analysis
 
@@ -601,6 +612,12 @@ Export rules:
 - `.docx` and `.pdf` compilation are explicit export operations.
 - Export failure must not corrupt the source document.
 - Export output is not the authoritative source format.
+
+Phase 32 implements the internal `.docx` operation for a strict fail-closed
+subset. Compilation completes in memory before atomic target replacement.
+Source DRAFT bytes and live registry state are outside the export mutation
+surface. PDF export remains unimplemented pending the Phase 33 architecture
+decision.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 

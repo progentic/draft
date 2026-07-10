@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 31 are complete. Phase 32 is
+**Current execution checkpoint:** Phases 0 through 32 are complete. Phase 33 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -120,6 +120,15 @@ citation-style consistency findings. It adds no document parser, complete style
 rules, mutation, persistence, filesystem access, export, Python, Tauri, frontend,
 or visible formatting workflow. Phase 32 requirements remain non-binding in
 `docs/drafts/DOCX_EXPORT.md`.
+
+Phase 32 implemented behavior is recorded in
+`docs/maintainers/DOCX_EXPORT.md`. Rust compiles a strict bounded Tiptap subset
+into five deterministic DOCX package parts and atomically replaces only a
+Rust-owned `.docx` target. Unsupported fields, nodes, marks, and citations fail
+explicitly. No application state, Tauri command, native dialog, frontend,
+persistence, network, Python, worker, PDF path, or visible export flow exists.
+Phase 33 decision requirements remain non-binding in
+`docs/drafts/PDF_EXPORT_DECISION.md`.
 
 ---
 

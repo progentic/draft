@@ -394,4 +394,6 @@ Every architecture PR must answer:
   requirements. The implemented Phase 31 formatting-check requirements are
   non-binding in `docs/drafts/FORMATTING_CHECKS.md` and do not claim complete
   style conformance. Phase 32 DOCX-export requirements are also non-binding in
-  `docs/drafts/DOCX_EXPORT.md`.
+  `docs/drafts/DOCX_EXPORT.md`. The Phase 33 PDF implementation-or-deferral
+  decision is non-binding in `docs/drafts/PDF_EXPORT_DECISION.md` until its ADR
+  completes the governed decision lifecycle.

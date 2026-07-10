@@ -562,6 +562,16 @@ absence of complete style claims, parsing, mutation, persistence, filesystem,
 export, Python, Tauri, or frontend authority. Phase 32 DOCX-export requirements
 are bounded in the non-binding `docs/drafts/DOCX_EXPORT.md`.
 
+Phase 32 documents strict Rust-owned DOCX compilation and atomic export in
+`docs/maintainers/DOCX_EXPORT.md`. The non-binding requirements remain in
+`docs/drafts/DOCX_EXPORT.md`. Rust tests and invariant scans enforce the bounded
+Tiptap subset, deterministic safe package entries, structured XML escaping,
+stored ZIP output, unsupported-content and citation rejection, atomic target
+replacement, source preservation, typed failures, and the absence of Tauri,
+frontend, Python, network, persistence, worker, and PDF authority. Phase 33 PDF
+decision requirements are bounded in the non-binding
+`docs/drafts/PDF_EXPORT_DECISION.md`.
+
 Recommended checks:
 
 - Markdown formatting
