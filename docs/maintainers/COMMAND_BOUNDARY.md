@@ -106,6 +106,22 @@ browser. No URL, browser detail, credential, cookie, token, or session state
 returns to the frontend. The full boundary is documented in
 `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
 
+## Formatting review command
+
+Phase 34 adds `run_formatting_review`. It accepts one bounded immutable
+snapshot containing a closed style identifier, ordered heading levels and
+titles, and validated citation citekeys and declared styles. Unknown fields,
+invalid identifiers, invalid heading values, and collection limits fail with
+one of six closed content-free codes.
+
+The response contains Rust-owned finding codes, severities, indexed targets,
+fixed wording, and ordered actions. Heading findings may include one bounded
+`apply_heading_level`; citation findings never do. The command receives no
+path, document identity, reference record, credential, or export target and
+performs no persistence, filesystem, network, Python, worker, or export work.
+The complete integration is documented in
+`docs/maintainers/FORMATTING_UX.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -117,6 +133,7 @@ returns to the frontend. The full boundary is documented in
 | Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
 | Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
 | Mid | `open_external_access` | Validates a research destination and delegates one system-browser launch. |
+| Mid | `run_formatting_review` | Validates one bounded snapshot and maps pure findings to closed actions. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -151,7 +168,8 @@ Rust tests cover valid and blank version inputs, exact command signatures,
 bounded request deserialization, stable JSON for success and error values,
 cancellation lifecycle outcomes, Phase 13 document commands, Phase 14
 atomic-write failure shapes, Phase 18 citation resolution, and Phase 23
-external browser handoff.
+external browser handoff. Phase 34 adds the same signature, request, response,
+error, and rejected-content evidence for formatting review.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -180,5 +198,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/CITATION_NODE.md`.
 - Phase 23 establishes Rust-owned browser handoff described in
   `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
+- Phase 34 establishes the bounded formatting review command described in
+  `docs/maintainers/FORMATTING_UX.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

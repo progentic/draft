@@ -24,6 +24,7 @@ main() {
   check_configuration_backlinks
   check_wiki_sources
   check_visible_error_recovery
+  check_formatting_export_alignment
   check_readme_scope
   check_pdf_decision_state
 
@@ -49,6 +50,7 @@ check_required_documents() {
     docs/drafts/FORMATTING_UX.md
     docs/drafts/CITATION_NODE.md
     docs/drafts/NETWORK_CLIENT.md
+    docs/drafts/OFFLINE_MODE.md
     docs/drafts/PDF_IMPORT.md
     docs/drafts/PDF_EXPORT_DECISION.md
     docs/drafts/PYTHON_HELPERS.md
@@ -170,7 +172,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 34 are complete'
+  local checkpoint='Phases 0 through 35 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -187,6 +189,8 @@ check_coverage_matrix() {
   check_matrix_subsystems "${matrix}"
   require_document_text "${matrix}" '457 granular lint findings remain'
   require_document_text "${matrix}" 'Live Wiki publication verified'
+  require_document_text "${matrix}" '43ac0bc'
+  require_document_text docs/maintainers/REALIGNMENT.md '## Phase 35 - 2026-07-10'
 }
 
 check_matrix_subsystems() {
@@ -422,6 +426,32 @@ check_visible_error_recovery() {
   require_document_text "${formatting_presentation}" 'Formatting review could not reach the DRAFT core.'
   require_document_text "${recovery}" 'DRAFT received an invalid formatting response.'
   require_document_text "${recovery}" 'Formatting review could not reach the DRAFT core.'
+}
+
+check_formatting_export_alignment() {
+  local checks='docs/maintainers/FORMATTING_CHECKS.md'
+  local command='docs/maintainers/COMMAND_BOUNDARY.md'
+  local client='docs/maintainers/FRONTEND_COMMAND_CLIENT.md'
+  local review='docs/maintainers/FORMATTING_UX.md'
+  local docx='docs/maintainers/DOCX_EXPORT.md'
+  local pdf='docs/maintainers/PDF_EXPORT_DECISION.md'
+  local offline='docs/drafts/OFFLINE_MODE.md'
+
+  require_document_text "${checks}" 'FORMATTING_UX.md'
+  require_document_text "${command}" 'run_formatting_review'
+  require_document_text "${client}" 'runFormattingReview'
+  require_document_text "${review}" 'stale result cannot'
+  require_document_text "${docx}" 'No user can start an export'
+  require_document_text "${pdf}" 'PDF export remains mechanically absent'
+  require_document_text docs/wiki/Workspace.md 'It does not certify'
+  require_document_text docs/wiki/Current-Limitations.md 'citation mismatches are'
+  require_document_text "${offline}" 'Rust-owned session policy'
+  require_document_text "${offline}" 'does not add operating-system reachability monitoring'
+
+  reject_document_pattern \
+    'No command or visible workflow can invoke it|Findings are not persisted or visible|DOCX-export absence gate remains active' \
+    'Phase 35 formatting documentation must describe the implemented review workflow' \
+    "${checks}"
 }
 
 check_readme_scope() {

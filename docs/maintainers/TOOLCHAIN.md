@@ -2,8 +2,8 @@
 
 ## Current phase
 
-Phases 0 through 34 are complete at the current checkpoint. Phase 35 is the
-next documentation and drift realignment phase. The Phase 1 toolchain remains locked, the Phase 2
+Phases 0 through 35 are complete at the current checkpoint. Phase 36 is the
+next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -18,8 +18,8 @@ adding a watcher dependency, plus a persistent PDF import-job state machine
 with hashed opaque claims and restart recovery. A provider-independent Rust AI
 boundary now assembles bounded provenance-tagged context and coordinates typed,
 cancellable generated-analysis streams without a production provider or
-network call. The Phase 5, Phase 10, Phase 15, Phase 20, Phase 25, and Phase 30
-audits are recorded in `docs/maintainers/REALIGNMENT.md`.
+network call. The Phase 5, Phase 10, Phase 15, Phase 20, Phase 25, Phase 30,
+and Phase 35 audits are recorded in `docs/maintainers/REALIGNMENT.md`.
 
 Rust also owns a versioned Python helper runner with a canonical fixed
 entrypoint, closed protocol allowlist, isolated cleared environment, bounded

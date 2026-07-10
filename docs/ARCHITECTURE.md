@@ -41,8 +41,8 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 34 is deliberately smaller than the
-full system described in this architecture:
+The implemented application through Phase 34, audited in Phase 35, is
+deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
   document-save, citation-resolution, and external-access commands with
@@ -335,7 +335,7 @@ Examples:
 - `start_ai_generation`
 - `cancel_ai_generation`
 - `run_text_analysis`
-- `run_formatting_check`
+- `run_formatting_review`
 
 Each command has:
 

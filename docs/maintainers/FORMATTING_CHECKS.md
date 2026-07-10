@@ -64,8 +64,10 @@ construction. It reads only the borrowed snapshot and allocates one bounded
 result. It performs no filesystem, persistence, network, Python, worker, event,
 Tauri, frontend, save, or export work.
 
-No application state initializes this boundary. No command or visible workflow
-can invoke it at this checkpoint.
+Phase 34 invokes this unchanged pure function through the adapter documented in
+`docs/maintainers/FORMATTING_UX.md`. The typed command constructs the snapshot
+and wraps each finding with a closed action policy; neither concern is part of
+the checker itself.
 
 ## Abstraction Hierarchy
 
@@ -86,16 +88,20 @@ and bounded content-free errors.
 `scripts/check-invariants.sh` requires the source, guide, draft, constants,
 identifiers, policy markers, and named tests. It rejects scoring, edit authority,
 document or citation-node coupling, persistence, filesystem access, networking,
-Python, worker spawning, Tauri commands, application initialization, and
-frontend models. The Phase 32 DOCX-export absence gate remains active.
+Python, worker spawning, Tauri commands, and application initialization inside
+the pure checker. Separate Phase 34 scans enforce the command, frontend, stale
+generation, target identity, and explicit-action boundaries. The Phase 32 DOCX
+contract and Phase 33 PDF deferral guard remain independently active.
 
 ## Current Limits
 
 The checker receives an explicit snapshot and does not extract headings or
 citations from Tiptap. Style support is consistency-only: it does not implement
 manual-specific title pages, running heads, margins, typography, capitalization,
-punctuation, or bibliography rules. Findings are not persisted or visible, and
-no document can be changed from a finding.
+punctuation, or bibliography rules. Findings are visible but not persisted.
+Only a closed heading action can change the current editor, and only after
+explicit user input and current-generation target validation. Citation
+findings remain inspect-only.
 
 ## Configuration Index
 

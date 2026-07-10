@@ -24,6 +24,7 @@ transport failures out of presentation components.
 | Mid | `saveDocument` | Sends one explicit snapshot and validates save outcomes. |
 | Mid | `resolveCitation` | Validates resolution responses and typed citation failures. |
 | Mid | `openExternalAccess` | Requests one Rust-validated default-browser handoff. |
+| Mid | `runFormattingReview` | Validates one closed formatting response and typed failures. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -146,6 +147,20 @@ receive opener permissions. Rust remains the URL and launch authority. No
 React component invokes the wrapper at this checkpoint because a visible
 research workflow has not been integrated.
 
+## Formatting review wrapper
+
+Phase 34 adds `runFormattingReview` under `src/ipc/`. It sends the selected
+closed style plus the current ordered heading and validated citation snapshot
+to `run_formatting_review`. It validates exact fields, style identity, target
+bounds, target/code compatibility, severity, fixed action order, and the
+expected heading level before returning a ready result.
+
+The wrapper preserves all six command codes and separately classifies invalid
+responses and transport failures. `useFormattingReview` ties each response to
+one run ID and editor generation. The feature rejects older runs and missing,
+moved, or changed targets before inspect or apply. See
+`docs/maintainers/FORMATTING_UX.md`.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -168,6 +183,8 @@ Frontend tests prove:
 - citation attrs, response marker, command-error, and transport classification
 - external destination arguments, opened response, typed launch errors, and
   malformed browser-handoff response handling
+- formatting request arguments, all closed styles and command errors, exact
+  actions, stale generations, remapped targets, and explicit review controls
 - workspace rendering of the connected Rust version
 - runtime-status presentation for every known command error code
 
@@ -196,3 +213,5 @@ request/response abstraction. Phase 9 worker lifecycle rules are documented in
 are documented in `docs/maintainers/DOCUMENT_SAVE_LOAD.md`, and Phase 18
 citation behavior in `docs/maintainers/CITATION_NODE.md`. Phase 23 browser
 handoff is documented in `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
+Phase 34 formatting review is documented in
+`docs/maintainers/FORMATTING_UX.md`.
