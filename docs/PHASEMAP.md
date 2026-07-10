@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 29 are complete. Phase 30 is
+**Current execution checkpoint:** Phases 0 through 30 are complete. Phase 31 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -93,7 +93,7 @@ Phase 28 requirements and implemented behavior are recorded in
 `docs/drafts/PYTHON_HELPERS.md` and
 `docs/maintainers/PYTHON_HELPERS.md`. Rust now owns a fixed, isolated Python
 entrypoint, versioned typed JSON, bounded standard streams, timeout,
-cancellation, child reaping, and output validation. The sole allowlisted
+cancellation, child reaping, and output validation. Phase 28's initial
 `contract_probe` proves the boundary without adding text-analysis findings,
 Tauri or frontend controls, persistence, document mutation, networking, or a
 packaged Python runtime.
@@ -105,6 +105,13 @@ codes and UTF-8 byte ranges for five deterministic review heuristics. Rust
 validates ordering, counts, ranges, and identity, then supplies fixed
 explanations. No score, replacement, mutation, persistence, Tauri command,
 event, frontend model, or visible issue workflow exists.
+
+Phase 30 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The audit
+distinguishes internal Rust analysis/helper lifecycles from product workers and
+Tauri events, records the two-helper protocol truth, and changes no runtime
+behavior. Phase 31 requirements remain non-binding in
+`docs/drafts/FORMATTING_CHECKS.md`; implementation may begin only with the
+bounded pure Rust review model defined there.
 
 ---
 

@@ -6,9 +6,9 @@
 ## Purpose
 
 Phase 9 establishes the reusable cancellation shape for user-initiated Rust
-workers that continue after their start command returns. It does not introduce
-a product worker, background-job persistence, or a cancellation control with
-no real work behind it.
+workers that continue after their start command returns. That phase introduces
+no product worker, background-job persistence, or cancellation control with no
+real work behind it.
 
 The boundary separates four concerns:
 
@@ -62,7 +62,10 @@ The command-specific errors are:
 An unknown but valid UUID is different from an ended worker. This prevents a
 mistyped or stale identifier from being reported as a successful cancellation.
 
-## Worker lifecycle
+## Product Worker Lifecycle
+
+This remains the required lifecycle when a future product worker starts from a
+command and continues after that command returns:
 
 1. A feature start command calls `WorkerCancellationRegistry::register`.
 2. Rust returns the registration's worker ID in the typed start response.
@@ -107,6 +110,24 @@ When persistent jobs arrive, durable job state owns restart and checkpoint
 behavior. The transient cancellation token still owns stopping the currently
 running task.
 
+## Current Internal Consumers
+
+Phase 27 analysis coordination creates one registration and races each adapter
+read against its token. The caller supplies the adapter and event sink and
+awaits the lifecycle directly; no task is spawned, no Tauri start command exists,
+and `AiStreamEvent` is not a Tauri event.
+
+The Phase 28/29 Python runner moves one registration into either
+`run_contract_probe` or `run_text_analysis`. Cancellation and timeout kill and
+reap the child before the call returns. No application state initializes the
+runner, and no Tauri command, frontend action, detached task, or visible progress
+stream can start it.
+
+These internal consumers prove cooperative cleanup but do not satisfy or trigger
+the future product-worker UI lifecycle above. If either becomes user-initiated
+work that outlives its start command, the start response, typed Tauri events,
+visible cancel action, and terminal-event tests become mandatory.
+
 ## Frontend boundary
 
 `src/ipc/workerCancellation.ts` is the typed frontend wrapper. It owns:
@@ -142,7 +163,9 @@ not reimplemented in command or feature modules.
 Rust tests pin command signature, request, response, and error serialization.
 Lifecycle tests prove active cancellation, repeated cancellation,
 already-ended idempotence, malformed IDs, unknown IDs, registration teardown,
-and registry-shutdown signaling.
+and registry-shutdown signaling. Analysis tests cover cancellation before and
+during adapter reads. Python-runner tests cover cancellation, timeout,
+termination, reaping, and registration cleanup.
 
 Frontend tests pin the command request, both successful outcomes, invalid
 responses, every command error, and unknown transport failure.

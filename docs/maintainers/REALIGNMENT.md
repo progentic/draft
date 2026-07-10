@@ -525,3 +525,112 @@ bash scripts/verify.sh
 
 Phase 25 is a truth-alignment checkpoint only. It adds no product capability.
 Phase 26 may begin only within the bounded background-job requirements draft.
+
+## Phase 30 - 2026-07-10
+
+The audited implementation baseline is commit `65c2b9f`, the completed Phase
+29 text-analysis checkpoint. Its hosted verification run passed:
+
+<https://github.com/progentic/draft/actions/runs/29074734527>
+
+### Surfaces reviewed
+
+- the public README, changelog, license, `.gitignore`, and local `AGENTS.md`
+- architecture, governance, invariants, coding style, documentation policy,
+  roadmap, and phasemap
+- every draft, user guide, maintainer guide, and prior realignment record
+- Rust analysis, worker, Python-helper, text-analysis, command, event,
+  persistence, citation, document, import, and application modules plus tests
+- the production Python package, hostile process fixture, and Python tests
+- TypeScript IPC, event, cancellation, editor, feature, and workspace surfaces
+- Cargo, npm, Python, Tauri, TypeScript, and Rust toolchain manifests
+- local scripts, `justfile`, GitHub Actions, and hosted run history
+- tracked, ignored, generated, duplicate, and untracked repository state
+
+### Drift corrected
+
+- Architecture now identifies the current checkpoint through Phase 29 and
+  records both allowlisted helper operations instead of describing only the
+  Phase 28 protocol probe.
+- Cancellation documentation now distinguishes Phase 27 analysis coordination
+  and Phase 28/29 child-process cleanup from the future product-worker lifecycle.
+  Neither internal caller starts detached work or exposes a visible cancel flow.
+- Event documentation now states that `AiStreamEvent` is an internal Rust sink
+  value, not a Tauri event. `draft://runtime-status` remains the only implemented
+  Rust-to-frontend event.
+- The Python-helper guide now records the closed `contract_probe` and
+  `text_analysis` version 1 allowlist, both registration lifetimes, the complete
+  active test suite, and the absence of application initialization or IPC.
+- `INV-07` and `INV-11` enforcement notes now include the Phase 27 through Phase
+  29 cancellation and helper extensions without implying a product worker.
+- Documentation sanity now requires the bounded Phase 31 formatting-check draft
+  and roadmap/phasemap agreement through Phase 30.
+
+### Analysis and helper truth
+
+- Phase 27 assembles bounded provenance-tagged context and coordinates a typed
+  generated-analysis stream through caller-supplied Rust traits. No production
+  provider, external request, credential, task spawn, Tauri command, event,
+  frontend listener, persistence, or document mutation exists.
+- Phase 28 owns one canonical fixed Python entrypoint, isolated cleared
+  environment, bounded standard streams, five-second timeout, cancellation,
+  kill/reap cleanup, and typed errors. The hostile fixture remains confined to
+  a test-only constructor and narrowly excluded only from production-helper API
+  scans whose denied behavior it deliberately exercises.
+- Phase 29 adds five deterministic review heuristics. Python returns closed codes
+  and UTF-8 ranges only; Rust validates identity, shape, order, count, and ranges
+  and supplies fixed wording. Findings remain immutable and non-persistent.
+- No watcher, job scheduler, background processing worker, analysis queue,
+  helper queue, model provider, helper packaging discovery, visible issue flow,
+  or formatting engine is implied by these internal boundaries.
+
+### Repository and public documentation
+
+- `README.md` remains the concise product landing page. Phases 27 through 29 add
+  no public-facing workflow, so this checkpoint leaves it untouched.
+- `CHANGELOG.md` still reports that no versioned release exists and receives no
+  synthetic phase entry.
+- No product source, dependency, command, capability, UI, workflow, runtime
+  behavior, or build configuration changes in this realignment phase.
+- `docs/adr`, `docs/contracts`, and `docs/wiki` remain absent intentionally; no
+  decision or stable contract completed the governance lifecycle.
+
+### Next-phase readiness
+
+`docs/drafts/FORMATTING_CHECKS.md` bounds Phase 31 before implementation. It
+defines one pure Rust immutable snapshot with a closed APA 7, MLA 9, or Chicago
+17 author-date style, ordered headings, and citation-style declarations. The
+initial findings cover a non-level-one first heading, skipped heading levels,
+and declarations that do not match the selected document style.
+
+The draft explicitly states that these are consistency and structure checks,
+not complete style-manual conformance. It excludes arbitrary Tiptap parsing,
+citation or bibliography rendering, layout rules, source mutation, persistence,
+filesystem access, Python, networking, workers, Tauri, frontend controls, DOCX
+or PDF export, and automatic repair. Phase 31 must replace its absence gate with
+behavioral tests and authority scans when implementation begins.
+
+### Verification evidence
+
+The checkpoint uses these executable gates:
+
+```bash
+npm test
+cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --locked --offline --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+cargo check --locked --offline --manifest-path src-tauri/Cargo.toml
+cargo test --locked --offline --manifest-path src-tauri/Cargo.toml
+npm run typecheck
+npm run build:frontend
+python -m unittest discover -s python/tests -v
+bash -n scripts/*.sh scripts/lib/*.sh
+bash scripts/check-invariants.sh
+bash scripts/check-docs.sh
+bash scripts/check-ci-local-parity.sh
+bash scripts/check-repository.sh
+git diff --check
+bash scripts/verify.sh
+```
+
+Phase 30 is a truth-alignment checkpoint only. It adds no product capability.
+Phase 31 may begin only within the bounded formatting-check requirements draft.

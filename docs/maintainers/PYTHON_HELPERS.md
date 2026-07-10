@@ -2,33 +2,39 @@
 
 ## Status
 
-This guide records implemented Phase 28 behavior. The requirements in
-`docs/drafts/PYTHON_HELPERS.md` remain non-binding until they complete the
+This guide records the implemented Phase 28 process boundary and its Phase 29
+protocol extension. The requirements in `docs/drafts/PYTHON_HELPERS.md` and
+`docs/drafts/TEXT_ANALYSIS.md` remain non-binding until they complete the
 contract lifecycle in `docs/GOVERNANCE.md`.
 
 ## Scope
 
 Phase 28 adds a Rust-owned, versioned stdin/stdout process protocol and one
 allowlisted `contract_probe` helper. The probe returns only the UTF-8 byte count
-of validated text. It verifies the boundary and is not a product text-analysis
-feature.
+of validated text and verifies the process boundary.
 
-The phase adds no grammar, clarity, tone, cohesion, voice, formatting, parsing,
-PDF, metadata, model, Tauri, frontend, event, persistence, finding, document
-mutation, third-party Python dependency, or packaged-runtime discovery.
+Phase 29 extends the same closed protocol with `text_analysis` version 1. That
+operation returns only five deterministic review codes and UTF-8 byte ranges;
+Rust validates them and owns all user-facing wording. The detailed behavior is
+recorded in `docs/maintainers/TEXT_ANALYSIS.md`.
+
+Together these phases add no formatting helper, parsing, PDF or metadata work,
+model call, Tauri or frontend surface, event, persistence, document mutation,
+third-party Python dependency, or packaged-runtime discovery.
 
 ## Typed Protocol
 
-Protocol version 1 carries a Rust-generated UUID request ID, the closed
-`contract_probe` helper name, helper version 1, bounded text, and the closed
-`en-US` locale. Text must be non-empty and no larger than 32 KiB. Complete JSON
-requests are limited to 64 KiB.
+Protocol version 1 carries a Rust-generated UUID request ID, one closed helper
+name, helper version 1, bounded text, and the closed `en-US` locale. The
+allowlist contains `contract_probe` and `text_analysis`. Text must be non-empty
+and no larger than 32 KiB. Complete JSON requests are limited to 64 KiB.
 
 The Python worker validates the exact field set, protocol and helper versions,
 canonical UUID string, locale, and text bounds before dispatch. A successful
-response repeats the request identity and versions and returns one typed
-`utf8Bytes` result. Rust rejects unknown fields, malformed JSON, wrong identity
-or versions, and a byte count inconsistent with the validated request.
+response repeats the request identity and versions and returns the exact result
+for the selected helper: `utf8Bytes` for the probe or bounded closed findings
+for text analysis. Rust rejects unknown fields, malformed JSON, wrong identity
+or versions, and helper/result mismatches.
 
 Python failures use only `invalid_json`, `invalid_request`,
 `unsupported_protocol`, `unsupported_helper`, or `internal_failure`, then exit
@@ -56,9 +62,10 @@ logged by this boundary.
 
 ## Timeout And Cancellation
 
-One `WorkerRegistration` is moved into `run_contract_probe` and remains alive
-for the complete child lifetime. The runner races the process exchange against
-the existing cooperative cancellation token and a fixed five-second timeout.
+One `WorkerRegistration` is moved into `run_contract_probe` or
+`run_text_analysis` and remains alive for the complete child lifetime. The
+runner races the process exchange against the existing cooperative cancellation
+token and a fixed five-second timeout.
 
 Cancellation before spawn returns immediately. Cancellation or timeout after
 spawn sends a kill request and waits for the child to exit before returning.
@@ -80,22 +87,29 @@ durable or affect a document.
 
 | Layer | Function or type | Responsibility |
 | :--- | :--- | :--- |
-| High | `run_contract_probe` | Owns one validated helper call through terminal cleanup. |
+| High | `run_contract_probe` / `run_text_analysis` | Owns one validated helper call through terminal cleanup. |
 | Mid | protocol and terminal classifiers | Enforce allowlist, identity, state, bounds, and typed outcomes. |
 | Low | command, stream, and path helpers | Canonicalize trusted files, spawn Python, move bytes, kill, and reap. |
 | Python | `process_request` | Validate and dispatch one deterministic allowlisted operation. |
 
 ## Verification
 
-Seventeen focused Rust tests cover request/response serialization, input bounds,
+The Phase 28 baseline has seventeen focused Rust tests covering
+request/response serialization, input bounds,
 strict fields, response identity, Unicode, canonical runtime configuration,
 real isolated subprocess execution, cleared environment, timeout, cancellation,
 reaping, malformed and oversized stdout, stderr on success, non-zero typed
 failure, registration cleanup, and bounded error strings.
 
-Six Python tests independently cover the exported protocol types, stable success
+Six Phase 28 Python tests independently cover the exported protocol types, stable success
 shape, invalid JSON, unknown fields, exact allowlist and versions, UUID, locale,
 text and request bounds, and closed failure documents.
+
+Phase 29 adds twelve Rust and five Python tests for its second allowlist entry,
+all five findings, strict result validation, Unicode ranges, deterministic
+ordering, thresholds, false-positive guards, and the unchanged real subprocess
+boundary. The complete helper suite therefore has twenty-nine focused Rust tests
+and eleven Python tests.
 
 `scripts/check-invariants.sh` requires those tests and the fixed protocol,
 process, timeout, cancellation, environment, stream, and dependency markers. It
@@ -115,5 +129,6 @@ test behavior.
 
 No application state initializes `PythonHelperRunner`, and no Tauri or frontend
 surface can start it. Packaging still needs a trusted Python runtime/resource
-location. Phase 29 may add an actual text-analysis helper by extending the
-closed protocol and tests without weakening the Phase 28 process boundary.
+location. The Phase 29 text-analysis extension remains internal and review-only.
+Phase 31 formatting checks are separately bounded as pure Rust work and do not
+expand Python authority.

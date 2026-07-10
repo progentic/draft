@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 27 is deliberately smaller than the
+The implemented application through Phase 29 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -51,7 +51,9 @@ full system described in this architecture:
 - Rust emits the typed finite `draft://runtime-status` event, and the frontend
   validates it before React displays connection state.
 - Rust owns a process-local worker cancellation registry and cooperative token.
-  No product worker starts yet, so no cancellation control is displayed.
+  The internal analysis and Python-helper boundaries use registrations while
+  their caller awaits completion, but no product worker starts from a Tauri
+  command, so no cancellation control is displayed.
 - Rust owns the version 1 document envelope, UUID identity parsing, root-shape
   validation, typed failures, and Serde round trips. Typed open/save commands
   now carry that envelope, while Rust remains the validation authority.
@@ -92,7 +94,8 @@ full system described in this architecture:
 - Rust owns a versioned Python helper runner with a fixed canonical entrypoint,
   closed allowlist, isolated environment, bounded standard streams, timeout,
   cooperative cancellation, child reaping, and typed output validation. Its
-  contract probe proves the process boundary but performs no product analysis.
+  contract probe proves the process boundary, and its text-analysis operation
+  returns only closed review codes and ranges.
 - Rust validates five deterministic text-analysis finding codes and UTF-8 byte
   ranges returned by the helper, then supplies fixed categories, severities,
   titles, and explanations. Findings are immutable, non-persistent review

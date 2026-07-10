@@ -67,11 +67,11 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | Phase 18 requires exact Rust attrs tests, nested envelope and pre-mutation open/save rejection, store-backed resolution, typed IPC guards, Tiptap fail-closed tests, and an embedded-metadata scan. Phase 19 reuses validated attrs for deterministic bibliography-consistency tests and rejects frontend or side-effecting authority. | The `verify` job runs the same Rust/frontend tests, consistency tests, and citation invariant scans through `scripts/verify.sh`. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | Phase 26 transactionally promotes one candidate identity into one SQLite job, permits one hashed opaque claim, requires current ownership for every in-progress mutation, persists attempts/checkpoints/cancellation/failures, and invalidates stale claims during recovery. Two-connection races, close/reopen recovery, typed ownership errors, and terminal immutability are required. | The `verify` job runs the same Phase 26 job tests and source-boundary scans through `scripts/verify.sh`. |
 | `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | Phase 12 establishes the process-local registry. Phase 13 retains exclusive Rust-selected source paths there and tests duplicate load, path alias rejection, save, close, and reopen behavior without creating a second handle. | The `verify` job runs the same registry, persistence, command, and frontend wrapper tests plus the invariant scan. |
-| `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | Phase 9 provides the Rust cancellation registry/token, typed cancel command and wrapper, active/repeated/already-ended/error/shutdown tests, and a scan that confines worker spawning to `src-tauri/src/workers/`. No product worker starts yet. | The `verify` job runs the same Rust/frontend tests, cancellation-boundary scan, and Phase 10 bridge-name parity check. Worker-specific terminal-event tests are required when start commands are introduced. |
+| `INV-07` | Accepted | Every user-initiated long-running Rust worker that emits progress events has a user-visible cancellation or abort path unless documented as non-cancelable and idempotent. | `ARCHITECTURE.md` §5.3 and §10 | Phase 9 provides the Rust cancellation registry/token, typed cancel command and wrapper, active/repeated/already-ended/error/shutdown tests, and a scan that confines worker spawning to `src-tauri/src/workers/`. Phases 27 through 29 exercise internal cancellation lifetimes without adding a Tauri start command, detached product worker, progress event, or visible workflow. | The `verify` job runs the same Rust/frontend tests, cancellation-boundary scan, Phase 27 analysis cancellation tests, Phase 28/29 helper cancellation and reaping tests, and bridge-name parity check. Worker-specific terminal-event tests are required when start commands are introduced. |
 | `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | Phase 24 enforces root-confined canonical paths, event-driven deadline resets, a one-second quiet window, unchanged byte length, signature validation, and the chunked-write regression test before returning a candidate. The size-only rule cannot detect an unreported same-size in-place change. The intake gate has no watcher, worker, persistence, or frontend flow; Phase 26 persistence begins only after candidate promotion. | The `verify` job runs the same Rust tests and import-boundary scans through `scripts/verify.sh`. |
 | `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | Phase 14 routes saves through a same-directory named temporary file, synchronizes content before atomic replacement, synchronizes the parent directory on Unix, serializes file lifecycle operations, and returns typed stage failures. Injected partial-write/sync/replacement faults, real replacement failure, cleanup, platform replacement, durability-uncertain, and concurrent disk/registry tests are required by the invariant scan. | The `verify` job runs the same atomic-writer, persistence, direct-write, command, and frontend boundary checks through `scripts/verify.sh`. |
 | `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | Phases 21 and 22 require centralized HTTPS-only client construction and request execution, controlled identity/timeouts, per-provider rate limits, capped backoff, bounded responses, typed failures, and no `reqwest` use outside `src-tauri/src/network/`. Existing frontend and Python scans remain active. | The `verify` job runs the same construction, request-policy, provider-normalization, and boundary checks through `scripts/verify.sh`. |
-| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Phase 28 requires a fixed canonical entrypoint, closed protocol/helper versions, exact bounded JSON, isolated cleared environment, bounded captured streams, timeout, cooperative cancellation, kill/reap behavior, typed failures, empty dependency set, and Rust validation. Python and Rust tests plus source scans deny helper network, credential, database, filesystem, environment, subprocess, persistence, mutation, Tauri, and frontend authority. | The `verify` job runs the same Phase 28 Python/Rust tests and helper-boundary scans through `scripts/verify.sh`. |
+| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Phase 28 requires a fixed canonical entrypoint, closed protocol/helper versions, exact bounded JSON, isolated cleared environment, bounded captured streams, timeout, cooperative cancellation, kill/reap behavior, typed failures, empty dependency set, and Rust validation. Phase 29 extends only the closed allowlist and result validation. Python and Rust tests plus source scans deny helper network, credential, database, filesystem, environment, subprocess, persistence, mutation, Tauri, and frontend authority. | The `verify` job runs the same Phase 28/29 Python and Rust tests plus helper-boundary scans through `scripts/verify.sh`. |
 | `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | The Phase 3 `verify` job runs Bash syntax and runtime-boundary checks. Optional tools run when present. |
 | `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
@@ -315,10 +315,13 @@ Phase 9 establishes the reusable transient-worker cancellation contract:
 - The owning feature must emit its typed terminal event before its worker exits.
 
 The registry is process-local and is not the persistent job state machine from
-Phase 26. No long-running product worker exists at this checkpoint. A future
-start command may not ship until it retains the registration guard, observes
-the token, exposes the typed frontend cancel action, and tests its terminal
-event.
+Phase 26. Phase 27 analysis coordination and the Phase 28/29 Python runner each
+retain a registration and observe cancellation inside their Rust caller's
+lifetime. They add no Tauri start command, detached product task, frontend
+listener, or visible progress event. No long-running product worker exists at
+this checkpoint. A future start command may not ship until it retains the
+registration guard, observes the token, exposes the typed frontend cancel
+action, and tests its terminal event.
 
 A worker may be documented as non-cancelable only if it is idempotent, short-lived, and safe to complete.
 
@@ -448,17 +451,20 @@ Allowed Python behavior:
 - Run local deterministic formatting or text-analysis checks.
 
 Phase 28 implements the process and protocol boundary with one non-product
-`contract_probe`. Rust generates request identity, selects the closed helper and
-version, canonicalizes a fixed entrypoint, clears inherited environment, and
-owns process creation, bounded stdin/stdout/stderr, timeout, cancellation,
-kill/reap, exit interpretation, and response validation. The request contains
-only bounded text and a closed locale; it carries no path, command, environment,
-credential, persistence, document, or reference field.
+`contract_probe`. Phase 29 adds `text_analysis` version 1 to the same closed
+allowlist. Rust generates request identity, selects the helper and version,
+canonicalizes a fixed entrypoint, clears inherited environment, and owns process
+creation, bounded stdin/stdout/stderr, timeout, cancellation, kill/reap, exit
+interpretation, and response validation. The request contains only bounded text
+and a closed locale; it carries no path, command, environment, credential,
+persistence, document, or reference field.
 
 The production Python package uses the standard library only. Scans reject file
 and directory access, environment inspection, network, credential, database,
-and subprocess APIs. The helper emits exact typed JSON and never decides whether
-a result becomes durable state or changes a document.
+and subprocess APIs. The probe emits a byte count; text analysis emits only five
+closed codes and UTF-8 byte ranges. Rust validates both exact result shapes, and
+Python never decides whether a result becomes durable state or changes a
+document.
 
 Minimum local checks:
 

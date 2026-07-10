@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 29 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 30 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -17,14 +17,14 @@ adding a watcher dependency, plus a persistent PDF import-job state machine
 with hashed opaque claims and restart recovery. A provider-independent Rust AI
 boundary now assembles bounded provenance-tagged context and coordinates typed,
 cancellable generated-analysis streams without a production provider or
-network call. The Phase 5, Phase 10, Phase 15, Phase 20, and Phase 25 audits are
-recorded in `docs/maintainers/REALIGNMENT.md`.
+network call. The Phase 5, Phase 10, Phase 15, Phase 20, Phase 25, and Phase 30
+audits are recorded in `docs/maintainers/REALIGNMENT.md`.
 
 Rust also owns a versioned Python helper runner with a canonical fixed
 entrypoint, closed protocol allowlist, isolated cleared environment, bounded
-standard streams, timeout, cancellation, and child reaping. The current
-`contract_probe` verifies only that boundary and is not a product analysis
-feature.
+standard streams, timeout, cancellation, and child reaping. The
+`contract_probe` verifies only that process boundary and is not a product
+analysis feature.
 
 The helper allowlist now also includes deterministic `text_analysis` version 1.
 Python returns only five closed review codes and UTF-8 ranges; Rust validates

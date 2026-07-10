@@ -106,6 +106,17 @@ apply.
 Any future event producer that continues after its initiating command returns
 must follow the Phase 9 cancellation pattern before it is considered complete.
 
+## Internal Stream Types
+
+Phase 27 defines `AiStreamEvent` and an `AiEventSink` for internal Rust
+orchestration. Those values are delivered only to a caller-supplied Rust sink.
+They have no stable `draft://` event name, Tauri emitter, registered command,
+WebView capability, frontend listener, or visible analysis workflow.
+
+The Python helper runner returns one terminal Rust result and emits no progress
+event. The runtime-status event therefore remains the only implemented
+Rust-to-frontend Tauri event at this checkpoint.
+
 ## Enforcement
 
 Rust tests pin the event name, payload serialization, expanded command error

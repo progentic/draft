@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 29 are complete. Phase 30 is
+**Current execution checkpoint:** Phases 0 through 30 are complete. Phase 31 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -35,6 +35,10 @@ Phase 29 adds five deterministic, explainable text-review finding types for
 grammar, clarity, tone, cohesion, and voice. Rust validates closed codes and
 UTF-8 ranges and owns all review wording. Findings remain non-persistent and
 cannot edit a document; visible issue cards remain deferred.
+
+Phase 30 audits the analysis, cancellation, event, and Python-helper boundaries
+without adding product behavior. Phase 31 requirements are bounded in advance
+to pure, review-only style-consistency and heading-structure checks.
 
 ---
 

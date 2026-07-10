@@ -545,6 +545,14 @@ real-process results, and the absence of scores, source copies, replacements,
 apply behavior, persistence, document mutation, Tauri, frontend, or networking
 authority.
 
+Phase 30 reconciles analysis, cancellation, Tauri-event, Python-helper, and
+text-analysis documentation with the implemented Phase 27 through Phase 29
+boundaries. The audit evidence is recorded in
+`docs/maintainers/REALIGNMENT.md`. The bounded Phase 31 readiness requirements
+live in the non-binding `docs/drafts/FORMATTING_CHECKS.md` and define pure,
+review-only style-consistency and heading-structure checks without export,
+mutation, persistence, Python, Tauri, or frontend authority.
+
 Recommended checks:
 
 - Markdown formatting
