@@ -31,6 +31,7 @@ check_required_documents() {
     docs/ARCHITECTURE.md
     docs/CODING_STYLE.md
     docs/DOCUMENTATION.md
+    docs/drafts/AI_ORCHESTRATION.md
     docs/drafts/BACKGROUND_JOBS.md
     docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md
     docs/drafts/DOCUMENT_ENVELOPE.md
@@ -45,6 +46,7 @@ check_required_documents() {
     docs/INVARIANTS.md
     docs/PHASEMAP.md
     docs/ROADMAP.md
+    docs/maintainers/AI_ORCHESTRATION.md
     docs/maintainers/CANCELLATION_BOUNDARY.md
     docs/maintainers/BACKGROUND_JOBS.md
     docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md
@@ -139,7 +141,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 26 are complete'
+  local checkpoint='Phases 0 through 27 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

@@ -388,5 +388,6 @@ Every architecture PR must answer:
   citation-node, bibliography-consistency, network-client, metadata-lookup,
   external-browser-handoff, and PDF-import requirements non-binding until the
   contract lifecycle permits acceptance. The implemented Phase 26
-  background-job requirements are also non-binding. Create Python-helper and
-  formatting drafts in their owning phases.
+  background-job requirements and Phase 27 AI-orchestration requirements are
+  also non-binding. Create Python-helper and formatting drafts in their owning
+  phases.

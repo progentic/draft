@@ -1,8 +1,9 @@
+pub mod analysis;
 mod application;
 pub mod citations;
 mod commands;
 pub mod documents;
-mod events;
+pub mod events;
 pub mod imports;
 pub mod jobs;
 pub mod network;

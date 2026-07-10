@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 26 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 27 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -14,16 +14,19 @@ boundary, pure bibliography-consistency check, centralized network client, and
 typed DOI metadata providers plus a Rust-owned system-browser handoff. Rust
 also owns explicit PDF validation and watched-file stable-write intake without
 adding a watcher dependency, plus a persistent PDF import-job state machine
-with hashed opaque claims and restart recovery. The Phase 5, Phase 10, Phase
-15, Phase 20, and Phase 25 audits are recorded in
-`docs/maintainers/REALIGNMENT.md`.
+with hashed opaque claims and restart recovery. A provider-independent Rust AI
+boundary now assembles bounded provenance-tagged context and coordinates typed,
+cancellable generated-analysis streams without a production provider or
+network call. The Phase 5, Phase 10, Phase 15, Phase 20, and Phase 25 audits are
+recorded in `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
-filesystem watcher, import processing worker or scheduler, release automation,
-or packaging.
+filesystem watcher, import processing worker or scheduler, production model
+provider, model credentials, analysis start command or frontend listener,
+release automation, or packaging.
 
 ## Toolchain decisions
 
@@ -48,6 +51,8 @@ or packaging.
 - A separate Rust `Mutex<()>` serializes document open/save lifecycle
   coordination so disk and registry snapshots cannot be reordered.
 - `tokio-util` provides cooperative cancellation tokens for Rust-owned workers.
+- The same cancellation token races each Phase 27 adapter read without spawning
+  a task. Deterministic in-memory adapters are test infrastructure only.
 - UUID values identify validated documents; UUID v4 values identify transient
   workers without frontend-generated IDs.
 - Frontend dependencies use npm with `package-lock.json` committed.
@@ -117,7 +122,7 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake/job scans, cross-bridge name parity, and tests
+  intake/job/AI orchestration scans, cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

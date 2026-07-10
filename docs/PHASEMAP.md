@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 26 are complete. Phase 27 is
+**Current execution checkpoint:** Phases 0 through 27 are complete. Phase 28 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -80,6 +80,14 @@ transactionally by `PdfImportId`; concurrent promotion returns one durable job,
 and concurrent claim allows one opaque-token owner. Checkpoints, typed failures,
 cancellation intent, attempts, and recovery persist without adding a worker,
 scheduler, watcher, parser, network call, reference mutation, or UI workflow.
+
+Phase 27 requirements and implemented behavior are recorded in
+`docs/drafts/AI_ORCHESTRATION.md` and
+`docs/maintainers/AI_ORCHESTRATION.md`. Rust now assembles bounded typed context,
+preserves document and verified-evidence provenance, classifies every output as
+generated analysis, and coordinates a cancel-safe adapter stream. No production
+provider, credential, network call, persistence, Tauri start command, frontend
+listener, document mutation, or spawned worker exists.
 
 ---
 

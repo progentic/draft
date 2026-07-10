@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 24 is deliberately smaller than the
+The implemented application through Phase 27 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -79,12 +79,16 @@ full system described in this architecture:
   and Google Scholar queries before handing one URL to the default system
   browser. The WebView has no direct opener API or capability.
 - Rust can validate an explicitly approved PDF or confirm a watched PDF after
-  one quiet second and an unchanged byte length. Phase 26 can promote that
-  Rust-only candidate into one durable PDF import job without starting
-  processing.
+  one quiet second and an unchanged byte length. That creates a Rust-only
+  candidate without starting processing.
 - Rust owns a versioned SQLite PDF import-job store. Candidate promotion is
   identity-deduplicated, in-progress updates require a hashed opaque claim, and
   startup recovery invalidates stale claims while preserving checkpoints.
+- Rust owns a provider-independent analysis seam with bounded request and
+  context assembly, explicit document/evidence provenance, generated-analysis
+  output tags, typed stream limits, and cooperative cancellation. Only
+  deterministic in-memory test adapters exist; no model or external request is
+  configured.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -100,9 +104,10 @@ full system described in this architecture:
   the current document.
 - The current workspace does not expose open/save controls yet. No close command,
   autosave, recovery, reference CRUD UI, citation insertion, rendered
-  bibliography workflow, provider lookup or browser-handoff control, analysis
-  worker, PDF import control or watcher, job scheduler or processing worker,
-  formatter, or export path is implemented.
+  bibliography workflow, provider lookup or browser-handoff control, production
+  model provider, analysis start command, frontend analysis listener, visible
+  analysis workflow, PDF import control or watcher, job scheduler or processing
+  worker, formatter, or export path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -135,6 +140,11 @@ Ownership:
 - Python may run local deterministic analysis helpers, such as readability metrics, grammar-oriented checks, or structural document inspection, when those helpers are versioned and invoked through Rust.
 
 Analysis output must remain distinguishable from source evidence. The application must not silently convert AI-generated claims into verified facts.
+
+Phase 27 implements only the internal Rust orchestration seam. Typed context
+keeps `UserDocument` and `VerifiedSourceEvidence` distinct, while every stream
+update is `GeneratedAnalysis`. Provider integration, credentials, network
+execution, persistence, Tauri start IPC, and UI remain future work.
 
 ### 3.3 Formatting
 

@@ -518,6 +518,15 @@ persistence, durable cancellation, stale-token rejection, crash recovery,
 terminal immutability, and the absence of parsing, networking, watcher, worker,
 reference, Tauri-command, or frontend authority.
 
+Phase 27 documents the provider-independent Rust analysis boundary in
+`docs/maintainers/AI_ORCHESTRATION.md`. The non-binding requirements remain in
+`docs/drafts/AI_ORCHESTRATION.md`. Rust tests and invariant scans enforce
+bounded request and stream sizes, deterministic context omission, explicit
+document/evidence provenance, generated-analysis output tags, cooperative
+cancellation, bounded failures, and the absence of provider, credential,
+network, persistence, mutation, Tauri-start, frontend, Python, or spawning
+authority.
+
 Recommended checks:
 
 - Markdown formatting

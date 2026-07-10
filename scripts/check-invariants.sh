@@ -30,6 +30,7 @@ main() {
   check_external_browser_handoff_contract
   check_pdf_import_contract
   check_background_job_contract
+  check_ai_orchestration_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -517,6 +518,78 @@ check_background_job_contract() {
   assert_no_matches "Phase 26 frontend job authority" \
     '\bPdfImportJob\b|\bpromote_candidate\b|\bclaim_token\b|\bjob_state\b' src
   printf 'PASS INV-05 Phase 26 persistent PDF job contract\n'
+}
+
+check_ai_orchestration_contract() {
+  local context_path="src-tauri/src/analysis/context.rs"
+  local context_test_path="src-tauri/src/analysis/context_tests.rs"
+  local orchestration_path="src-tauri/src/analysis/ai.rs"
+  local orchestration_test_path="src-tauri/src/analysis/ai_tests.rs"
+  local event_path="src-tauri/src/events/ai_stream.rs"
+  local required_tests=(
+    request_validates_and_normalizes_bounded_input
+    request_rejects_instruction_and_excerpt_bounds
+    request_rejects_count_and_duplicate_evidence_bounds
+    evidence_identity_and_citekey_fail_closed
+    context_preserves_provenance_and_class_order
+    context_omits_whole_blocks_deterministically
+    request_errors_do_not_include_user_content
+    preparation_registers_stream_before_adapter_work
+    successful_stream_is_ordered_and_generated_analysis_only
+    adapter_receives_typed_provenance_not_flattened_text
+    cancellation_before_run_avoids_adapter_start
+    cancellation_during_read_cancels_adapter_and_emits_terminal
+    adapter_start_and_stream_failures_emit_bounded_terminal_events
+    invalid_or_excessive_chunks_cancel_stream_and_fail_typed
+    cumulative_output_limit_is_enforced
+    event_delivery_failure_stops_adapter_without_content_error
+    adapter_and_preparation_errors_do_not_include_context
+  )
+  local test_name
+
+  require_file "${context_path}"
+  require_file "${context_test_path}"
+  require_file "${orchestration_path}"
+  require_file "${orchestration_test_path}"
+  require_file "${event_path}"
+  require_file docs/drafts/AI_ORCHESTRATION.md
+  require_file docs/maintainers/AI_ORCHESTRATION.md
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" src-tauri/src/analysis
+  done
+  require_rust_test stream_payload_serialization_is_stable "${event_path}"
+  require_source_pattern 'MAX_AI_INSTRUCTION_BYTES: usize = 4 * 1024' "${context_path}"
+  require_source_pattern 'MAX_AI_EXCERPTS_PER_CLASS: usize = 64' "${context_path}"
+  require_source_pattern 'MAX_AI_EXCERPT_BYTES: usize = 8 * 1024' "${context_path}"
+  require_source_pattern 'MAX_AI_CONTEXT_CLASS_BYTES: usize = 32 * 1024' "${context_path}"
+  require_source_pattern 'AiContextBlock::UserDocument' "${context_path}"
+  require_source_pattern 'AiContextBlock::VerifiedSourceEvidence' "${context_path}"
+  require_source_pattern 'is_valid_citekey(value)' "${context_path}"
+  require_source_pattern 'MAX_AI_STREAM_CHUNK_BYTES: usize = 16 * 1024' "${orchestration_path}"
+  require_source_pattern 'MAX_AI_STREAM_CHUNKS: u32 = 4_096' "${orchestration_path}"
+  require_source_pattern 'MAX_AI_STREAM_BYTES: usize = 1024 * 1024' "${orchestration_path}"
+  require_source_pattern 'run_until_cancelled(stream.next_chunk()).await' "${orchestration_path}"
+  require_source_pattern 'stream.cancel();' "${orchestration_path}"
+  require_source_pattern 'GeneratedAnalysis' "${event_path}"
+  assert_no_matches "Phase 27 provider, network, or secret authority" \
+    '\breqwest\b|\bNetworkClient\b|https?://|\b(?:api[_-]?key|authorization|bearer|credential|secret)\b|\bstd::env\b|\bdotenv\b' \
+    src-tauri/src/analysis "${event_path}"
+  assert_no_matches "Phase 27 persistence or mutation authority" \
+    '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|\bPdfImportJob\b|(?:std|tokio)::fs|\bOpenOptions\b|\.write_all\s*\(' \
+    src-tauri/src/analysis "${event_path}"
+  # Tests use the already-linked Tauri executor only to drive deterministic
+  # futures. Product orchestration remains independent of the Tauri boundary.
+  assert_no_matches "Phase 27 Tauri product authority" \
+    '#\[tauri::command\]|\btauri::' \
+    "${context_path}" "${orchestration_path}" "${event_path}"
+  assert_no_matches "Phase 27 spawned-worker authority" \
+    '(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(|\bCommand::new\s*\(' \
+    src-tauri/src/analysis "${event_path}"
+  assert_no_matches "Phase 27 frontend analysis authority" \
+    '\bAi(?:Analysis|Model|Stream)|\bGeneratedAnalysis\b|\bVerifiedSourceEvidence\b|draft://ai' src
+  assert_no_matches "Phase 27 Python helper coupling" \
+    '\bdraft_helpers\b|\bpython(?:3)?\b|\.py\b' src-tauri/src/analysis "${event_path}"
+  printf 'PASS INV-14 Phase 27 AI orchestration contract\n'
 }
 
 require_citation_sources() {

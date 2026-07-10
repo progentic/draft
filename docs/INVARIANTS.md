@@ -74,6 +74,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Python tests and denied-import scans run now; the Phase 10 absence gate rejects a helper protocol before Phase 28. Phase 28 must replace it with allowlist, timeout, and typed I/O tests. | The `verify` job runs the same Python tests, denied-import scan, and helper-protocol absence gate. |
 | `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | The Phase 3 `verify` job runs Bash syntax and runtime-boundary checks. Optional tools run when present. |
 | `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
+| `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
 
 ---
 
@@ -518,6 +519,35 @@ That script must verify that core CI jobs call repository scripts or `just` targ
 
 ---
 
+### INV-14: Generated Analysis Provenance
+
+Model output is assistance, not evidence. Every Phase 27 stream event is tagged
+`GeneratedAnalysis`, including started, chunk, completed, cancelled, and failed
+updates. Evidence IDs in the started context summary disclose which verified
+inputs were available; they do not claim that the model used, checked, or
+verified a statement.
+
+Context retains the distinction between `UserDocument` and
+`VerifiedSourceEvidence` through the adapter boundary. Verified blocks keep
+their evidence ID and citekey, and the model request is never flattened into an
+untyped prompt. Context limits are deterministic, preserve whole UTF-8 blocks,
+and report omissions separately for each provenance class.
+
+Phase 27 does not persist generated output, mutate documents or references,
+call an external provider, accept credentials, or expose a Tauri start command
+or frontend stream. Adding any verification or promotion path from generated
+analysis to evidence requires an explicit governed contract and tests that keep
+the two states distinguishable.
+
+Minimum verification:
+
+```bash
+cargo test --manifest-path src-tauri/Cargo.toml --locked --offline analysis::
+bash scripts/check-invariants.sh
+```
+
+---
+
 ## 5. Required Local Command Surface
 
 The root `justfile` must expose these commands:
@@ -616,10 +646,11 @@ tests, Phase 17 transactional reference-store CRUD and migration tests, Phase
 18 citation validation and resolution, Phase 19 bibliography consistency,
 Phase 21 centralized network-client construction, Phase 22 metadata lookup and
 request policy, Phase 23 external browser handoff, direct frontend opener APIs,
-Phase 24 PDF intake and stable-write confirmation, ad hoc Rust network clients,
-and Bash invocation from product runtime. The
-verifier also checks locked offline builds, tests,
-required source visibility, generated-file hygiene, and documentation sanity.
+Phase 24 PDF intake and stable-write confirmation, Phase 26 persistent job
+ownership and recovery, Phase 27 bounded AI orchestration and generated-output
+provenance, ad hoc Rust network clients, and Bash invocation from product
+runtime. The verifier also checks locked offline builds, tests, required source
+visibility, generated-file hygiene, and documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 

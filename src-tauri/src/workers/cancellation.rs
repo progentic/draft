@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     fmt,
+    future::Future,
     sync::{Arc, Mutex, MutexGuard, Weak},
 };
 
@@ -138,6 +139,14 @@ impl WorkerCancellation {
     /// Resolves when cancellation is requested or the registry shuts down.
     pub async fn cancelled(&self) {
         self.token.cancelled().await;
+    }
+
+    /// Runs one cancel-safe future until it completes or cancellation wins.
+    pub async fn run_until_cancelled<F>(&self, future: F) -> Option<F::Output>
+    where
+        F: Future,
+    {
+        self.token.run_until_cancelled(future).await
     }
 
     /// Reports whether cancellation has already been requested.
