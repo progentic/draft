@@ -103,5 +103,11 @@ Actions.
 ## Next Boundary
 
 Phase 24 PDF intake is implemented in `docs/maintainers/PDF_IMPORT.md`. Phase
-25 must now realign the complete research workflow boundary before persistent
-jobs begin.
+25 realigned the research workflow boundary, and Phase 26 added the separate
+persistent job state machine documented in `docs/maintainers/BACKGROUND_JOBS.md`.
+Neither phase added a visible research workflow.
+
+## Configuration Index
+
+Fixed browser-handoff origins and input bounds are indexed in
+`docs/maintainers/CONFIGURATION.md`.

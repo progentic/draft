@@ -116,3 +116,8 @@ split abbreviations. All-caps detection uses length instead of an acronym
 dictionary. Perspective changes can be intentional. Findings therefore remain
 advisory review prompts. A later UI must preserve this wording and require an
 explicit edit/save path for any user change.
+
+## Configuration Index
+
+Finding counts, locale, and deterministic heuristic thresholds are indexed in
+`docs/maintainers/CONFIGURATION.md`.

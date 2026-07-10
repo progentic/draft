@@ -89,6 +89,12 @@ docs/
   wiki/         # when a recurring support topic exists
 ```
 
+`docs/maintainers/DOCUMENTATION_COVERAGE.md` is the code-outward coverage
+matrix. It maps each major subsystem to its code surface, maintainer guide,
+user or Wiki source, ADR status, invariant, tests, and remaining gap. A drift
+audit must update that matrix from implementation evidence rather than filling
+cells from memory.
+
 ## 4. Architecture Decisions
 
 Architecture decisions are tracked through ADRs.
@@ -265,6 +271,17 @@ Wiki articles belong in:
 docs/wiki/
 ```
 
+Files under `docs/wiki/` are the canonical source for the public GitHub Wiki.
+The live Wiki mirrors those files; it is not an independent place to edit
+product truth. A Wiki publication must preserve the repository page content
+and must not add internal architecture, phase status, or unreviewed capability
+claims.
+
+Every user-visible workflow needs a Wiki source page. Every visible typed error
+needs a recovery action in a troubleshooting page before merge. Internal
+boundaries with no visible workflow belong in maintainer documentation and the
+current-limitations page rather than speculative user instructions.
+
 ## 9. Contract Documents
 
 Contract documents define exact behavior that code may rely on.
@@ -339,6 +356,9 @@ Update documentation when a change affects:
 - public-facing claims
 - invariants
 - architecture boundaries
+- significant configuration defaults, limits, thresholds, or feature flags
+- subsystem coverage in `docs/maintainers/DOCUMENTATION_COVERAGE.md`
+- visible error recovery guidance under `docs/wiki/`
 
 When unsure, update the smallest relevant document.
 
@@ -356,6 +376,11 @@ A documentation review should ask:
 - Are examples still accurate?
 - Are links and file paths still valid?
 - Are public claims still supported by code or tests?
+- Does the coverage matrix name the code, documentation, tests, and any real
+  remaining gap?
+- Are significant values indexed in `docs/maintainers/CONFIGURATION.md`?
+- Does every visible error message link to a concrete recovery action?
+- Do canonical Wiki pages still match the visible interface and limitations?
 
 A pull request should not merge when documentation is knowingly false.
 
@@ -376,10 +401,11 @@ bash scripts/check-docs.sh
 ```
 
 The Phase 2 check verifies required document presence, top-level headings in
-`/docs`, machine-specific path absence, and the changelog's no-`Unreleased`
-rule. External URLs, Markdown anchor targets, ADR filenames, and contract
-frontmatter are not checked yet because those surfaces do not exist or would
-require broader tooling.
+`/docs`, machine-specific path absence, the changelog's no-`Unreleased` rule,
+coverage-matrix structure, significant-value indexing, canonical Wiki-source
+links, visible runtime recovery coverage, and README heading scope. External
+URLs, Markdown anchor targets, and live Wiki publication remain external-state
+checks.
 
 The Phase 3 `Verify` workflow runs `bash scripts/verify.sh`, which invokes
 `scripts/check-docs.sh`. Documentation sanity therefore uses the same script

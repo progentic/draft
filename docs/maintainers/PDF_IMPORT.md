@@ -122,3 +122,8 @@ can rely on content identity.
 Phase 26 adds only the persistent state machine documented in
 `docs/maintainers/BACKGROUND_JOBS.md`. Watcher execution and PDF processing
 remain future boundaries.
+
+## Configuration Index
+
+The stable-write quiet period and related intake limits are indexed in
+`docs/maintainers/CONFIGURATION.md`.

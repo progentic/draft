@@ -1,0 +1,108 @@
+# Documentation Coverage
+
+## Status
+
+This matrix records the code-outward documentation audit for the implemented
+repository state through Phase 32 plus independent maintenance merged after
+that checkpoint. It does not advance the roadmap phase, accept a proposed ADR,
+or imply that an internal Rust boundary has a visible product workflow.
+
+Phase 33 and ADR-001 remain under review. Their proposal state is an explicit
+boundary in this matrix, not a documentation defect to resolve outside the
+governed pull request.
+
+## Audit Method
+
+The audit starts from tracked implementation rather than existing prose. It
+reviews:
+
+- public and crate-visible Rust modules, boundary types, lifecycle functions,
+  commands, stores, workers, constants, schemas, and failure enums;
+- exported TypeScript clients, hooks, state types, presentation mappings, and
+  visible messages;
+- the Python helper protocol, versions, thresholds, and process entry point;
+- Bash command surfaces, scans, and GitHub Actions parity;
+- Tauri, Cargo, npm, capability, toolchain, persistence, export, and packaging
+  configuration;
+- tests that establish each implemented guarantee; and
+- maintainer, user, Wiki-source, policy, architecture, invariant, and ADR
+  ownership.
+
+Accessors and enum variants are covered by their owning boundary type and
+maintainer guide. The audit does not add repetitive comments that merely
+narrate a field name. New public boundary behavior still requires a focused
+documentation comment under `CODING_STYLE.md`.
+
+## Coverage Matrix
+
+The Gap column uses these coverage states:
+
+- **Implemented and documented:** code, owning documentation, and evidence agree.
+- **Implemented but user documentation absent:** an internal or repository
+  source exists, but a real user workflow or publication surface is missing.
+- **Documented but enforcement missing:** the rule is written down but no
+  mechanical check proves it yet.
+- **Proposed and blocked by governance:** the text remains non-binding until its
+  governed decision completes.
+- **Intentionally internal and not user-facing:** implementation exists, and
+  user documentation explains its visible absence instead of inventing a flow.
+
+| Subsystem | Code Surface | Maintainer Doc | User Doc | ADR | Invariant | Tests | Gap |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Desktop runtime and managed state | `src-tauri/src/lib.rs`; `application::{network_client,reference_store,job_store,runtime_status}`; `run` | `TOOLCHAIN.md`, `COMMAND_BOUNDARY.md`, `CONFIGURATION.md` | `docs/wiki/Workspace.md`, `docs/wiki/Current-Limitations.md` | Baseline stack decision | `INV-03`, `INV-10`, `INV-13` | Rust application, command, store, and parity tests | Implemented and documented. |
+| Workspace shell and editor | `DraftWorkspace`, `WorkspaceHeader`, `DocumentOutline`, `DocumentInspector`, `DraftEditor`, `EditorToolbar` | `WORKSPACE_UI.md`, `PERFORMANCE_MEASUREMENT.md` | `docs/wiki/Workspace.md` | None | `INV-03` | `src/App.test.tsx`, editor and benchmark tests | Implemented and documented; live Wiki publication remains a separate row. |
+| Runtime status and visible failures | `get_runtime_status`; `draft://runtime-status`; `startRuntimeStatusSession`; `useRuntimeStatus`; `RUNTIME_COMMAND_FAILURE_LABELS` | `COMMAND_BOUNDARY.md`, `EVENT_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md`, `ERROR_MESSAGES.md` | `docs/wiki/Troubleshooting.md` | None | `INV-02`, `INV-03` | Rust command/event tests and runtime-status frontend suites | Implemented and documented in canonical sources; `docs/user/WORKSPACE.md` still uses an older event-failure label. PR #1 also edits that file, so reconciliation waits for rebase. |
+| Typed Tauri command client | Six registered Rust commands and matching wrappers under `src/ipc/` | `COMMAND_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md` | No direct user surface | None | `INV-02`, `INV-03` | Command serialization tests, wrapper tests, bridge-name parity scan | Intentionally internal and not user-facing. |
+| Transient worker cancellation | `WorkerCancellationRegistry`, `WorkerRegistration`, `WorkerCancellation`, `cancel_worker` | `CANCELLATION_BOUNDARY.md`, `COMMAND_BOUNDARY.md` | `docs/wiki/Current-Limitations.md` | None | `INV-07` | Cancellation registry, command, helper, and analysis tests | Intentionally internal and not user-facing; no visible worker exists. |
+| Document envelope | `DocumentEnvelope`, `DocumentId`, `DocumentEnvelopeError`, `from_json_value` | `DOCUMENT_ENVELOPE.md` | `docs/wiki/Current-Limitations.md` | None | `INV-04`, `INV-09` | Envelope validation, serialization, citation, and command tests | Intentionally internal and not user-facing; no file controls exist. |
+| Document registry | `DocumentRegistry::{open,open_from_path,update,update_source,close}` | `DOCUMENT_REGISTRY.md` | `docs/wiki/Current-Limitations.md` | None | `INV-06` | Registry concurrency, duplicate-open, close, and lifecycle tests | Intentionally internal and not user-facing; no file controls exist. |
+| Document open, save, and atomic replacement | `open_document`, `save_document`, `write_document_atomically`; native dialog adapters | `DOCUMENT_SAVE_LOAD.md`, `ERROR_MESSAGES.md` | `docs/wiki/Current-Limitations.md` | None | `INV-03`, `INV-06`, `INV-09` | Command, persistence, interruption, durability, and reopen tests | Intentionally internal and not user-facing; only the backend boundary exists. |
+| Reference record | `ReferenceRecord`, `ReferenceId`, `ReferenceRecordError`, schema version 1 | `REFERENCE_RECORD.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-03` | Record validation and serialization tests | Intentionally internal and not user-facing; no reference UI exists. |
+| Reference store | `ReferenceStore::{open,create,get,get_by_citekey,list,update,delete}`; `reference_records` | `REFERENCE_STORE.md`, `CONFIGURATION.md`, `ERROR_MESSAGES.md` | `docs/wiki/Current-Limitations.md` | None | `INV-03` | SQLite CRUD, migration, corruption, and concurrency tests | Intentionally internal and not user-facing; CRUD IPC is absent. |
+| Citation node and resolution | `CitationNodeAttrs`, `collect_document_citations`, `resolve_citation`; TypeScript/Tiptap mirrors | `CITATION_NODE.md`, `COMMAND_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md` | `docs/wiki/Current-Limitations.md` | None | `INV-04` | Rust validation/resolution and frontend fail-closed rendering tests | Intentionally internal and not user-facing; citation insertion is absent. |
+| Bibliography consistency | `check_bibliography_consistency`, `BibliographyConsistencyReport` | `BIBLIOGRAPHY_CONSISTENCY.md` | `docs/wiki/Current-Limitations.md` | None | `INV-04` | Missing, orphaned, duplicate, ordering, and side-effect tests | Intentionally internal and not user-facing; no visible bibliography workflow exists. |
+| Central network client | `NetworkClient::{new,get_metadata}`, `NetworkService`, typed request errors | `NETWORK_CLIENT.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | Baseline external-service policy | `INV-01`, `INV-03`, `INV-10` | Construction, timeout, rate-limit, response-bound, and scan tests | Intentionally internal and not user-facing; no visible lookup control exists. |
+| Metadata providers | `lookup_crossref`, `lookup_semantic_scholar`, `lookup_unpaywall`; normalized `MetadataRecord` | `METADATA_LOOKUP.md`, `NETWORK_CLIENT.md` | `docs/wiki/Current-Limitations.md` | Baseline external-service policy | `INV-10` | Provider request and malformed-response tests | Intentionally internal and not user-facing; candidates are non-persistent. |
+| External browser handoff | `open_in_system_browser`, `open_external_access`, `openExternalAccess` | `EXTERNAL_BROWSER_HANDOFF.md`, `COMMAND_BOUNDARY.md`, `ERROR_MESSAGES.md` | `docs/wiki/Current-Limitations.md` | Baseline external-service policy | `INV-01`, `INV-03`, `INV-10` | URL validation, fixed-origin, command, wrapper, and opener scans | Intentionally internal and not user-facing; no visible control exists. |
+| PDF intake candidate | `prepare_explicit_pdf`, `WatchedPdfIntake::{record_change,confirm_stable}`, `PendingPdfImport` | `PDF_IMPORT.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-08` | Explicit, containment, symlink, quiet-period, and stable-size tests | Intentionally internal and not user-facing; watcher and UI are absent. |
+| Durable PDF import jobs | `PdfImportJobStore` lifecycle; `pdf_import_jobs`; claim token, checkpoint, retry, cancellation, recovery | `BACKGROUND_JOBS.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-05` | Promotion/claim races, stale ownership, recovery, cancellation, and migration tests | Intentionally internal and not user-facing; scheduler and processing are absent. |
+| AI orchestration | `AiAnalysisRequest`, `assemble_model_request`, `prepare_ai_analysis`, `run_ai_analysis`; stream traits/events | `AI_ORCHESTRATION.md`, `CANCELLATION_BOUNDARY.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-07`, `INV-14` | Context, provenance, stream, cancellation, and failure tests | Intentionally internal and not user-facing; provider and UI are absent. |
+| Python helper process | `PythonHelperRunner`; protocol and helper versions; `draft_helpers.worker.process_request` | `PYTHON_HELPERS.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-11` | Rust process/protocol tests, Python contract tests, authority scans | Intentionally internal and not user-facing; packaged runtime discovery is absent. |
+| Text-analysis findings | `TextAnalysisInput`, `TextAnalysisFinding`, five closed finding codes; Python heuristics | `TEXT_ANALYSIS.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-15` | Rust validation, Python heuristic, offset, limit, and authority tests | Intentionally internal and not user-facing; issue-card UI is absent. |
+| Formatting checks | `FormattingSnapshot`, `run_formatting_checks`, three styles, heading and citation findings | `FORMATTING_CHECKS.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-16` | Input, finding, style, heading, and no-authority tests | Intentionally internal and not user-facing; checks are not wired to UI. |
+| DOCX export | `compile_docx`, `export_docx`, strict model/package compiler, atomic write | `DOCX_EXPORT.md`, `CONFIGURATION.md`, `ERROR_MESSAGES.md` | `docs/wiki/Current-Limitations.md` | None | `INV-04`, `INV-09` | Parser, package, XML, resource-limit, citation-rejection, and atomic-export tests | Intentionally internal and not user-facing; no visible export control exists. |
+| Error presentation | Typed Rust errors, TypeScript guards, runtime session state, visible runtime copy | `ERROR_MESSAGES.md`, owning boundary guides | `docs/wiki/Troubleshooting.md` | None | `INV-02`, `INV-03` | Serialization, exhaustive mapping, fallback, and rendered message tests | Implemented and documented; typed but unwired failures intentionally have no speculative user copy. |
+| Verification and repository tooling | `justfile`; `scripts/{bootstrap,build,format,verify,check-*}.sh`; `.github/workflows/verify.yml` | `TOOLCHAIN.md`, `CONFIGURATION.md`, this matrix | No user workflow | Baseline governance policy | `INV-12`, `INV-13` | Script syntax, scans, repository hygiene, and CI/local parity | Intentionally internal and not user-facing. |
+| Packaging and application icons | `src-tauri/icons/**`; five explicit `bundle.icon` paths; inactive bundle setting | `PACKAGING.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-13` for verification parity | Tauri info, unsigned `.app` build, embedded-icon and format audit | Implemented and documented as groundwork, not Phase 42. |
+| PDF export decision | No dependency, command, runtime path, control, or generated PDF | ADR-001 proposed in PR #1 and its proposal documents | `docs/wiki/Current-Limitations.md` | ADR-001 proposed | Current PDF absence scan; named proposal guard remains in PR #1 | Absence scan and full verifier | Proposed and blocked by governance: PR #1 must finish cooling before its wording and guard can become `main` truth. |
+| Public Rust API comments | Externally reachable modules, types, functions, methods, variants, and fields | Owning subsystem guides and this matrix | No user surface | None | None | `cargo rustdoc -- -D missing_docs` audit probe | Documented but enforcement missing: 457 granular lint findings remain, mostly variants, fields, accessors, and module exports. A focused source-documentation change is required before enabling the lint. |
+| Live GitHub Wiki | Canonical pages under `docs/wiki/` | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks plus external publication review | Implemented but user documentation absent from the live surface: Wiki is enabled but its page repository is not initialized. |
+
+## Detected Drift And Resolution
+
+The audit detected these concrete gaps:
+
+- the visible workspace had user guidance but no maintainer ownership guide;
+- app-icon generation and explicit bundle paths had no packaging guide;
+- significant defaults and limits were spread across implementation guides
+  without one source-name index;
+- the live GitHub Wiki was enabled but had no initialized page repository;
+- visible runtime failures had copy mappings but no user recovery article; and
+- documentation verification did not enforce subsystem, configuration,
+  recovery, Wiki-source, or README-scope coverage.
+
+The new guides, canonical Wiki source, and `scripts/check-docs.sh` checks close
+the repository-owned coverage gaps. The matrix keeps the remaining public-API
+comment debt and live-Wiki publication state explicit instead of treating
+presence checks as proof of completion. Publishing the canonical pages must use
+the same page contents without creating a second source of truth.
+
+## Audit Boundaries
+
+- `README.md` remains the marketing landing page.
+- `CHANGELOG.md` remains released changes only.
+- No product behavior, command, schema, state transition, or phase status is
+  changed by this audit.
+- No proposed Phase 33 decision is restated as accepted.
+- A future visible workflow must add or update both its maintainer guide and a
+  page under `docs/wiki/` before merge.

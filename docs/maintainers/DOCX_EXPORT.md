@@ -109,3 +109,8 @@ links, images, equations, notes, comments, tracked changes, headers, footers,
 page numbers, templates, layout controls, or complete APA/MLA/Chicago rendering.
 Unsupported content fails the whole export. No user can start an export until a
 later phase adds a native Rust dialog and typed frontend workflow.
+
+## Configuration Index
+
+Source, node, nesting, artifact, and supported-subset limits are indexed in
+`docs/maintainers/CONFIGURATION.md`.

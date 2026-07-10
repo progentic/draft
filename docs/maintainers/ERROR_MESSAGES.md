@@ -44,6 +44,24 @@ follows:
 The unknown-command message is a defensive fallback. The current command
 wrapper accepts only the two documented runtime-status command codes.
 
+## Recovery Guidance
+
+Visible copy is incomplete unless the user has a next action. Canonical user
+guidance lives in `docs/wiki/Troubleshooting.md`:
+
+| Visible failure | Recovery action |
+| :--- | :--- |
+| Unsupported application version | Install one complete matching DRAFT build, restart, and report the source/version if it repeats. |
+| Core status event delivery failure | Restart DRAFT and report the version and exact message if it repeats. |
+| Unknown core command failure | Restart DRAFT and report the version and exact message if it repeats. |
+| Invalid response or event payload | Restart DRAFT and report the version if the status remains invalid. |
+| Transport failure | Use the desktop app rather than browser preview, restart, and report the operating-system and DRAFT versions if it repeats. |
+
+Maintainer copy, rendered copy, and the Wiki recovery page must change together.
+Typed errors for commands with no visible workflow stay in the inventory only;
+the project does not invent user instructions before a real control owns the
+action.
+
 ## Deferred work
 
 Future visible workflows should map their existing typed failures when those
