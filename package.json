@@ -10,6 +10,7 @@
   "scripts": {
     "bootstrap": "bash scripts/bootstrap.sh",
     "dev": "vite",
+    "bench:editor": "vitest bench src/editor/DraftEditor.bench.ts --run",
     "test": "vitest run",
     "typecheck": "tsc -b --pretty false",
     "build:frontend": "vite build",
