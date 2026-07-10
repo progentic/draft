@@ -132,6 +132,13 @@ fn watched_pdf_rejects_paths_outside_root() {
             intake.record_change(link_path, Instant::now()),
             Err(PdfImportError::SymbolicLinkNotAllowed)
         );
+
+        let linked_directory = watched_directory.path().join("linked-directory");
+        std::os::unix::fs::symlink(outside_directory.path(), &linked_directory).unwrap();
+        assert_eq!(
+            intake.record_change(linked_directory.join("outside.pdf"), Instant::now()),
+            Err(PdfImportError::OutsideWatchedFolder)
+        );
     }
 }
 
