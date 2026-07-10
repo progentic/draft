@@ -192,6 +192,13 @@ escaped XML parts in a deterministic stored ZIP; and reuses the atomic writer
 for `.docx` targets. It adds no citation rendering, application state, Tauri
 command, frontend control, PDF path, or source mutation.
 
+ADR-001 proposes deferring native PDF generation until DRAFT has accepted
+policies for fonts, pagination and layout, accessibility, cross-platform
+rendering, dependencies and licensing, bounded resources, parser-based output
+verification, deterministic failures, and source preservation. While that ADR
+is under review, no PDF dependency, renderer, runtime path, command, process,
+frontend control, or capability claim is authorized.
+
 ### 3.4 Text-analysis
 
 Text-analysis includes grammar, syntax, tone, clarity, cohesion, and voice validation.
@@ -616,8 +623,9 @@ Export rules:
 Phase 32 implements the internal `.docx` operation for a strict fail-closed
 subset. Compilation completes in memory before atomic target replacement.
 Source DRAFT bytes and live registry state are outside the export mutation
-surface. PDF export remains unimplemented pending the Phase 33 architecture
-decision.
+surface. PDF export remains unimplemented. Proposed ADR-001 would keep it
+deferred until the prerequisite rendering policies and verification contract
+are accepted through governance.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 

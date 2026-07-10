@@ -38,10 +38,10 @@ main() {
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
-  check_future_feature_absence_gates
+  check_pdf_export_deferral_guard
   check_rust_network_boundary
   check_bash_runtime_boundary
-  report_deferred_behavior_checks
+  report_pdf_deferral_status
 
   printf 'Invariant boundary scans passed.\n'
 }
@@ -1287,11 +1287,24 @@ require_documented_values() {
   done <<<"${values}"
 }
 
-check_future_feature_absence_gates() {
-  assert_no_matches "Phase 33 PDF export behavior" \
-    '\b(?:PdfExport|PdfArtifact|export_pdf|compile_pdf|print_to_pdf)\b' \
+check_pdf_export_deferral_guard() {
+  require_file docs/adr/001-defer-native-pdf-export.md
+  require_file docs/maintainers/PDF_EXPORT_DECISION.md
+  require_file docs/drafts/FORMATTING_UX.md
+
+  assert_no_matches "Phase 33 PDF export symbols" \
+    '\b(?:PdfExport|PdfArtifact|PdfRenderer|export_pdf|compile_pdf|render_pdf|print_to_pdf)\b' \
     python/draft_helpers src-tauri/src src
-  printf 'PASS future feature absence gates\n'
+  assert_no_matches "Phase 33 PDF conversion runtime" \
+    '(?i)\b(?:wkhtmltopdf|weasyprint|libreoffice|soffice|pdfium|chromiumoxide|headless_chrome)\b' \
+    python/draft_helpers src-tauri/src src src-tauri/tauri.conf.json
+  assert_no_matches "Phase 33 PDF renderer dependencies" \
+    '(?i)^[[:space:]]*["\x27]?(?:printpdf|lopdf|pdf-writer|pdfium-render|chromiumoxide|headless_chrome|wkhtmltopdf|weasyprint)["\x27]?[[:space:]]*(?:=|:)' \
+    src-tauri/Cargo.toml package.json pyproject.toml
+  assert_no_matches "Phase 33 frontend PDF claims" \
+    '(?i)\b(?:export(?:[[:space:]]+to)?|download|save[[:space:]]+as)[[:space:]]+pdf\b|\bpdf[[:space:]]+export\b' \
+    src
+  printf 'PASS Phase 33 PDF export deferral guard\n'
 }
 
 require_capability_permission() {
@@ -1377,9 +1390,9 @@ report_command_surface() {
   printf 'INFO No Tauri commands exist; command contract checks have no active surface.\n'
 }
 
-report_deferred_behavior_checks() {
+report_pdf_deferral_status() {
   printf '%s\n' \
-    'INFO The remaining future feature absence gate stays active until its owning phase adds behavioral checks.'
+    'INFO PDF export remains absent under ADR-001 governance; no PDF runtime path is active.'
 }
 
 main "$@"

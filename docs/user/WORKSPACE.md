@@ -57,3 +57,14 @@ until workspace file controls are integrated.
 The visible workspace does not call external services, read local files, or
 write application data. Editor state remains transient inside the application
 WebView until file controls are integrated.
+
+## Exporting
+
+The current workspace has no export controls. DRAFT has an internal DOCX
+foundation, but users cannot start that export from the workspace yet. PDF
+export is not currently available because its rendering policy and
+implementation boundary are still under review.
+
+DRAFT must define reliable rules for fonts, page layout, accessibility, and
+consistent output across supported platforms before PDF work can begin. No PDF
+converter or hidden printing process runs in the application.

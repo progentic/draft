@@ -2,8 +2,9 @@
 
 ## Current phase
 
-Phase 32 is complete at the current checkpoint. The Phase 1 toolchain remains
-locked, the Phase 2 verification command runs locally and in GitHub Actions,
+Phase 32 is complete at the current checkpoint. Phase 33 is under architecture
+review and is not complete. The Phase 1 toolchain remains locked, the Phase 2
+verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
@@ -53,6 +54,12 @@ visible text-analysis or formatting controls, finding persistence or
 accepted-edit workflow, document-integrated formatting, citation rendering,
 DOCX export controls, PDF export, packaged Python runtime discovery, release
 automation, or packaging.
+
+Proposed ADR-001 defers choosing a PDF engine. No PDF library, renderer, binary,
+font bundle, conversion process, command, frontend control, or packaged resource
+is part of the toolchain. Reconsideration requires accepted font, layout,
+accessibility, cross-platform rendering, dependency/licensing, resource-bound,
+parser-verification, deterministic-failure, and source-preservation policies.
 
 ## Toolchain decisions
 
@@ -157,8 +164,8 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake/job/AI/Python-helper/text-analysis/formatting/DOCX scans, cross-bridge
-  name parity, and tests
+  intake/job/AI/Python-helper/text-analysis/formatting/DOCX scans, the PDF
+  deferral guard, cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

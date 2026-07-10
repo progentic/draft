@@ -7,7 +7,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
 **Current execution checkpoint:** Phases 0 through 32 are complete. Phase 33 is
-the next implementation phase.
+under architecture review and is not complete.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -129,6 +129,13 @@ explicitly. No application state, Tauri command, native dialog, frontend,
 persistence, network, Python, worker, PDF path, or visible export flow exists.
 Phase 33 decision requirements remain non-binding in
 `docs/drafts/PDF_EXPORT_DECISION.md`.
+
+ADR-001 is proposed on the Phase 33 architecture branch. It would defer native
+PDF generation while retaining a mechanical absence guard. The decision is not
+accepted, Phase 33 is not complete, and Phase 34 implementation cannot begin
+until the required cooling period ends, verification passes, and the governed
+PR merges. Phase 34 requirements remain non-binding in
+`docs/drafts/FORMATTING_UX.md`.
 
 ---
 
