@@ -218,7 +218,6 @@ check_document_envelope_contract() {
 check_citation_node_contract() {
   local node_path="src-tauri/src/citations/node.rs"
   local node_test_path="src-tauri/src/citations/node_tests.rs"
-  local resolution_path="src-tauri/src/citations/resolution.rs"
   local resolution_test_path="src-tauri/src/citations/resolution_tests.rs"
   local required_node_tests=(
     valid_citation_attrs_deserialize
