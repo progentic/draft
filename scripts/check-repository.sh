@@ -83,6 +83,9 @@ check_required_sources() {
     src-tauri/src/citations/resolution.rs
     src-tauri/src/citations/resolution_tests.rs
     src-tauri/src/events/runtime_status.rs
+    src-tauri/src/imports/mod.rs
+    src-tauri/src/imports/pdf.rs
+    src-tauri/src/imports/pdf_tests.rs
     src-tauri/src/network/client.rs
     src-tauri/src/network/client_tests.rs
     src-tauri/src/network/mod.rs

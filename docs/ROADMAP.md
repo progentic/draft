@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 23 are complete. Phase 24 is
-the next implementation phase; PDF import has not started.
+**Current execution checkpoint:** Phases 0 through 24 are complete. Phase 25 is
+the next mandatory documentation and drift realignment phase.
 
 ---
 

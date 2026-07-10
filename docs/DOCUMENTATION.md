@@ -495,6 +495,13 @@ invariant scans enforce tagged target input, HTTPS and credential rejection,
 fixed DOI and Google Scholar origins, typed outcomes, no direct frontend opener
 authority, and no real browser launch in tests.
 
+Phase 24 documents Rust-owned explicit and watched PDF intake in
+`docs/maintainers/PDF_IMPORT.md`. The non-binding requirements remain in
+`docs/drafts/PDF_IMPORT.md`. Rust tests and invariant scans enforce file shape,
+symlink and watched-root boundaries, chunked-write debounce, stable-size
+confirmation, signature validation, pending provenance, and the absence of
+premature IPC, persistence, network, or watcher authority.
+
 Recommended checks:
 
 - Markdown formatting

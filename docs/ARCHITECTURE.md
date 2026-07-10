@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 23 is deliberately smaller than the
+The implemented application through Phase 24 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -78,6 +78,9 @@ full system described in this architecture:
 - Rust validates publisher and institutional HTTPS URLs, DOI resolver targets,
   and Google Scholar queries before handing one URL to the default system
   browser. The WebView has no direct opener API or capability.
+- Rust can validate an explicitly approved PDF or confirm a watched PDF after
+  one quiet second and an unchanged byte length. It produces a Rust-only
+  pending candidate without starting or persisting a processing job.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -94,8 +97,8 @@ full system described in this architecture:
 - The current workspace does not expose open/save controls yet. No close command,
   autosave, recovery, reference CRUD UI, citation insertion, rendered
   bibliography workflow, provider lookup or browser-handoff control, analysis
-  worker, formatter, export path, or non-reference durable database is
-  implemented.
+  worker, PDF import control or watcher, formatter, export path, or
+  non-reference durable database is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -467,6 +470,14 @@ Required confirmation:
 - Debounce window with no further modification events.
 - Stable-size check, file-lock check, or equivalent platform-safe confirmation.
 - Only then does the file enter the metadata-resolution state machine.
+
+Phase 24 implements the intake gate documented in
+`maintainers/PDF_IMPORT.md`. `WatchedPdfIntake` records Rust-supplied change
+observations, requires one quiet second, confirms the byte length is unchanged,
+then validates the PDF signature while rechecking file length. Paths are
+canonical and confined to one watched root. The resulting
+`PendingPdfImport` is a process-local candidate only; no work begins until a
+later persistent job owns it.
 
 Relevant invariants: `INV-05` and `INV-08` in `INVARIANTS.md`.
 

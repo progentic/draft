@@ -88,8 +88,8 @@ and URL credentials, DOI URL construction, Google Scholar URL construction,
 invalid input before launch, and bounded launch failures. Four command tests
 cover the standard typed signature, request, response, and error shapes.
 Thirteen frontend tests cover every target, exact arguments, destination
-mismatch, malformed responses,
-all command errors, and bounded transport errors.
+mismatch, malformed responses, all command errors, and bounded transport
+errors.
 
 `scripts/check-invariants.sh` requires those tests, fixed service origins, the
 Rust-only opener dependency, and the typed frontend wrapper. It rejects direct
@@ -102,5 +102,6 @@ Actions.
 
 ## Next Boundary
 
-Phase 24 owns explicit and watched-folder PDF import. It must confirm a watched
-file is stable before import and must keep filesystem authority in Rust.
+Phase 24 PDF intake is implemented in `docs/maintainers/PDF_IMPORT.md`. Phase
+25 must now realign the complete research workflow boundary before persistent
+jobs begin.

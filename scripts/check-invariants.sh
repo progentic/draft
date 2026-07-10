@@ -28,6 +28,7 @@ main() {
   check_network_client_contract
   check_metadata_lookup_contract
   check_external_browser_handoff_contract
+  check_pdf_import_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -425,6 +426,43 @@ check_external_browser_handoff_contract() {
   printf 'PASS Phase 23 external browser handoff contract\n'
 }
 
+check_pdf_import_contract() {
+  local source_path="src-tauri/src/imports/pdf.rs"
+  local test_path="src-tauri/src/imports/pdf_tests.rs"
+  local required_tests=(
+    explicit_pdf_enters_pending_after_validation
+    explicit_import_rejects_non_pdf_and_symlink
+    watched_pdf_waits_during_chunked_write
+    watched_pdf_requires_debounce_and_stable_snapshot
+    watched_pdf_rejects_paths_outside_root
+    watched_pdf_returns_typed_file_failures
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_file "${test_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_source_pattern 'pub const STABLE_WRITE_DEBOUNCE: Duration = Duration::from_secs(1);' "${source_path}"
+  require_source_pattern 'const PDF_HEADER: &[u8; 5] = b"%PDF-";' "${source_path}"
+  require_source_pattern 'metadata.file_type().is_symlink()' "${source_path}"
+  require_source_pattern 'path.starts_with(&self.watched_root)' "${source_path}"
+  assert_no_matches "Phase 24 import IPC, persistence, or network authority" \
+    '\btauri::|#\[tauri::command\]|\brusqlite\b|\bReferenceStore\b|\bNetworkClient\b|\breqwest\b' \
+    "${source_path}"
+  assert_no_matches "Phase 24 import file mutation" \
+    '\bfs::(?:write|remove_file|rename|copy)\s*\(|\bOpenOptions\b|\.write_all\s*\(' \
+    "${source_path}"
+  assert_no_matches "Phase 24 unmanaged watcher or worker" \
+    '\bnotify::|\bRecommendedWatcher\b|(?:std::thread|tokio)::spawn\s*\(' \
+    "${source_path}"
+  assert_no_matches "Phase 24 frontend import authority" \
+    '\bPendingPdfImport\b|\bWatchedPdfIntake\b|\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' \
+    src
+  printf 'PASS INV-08 Phase 24 PDF intake contract\n'
+}
+
 require_citation_sources() {
   require_file src-tauri/src/citations/node.rs
   require_file src-tauri/src/citations/node_tests.rs
@@ -680,6 +718,7 @@ check_document_write_boundary() {
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
+    --glob '!src-tauri/src/imports/pdf_tests.rs' \
     --glob '!src-tauri/src/references/store_tests.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
@@ -780,8 +819,6 @@ check_future_feature_absence_gates() {
   assert_no_matches "INV-05 persistent job surface before Phase 26" \
     '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
     src src-tauri/src
-  assert_no_matches "INV-08 watched import before Phase 24" \
-    '\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' src src-tauri/src
   assert_no_matches "INV-11 helper protocol before Phase 28" \
     '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
     python/draft_helpers

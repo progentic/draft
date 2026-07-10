@@ -3,6 +3,7 @@ pub mod citations;
 mod commands;
 pub mod documents;
 mod events;
+pub mod imports;
 pub mod network;
 pub mod references;
 pub mod research;

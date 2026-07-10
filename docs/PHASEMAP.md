@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 23 are complete. Phase 24 is
-the next implementation phase; PDF import has not started.
+**Current execution checkpoint:** Phases 0 through 24 are complete. Phase 25 is
+the next mandatory documentation and drift realignment phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -59,6 +59,13 @@ Phase 23 requirements and implemented behavior are recorded in
 publisher, institutional, DOI, and Google Scholar targets and delegates one
 launch to the default system browser. The frontend has no direct opener API or
 capability, and no visible handoff control exists yet.
+
+Phase 24 requirements and implemented behavior are recorded in
+`docs/drafts/PDF_IMPORT.md` and `docs/maintainers/PDF_IMPORT.md`. Rust validates
+explicit PDFs and gates watched PDFs on canonical root containment, a
+one-second quiet interval, unchanged byte length, and stable signature read.
+The resulting pending value starts no work and is not the Phase 26 persistent
+job state machine.
 
 ---
 

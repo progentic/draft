@@ -386,6 +386,6 @@ Every architecture PR must answer:
   helper dependency.
 - Keep the implemented document-envelope, reference-record, reference-store,
   citation-node, bibliography-consistency, network-client, metadata-lookup, and
-  external-browser-handoff requirements non-binding until the contract
-  lifecycle permits acceptance. Create Python-helper and formatting drafts in
-  their owning phases.
+  external-browser-handoff and PDF-import requirements non-binding until the
+  contract lifecycle permits acceptance. Create Python-helper and formatting
+  drafts in their owning phases.
