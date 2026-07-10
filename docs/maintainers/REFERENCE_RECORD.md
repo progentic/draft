@@ -200,3 +200,8 @@ Phase 19 accepts borrowed validated records only after a caller selects the
 candidate bibliography for one document. The pure consistency check reads only
 their citekeys. Bibliography rendering, network lookup, PDF import, and
 document-envelope metadata fields remain absent.
+
+## Configuration Index
+
+Reference-record schema values are indexed in
+`docs/maintainers/CONFIGURATION.md`.

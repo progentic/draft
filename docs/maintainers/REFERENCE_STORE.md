@@ -156,3 +156,8 @@ Phase 19 does not call `ReferenceStore::list`, because the complete shared
 library is not one document's bibliography. A future caller must select the
 candidate records explicitly before invoking the consistency module documented
 in `docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md`.
+
+## Configuration Index
+
+Database filename, schema version, and SQLite busy timeout are indexed in
+`docs/maintainers/CONFIGURATION.md`.

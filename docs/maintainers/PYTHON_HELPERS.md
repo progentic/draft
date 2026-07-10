@@ -132,3 +132,8 @@ surface can start it. Packaging still needs a trusted Python runtime/resource
 location. The Phase 29 text-analysis extension remains internal and review-only.
 Phase 31 formatting checks are separately bounded as pure Rust work and do not
 expand Python authority.
+
+## Configuration Index
+
+Protocol versions, process timeout, request, stdout, and stderr bounds are
+indexed in `docs/maintainers/CONFIGURATION.md`.

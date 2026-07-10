@@ -98,3 +98,8 @@ user-visible event transport, analysis history, automatic edit, or product
 workflow. A later phase must introduce credentials and provider integration
 through their accepted boundaries before this orchestration can call an
 external model.
+
+## Configuration Index
+
+Context, identity, chunk, count, and cumulative stream bounds are indexed in
+`docs/maintainers/CONFIGURATION.md`.

@@ -169,3 +169,8 @@ adding top-level fields or changing envelope version 1. The implementation is
 documented in `docs/maintainers/CITATION_NODE.md`. Reference metadata,
 bibliography behavior, network lookup, imports, and workspace file controls
 remain outside the document file contract.
+
+## Configuration Index
+
+Document extensions, the default save name, and schema versions are indexed in
+`docs/maintainers/CONFIGURATION.md`.

@@ -1,0 +1,47 @@
+# Using The Workspace
+
+## Write And Format
+
+The center of the workspace is an editable document. The formatting toolbar
+supports:
+
+- undo and redo;
+- bold, italic, and strikethrough text;
+- first- and second-level headings;
+- bulleted and numbered lists; and
+- block quotes.
+
+Formatting applies to the current selection. Selected formatting controls show
+their active state.
+
+## Use The Toolbar With A Keyboard
+
+Press Tab to enter the formatting toolbar. Use Left Arrow and Right Arrow to
+move between available controls. Home moves to the first available control and
+End moves to the last. Disabled controls are skipped.
+
+## Navigate The Outline
+
+The Outline panel lists headings from the current document. Choose a heading to
+move the editor cursor to it. The button beside the DRAFT wordmark opens or
+closes the panel.
+
+## Read Document Details
+
+The Document panel shows live word, character, and heading counts. It also shows
+the desktop core status:
+
+- `Connecting to core` while startup is in progress;
+- `Core v<version>` when the connection is ready; or
+- a specific unavailable message when startup or status validation fails.
+
+See [Troubleshooting](Troubleshooting.md) for recovery steps.
+
+## Protect Your Work
+
+The current interface does not create, open, save, close, or reopen document
+files. Reloading or closing DRAFT discards editor changes. Keep important text
+in another saved document until file controls are available.
+
+See [Current limitations](Current-Limitations.md) for the complete current
+workflow boundary.

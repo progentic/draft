@@ -170,3 +170,8 @@ validated document with an explicit candidate bibliography of validated
 reference records. It does not turn document nodes into metadata authority,
 embed records, read the complete store, add network lookup, or rewrite source
 documents.
+
+## Configuration Index
+
+The mirrored citation schema version is indexed in
+`docs/maintainers/CONFIGURATION.md`.

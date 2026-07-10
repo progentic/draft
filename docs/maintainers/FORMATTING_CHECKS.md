@@ -96,3 +96,8 @@ citations from Tiptap. Style support is consistency-only: it does not implement
 manual-specific title pages, running heads, margins, typography, capitalization,
 punctuation, or bibliography rules. Findings are not persisted or visible, and
 no document can be changed from a finding.
+
+## Configuration Index
+
+Snapshot counts, heading bounds, and closed style identifiers are indexed in
+`docs/maintainers/CONFIGURATION.md`.

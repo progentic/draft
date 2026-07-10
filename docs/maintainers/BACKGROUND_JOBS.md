@@ -118,3 +118,8 @@ Opening the store is the recovery boundary for the single desktop process.
 Phase 26 defines no multi-process lease, timer-based claim expiry, scheduler,
 automatic retry, progress event, or worker integration. The only checkpoint is
 `IntakeValidated` because all PDF processing remains deferred.
+
+## Configuration Index
+
+Job schema, filename, SQLite timeout, and failure-message bound are indexed in
+`docs/maintainers/CONFIGURATION.md`.

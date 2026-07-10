@@ -67,3 +67,8 @@ Repository and documentation checks require every Phase 22 source and guide.
 Phase 23 implements the separate system-browser handoff documented in
 `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`. Metadata candidates remain
 non-persistent and are not exposed through IPC at this checkpoint.
+
+## Configuration Index
+
+Provider origins, DOI/contact bounds, and network limits are indexed in
+`docs/maintainers/CONFIGURATION.md`.

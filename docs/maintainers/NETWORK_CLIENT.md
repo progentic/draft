@@ -130,3 +130,8 @@ Phase 23 browser handoff is implemented separately in
 browser is not a request through this client: DRAFT neither performs nor
 observes the browser's network work. Automated DRAFT requests remain confined
 to this module.
+
+## Configuration Index
+
+Network timeouts, rate limits, response bounds, and provider origins are indexed
+in `docs/maintainers/CONFIGURATION.md`.

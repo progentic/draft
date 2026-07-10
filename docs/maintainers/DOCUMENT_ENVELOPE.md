@@ -116,3 +116,8 @@ lifecycle and atomic writes are implemented by Phases 13 and 14.
 Phase 18 citation scanning is documented in
 `docs/maintainers/CITATION_NODE.md`. It changes validation behavior but does not
 add an envelope field or change `DOCUMENT_ENVELOPE_SCHEMA_VERSION`.
+
+## Configuration Index
+
+Schema versions and document-dialog defaults are indexed in
+`docs/maintainers/CONFIGURATION.md`.
