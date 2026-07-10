@@ -81,10 +81,9 @@ or outline relationship; it does not prove that the source document is wrong.
 
 ## Failure Behavior
 
-Input validation returns bounded typed errors for an unsupported or excessive
-snapshot, invalid heading level or title, invalid citekey, or an excessive
-result. Errors contain no heading title, citekey, document text, path, or
-serialized snapshot.
+Input validation returns bounded typed errors for excessive heading or citation
+collections, an invalid heading level or title, or an invalid citekey. Errors
+contain no heading title, citekey, document text, path, or serialized snapshot.
 
 Checking valid input is pure and infallible. Equal snapshots produce equal
 ordered findings.

@@ -76,6 +76,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
 | `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
+| `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and a finding cannot mutate or export source content. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot, checks three closed style identifiers and heading structure, and returns content-free indexed findings. Twelve Rust tests and authority scans deny document parsing, mutation, persistence, filesystem, export, Python, network, worker, Tauri, and frontend behavior. | The `verify` job runs the same Phase 31 tests and formatting-boundary scans through `scripts/verify.sh`. |
 
 ---
 
@@ -597,6 +598,37 @@ bash scripts/check-invariants.sh
 
 ---
 
+### INV-16: Review-Only Formatting Checks
+
+Phase 31 formatting findings identify inconsistent declarations or outline
+relationships for human review. They do not certify a document against APA,
+MLA, Chicago, or another complete style manual and do not authorize a change.
+
+The immutable snapshot accepts at most 512 headings and 512 citation-style
+declarations. Heading levels are 1 through 6, titles are non-blank and at most
+512 UTF-8 bytes, and citekeys reuse the existing reference-domain validator.
+The supported style identifiers are exactly `apa7`, `mla9`, and
+`chicago17_author_date`.
+
+The pure checker reports only a non-level-one first heading, a skipped heading
+level, or a citation style that differs from the selected style. Each finding
+contains a closed code, fixed Rust-owned severity and wording, and a heading or
+citation index. It contains no source title, citekey, document text, score,
+replacement, patch, apply instruction, path, or document identity.
+
+No application state, command, event, frontend model, Python helper,
+persistence, filesystem call, network call, worker, parser, save, or export path
+can invoke or extend this boundary at the current checkpoint.
+
+Minimum verification:
+
+```bash
+cargo test --manifest-path src-tauri/Cargo.toml --locked --offline formatting::
+bash scripts/check-invariants.sh
+```
+
+---
+
 ## 5. Required Local Command Surface
 
 The root `justfile` must expose these commands:
@@ -698,10 +730,10 @@ request policy, Phase 23 external browser handoff, direct frontend opener APIs,
 Phase 24 PDF intake and stable-write confirmation, Phase 26 persistent job
 ownership and recovery, Phase 27 bounded AI orchestration and generated-output
 provenance, Phase 28 Python helper protocol/process confinement, Phase 29
-review-only text-analysis findings, ad hoc Rust network clients, and Bash
-invocation from product runtime. The verifier also checks locked offline builds,
-tests, required source visibility, generated-file hygiene, and documentation
-sanity.
+review-only text-analysis findings, Phase 31 review-only formatting checks, ad
+hoc Rust network clients, and Bash invocation from product runtime. The verifier
+also checks locked offline builds, tests, required source visibility,
+generated-file hygiene, and documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 

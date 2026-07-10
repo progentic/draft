@@ -22,6 +22,7 @@ main() {
   check_worker_cancellation_contract
   check_python_helper_contract
   check_text_analysis_contract
+  check_formatting_contract
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -365,6 +366,72 @@ check_text_analysis_contract() {
   assert_no_matches "Phase 29 frontend text-analysis authority" \
     '\bTextAnalysis\b|\btext_analysis\b|\bRepeatedWord\b' src
   printf 'PASS INV-15 Phase 29 review-only text-analysis contract\n'
+}
+
+check_formatting_contract() {
+  local source_path="src-tauri/src/formatting/checks.rs"
+  local test_path="src-tauri/src/formatting/checks_tests.rs"
+  local required_tests=(
+    style_identifiers_are_stable_and_closed
+    matching_style_and_valid_outline_are_consistent
+    first_heading_below_level_one_is_reviewable
+    skipped_heading_levels_are_reported_in_source_order
+    siblings_and_ancestor_transitions_do_not_create_findings
+    citation_style_mismatches_are_reported_for_every_selected_style
+    heading_and_citation_findings_have_deterministic_target_order
+    heading_validation_enforces_level_title_and_utf8_byte_bounds
+    citekey_validation_reuses_the_reference_domain_rule
+    snapshot_collection_bounds_fail_before_checks_run
+    finding_policy_is_fixed_review_only_and_content_free
+    input_errors_are_bounded_and_do_not_include_rejected_content
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_file "${test_path}"
+  require_file docs/drafts/FORMATTING_CHECKS.md
+  require_file docs/maintainers/FORMATTING_CHECKS.md
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_formatting_contract_markers "${source_path}"
+  check_formatting_authority "${source_path}"
+  printf 'PASS INV-16 Phase 31 review-only formatting contract\n'
+}
+
+require_formatting_contract_markers() {
+  local source_path="$1"
+
+  require_source_pattern 'MAX_FORMATTING_HEADINGS: usize = 512' "${source_path}"
+  require_source_pattern 'MAX_FORMATTING_CITATIONS: usize = 512' "${source_path}"
+  require_source_pattern 'MAX_HEADING_TITLE_BYTES: usize = 512' "${source_path}"
+  require_source_pattern 'pub fn run_formatting_checks' "${source_path}"
+  require_source_pattern 'Self::Apa7 => "apa7"' "${source_path}"
+  require_source_pattern 'Self::Mla9 => "mla9"' "${source_path}"
+  require_source_pattern 'Self::Chicago17AuthorDate => "chicago17_author_date"' "${source_path}"
+  require_source_pattern 'title: "Outline starts below level 1"' "${source_path}"
+  require_source_pattern 'title: "Heading level skipped"' "${source_path}"
+  require_source_pattern 'title: "Citation style differs"' "${source_path}"
+}
+
+check_formatting_authority() {
+  local source_path="$1"
+
+  assert_no_matches "INV-16 formatting mutation or scoring authority" \
+    '\b(?:replacement|suggestion|apply|patch|score)\b' "${source_path}"
+  assert_no_matches "INV-16 formatting persistence or document authority" \
+    '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|\bDocumentEnvelope\b|\bCitationNodeAttributes\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
+    "${source_path}"
+  assert_no_matches "Phase 31 Tauri, network, Python, or worker authority" \
+    '#\[tauri::command\]|\btauri::|\breqwest\b|\bNetworkClient\b|\bPythonHelper\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
+    src-tauri/src/formatting
+  assert_no_matches "Phase 31 application or command formatting authority" \
+    '\bFormattingSnapshot\b|\brun_formatting_checks\b' \
+    src-tauri/src/application src-tauri/src/commands
+  assert_no_matches "Phase 31 frontend formatting authority" \
+    '\bFormattingFinding\b|\bFormattingSnapshot\b|\brun_formatting_checks\b' src
+  assert_no_matches "Phase 31 Python formatting authority" \
+    '\bFormattingFinding\b|\bFormattingSnapshot\b|\brun_formatting_checks\b' python
 }
 
 check_document_envelope_contract() {
@@ -1134,8 +1201,8 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "Phase 31 formatting-check behavior" \
-    '\b(?:FormattingFinding|FormattingResult|ApaStyleCheck|MlaStyleCheck|ChicagoStyleCheck|run_formatting_checks)\b' \
+  assert_no_matches "Phase 32 DOCX export behavior" \
+    '\b(?:DocxExport|DocxPackage|DocumentCompiler|export_docx|compile_docx)\b' \
     python/draft_helpers src-tauri/src src
   printf 'PASS future feature absence gates\n'
 }

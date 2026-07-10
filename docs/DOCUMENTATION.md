@@ -553,6 +553,15 @@ live in the non-binding `docs/drafts/FORMATTING_CHECKS.md` and define pure,
 review-only style-consistency and heading-structure checks without export,
 mutation, persistence, Python, Tauri, or frontend authority.
 
+Phase 31 documents the pure Rust formatting review boundary in
+`docs/maintainers/FORMATTING_CHECKS.md`. The non-binding requirements remain in
+`docs/drafts/FORMATTING_CHECKS.md`. Rust tests and invariant scans enforce three
+closed style identifiers, heading and citation limits, outline checks,
+citation-style consistency, deterministic content-free findings, and the
+absence of complete style claims, parsing, mutation, persistence, filesystem,
+export, Python, Tauri, or frontend authority. Phase 32 DOCX-export requirements
+are bounded in the non-binding `docs/drafts/DOCX_EXPORT.md`.
+
 Recommended checks:
 
 - Markdown formatting

@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 29 is deliberately smaller than the
+The implemented application through Phase 31 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -100,6 +100,10 @@ full system described in this architecture:
   ranges returned by the helper, then supplies fixed categories, severities,
   titles, and explanations. Findings are immutable, non-persistent review
   prompts with no replacement or apply authority.
+- Rust owns a pure formatting-check domain over one explicit bounded snapshot.
+  It compares APA 7, MLA 9, or Chicago 17 author-date declarations and checks
+  heading-level structure without parsing or mutating a document. These are
+  consistency checks, not complete style-manual conformance.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -118,8 +122,8 @@ full system described in this architecture:
   bibliography workflow, provider lookup or browser-handoff control, production
   model provider, analysis start command, frontend analysis listener, visible
   analysis workflow, visible text-analysis issue cards or controls, PDF import
-  control or watcher, job scheduler or processing worker, formatter, or export
-  path is implemented.
+  control or watcher, job scheduler or processing worker, document-integrated
+  formatting workflow, citation renderer, or export path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -170,6 +174,12 @@ Ownership:
 - TypeScript/React displays formatting issues and user choices.
 
 Formatting automation must not mutate the source document without a Rust-owned transaction or explicit user action.
+
+Phase 31 implements only a pure review boundary. Its immutable snapshot declares
+one closed style, ordered heading levels, and ordered citation styles. Findings
+identify a non-level-one first heading, skipped heading level, or citation-style
+mismatch by index. No document extraction, style rendering, persistence, IPC,
+frontend workflow, or source mutation is present.
 
 ### 3.4 Text-analysis
 
@@ -698,7 +708,8 @@ These must be resolved before granular contract docs become binding:
 - Document-envelope evolution: fields and migrations beyond the implemented
   version 1 minimum.
 - AI context-window assembly policy: token budget, truncation strategy, source prioritization, and user-visible disclosure.
-- Formatting contract: exact APA, MLA, Chicago, heading, and export rules.
+- Formatting contract beyond the Phase 31 consistency checks: exact APA, MLA,
+  Chicago, heading, rendering, and export rules.
 - Text-analysis contract: grammar, syntax, tone, clarity, cohesion, and voice-validation issue model.
 - Python helper contract: allowed helpers, package management, pinned dependencies, timeout defaults, and output schemas.
 - Network client interface: queue structure, backoff parameters, retry policy, and per-service limits.

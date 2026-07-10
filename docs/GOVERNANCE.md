@@ -391,5 +391,7 @@ Every architecture PR must answer:
   background-job requirements and Phase 27 AI-orchestration requirements are
   also non-binding. The implemented Phase 28 Python-helper requirements remain
   non-binding as well, as do the implemented Phase 29 text-analysis
-  requirements. The Phase 31 formatting-check requirements are non-binding in
-  `docs/drafts/FORMATTING_CHECKS.md` and do not claim complete style conformance.
+  requirements. The implemented Phase 31 formatting-check requirements are
+  non-binding in `docs/drafts/FORMATTING_CHECKS.md` and do not claim complete
+  style conformance. Phase 32 DOCX-export requirements are also non-binding in
+  `docs/drafts/DOCX_EXPORT.md`.

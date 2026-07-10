@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 30 are complete. Phase 31 is
+**Current execution checkpoint:** Phases 0 through 31 are complete. Phase 32 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -39,6 +39,11 @@ cannot edit a document; visible issue cards remain deferred.
 Phase 30 audits the analysis, cancellation, event, and Python-helper boundaries
 without adding product behavior. Phase 31 requirements are bounded in advance
 to pure, review-only style-consistency and heading-structure checks.
+
+Phase 31 adds those pure Rust checks for APA 7, MLA 9, and Chicago 17
+author-date declarations plus heading structure. It does not parse or change a
+document, render citations, claim complete style conformance, persist findings,
+or expose a workflow. Phase 32 requirements now bound the DOCX export foundation.
 
 ---
 

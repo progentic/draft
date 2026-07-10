@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 30 are complete. Phase 31 is
+**Current execution checkpoint:** Phases 0 through 31 are complete. Phase 32 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -110,8 +110,16 @@ Phase 30 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The audit
 distinguishes internal Rust analysis/helper lifecycles from product workers and
 Tauri events, records the two-helper protocol truth, and changes no runtime
 behavior. Phase 31 requirements remain non-binding in
-`docs/drafts/FORMATTING_CHECKS.md`; implementation may begin only with the
-bounded pure Rust review model defined there.
+`docs/drafts/FORMATTING_CHECKS.md`; the implementation stayed within the bounded
+pure Rust review model defined there.
+
+Phase 31 implemented behavior is recorded in
+`docs/maintainers/FORMATTING_CHECKS.md`. A bounded immutable Rust snapshot now
+supports three closed style identifiers, heading-outline checks, and
+citation-style consistency findings. It adds no document parser, complete style
+rules, mutation, persistence, filesystem access, export, Python, Tauri, frontend,
+or visible formatting workflow. Phase 32 requirements remain non-binding in
+`docs/drafts/DOCX_EXPORT.md`.
 
 ---
 

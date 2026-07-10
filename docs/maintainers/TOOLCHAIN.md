@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 30 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 31 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -32,14 +32,22 @@ them and supplies fixed grammar, clarity, tone, cohesion, and voice review
 wording. No score, replacement, persistence, command, frontend, or mutation
 path is added.
 
+Rust also owns a pure formatting-check module with bounded immutable inputs,
+closed APA 7, MLA 9, and Chicago 17 author-date identifiers, deterministic
+heading and citation-style consistency findings, and fixed content-free review
+wording. It has no document integration, complete style rules, persistence,
+filesystem access, Python, IPC, frontend, or export authority.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
 filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
-visible text-analysis controls, finding persistence or accepted-edit workflow,
-packaged Python runtime discovery, release automation, or packaging.
+visible text-analysis or formatting controls, finding persistence or
+accepted-edit workflow, document-integrated formatting, citation rendering,
+DOCX/PDF export, packaged Python runtime discovery, release automation, or
+packaging.
 
 ## Toolchain decisions
 
@@ -139,8 +147,8 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake/job/AI/Python-helper/text-analysis scans, cross-bridge name parity, and
-  tests
+  intake/job/AI/Python-helper/text-analysis/formatting scans, cross-bridge name
+  parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks
