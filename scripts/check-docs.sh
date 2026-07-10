@@ -449,7 +449,7 @@ check_pdf_decision_state() {
   [[ -f "${adr}" ]] || return 0
   require_document_text "${adr}" 'Status: Accepted'
   require_document_text "${decision_record}" '**One-time owner override**'
-  require_document_text "${decision_record}" 'It does not change `GOVERNANCE.md`'
+  require_document_text "${decision_record}" "It does not change \`GOVERNANCE.md\`"
   require_document_text "${phase34_draft}" 'Phase 34. ADR-001 is accepted'
   require_document_text "${user_workspace}" 'DRAFT has deferred that work'
   require_document_text "${user_limits}" 'DRAFT has deferred that work'
