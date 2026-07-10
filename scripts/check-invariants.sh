@@ -372,6 +372,9 @@ check_text_analysis_contract() {
 check_formatting_contract() {
   local source_path="src-tauri/src/formatting/checks.rs"
   local test_path="src-tauri/src/formatting/checks_tests.rs"
+  local review_path="src-tauri/src/formatting/review.rs"
+  local review_test_path="src-tauri/src/formatting/review_tests.rs"
+  local command_path="src-tauri/src/commands/formatting_review.rs"
   local required_tests=(
     style_identifiers_are_stable_and_closed
     matching_style_and_valid_outline_are_consistent
@@ -390,14 +393,25 @@ check_formatting_contract() {
 
   require_file "${source_path}"
   require_file "${test_path}"
+  require_file "${review_path}"
+  require_file "${review_test_path}"
+  require_file "${command_path}"
+  require_file src/ipc/formattingReview.ts
+  require_file src/ipc/formattingReview.test.ts
+  require_file src/features/formatting-review/FormattingReviewPanel.tsx
+  require_file src/features/formatting-review/FormattingReviewPanel.test.tsx
+  require_file src/features/formatting-review/formattingSnapshot.test.ts
+  require_file src/features/formatting-review/useFormattingReview.test.tsx
   require_file docs/drafts/FORMATTING_CHECKS.md
   require_file docs/maintainers/FORMATTING_CHECKS.md
+  require_file docs/maintainers/FORMATTING_UX.md
   for test_name in "${required_tests[@]}"; do
     require_rust_test "${test_name}" "${test_path}"
   done
   require_formatting_contract_markers "${source_path}"
   check_formatting_authority "${source_path}"
-  printf 'PASS INV-16 Phase 31 review-only formatting contract\n'
+  check_formatting_review_contract "${review_path}" "${command_path}"
+  printf 'PASS INV-16 Phase 34 review-only formatting contract\n'
 }
 
 require_formatting_contract_markers() {
@@ -423,16 +437,40 @@ check_formatting_authority() {
   assert_no_matches "INV-16 formatting persistence or document authority" \
     '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|\bDocumentEnvelope\b|\bCitationNodeAttributes\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
     "${source_path}"
-  assert_no_matches "Phase 31 Tauri, network, Python, or worker authority" \
+  assert_no_matches "Phase 31 network, Python, or worker authority" \
     '#\[tauri::command\]|\btauri::|\breqwest\b|\bNetworkClient\b|\bPythonHelper\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
-    src-tauri/src/formatting
-  assert_no_matches "Phase 31 application or command formatting authority" \
-    '\bFormattingSnapshot\b|\brun_formatting_checks\b' \
-    src-tauri/src/application src-tauri/src/commands
-  assert_no_matches "Phase 31 frontend formatting authority" \
-    '\bFormattingFinding\b|\bFormattingSnapshot\b|\brun_formatting_checks\b' src
+    "${source_path}"
   assert_no_matches "Phase 31 Python formatting authority" \
     '\bFormattingFinding\b|\bFormattingSnapshot\b|\brun_formatting_checks\b' python
+}
+
+check_formatting_review_contract() {
+  local review_path="$1"
+  local command_path="$2"
+  local rust_paths=("${review_path}" "${command_path}")
+  local frontend_paths=(src/ipc/formattingReview.ts src/features/formatting-review)
+
+  require_source_pattern 'pub fn run_formatting_review' "${review_path}"
+  require_source_pattern '#[tauri::command]' "${command_path}"
+  require_source_pattern 'ApplyHeadingLevel' "${review_path}"
+  require_source_pattern 'generationRef' src/features/formatting-review/useFormattingReview.ts
+  require_source_pattern 'isCurrentFormattingTarget' src/features/formatting-review/formattingSnapshot.ts
+  require_source_pattern 'ignores an older run after a newer run becomes ready' \
+    src/features/formatting-review/useFormattingReview.test.tsx
+  require_source_pattern 'rejects a target whose captured position now addresses another node' \
+    src/features/formatting-review/formattingSnapshot.test.ts
+  require_source_pattern 'requires explicit review actions' \
+    src/features/formatting-review/FormattingReviewPanel.test.tsx
+
+  assert_no_matches "INV-16 review persistence, filesystem, export, or PDF authority" \
+    '\brusqlite\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b|\bexport_docx\b|\bcompile_docx\b|\bPdf\b|\bPDF\b' \
+    "${rust_paths[@]}"
+  assert_no_matches "INV-16 review network, Python, or worker authority" \
+    '\breqwest\b|\bNetworkClient\b|\bPythonHelper\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
+    "${rust_paths[@]}"
+  assert_no_matches "INV-16 frontend persistence or privileged authority" \
+    '\blocalStorage\b|\bfetch\s*\(|\bopenExternalAccess\b|\bexportDocx\b|\bsaveDocument\b' \
+    "${frontend_paths[@]}"
 }
 
 check_docx_export_contract() {

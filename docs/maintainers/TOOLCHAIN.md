@@ -2,8 +2,8 @@
 
 ## Current phase
 
-Phases 0 through 33 are complete at the current checkpoint. Phase 34 is the
-next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
+Phases 0 through 34 are complete at the current checkpoint. Phase 35 is the
+next documentation and drift realignment phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -37,7 +37,10 @@ Rust also owns a pure formatting-check module with bounded immutable inputs,
 closed APA 7, MLA 9, and Chicago 17 author-date identifiers, deterministic
 heading and citation-style consistency findings, and fixed content-free review
 wording. It has no document integration, complete style rules, persistence,
-filesystem access, Python, IPC, frontend, or export authority.
+filesystem access, Python, network, worker, or export authority. One typed
+command and validated frontend wrapper expose those findings in a transient
+workspace review band. Explicit heading-level actions use Tiptap only while
+the captured run and target node remain current.
 
 Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
@@ -50,8 +53,8 @@ a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
 filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
-visible text-analysis or formatting controls, finding persistence or
-accepted-edit workflow, document-integrated formatting, citation rendering,
+visible text-analysis controls, formatting finding persistence, citation style
+conversion, complete document formatting, citation rendering,
 DOCX export controls, PDF export, packaged Python runtime discovery, release
 automation, or packaging.
 

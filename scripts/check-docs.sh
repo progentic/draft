@@ -77,6 +77,7 @@ check_required_documents() {
     docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md
     docs/maintainers/FORMATTING_CHECKS.md
+    docs/maintainers/FORMATTING_UX.md
     docs/maintainers/NETWORK_CLIENT.md
     docs/maintainers/PDF_IMPORT.md
     docs/maintainers/PACKAGING.md
@@ -169,7 +170,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 33 are complete'
+  local checkpoint='Phases 0 through 34 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -211,7 +212,7 @@ check_matrix_subsystems() {
     'AI orchestration'
     'Python helper process'
     'Text-analysis findings'
-    'Formatting checks'
+    'Formatting review'
     'DOCX export'
     'Error presentation'
     'Verification and repository tooling'
@@ -245,6 +246,8 @@ check_coverage_symbols() {
     'src-tauri/src/workers/python/runner.rs|PythonHelperRunner'
     'src-tauri/src/workers/python/text_analysis.rs|TextAnalysisInput'
     'src-tauri/src/formatting/checks.rs|run_formatting_checks'
+    'src-tauri/src/commands/formatting_review.rs|run_formatting_review'
+    'src/features/formatting-review/useFormattingReview.ts|useFormattingReview'
     'src-tauri/src/exports/docx.rs|compile_docx'
   )
   local entry
@@ -313,6 +316,7 @@ check_configuration_index() {
     MAX_FORMATTING_HEADINGS
     MAX_FORMATTING_CITATIONS
     MAX_HEADING_TITLE_BYTES
+    DEFAULT_FORMATTING_STYLE
     MAX_DOCX_SOURCE_BYTES
     MAX_DOCX_NODES
     MAX_DOCX_NESTING_DEPTH
@@ -348,6 +352,7 @@ check_configuration_backlinks() {
     DOCX_EXPORT.md
     EXTERNAL_BROWSER_HANDOFF.md
     FORMATTING_CHECKS.md
+    FORMATTING_UX.md
     METADATA_LOOKUP.md
     NETWORK_CLIENT.md
     PACKAGING.md
@@ -397,6 +402,7 @@ check_wiki_sources() {
 
 check_visible_error_recovery() {
   local presentation='src/components/DocumentInspector.tsx'
+  local formatting_presentation='src/features/formatting-review/FormattingReviewPanel.tsx'
   local recovery='docs/wiki/Troubleshooting.md'
   local messages=(
     'DRAFT received an unsupported application version.'
@@ -411,6 +417,11 @@ check_visible_error_recovery() {
     require_document_text "${presentation}" "${message}"
     require_document_text "${recovery}" "${message}"
   done
+
+  require_document_text "${formatting_presentation}" 'DRAFT received an invalid formatting response.'
+  require_document_text "${formatting_presentation}" 'Formatting review could not reach the DRAFT core.'
+  require_document_text "${recovery}" 'DRAFT received an invalid formatting response.'
+  require_document_text "${recovery}" 'Formatting review could not reach the DRAFT core.'
 }
 
 check_readme_scope() {
@@ -450,7 +461,8 @@ check_pdf_decision_state() {
   require_document_text "${adr}" 'Status: Accepted'
   require_document_text "${decision_record}" '**One-time owner override**'
   require_document_text "${decision_record}" "It does not change \`GOVERNANCE.md\`"
-  require_document_text "${phase34_draft}" 'Phase 34. ADR-001 is accepted'
+  require_document_text "${phase34_draft}" 'bounded Phase 34'
+  require_document_text "${phase34_draft}" 'ADR-001 is accepted'
   require_document_text "${user_workspace}" 'DRAFT has deferred that work'
   require_document_text "${user_limits}" 'DRAFT has deferred that work'
   reject_document_pattern \

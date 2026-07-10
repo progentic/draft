@@ -6,6 +6,7 @@ import { DocumentOutline } from "../components/DocumentOutline";
 import { WorkspaceHeader } from "../components/WorkspaceHeader";
 import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
 import { EditorToolbar } from "../editor/EditorToolbar";
+import { FormattingReviewPanel } from "../features/formatting-review/FormattingReviewPanel";
 import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
 import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 
@@ -13,6 +14,7 @@ export function DraftWorkspace() {
   const editor = useDraftEditor();
   const runtimeStatus = useRuntimeStatus();
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
+  const [isFormattingReviewOpen, setIsFormattingReviewOpen] = useState(false);
 
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
@@ -22,8 +24,11 @@ export function DraftWorkspace() {
       />
       <WorkspaceBody
         editor={editor}
+        isFormattingReviewOpen={isFormattingReviewOpen}
         isOutlineOpen={isOutlineOpen}
         runtimeStatus={runtimeStatus}
+        onCloseFormattingReview={() => setIsFormattingReviewOpen(false)}
+        onToggleFormattingReview={() => setIsFormattingReviewOpen((isOpen) => !isOpen)}
       />
     </main>
   );
@@ -31,14 +36,26 @@ export function DraftWorkspace() {
 
 function WorkspaceBody(props: {
   editor: Editor | null;
+  isFormattingReviewOpen: boolean;
   isOutlineOpen: boolean;
   runtimeStatus: RuntimeConnectionState;
+  onCloseFormattingReview: () => void;
+  onToggleFormattingReview: () => void;
 }) {
   return (
     <div className={workspaceBodyClassName(props.isOutlineOpen)} data-testid="workspace-body">
       <DocumentOutline editor={props.editor} isOpen={props.isOutlineOpen} />
       <section className="editor-workspace" aria-label="Document workspace">
-        <EditorToolbar editor={props.editor} />
+        <EditorToolbar
+          editor={props.editor}
+          formattingReviewOpen={props.isFormattingReviewOpen}
+          onToggleFormattingReview={props.onToggleFormattingReview}
+        />
+        <FormattingReviewPanel
+          editor={props.editor}
+          isOpen={props.isFormattingReviewOpen}
+          onClose={props.onCloseFormattingReview}
+        />
         <DraftEditor editor={props.editor} />
       </section>
       <DocumentInspector editor={props.editor} runtimeStatus={props.runtimeStatus} />

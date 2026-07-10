@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 33 are complete. Phase 34 is
-the next implementation phase.
+**Current execution checkpoint:** Phases 0 through 34 are complete. Phase 35 is
+the next documentation and drift realignment phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -134,8 +134,16 @@ ADR-001 is accepted. Phase 33 defers native PDF generation while retaining a
 mechanical absence guard, and adds no PDF runtime path or product workflow. PR
 #1 merged under a documented one-time owner waiver of the remaining cooling
 period; the standing governance rule is unchanged. Its post-merge verification
-passed, so Phase 34 is the next implementation phase. Phase 34 requirements
-remain non-binding in `docs/drafts/FORMATTING_UX.md`.
+passed before Phase 34 began. Phase 34 implementation is recorded in
+`docs/maintainers/FORMATTING_UX.md`; its original requirements remain
+non-binding in `docs/drafts/FORMATTING_UX.md`.
+
+Phase 34 exposes the bounded formatting checks in a transient workspace review
+band. Findings are grouped into Structure and Citations, every action is
+closed and Rust-owned, heading edits require an explicit user command, and
+generation plus target checks reject stale results. No finding persistence,
+complete style conformance, citation conversion, export control, or automatic
+repair is added. Phase 35 is the next realignment boundary.
 
 ---
 

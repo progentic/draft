@@ -115,23 +115,41 @@ describe("DRAFT workspace shell", () => {
 
     const boldButton = screen.getByRole("button", { name: "Bold" });
     const italicButton = screen.getByRole("button", { name: "Italic" });
-    const blockQuoteButton = screen.getByRole("button", { name: "Block quote" });
+    const formattingReviewButton = screen.getByRole("button", { name: "Formatting review" });
 
     boldButton.focus();
     await user.keyboard("{ArrowRight}");
     expect(document.activeElement).toBe(italicButton);
 
     await user.keyboard("{End}");
-    expect(document.activeElement).toBe(blockQuoteButton);
+    expect(document.activeElement).toBe(formattingReviewButton);
 
     await user.keyboard("{ArrowRight}");
     expect(document.activeElement).toBe(boldButton);
 
     await user.keyboard("{ArrowLeft}");
-    expect(document.activeElement).toBe(blockQuoteButton);
+    expect(document.activeElement).toBe(formattingReviewButton);
 
     await user.keyboard("{Home}");
     expect(document.activeElement).toBe(boldButton);
+  });
+
+  it("opens and closes the formatting review from its toolbar control", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toggle = screen.getByRole("button", { name: "Formatting review" });
+    const panel = document.getElementById("formatting-review-panel")!;
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(panel.hidden).toBe(true);
+
+    await user.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(panel.hidden).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: "Close formatting review" }));
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(panel.hidden).toBe(true);
   });
 
   it.each([

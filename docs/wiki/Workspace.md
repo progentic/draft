@@ -14,6 +14,21 @@ supports:
 Formatting applies to the current selection. Selected formatting controls show
 their active state.
 
+## Review Formatting
+
+Choose **Formatting review** in the toolbar. Select APA 7, MLA 9, or Chicago 17
+author-date, then choose **Check formatting**. Findings are grouped into
+Structure and Citations.
+
+Use **Inspect** to move to the current heading or citation. A heading finding
+may offer an explicit level change; it runs only when you choose it and the
+target still matches the checked document. **Dismiss** hides a finding for the
+current check. Citation findings do not change citation styles.
+
+The review checks structure and style declarations only. It does not certify
+complete style-manual compliance, save findings, or repair a document
+automatically.
+
 ## Use The Toolbar With A Keyboard
 
 Press Tab to enter the formatting toolbar. Use Left Arrow and Right Arrow to
