@@ -527,6 +527,15 @@ cancellation, bounded failures, and the absence of provider, credential,
 network, persistence, mutation, Tauri-start, frontend, Python, or spawning
 authority.
 
+Phase 28 documents the Rust-owned Python helper protocol and process boundary in
+`docs/maintainers/PYTHON_HELPERS.md`. The non-binding requirements remain in
+`docs/drafts/PYTHON_HELPERS.md`. Rust and Python tests plus invariant scans
+enforce the closed helper/version allowlist, exact JSON fields, request identity,
+input and stream bounds, canonical fixed entrypoint, isolated cleared
+environment, timeout, cancellation, kill/reap behavior, typed failures, empty
+Python dependency set, and the absence of networking, credentials, persistence,
+mutation, Tauri, frontend, or product text-analysis authority.
+
 Recommended checks:
 
 - Markdown formatting

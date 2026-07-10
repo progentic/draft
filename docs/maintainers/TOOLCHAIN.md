@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 27 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 28 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -20,13 +20,20 @@ cancellable generated-analysis streams without a production provider or
 network call. The Phase 5, Phase 10, Phase 15, Phase 20, and Phase 25 audits are
 recorded in `docs/maintainers/REALIGNMENT.md`.
 
+Rust also owns a versioned Python helper runner with a canonical fixed
+entrypoint, closed protocol allowlist, isolated cleared environment, bounded
+standard streams, timeout, cancellation, and child reaping. The current
+`contract_probe` verifies only that boundary and is not a product analysis
+feature.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
 filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
-release automation, or packaging.
+text-analysis findings or controls, packaged Python runtime discovery, release
+automation, or packaging.
 
 ## Toolchain decisions
 
@@ -53,6 +60,9 @@ release automation, or packaging.
 - `tokio-util` provides cooperative cancellation tokens for Rust-owned workers.
 - The same cancellation token races each Phase 27 adapter read without spawning
   a task. Deterministic in-memory adapters are test infrastructure only.
+- A direct Tokio dependency provides bounded asynchronous process I/O, timeout,
+  and cancellation selection for the Python helper runner. Rust invokes the
+  fixed entrypoint directly without a shell or detached task.
 - UUID values identify validated documents; UUID v4 values identify transient
   workers without frontend-generated IDs.
 - Frontend dependencies use npm with `package-lock.json` committed.
@@ -64,8 +74,9 @@ release automation, or packaging.
 - Tauri capabilities grant the main WebView event listen/unlisten access only.
 - Lucide React provides the workspace's interface icons.
 - Vitest, Testing Library, and jsdom provide frontend component tests.
-- Python currently uses the standard library only. Third-party helper
-  dependencies will be pinned when a concrete helper contract requires them.
+- Python uses the standard library only and `pyproject.toml` declares an empty
+  dependency list. A dependency manager must be chosen and locked before any
+  third-party helper dependency is added.
 - Bash is limited to local and CI orchestration.
 
 These choices implement the stack already accepted in `ARCHITECTURE.md` and
@@ -122,7 +133,7 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake/job/AI orchestration scans, cross-bridge name parity, and tests
+  intake/job/AI/Python-helper scans, cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

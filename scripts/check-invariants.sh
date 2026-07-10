@@ -20,6 +20,7 @@ main() {
   check_event_contract_coverage
   check_event_capability
   check_worker_cancellation_contract
+  check_python_helper_contract
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -187,6 +188,98 @@ check_worker_cancellation_contract() {
     '(?:tokio(?:::task)?|tauri::async_runtime)::spawn\s*\(' \
     --glob '!src-tauri/src/workers/**' src-tauri/src
   printf 'PASS INV-07 worker cancellation contract\n'
+}
+
+check_python_helper_contract() {
+  local protocol_path="src-tauri/src/workers/python/protocol.rs"
+  local protocol_test_path="src-tauri/src/workers/python/protocol_tests.rs"
+  local runner_path="src-tauri/src/workers/python/runner.rs"
+  local runner_test_path="src-tauri/src/workers/python/runner_tests.rs"
+  local worker_path="python/draft_helpers/worker.py"
+  local python_test_path="python/tests/test_worker.py"
+  local required_rust_tests=(
+    contract_probe_input_is_bounded_before_request_creation
+    request_serialization_is_stable_and_allowlisted
+    matching_success_response_is_validated
+    unknown_or_malformed_success_output_fails_closed
+    response_identity_and_versions_must_match_request
+    impossible_contract_probe_result_fails_validation
+    helper_failure_response_is_typed_and_strict
+    request_errors_do_not_include_input_content
+    runtime_configuration_requires_canonical_trusted_files
+    isolated_worker_round_trip_is_typed_and_unicode_safe
+    helper_environment_is_cleared_before_execution
+    helper_timeout_kills_and_reaps_child
+    helper_cancellation_kills_and_reaps_child
+    malformed_excessive_and_stderr_output_fail_closed
+    nonzero_helper_failure_maps_to_closed_code
+    cancellation_before_spawn_avoids_process_work
+    runner_errors_do_not_expose_payload_stderr_or_paths
+  )
+  local required_python_tests=(
+    test_package_exports_typed_protocol
+    test_valid_request_returns_stable_typed_response
+    test_invalid_json_and_unknown_fields_fail_typed
+    test_protocol_and_helper_allowlist_fail_closed
+    test_request_identity_and_input_bounds_fail_closed
+    test_oversized_serialized_request_fails_closed
+  )
+  local test_name
+
+  require_file "${protocol_path}"
+  require_file "${protocol_test_path}"
+  require_file "${runner_path}"
+  require_file "${runner_test_path}"
+  require_file "${worker_path}"
+  require_file "${python_test_path}"
+  require_file docs/drafts/PYTHON_HELPERS.md
+  require_file docs/maintainers/PYTHON_HELPERS.md
+  for test_name in "${required_rust_tests[@]}"; do
+    require_rust_test "${test_name}" src-tauri/src/workers/python
+  done
+  for test_name in "${required_python_tests[@]}"; do
+    require_source_pattern "def ${test_name}" "${python_test_path}"
+  done
+  require_source_pattern 'PYTHON_HELPER_PROTOCOL_VERSION: u16 = 1' "${protocol_path}"
+  require_source_pattern 'CONTRACT_PROBE_VERSION: u16 = 1' "${protocol_path}"
+  require_source_pattern 'MAX_CONTRACT_PROBE_TEXT_BYTES: usize = 32 * 1024' "${protocol_path}"
+  require_source_pattern 'MAX_PYTHON_HELPER_REQUEST_BYTES: usize = 64 * 1024' "${protocol_path}"
+  require_source_pattern '#[serde(deny_unknown_fields, rename_all = "camelCase")]' "${protocol_path}"
+  require_source_pattern 'MAX_PYTHON_HELPER_STDOUT_BYTES: usize = 64 * 1024' "${runner_path}"
+  require_source_pattern 'MAX_PYTHON_HELPER_STDERR_BYTES: usize = 16 * 1024' "${runner_path}"
+  require_source_pattern 'PYTHON_HELPER_TIMEOUT: Duration = Duration::from_secs(5)' "${runner_path}"
+  require_source_pattern '.arg("-I")' "${runner_path}"
+  require_source_pattern '.arg("-B")' "${runner_path}"
+  require_source_pattern '.env_clear()' "${runner_path}"
+  require_source_pattern '.kill_on_drop(true)' "${runner_path}"
+  require_source_pattern 'cancellation.cancelled()' "${runner_path}"
+  require_source_pattern 'child.start_kill()' "${runner_path}"
+  require_source_pattern 'child.wait().await' "${runner_path}"
+  require_source_pattern 'PROTOCOL_VERSION = 1' "${worker_path}"
+  require_source_pattern 'CONTRACT_PROBE_HELPER = "contract_probe"' "${worker_path}"
+  require_source_pattern 'MAX_REQUEST_BYTES = 64 * 1024' "${worker_path}"
+  require_source_pattern 'dependencies = []' pyproject.toml
+  require_source_pattern 'tokio = { version = "1.52.3", features = ["io-util", "macros", "process", "time"] }' src-tauri/Cargo.toml
+  # The hostile worker fixture deliberately sleeps, reads PATH, writes stderr,
+  # and overproduces output. Production authority scans cover only the package.
+  assert_no_matches "INV-11 production Python authority" \
+    '(?m)^\s*(?:from|import)\s+(?:aiohttp|glob|httpx|keyring|os|pathlib|requests|shutil|socket|sqlite3|subprocess|tempfile|urllib)(?:[.\s]|$)|\bopen\s*\(|\bos\.environ\b|\bos\.getenv\s*\(|\bos\.system\s*\(' \
+    python/draft_helpers
+  assert_no_matches "INV-11 Python credential fields" \
+    '\b(?:api[_-]?key|authorization|bearer|credential|password|secret|token)\b' \
+    python/draft_helpers "${protocol_path}"
+  assert_no_matches "Phase 28 helper persistence, network, or mutation authority" \
+    '\breqwest\b|\bNetworkClient\b|\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
+    "${protocol_path}" "${runner_path}"
+  assert_no_matches "Phase 28 helper Tauri or detached-task authority" \
+    '#\[tauri::command\]|\btauri::|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
+    "${protocol_path}" "${runner_path}"
+  assert_no_matches "Phase 28 application or command helper authority" \
+    '\bPythonHelperRunner\b|\bcontract_probe\b|draft_helpers/worker\.py' \
+    src-tauri/src/application src-tauri/src/commands
+  assert_no_matches "Phase 28 frontend helper authority" \
+    '\bPythonHelper\b|\bcontract_probe\b|\bContractProbe\b' src
+  printf 'PASS INV-11 Phase 28 Python helper contract\n'
 }
 
 check_document_envelope_contract() {
@@ -413,9 +506,13 @@ check_external_browser_handoff_contract() {
   require_source_pattern 'https://doi.org' "${domain_path}"
   require_source_pattern 'https://scholar.google.com/scholar' "${domain_path}"
   require_source_pattern 'const COMMAND_NAME = "open_external_access"' "${frontend_path}"
+  # Phase 28 owns one direct Python process launch under the worker boundary;
+  # it is not a browser launch path and remains governed by its own scans.
   assert_no_matches "Phase 23 alternate Rust browser launch" \
     'tauri_plugin_opener::open_url|\bopen::(?:that|with)|\bwebbrowser::|Command::new' \
-    --glob '!system_browser.rs' src-tauri/src
+    --glob '!system_browser.rs' \
+    --glob '!**/workers/python/runner.rs' \
+    --glob '!**/workers/python/runner_tests.rs' src-tauri/src
   assert_no_matches "Phase 23 frontend opener authority" \
     '@tauri-apps/plugin-opener|\bwindow\.open\s*\(|target\s*=\s*[\x22\x27]_blank' src
   assert_no_matches "Phase 23 opener plugin registration" \
@@ -846,14 +943,16 @@ require_atomic_writer_tests() {
 check_document_write_boundary() {
   local atomic_writer_path="$1"
 
-  # These exact test files write only temporary PDF fixtures. Production intake
-  # and job mutation remain denied by their separate source scans.
+  # These exact test files write only temporary fixtures. The Python runner's
+  # write_all targets piped child stdin, not a filesystem path. Production
+  # document, intake, and job mutation remain denied by separate source scans.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
     --glob '!src-tauri/src/imports/pdf_tests.rs' \
     --glob '!src-tauri/src/jobs/store_tests.rs' \
-    --glob '!src-tauri/src/references/store_tests.rs' src-tauri/src
+    --glob '!src-tauri/src/references/store_tests.rs' \
+    --glob '!src-tauri/src/workers/python/runner.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
   require_source_pattern '.persist(target_path)' "${atomic_writer_path}"
@@ -950,9 +1049,9 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "INV-11 helper protocol before Phase 28" \
-    '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
-    python/draft_helpers
+  assert_no_matches "Phase 29 text-analysis behavior" \
+    '\b(?:TextAnalysis|GrammarFinding|ClarityFinding|ToneFinding|CohesionFinding|VoiceFinding|analyze_text|run_text_analysis)\b' \
+    python/draft_helpers src-tauri/src/workers/python src
   printf 'PASS future feature absence gates\n'
 }
 

@@ -389,5 +389,5 @@ Every architecture PR must answer:
   external-browser-handoff, and PDF-import requirements non-binding until the
   contract lifecycle permits acceptance. The implemented Phase 26
   background-job requirements and Phase 27 AI-orchestration requirements are
-  also non-binding. Create Python-helper and formatting drafts in their owning
-  phases.
+  also non-binding. The implemented Phase 28 Python-helper requirements remain
+  non-binding as well. Create formatting drafts in their owning phases.

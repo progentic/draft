@@ -119,6 +119,15 @@ check_required_sources() {
     src-tauri/src/references/store_tests.rs
     src-tauri/src/references/test_support.rs
     src-tauri/src/workers/cancellation.rs
+    src-tauri/src/workers/python/mod.rs
+    src-tauri/src/workers/python/protocol.rs
+    src-tauri/src/workers/python/protocol_tests.rs
+    src-tauri/src/workers/python/runner.rs
+    src-tauri/src/workers/python/runner_tests.rs
+    src-tauri/src/workers/python/worker_fixture.py
+    python/draft_helpers/__init__.py
+    python/draft_helpers/worker.py
+    python/tests/test_worker.py
     src-tauri/icons/icon.png
   )
   local file_path

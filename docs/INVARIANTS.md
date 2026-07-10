@@ -71,7 +71,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-08` | Accepted | A watched-folder file enters the import pipeline only after stable-write confirmation. | `ARCHITECTURE.md` §10.1 | Phase 24 enforces root-confined canonical paths, event-driven deadline resets, a one-second quiet window, unchanged byte length, signature validation, and the chunked-write regression test before returning a candidate. The size-only rule cannot detect an unreported same-size in-place change. The intake gate has no watcher, worker, persistence, or frontend flow; Phase 26 persistence begins only after candidate promotion. | The `verify` job runs the same Rust tests and import-boundary scans through `scripts/verify.sh`. |
 | `INV-09` | Accepted | Document saves use atomic write-then-rename. The on-disk file is always the prior complete version or the new complete version, never a partial write. | `ARCHITECTURE.md` §11 | Phase 14 routes saves through a same-directory named temporary file, synchronizes content before atomic replacement, synchronizes the parent directory on Unix, serializes file lifecycle operations, and returns typed stage failures. Injected partial-write/sync/replacement faults, real replacement failure, cleanup, platform replacement, durability-uncertain, and concurrent disk/registry tests are required by the invariant scan. | The `verify` job runs the same atomic-writer, persistence, direct-write, command, and frontend boundary checks through `scripts/verify.sh`. |
 | `INV-10` | Accepted | All outbound requests to external services go through the centralized Rust network client. Feature code, frontend code, and Python helpers must not create ad hoc external network clients. | `ARCHITECTURE.md` §13 | Phases 21 and 22 require centralized HTTPS-only client construction and request execution, controlled identity/timeouts, per-provider rate limits, capped backoff, bounded responses, typed failures, and no `reqwest` use outside `src-tauri/src/network/`. Existing frontend and Python scans remain active. | The `verify` job runs the same construction, request-policy, provider-normalization, and boundary checks through `scripts/verify.sh`. |
-| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Python tests and denied-import scans run now; the Phase 10 absence gate rejects a helper protocol before Phase 28. Phase 28 must replace it with allowlist, timeout, and typed I/O tests. | The `verify` job runs the same Python tests, denied-import scan, and helper-protocol absence gate. |
+| `INV-11` | Accepted | Python helpers are allowlisted, versioned, typed worker tools. They do not own persistence, secrets, source-document mutation, or external network access by default. | `ARCHITECTURE.md` §4.3, §5.3, and §11 | Phase 28 requires a fixed canonical entrypoint, closed protocol/helper versions, exact bounded JSON, isolated cleared environment, bounded captured streams, timeout, cooperative cancellation, kill/reap behavior, typed failures, empty dependency set, and Rust validation. Python and Rust tests plus source scans deny helper network, credential, database, filesystem, environment, subprocess, persistence, mutation, Tauri, and frontend authority. | The `verify` job runs the same Phase 28 Python/Rust tests and helper-boundary scans through `scripts/verify.sh`. |
 | `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | The Phase 3 `verify` job runs Bash syntax and runtime-boundary checks. Optional tools run when present. |
 | `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
@@ -446,12 +446,25 @@ Allowed Python behavior:
 - Return JSON to stdout.
 - Run local deterministic formatting or text-analysis checks.
 
+Phase 28 implements the process and protocol boundary with one non-product
+`contract_probe`. Rust generates request identity, selects the closed helper and
+version, canonicalizes a fixed entrypoint, clears inherited environment, and
+owns process creation, bounded stdin/stdout/stderr, timeout, cancellation,
+kill/reap, exit interpretation, and response validation. The request contains
+only bounded text and a closed locale; it carries no path, command, environment,
+credential, persistence, document, or reference field.
+
+The production Python package uses the standard library only. Scans reject file
+and directory access, environment inspection, network, credential, database,
+and subprocess APIs. The helper emits exact typed JSON and never decides whether
+a result becomes durable state or changes a document.
+
 Minimum local checks:
 
 ```bash
-python -m pytest
-scripts/check-python-helper-boundary.sh
-scripts/check-python-dependencies-pinned.sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=python \
+  python3 -m unittest discover -s python/tests -v
+bash scripts/check-invariants.sh
 ```
 
 ---
@@ -648,9 +661,10 @@ Phase 21 centralized network-client construction, Phase 22 metadata lookup and
 request policy, Phase 23 external browser handoff, direct frontend opener APIs,
 Phase 24 PDF intake and stable-write confirmation, Phase 26 persistent job
 ownership and recovery, Phase 27 bounded AI orchestration and generated-output
-provenance, ad hoc Rust network clients, and Bash invocation from product
-runtime. The verifier also checks locked offline builds, tests, required source
-visibility, generated-file hygiene, and documentation sanity.
+provenance, Phase 28 Python helper protocol/process confinement, ad hoc Rust
+network clients, and Bash invocation from product runtime. The verifier also
+checks locked offline builds, tests, required source visibility, generated-file
+hygiene, and documentation sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 

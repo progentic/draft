@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 27 are complete. Phase 28 is
+**Current execution checkpoint:** Phases 0 through 28 are complete. Phase 29 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -88,6 +88,15 @@ preserves document and verified-evidence provenance, classifies every output as
 generated analysis, and coordinates a cancel-safe adapter stream. No production
 provider, credential, network call, persistence, Tauri start command, frontend
 listener, document mutation, or spawned worker exists.
+
+Phase 28 requirements and implemented behavior are recorded in
+`docs/drafts/PYTHON_HELPERS.md` and
+`docs/maintainers/PYTHON_HELPERS.md`. Rust now owns a fixed, isolated Python
+entrypoint, versioned typed JSON, bounded standard streams, timeout,
+cancellation, child reaping, and output validation. The sole allowlisted
+`contract_probe` proves the boundary without adding text-analysis findings,
+Tauri or frontend controls, persistence, document mutation, networking, or a
+packaged Python runtime.
 
 ---
 

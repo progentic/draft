@@ -89,6 +89,10 @@ full system described in this architecture:
   output tags, typed stream limits, and cooperative cancellation. Only
   deterministic in-memory test adapters exist; no model or external request is
   configured.
+- Rust owns a versioned Python helper runner with a fixed canonical entrypoint,
+  closed allowlist, isolated environment, bounded standard streams, timeout,
+  cooperative cancellation, child reaping, and typed output validation. Its
+  contract probe proves the process boundary but performs no product analysis.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -106,8 +110,8 @@ full system described in this architecture:
   autosave, recovery, reference CRUD UI, citation insertion, rendered
   bibliography workflow, provider lookup or browser-handoff control, production
   model provider, analysis start command, frontend analysis listener, visible
-  analysis workflow, PDF import control or watcher, job scheduler or processing
-  worker, formatter, or export path is implemented.
+  analysis or text-analysis workflow, PDF import control or watcher, job
+  scheduler or processing worker, formatter, or export path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -229,6 +233,14 @@ A Python helper must not:
 - Call external network services unless an ADR explicitly approves the helper and the call still routes through the Rust network policy.
 - Shell out to arbitrary commands.
 - Become the source of truth for document state.
+
+Phase 28 implements this boundary with protocol version 1 and only the
+`contract_probe` allowlist entry. Rust canonicalizes a trusted Python executable
+and fixed package entrypoint, invokes it without a shell under an empty inherited
+environment, and owns bounded stdin/stdout/stderr, a five-second timeout,
+cooperative cancellation, kill, reap, exit interpretation, and exact response
+validation. No application state, command, event, frontend, persistence, or
+product text-analysis flow invokes the runner yet.
 
 Relevant invariant: `INV-11` in `INVARIANTS.md`.
 
