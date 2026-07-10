@@ -59,23 +59,30 @@ describe("startRuntimeStatusSession", () => {
 
     await startRuntimeStatusSession((state) => states.push(state));
 
-    expect(states).toEqual([{ phase: "unavailable", reason: "invalid-payload" }]);
+    expect(states).toEqual([
+      { phase: "unavailable", reason: { type: "invalid-payload" } },
+    ]);
   });
 
-  it("maps command failure after listener setup and keeps cleanup", async () => {
-    const states: unknown[] = [];
-    listenToRuntimeStatusMock.mockResolvedValue(stopMock);
-    getRuntimeStatusMock.mockResolvedValue({
-      status: "error",
-      error: { type: "command", code: "event_delivery_failed" },
-    });
+  it.each(["invalid_application_version", "event_delivery_failed"] as const)(
+    "preserves the %s command failure after listener setup",
+    async (code) => {
+      const states: unknown[] = [];
+      listenToRuntimeStatusMock.mockResolvedValue(stopMock);
+      getRuntimeStatusMock.mockResolvedValue({
+        status: "error",
+        error: { type: "command", code },
+      });
 
-    const stop = await startRuntimeStatusSession((state) => states.push(state));
-    stop();
+      const stop = await startRuntimeStatusSession((state) => states.push(state));
+      stop();
 
-    expect(states).toEqual([{ phase: "unavailable", reason: "command" }]);
-    expect(stopMock).toHaveBeenCalledOnce();
-  });
+      expect(states).toEqual([
+        { phase: "unavailable", reason: { type: "command", code } },
+      ]);
+      expect(stopMock).toHaveBeenCalledOnce();
+    },
+  );
 
   it("maps listener setup failure without invoking the command", async () => {
     const states: unknown[] = [];
@@ -84,7 +91,7 @@ describe("startRuntimeStatusSession", () => {
     const stop = await startRuntimeStatusSession((state) => states.push(state));
     stop();
 
-    expect(states).toEqual([{ phase: "unavailable", reason: "transport" }]);
+    expect(states).toEqual([{ phase: "unavailable", reason: { type: "transport" } }]);
     expect(getRuntimeStatusMock).not.toHaveBeenCalled();
     expect(stopMock).not.toHaveBeenCalled();
   });

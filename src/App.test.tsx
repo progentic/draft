@@ -9,6 +9,17 @@ vi.mock("./features/runtime-status/useRuntimeStatus", () => ({
 }));
 
 import { App } from "./App";
+import type { RuntimeConnectionState } from "./features/runtime-status/runtimeStatusSession";
+
+type RuntimeCommandFailureCode = Extract<
+  Extract<RuntimeConnectionState, { phase: "unavailable" }>["reason"],
+  { type: "command" }
+>["code"];
+
+const RUNTIME_COMMAND_FAILURE_LABELS = {
+  invalid_application_version: "DRAFT received an unsupported application version.",
+  event_delivery_failed: "DRAFT could not deliver the core status event.",
+} satisfies Record<RuntimeCommandFailureCode, string>;
 
 describe("DRAFT workspace shell", () => {
   beforeEach(() => {
@@ -108,10 +119,18 @@ describe("DRAFT workspace shell", () => {
   });
 
   it.each([
-    ["transport", "Core unavailable"],
-    ["command", "Core event failed"],
-    ["invalid-payload", "Core status invalid"],
-  ] as const)("shows the bounded %s failure state", (reason, expectedLabel) => {
+    [{ type: "transport" }, "Core unavailable"],
+    [{ type: "invalid-payload" }, "Core status invalid"],
+    [{ type: "invalid-response" }, "Core status invalid"],
+    ...Object.entries(RUNTIME_COMMAND_FAILURE_LABELS).map(([code, label]) => [
+      { type: "command", code },
+      label,
+    ] as const),
+    [
+      { type: "command", code: "unknown_command_failure" },
+      "DRAFT could not read the core status.",
+    ],
+  ] as const)("shows the bounded $reason.type failure state", (reason, expectedLabel) => {
     useRuntimeStatusMock.mockReturnValueOnce({ phase: "unavailable", reason });
 
     render(<App />);

@@ -90,11 +90,12 @@ one of three transient states:
 
 - `checking`
 - `ready` with the Rust application version
-- `unavailable` with a bounded reason category
+- `unavailable` with the complete bounded client or event error
 
 The document inspector displays `Connecting to core`, `Core v<version>`, or a
-bounded unavailable label for transport, event-delivery, or invalid-contract
-failure. This state is not persisted and does not make the frontend
+bounded unavailable label. Invalid application metadata and event-delivery
+failure remain distinct through the session state so the interface can explain
+the actual failure. This state is not persisted and does not make the frontend
 authoritative for runtime metadata.
 
 A standalone Vite browser does not have a Tauri runtime and therefore reports
@@ -168,6 +169,7 @@ Frontend tests prove:
 - external destination arguments, opened response, typed launch errors, and
   malformed browser-handoff response handling
 - workspace rendering of the connected Rust version
+- runtime-status presentation for every known command error code
 
 Run the focused evidence with:
 

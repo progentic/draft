@@ -6,8 +6,8 @@ import {
 } from "../../ipc/runtimeStatusEvents";
 
 export type RuntimeUnavailableReason =
-  | RuntimeStatusClientError["type"]
-  | RuntimeStatusEventClientError["type"];
+  | RuntimeStatusClientError
+  | RuntimeStatusEventClientError;
 
 export type RuntimeConnectionState =
   | { phase: "checking" }
@@ -29,7 +29,7 @@ export async function startRuntimeStatusSession(
     return stopListener;
   } catch {
     stopListener();
-    onState({ phase: "unavailable", reason: "transport" });
+    onState({ phase: "unavailable", reason: { type: "transport" } });
     return STOP_NOOP;
   }
 }
@@ -37,13 +37,13 @@ export async function startRuntimeStatusSession(
 function registerRuntimeStatusListener(onState: RuntimeStateListener) {
   return listenToRuntimeStatus(
     (event) => onState({ phase: "ready", version: event.version }),
-    (error) => onState({ phase: "unavailable", reason: error.type }),
+    (error) => onState({ phase: "unavailable", reason: error }),
   );
 }
 
 async function requestRuntimeStatus(onState: RuntimeStateListener) {
   const result = await getRuntimeStatus();
   if (result.status === "error") {
-    onState({ phase: "unavailable", reason: result.error.type });
+    onState({ phase: "unavailable", reason: result.error });
   }
 }
