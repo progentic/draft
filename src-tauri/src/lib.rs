@@ -6,6 +6,7 @@ mod events;
 pub mod network;
 pub mod references;
 pub mod research;
+mod system_browser;
 pub mod workers;
 
 /// Starts the DRAFT desktop runtime.
@@ -24,6 +25,7 @@ pub fn run() {
             commands::citation_resolution::resolve_citation,
             commands::document_open::open_document,
             commands::document_save::save_document,
+            commands::external_access::open_external_access,
             commands::runtime_status::get_runtime_status,
             commands::worker_cancellation::cancel_worker
         ])

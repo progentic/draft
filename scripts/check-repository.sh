@@ -55,6 +55,8 @@ check_required_sources() {
     src/ipc/documentOpen.ts
     src/ipc/documentSave.test.ts
     src/ipc/documentSave.ts
+    src/ipc/externalAccess.test.ts
+    src/ipc/externalAccess.ts
     src/ipc/runtimeStatus.test.ts
     src/ipc/runtimeStatus.ts
     src/ipc/runtimeStatusEvents.test.ts
@@ -66,6 +68,7 @@ check_required_sources() {
     src-tauri/src/commands/document_open.rs
     src-tauri/src/commands/citation_resolution.rs
     src-tauri/src/commands/document_save.rs
+    src-tauri/src/commands/external_access.rs
     src-tauri/src/commands/worker_cancellation.rs
     src-tauri/src/application/network_client.rs
     src-tauri/src/documents/atomic_write.rs
@@ -85,6 +88,8 @@ check_required_sources() {
     src-tauri/src/network/mod.rs
     src-tauri/src/research/metadata.rs
     src-tauri/src/research/metadata_tests.rs
+    src-tauri/src/research/external_access.rs
+    src-tauri/src/research/external_access_tests.rs
     src-tauri/src/research/mod.rs
     src-tauri/src/research/providers/crossref.rs
     src-tauri/src/research/providers/crossref_tests.rs
@@ -93,6 +98,7 @@ check_required_sources() {
     src-tauri/src/research/providers/semantic_scholar_tests.rs
     src-tauri/src/research/providers/unpaywall.rs
     src-tauri/src/research/providers/unpaywall_tests.rs
+    src-tauri/src/system_browser.rs
     src-tauri/src/references/mod.rs
     src-tauri/src/references/record.rs
     src-tauri/src/references/store.rs

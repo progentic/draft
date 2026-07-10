@@ -27,6 +27,7 @@ main() {
   check_bibliography_consistency_contract
   check_network_client_contract
   check_metadata_lookup_contract
+  check_external_browser_handoff_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -46,7 +47,7 @@ check_credential_fields() {
 
 check_frontend_boundary() {
   assert_no_matches "INV-03 frontend trusted APIs" \
-    'fetch\s*\(|\baxios\b|\bXMLHttpRequest\b|\bWebSocket\s*\(|\bEventSource\s*\(|navigator\.sendBeacon\s*\(|\bnode:fs\b|@tauri-apps/plugin-(?:dialog|fs|store)|\blocalStorage\b' \
+    'fetch\s*\(|\baxios\b|\bXMLHttpRequest\b|\bWebSocket\s*\(|\bEventSource\s*\(|navigator\.sendBeacon\s*\(|\bwindow\.open\s*\(|target\s*=\s*[\x22\x27]_blank|\bnode:fs\b|@tauri-apps/plugin-(?:dialog|fs|store|opener)|\blocalStorage\b' \
     src
 
   check_frontend_ipc_boundary
@@ -376,6 +377,52 @@ check_metadata_lookup_contract() {
   assert_no_matches "Phase 22 frontend metadata authority" \
     '\bCrossref\b|\bSemanticScholar\b|\bUnpaywall\b|\bMetadataRecord\b' src
   printf 'PASS Phase 22 metadata lookup contract\n'
+}
+
+check_external_browser_handoff_contract() {
+  local domain_path="src-tauri/src/research/external_access.rs"
+  local domain_test_path="src-tauri/src/research/external_access_tests.rs"
+  local command_path="src-tauri/src/commands/external_access.rs"
+  local browser_path="src-tauri/src/system_browser.rs"
+  local frontend_path="src/ipc/externalAccess.ts"
+  local frontend_test_path="src/ipc/externalAccess.test.ts"
+  local required_tests=(
+    publisher_and_institutional_urls_open_as_validated_https
+    non_https_or_credentialed_urls_fail_before_browser_launch
+    doi_handoff_builds_resolver_url
+    google_scholar_handoff_builds_bounded_search_url
+    malformed_doi_and_query_fail_before_browser_launch
+    browser_launch_failures_are_bounded
+  )
+  local test_name
+
+  require_file "${domain_path}"
+  require_file "${domain_test_path}"
+  require_file "${command_path}"
+  require_file "${browser_path}"
+  require_file "${frontend_path}"
+  require_file "${frontend_test_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${domain_test_path}"
+  done
+  require_source_pattern 'tauri-plugin-opener = "2.5.4"' src-tauri/Cargo.toml
+  require_source_pattern 'tauri_plugin_opener::open_url(url.as_str(), None::<&str>)' "${browser_path}"
+  require_source_pattern 'https://doi.org' "${domain_path}"
+  require_source_pattern 'https://scholar.google.com/scholar' "${domain_path}"
+  require_source_pattern 'const COMMAND_NAME = "open_external_access"' "${frontend_path}"
+  assert_no_matches "Phase 23 alternate Rust browser launch" \
+    'tauri_plugin_opener::open_url|\bopen::(?:that|with)|\bwebbrowser::|Command::new' \
+    --glob '!system_browser.rs' src-tauri/src
+  assert_no_matches "Phase 23 frontend opener authority" \
+    '@tauri-apps/plugin-opener|\bwindow\.open\s*\(|target\s*=\s*[\x22\x27]_blank' src
+  assert_no_matches "Phase 23 opener plugin registration" \
+    'tauri_plugin_opener::init|\.plugin\([^\n]*opener' src-tauri/src
+  assert_no_matches "Phase 23 opener capability" \
+    '\bopener:' src-tauri/capabilities
+  assert_no_matches "Phase 23 handoff network or persistence authority" \
+    '\breqwest\b|\bNetworkClient\b|\brusqlite\b|(?:std|tokio)::fs|\bReferenceStore\b' \
+    "${domain_path}" "${command_path}" "${browser_path}"
+  printf 'PASS Phase 23 external browser handoff contract\n'
 }
 
 require_citation_sources() {

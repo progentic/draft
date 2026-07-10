@@ -488,6 +488,13 @@ validation, exact provider requests, candidate normalization, per-provider
 rate limits, bounded backoff and responses, typed failures, no persistence or
 IPC authority, and no external requests in tests.
 
+Phase 23 documents Rust-owned default-browser handoff in
+`docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`. The non-binding requirements
+remain in `docs/drafts/EXTERNAL_BROWSER_HANDOFF.md`. Rust/frontend tests and
+invariant scans enforce tagged target input, HTTPS and credential rejection,
+fixed DOI and Google Scholar origins, typed outcomes, no direct frontend opener
+authority, and no real browser launch in tests.
+
 Recommended checks:
 
 - Markdown formatting

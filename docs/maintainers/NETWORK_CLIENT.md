@@ -120,11 +120,13 @@ configuration, and rejects `reqwest` use outside `src-tauri/src/network/`.
 
 `scripts/check-repository.sh` requires every network source to remain visible
 to Git. `scripts/check-docs.sh` requires this guide and roadmap/phasemap
-agreement through Phase 22. The aggregate verifier runs the same checks locally
+agreement through Phase 23. The aggregate verifier runs the same checks locally
 and in GitHub Actions.
 
-## Phase 23 Gate
+## Browser Handoff Boundary
 
-Phase 23 may add system-browser handoff for external access. It must not add
-scraping, browser-session automation, credential capture, or a direct frontend
-network path.
+Phase 23 browser handoff is implemented separately in
+`docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`. Launching the user's default
+browser is not a request through this client: DRAFT neither performs nor
+observes the browser's network work. Automated DRAFT requests remain confined
+to this module.

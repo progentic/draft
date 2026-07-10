@@ -94,6 +94,18 @@ disposable display marker. Typed errors distinguish invalid attrs, a missing
 reference, and bounded unavailable/read/corruption store categories. The full
 contract is documented in `docs/maintainers/CITATION_NODE.md`.
 
+## External browser handoff command
+
+Phase 23 adds `open_external_access`. It accepts one tagged publisher URL,
+institutional URL, DOI, or Google Scholar query. Rust validates or constructs
+the final HTTPS URL and delegates one launch to the default system browser.
+
+The response reports only `opened` and the destination. Typed errors
+distinguish an invalid URL, invalid DOI, invalid search query, and unavailable
+browser. No URL, browser detail, credential, cookie, token, or session state
+returns to the frontend. The full boundary is documented in
+`docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -104,6 +116,7 @@ contract is documented in `docs/maintainers/CITATION_NODE.md`.
 | Mid | `open_document` | Selects a file in Rust and delegates validated loading. |
 | Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
 | Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
+| Mid | `open_external_access` | Validates a research destination and delegates one system-browser launch. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -137,7 +150,8 @@ must make the result observable to the frontend.
 Rust tests cover valid and blank version inputs, exact command signatures,
 bounded request deserialization, stable JSON for success and error values,
 cancellation lifecycle outcomes, Phase 13 document commands, Phase 14
-atomic-write failure shapes, and Phase 18 citation resolution.
+atomic-write failure shapes, Phase 18 citation resolution, and Phase 23
+external browser handoff.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -164,5 +178,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
 - Phase 18 establishes citation validation and resolution described in
   `docs/maintainers/CITATION_NODE.md`.
+- Phase 23 establishes Rust-owned browser handoff described in
+  `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

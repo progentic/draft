@@ -33,6 +33,7 @@ check_required_documents() {
     docs/DOCUMENTATION.md
     docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md
     docs/drafts/DOCUMENT_ENVELOPE.md
+    docs/drafts/EXTERNAL_BROWSER_HANDOFF.md
     docs/drafts/CITATION_NODE.md
     docs/drafts/NETWORK_CLIENT.md
     docs/drafts/METADATA_LOOKUP.md
@@ -50,6 +51,7 @@ check_required_documents() {
     docs/maintainers/DOCUMENT_REGISTRY.md
     docs/maintainers/DOCUMENT_SAVE_LOAD.md
     docs/maintainers/EVENT_BOUNDARY.md
+    docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md
     docs/maintainers/NETWORK_CLIENT.md
     docs/maintainers/METADATA_LOOKUP.md
@@ -133,7 +135,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 22 are complete'
+  local checkpoint='Phases 0 through 23 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

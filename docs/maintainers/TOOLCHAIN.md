@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 22 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 23 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -11,14 +11,16 @@ envelope, a process-local single-live-handle registry, typed native-dialog
 open/save commands, a hardened atomic replacement path, and a validated
 reference record, local SQLite store, versioned citation-node resolution
 boundary, pure bibliography-consistency check, centralized network client, and
-typed DOI metadata providers. The Phase 5, Phase 10,
+typed DOI metadata providers plus a Rust-owned system-browser handoff. The
+Phase 5, Phase 10,
 Phase 15, and Phase 20 audits are recorded in
 `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
-provider metadata lookup, release automation, or packaging.
+provider metadata lookup UI, browser-handoff controls, PDF import, release
+automation, or packaging.
 
 ## Toolchain decisions
 
@@ -33,6 +35,9 @@ provider metadata lookup, release automation, or packaging.
   persistence without depending on a system SQLite installation.
 - `reqwest` 0.13.4 with only its Rustls feature provides the centralized
   HTTPS-only client without cookie or system-proxy features.
+- `tauri-plugin-opener` 2.5.4 provides the Rust-only default-browser adapter.
+  Its guest plugin is not initialized, and the WebView receives no opener
+  package or capability.
 - A Rust `Mutex<HashMap<...>>` serializes process-local document handle
   ownership without introducing persistence.
 - A separate Rust `Mutex<()>` serializes document open/save lifecycle
@@ -104,9 +109,9 @@ The verifier runs:
 
 - npm dependency-tree validation
 - React/Tiptap workspace plus typed command, event, cancellation, citation,
-  and document client tests
+  document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
-  registry/persistence/atomic-write/citation/bibliography/network scans,
+  registry/persistence/atomic-write/citation/bibliography/network/browser scans,
   cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches

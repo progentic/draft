@@ -41,12 +41,12 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 22 is deliberately smaller than the
+The implemented application through Phase 23 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
-  document-save, and citation-resolution commands with command-specific
-  request, response, and error types.
+  document-save, citation-resolution, and external-access commands with
+  command-specific request, response, and error types.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
 - Rust emits the typed finite `draft://runtime-status` event, and the frontend
   validates it before React displays connection state.
@@ -75,6 +75,9 @@ full system described in this architecture:
   explicit timeouts, per-provider rate limiting and backoff, bounded responses,
   and typed transport failures. Crossref, Semantic Scholar, and Unpaywall
   modules use it for DOI metadata lookup and return non-persistent candidates.
+- Rust validates publisher and institutional HTTPS URLs, DOI resolver targets,
+  and Google Scholar queries before handing one URL to the default system
+  browser. The WebView has no direct opener API or capability.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -90,8 +93,9 @@ full system described in this architecture:
   the current document.
 - The current workspace does not expose open/save controls yet. No close command,
   autosave, recovery, reference CRUD UI, citation insertion, rendered
-  bibliography workflow, provider metadata lookup, analysis worker, formatter,
-  export path, or non-reference durable database is implemented.
+  bibliography workflow, provider lookup or browser-handoff control, analysis
+  worker, formatter, export path, or non-reference durable database is
+  implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -413,6 +417,13 @@ The allowed flow is:
 Opening a URL in the user's system browser is not automated access. DRAFT must not script, scrape, intercept, proxy, or automate that browser session.
 
 This keeps institutional and publisher credentials permanently outside DRAFT's trust boundary.
+
+Phase 23 implements the typed handoff documented in
+`maintainers/EXTERNAL_BROWSER_HANDOFF.md`. Rust accepts one tagged publisher,
+institutional, DOI, or Google Scholar target, constructs or validates a bounded
+HTTPS URL, and calls only the default OS browser. No opener guest plugin,
+frontend capability, embedded browser, session inspection, or persistence is
+added.
 
 Relevant invariant: `INV-01` in `INVARIANTS.md`.
 

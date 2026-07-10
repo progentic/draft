@@ -23,6 +23,7 @@ transport failures out of presentation components.
 | Mid | `openDocument` | Validates Rust-loaded envelopes without receiving a path. |
 | Mid | `saveDocument` | Sends one explicit snapshot and validates save outcomes. |
 | Mid | `resolveCitation` | Validates resolution responses and typed citation failures. |
+| Mid | `openExternalAccess` | Requests one Rust-validated default-browser handoff. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -132,6 +133,18 @@ accepts the attrs. Rust still validates again and remains authoritative. The
 response contains no reference metadata; the resulting marker is disposable
 presentation state. See `docs/maintainers/CITATION_NODE.md`.
 
+## External browser handoff wrapper
+
+Phase 23 adds `openExternalAccess` under `src/ipc/`. It sends one tagged
+publisher URL, institutional URL, DOI, or Google Scholar query to
+`open_external_access`. It validates the exact opened response and preserves
+four bounded command errors without retaining a raw browser failure.
+
+The wrapper does not import `@tauri-apps/plugin-opener`, call `window.open`, or
+receive opener permissions. Rust remains the URL and launch authority. No
+React component invokes the wrapper at this checkpoint because a visible
+research workflow has not been integrated.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -152,6 +165,8 @@ Frontend tests prove:
 - document open/save command names and exact request arguments
 - envelope, cancellation, nested error, and malformed-response handling
 - citation attrs, response marker, command-error, and transport classification
+- external destination arguments, opened response, typed launch errors, and
+  malformed browser-handoff response handling
 - workspace rendering of the connected Rust version
 
 Run the focused evidence with:
@@ -177,4 +192,5 @@ Phase 8 event transport is documented in
 request/response abstraction. Phase 9 worker lifecycle rules are documented in
 `docs/maintainers/CANCELLATION_BOUNDARY.md`. Phase 13/14 file lifecycle rules
 are documented in `docs/maintainers/DOCUMENT_SAVE_LOAD.md`, and Phase 18
-citation behavior in `docs/maintainers/CITATION_NODE.md`.
+citation behavior in `docs/maintainers/CITATION_NODE.md`. Phase 23 browser
+handoff is documented in `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.

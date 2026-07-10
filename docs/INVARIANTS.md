@@ -61,9 +61,9 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 
 | ID | Status | Invariant | Protects | Local development enforcement | GitHub Actions enforcement |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 2 scans implemented source surfaces for denied credential fields. Full secret, schema, helper-input, and log checks remain open. | The Phase 3 `verify` job runs the current source scan. Full secret, schema, helper-input, and log checks remain open. |
-| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phases 6, 9, 13, and 18 establish typed runtime-status, cancellation, document-file, and citation-resolution commands. The invariant scan rejects generic errors, requires matching command registration and contract-test counts, and compares registered Rust names with frontend wrappers. | The `verify` job runs the same Rust tests, command-contract counts, and bridge-name parity scan. |
-| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, or secret stores directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1 and §13 | `scripts/check-invariants.sh` blocks direct trusted APIs plus raw command and event APIs outside `src/ipc/`. Typed wrappers carry document snapshots or citation attrs without paths, direct SQLite access, or reference metadata authority. | The `verify` job runs the same frontend tests, boundary scans, and bridge-name parity check. |
+| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 23 adds a Rust-owned default-browser handoff with no login fields, rejects URL userinfo, and mechanically denies embedded/direct opener authority. The Phase 2 credential scan remains active; full secret, schema, helper-input, and log checks remain open. | The `verify` job runs the same handoff tests, opener scans, and credential scan. Full secret, schema, helper-input, and log checks remain open. |
+| `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phases 6, 9, 13, 18, and 23 establish typed runtime-status, cancellation, document-file, citation-resolution, and browser-handoff commands. The invariant scan rejects generic errors, requires matching command registration and contract-test counts, and compares registered Rust names with frontend wrappers. | The `verify` job runs the same Rust tests, command-contract counts, and bridge-name parity scan. |
+| `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, secret stores, or external opener APIs directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1, §9, and §13 | `scripts/check-invariants.sh` blocks direct trusted APIs, opener bindings, `window.open`, and raw command/event APIs outside `src/ipc/`. Typed wrappers carry bounded inputs without paths, SQLite authority, full reference metadata, or browser-session authority. | The `verify` job runs the same frontend tests, boundary scans, and bridge-name parity check. |
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | Phase 18 requires exact Rust attrs tests, nested envelope and pre-mutation open/save rejection, store-backed resolution, typed IPC guards, Tiptap fail-closed tests, and an embedded-metadata scan. Phase 19 reuses validated attrs for deterministic bibliography-consistency tests and rejects frontend or side-effecting authority. | The `verify` job runs the same Rust/frontend tests, consistency tests, and citation invariant scans through `scripts/verify.sh`. |
 | `INV-05` | Accepted | Background jobs persist state per record and resume from the last valid checkpoint after interruption. | `ARCHITECTURE.md` §10 | The Phase 10 absence gate rejects persistent-job implementation before Phase 26. Phase 26 must replace it with resumability tests. | The `verify` job runs the same absence gate; persistence tests become required with the job surface. |
 | `INV-06` | Accepted | A document can have only one live editing handle at a time. No two Tiptap instances may hold a live handle to the same document. | `ARCHITECTURE.md` §6 | Phase 12 establishes the process-local registry. Phase 13 retains exclusive Rust-selected source paths there and tests duplicate load, path alias rejection, save, close, and reopen behavior without creating a second handle. | The `verify` job runs the same registry, persistence, command, and frontend wrapper tests plus the invariant scan. |
@@ -131,6 +131,10 @@ api_key_for_publisher
 
 Generic `api_key` is allowed only for documented API integrations stored through the OS credential manager path. It must not be allowed for publisher or institutional login.
 
+Phase 23 accepts no login fields. Publisher and institutional browser targets
+reject URL username and password components before launch. The handoff uses the
+default system browser and cannot inspect or receive the resulting session.
+
 ---
 
 ### INV-02: Typed Command Errors
@@ -182,6 +186,9 @@ EventSource(
 navigator.sendBeacon(
 localStorage secret usage
 filesystem access APIs
+@tauri-apps/plugin-opener
+window.open(...)
+target="_blank"
 @tauri-apps/api/core outside src/ipc
 raw invoke(...) outside src/ipc
 generic invokeCommand(...) outside src/ipc
@@ -342,6 +349,11 @@ Denied behavior:
 ### INV-10: Centralized Network Client
 
 All external requests go through the Rust network client. This protects rate limiting, backoff, logging policy, offline detection, and User-Agent behavior.
+
+A Phase 23 system-browser handoff is not a DRAFT network request. Rust launches
+the user's default browser and neither performs nor observes that browser's
+request. Any automated request made by the DRAFT process remains subject to
+this invariant.
 
 Denied Rust patterns outside the network crate or module:
 
@@ -576,8 +588,8 @@ atomic-save hardening, the Phase 16 reference-record schema and malformed-shape
 tests, Phase 17 transactional reference-store CRUD and migration tests, Phase
 18 citation validation and resolution, Phase 19 bibliography consistency,
 Phase 21 centralized network-client construction, Phase 22 metadata lookup and
-request policy, ad hoc Rust network clients, and Bash invocation from product
-runtime. The
+request policy, Phase 23 external browser handoff, direct frontend opener APIs,
+ad hoc Rust network clients, and Bash invocation from product runtime. The
 verifier also checks locked offline builds, tests,
 required source visibility, generated-file hygiene, and documentation sanity.
 

@@ -64,6 +64,6 @@ Repository and documentation checks require every Phase 22 source and guide.
 
 ## Next Boundary
 
-Phase 23 may expose system-browser handoff for external access. It must not add
-scraping, embedded authentication, credential capture, or a frontend network
-client.
+Phase 23 implements the separate system-browser handoff documented in
+`docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`. Metadata candidates remain
+non-persistent and are not exposed through IPC at this checkpoint.

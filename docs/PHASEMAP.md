@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 22 are complete. Phase 23 is
-the next implementation phase; external browser handoff has not started.
+**Current execution checkpoint:** Phases 0 through 23 are complete. Phase 24 is
+the next implementation phase; PDF import has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -52,6 +52,13 @@ Phase 22 requirements and behavior are recorded in
 `docs/maintainers/METADATA_LOOKUP.md`. Crossref, Semantic Scholar, and
 Unpaywall DOI lookups now route through the centralized client and return
 non-persistent normalized candidates with typed bounded failures.
+
+Phase 23 requirements and implemented behavior are recorded in
+`docs/drafts/EXTERNAL_BROWSER_HANDOFF.md` and
+`docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`. Rust validates tagged
+publisher, institutional, DOI, and Google Scholar targets and delegates one
+launch to the default system browser. The frontend has no direct opener API or
+capability, and no visible handoff control exists yet.
 
 ---
 
