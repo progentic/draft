@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 19 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 20 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -10,13 +10,14 @@ boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
 open/save commands, a hardened atomic replacement path, and a validated
 reference record, local SQLite store, versioned citation-node resolution
-boundary, and pure bibliography-consistency check. The Phase 5, Phase 10, and
-Phase 15 audits are recorded in `docs/maintainers/REALIGNMENT.md`.
+boundary, and pure bibliography-consistency check. The Phase 5, Phase 10,
+Phase 15, and Phase 20 audits are recorded in
+`docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
-release automation, or packaging.
+centralized network client, release automation, or packaging.
 
 ## Toolchain decisions
 
@@ -102,8 +103,8 @@ The verifier runs:
 - React/Tiptap workspace plus typed command, event, cancellation, citation,
   and document client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
-  registry/persistence/atomic-write/citation scans, cross-bridge name parity,
-  and tests
+  registry/persistence/atomic-write/citation/bibliography scans, cross-bridge
+  name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

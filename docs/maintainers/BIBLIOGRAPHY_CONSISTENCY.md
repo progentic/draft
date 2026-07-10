@@ -113,11 +113,12 @@ phase.
 
 `scripts/check-repository.sh` requires the new Rust sources to remain visible
 to Git. `scripts/check-docs.sh` requires the draft and maintainer guide and
-requires roadmap/phasemap agreement through Phase 19. The same checks run
+requires roadmap/phasemap agreement through Phase 20. The same checks run
 through `scripts/verify.sh` locally and in the GitHub Actions `verify` job.
 
-## Phase 20 Gate
+## Phase 20 Audit
 
-Phase 20 must audit the citation/reference source-of-truth model, Phase 19
+Phase 20 audits the citation/reference source-of-truth model, Phase 19
 semantics, documentation, tests, scripts, repository shape, and local/CI
-parity. It must not add unrelated product behavior during the realignment.
+parity. The evidence is recorded in `docs/maintainers/REALIGNMENT.md`; the
+realignment adds no unrelated product behavior.

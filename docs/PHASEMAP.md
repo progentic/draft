@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 19 are complete. Phase 20 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 20 are complete. Phase 21 is
+the next implementation phase; the centralized network client has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -44,6 +44,11 @@ validated citation nodes with an explicit candidate bibliography, reports
 unique sorted missing, orphaned, and duplicate citekeys, and treats repeated
 in-text citations as valid. It adds no persistence, IPC, formatting, or visible
 workflow.
+
+Phase 20 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The
+non-binding Phase 21 readiness requirements live in
+`docs/drafts/NETWORK_CLIENT.md`; no centralized client or provider lookup path
+exists yet.
 
 ---
 

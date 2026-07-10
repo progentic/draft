@@ -316,3 +316,107 @@ All Phase 15 documentation, document-core, repository-shape, and verification
 drift within the permitted scope is reconciled. Phase 16 may begin only within
 the bounded readiness draft; Phase 17 persistence and Phase 18 citation gates
 remain intact.
+
+## Phase 20 - 2026-07-09
+
+The audited implementation baseline is commit `a0f1ba5`, the completed Phase
+19 bibliography-consistency checkpoint. Its hosted verification run passed:
+
+<https://github.com/progentic/draft/actions/runs/29067300921>
+
+### Surfaces reviewed
+
+- the public README, changelog, license, `.gitignore`, and local `AGENTS.md`
+- architecture, governance, invariants, coding style, documentation policy,
+  roadmap, and phasemap
+- every draft, user guide, maintainer guide, and prior realignment record
+- Rust citation, reference, document, command, event, worker, and application
+  modules plus their tests
+- TypeScript IPC, citation, editor, feature, component, and workspace surfaces
+- Cargo, npm, Python, Tauri, TypeScript, and Rust toolchain manifests
+- local scripts, `justfile`, GitHub Actions, and hosted run history
+- tracked, ignored, generated, duplicate, and untracked repository state
+
+### Drift corrected
+
+- `ROADMAP.md` now lists every mandatory five-phase realignment through Phase
+  50 instead of stopping at Phase 30.
+- The invariant enforcement overview no longer describes the repository as one
+  small implementation surface; the aggregate hosted job remains accurate
+  without minimizing the implemented document and citation boundaries.
+- The citation-node guide now counts the Phase 19 collection-order test.
+- The bibliography side-effect scan rejects any `ReferenceStore` type use, not
+  only associated-function syntax.
+- Toolchain verification text now includes bibliography tests and scans.
+- Documentation sanity requires the Phase 21 network-client readiness draft
+  and roadmap/phasemap agreement through Phase 20.
+- A Phase 21 absence gate now rejects premature centralized-client
+  implementation until that phase replaces it with behavioral checks.
+
+### Citation and reference truth
+
+- Rust remains the citation-attrs validation authority before envelope open,
+  save, resolution, consistency analysis, formatting, or export.
+- Citation nodes contain only schema version, case-sensitive citekey, and
+  render style. No record metadata or disposable marker becomes source data.
+- The validated SQLite reference store remains the metadata source of truth.
+  It is shared across documents and is not itself one document's bibliography.
+- Phase 19 compares one validated document with an explicit candidate list of
+  validated reference records. It does not call `ReferenceStore::list`.
+- Missing means cited but absent, orphaned means listed but uncited, and
+  duplicate means repeated in the candidate bibliography. Repeated in-text
+  citations remain valid.
+- The consistency checker is pure Rust domain logic. It has no persistence,
+  filesystem, Tauri command, frontend, network, or Python authority.
+
+### Repository and public documentation
+
+- `README.md` is now a concise product landing page with only repository,
+  release, wiki, and MIT license navigation. It contains no roadmap,
+  architecture, governance, implementation status, or contributor workflow.
+- `CHANGELOG.md` still reports that no versioned release exists and contains no
+  synthetic release entry.
+- The repository contains no non-ignored untracked files. The local `website/`
+  workspace and `docs/.DS_Store` are ignored and remain untracked.
+- No duplicate source, rejected patch, generated build output, local database,
+  or document export is tracked.
+- `docs/adr`, `docs/contracts`, and `docs/wiki` remain absent intentionally.
+  No decision or stable contract has completed the governance lifecycle, and
+  no repository-owned wiki article is required at this checkpoint.
+
+### Next-phase readiness
+
+`docs/drafts/NETWORK_CLIENT.md` bounds Phase 21 to centralized Rust client
+construction, controlled User-Agent and timeout policy, typed construction
+failure, and mechanical rejection of ad hoc clients. It explicitly defers
+provider lookup, rate-limit behavior, offline classification, browser handoff,
+imports, secrets, frontend commands, jobs, and Python networking.
+
+The architecture already assigns outbound network ownership to Rust, so this
+readiness work changes no trust boundary and requires no ADR.
+
+### Verification evidence
+
+The checkpoint uses these executable gates:
+
+```bash
+npm test
+cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --locked --offline --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+cargo check --locked --offline --manifest-path src-tauri/Cargo.toml
+cargo test --locked --offline --manifest-path src-tauri/Cargo.toml
+npm run typecheck
+npm run build:frontend
+python -m unittest discover -s python/tests -v
+bash -n scripts/*.sh scripts/lib/*.sh
+bash scripts/check-invariants.sh
+bash scripts/check-docs.sh
+bash scripts/check-ci-local-parity.sh
+bash scripts/check-repository.sh
+git diff --check
+bash scripts/verify.sh
+```
+
+All Phase 20 citation/reference documentation, source-of-truth, repository,
+and verification drift within scope is reconciled. Phase 21 may begin only
+within the bounded network-client readiness draft.

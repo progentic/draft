@@ -142,7 +142,7 @@ document contains no citation node.
 
 Rust evidence includes:
 
-- 13 attrs, schema, nested-path, opacity, and error-shape tests;
+- 14 attrs, schema, collection-order, nested-path, opacity, and error-shape tests;
 - 5 known/missing/invalid/corrupt resolution tests;
 - 4 command signature/request/response/error tests;
 - 2 envelope round-trip/failure tests; and

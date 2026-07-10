@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 19 are complete. Phase 20 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 20 are complete. Phase 21 is
+the next implementation phase; the centralized network client has not started.
 
 ---
 
@@ -222,6 +222,10 @@ Required realignment phases:
 - Phase 20
 - Phase 25
 - Phase 30
+- Phase 35
+- Phase 40
+- Phase 45
+- Phase 50
 
 A drift realignment phase does not exist to add features. It exists to stop architectural decay before it becomes expensive.
 

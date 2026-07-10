@@ -285,7 +285,7 @@ check_bibliography_consistency_contract() {
   require_source_pattern 'BTreeMap<String, usize>' "${source_path}"
   require_source_pattern 'BTreeSet<String>' "${source_path}"
   assert_no_matches "Phase 19 bibliography side effects" \
-    '(?:std|tokio)::fs|\b(?:ReferenceStore|rusqlite|tauri)::|#\[tauri::command\]' \
+    '(?:std|tokio)::fs|\bReferenceStore\b|\brusqlite\b|\btauri::|#\[tauri::command\]' \
     "${source_path}"
   assert_no_matches "Phase 19 frontend bibliography authority" \
     '\bBibliographyConsistency\b|\bbibliography_' src
@@ -644,6 +644,8 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
+  assert_no_matches "Phase 21 network client before Phase 21" \
+    '\bNetworkClient\b|reqwest::Client::(?:new|builder)\s*\(' src-tauri/src
   assert_no_matches "INV-05 persistent job surface before Phase 26" \
     '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
     src src-tauri/src

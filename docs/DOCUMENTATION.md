@@ -469,6 +469,12 @@ in `docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md`. Rust tests and invariant scans
 enforce missing, orphaned, duplicate, repeated-citation, case-sensitive,
 deterministic, no-side-effect, and no-frontend-authority behavior.
 
+Phase 20 reconciles the citation/reference source-of-truth model, Phase 19
+semantics, public and internal documentation, verification scripts, repository
+shape, and hosted CI evidence. The audit is recorded in
+`docs/maintainers/REALIGNMENT.md`, and bounded Phase 21 readiness requirements
+live in the non-binding `docs/drafts/NETWORK_CLIENT.md`.
+
 Recommended checks:
 
 - Markdown formatting
