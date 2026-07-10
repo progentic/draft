@@ -598,6 +598,13 @@ frontend, Python, network, persistence, worker, and PDF authority. Phase 33 PDF
 decision requirements are bounded in the non-binding
 `docs/drafts/PDF_EXPORT_DECISION.md`.
 
+Phase 33 accepts ADR-001 and records explicit PDF deferral in
+`docs/maintainers/PDF_EXPORT_DECISION.md`. The named invariant guard enforces
+the absence of PDF dependencies, conversion runtimes, commands, frontend
+claims, and bundled paths while the prerequisite rendering policies remain
+unresolved. The one-time owner waiver for the remaining cooling period is
+recorded with the Phase 33 decision and does not change `GOVERNANCE.md`.
+
 Recommended checks:
 
 - Markdown formatting

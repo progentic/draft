@@ -25,7 +25,7 @@ main() {
   check_wiki_sources
   check_visible_error_recovery
   check_readme_scope
-  check_pdf_proposal_state
+  check_pdf_decision_state
 
   printf 'INFO External URLs and Markdown anchor targets are not checked.\n'
   printf 'Documentation sanity checks passed.\n'
@@ -46,6 +46,7 @@ check_required_documents() {
     docs/drafts/DOCX_EXPORT.md
     docs/drafts/EXTERNAL_BROWSER_HANDOFF.md
     docs/drafts/FORMATTING_CHECKS.md
+    docs/drafts/FORMATTING_UX.md
     docs/drafts/CITATION_NODE.md
     docs/drafts/NETWORK_CLIENT.md
     docs/drafts/PDF_IMPORT.md
@@ -168,7 +169,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 32 are complete'
+  local checkpoint='Phases 0 through 33 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -429,22 +430,33 @@ check_readme_scope() {
   fi
 }
 
-check_pdf_proposal_state() {
+check_pdf_decision_state() {
   local adr='docs/adr/001-defer-native-pdf-export.md'
-  local governed_files=(
+  local decision_record='docs/maintainers/PDF_EXPORT_DECISION.md'
+  local phase34_draft='docs/drafts/FORMATTING_UX.md'
+  local user_workspace='docs/user/WORKSPACE.md'
+  local user_limits='docs/wiki/Current-Limitations.md'
+  local living_files=(
     docs/ARCHITECTURE.md
     docs/INVARIANTS.md
     docs/PHASEMAP.md
     docs/ROADMAP.md
-    docs/drafts/PDF_EXPORT_DECISION.md
+    docs/maintainers/DOCUMENTATION_COVERAGE.md
+    docs/maintainers/PDF_EXPORT_DECISION.md
+    docs/maintainers/TOOLCHAIN.md
   )
 
   [[ -f "${adr}" ]] || return 0
-  require_document_text "${adr}" 'Status: Proposed'
+  require_document_text "${adr}" 'Status: Accepted'
+  require_document_text "${decision_record}" '**One-time owner override**'
+  require_document_text "${decision_record}" 'It does not change `GOVERNANCE.md`'
+  require_document_text "${phase34_draft}" 'Phase 34. ADR-001 is accepted'
+  require_document_text "${user_workspace}" 'DRAFT has deferred that work'
+  require_document_text "${user_limits}" 'DRAFT has deferred that work'
   reject_document_pattern \
-    '\bPhase 33 complete\b|ADR-001 establishes|Status: Accepted|accepted decision|accepted deferral guard' \
-    'Phase 33 and ADR-001 must remain proposed before acceptance' \
-    "${governed_files[@]}" "${adr}"
+    'ADR-001 proposes|Proposed ADR-001|ADR-001 is proposed|Phase 33 is not complete|Phase 33 is under architecture review|Status: Proposed' \
+    'Phase 33 and ADR-001 must remain accepted after the governed merge' \
+    "${living_files[@]}" "${adr}"
 }
 
 require_document_text() {

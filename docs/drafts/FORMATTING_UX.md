@@ -2,10 +2,10 @@
 
 ## Status
 
-This is a non-binding Phase 34 requirements draft. Phase 34 cannot begin until
-ADR-001 is accepted, the Phase 33 architecture PR merges after its cooling
-period, and the post-merge GitHub Actions run is green. Implemented behavior
-must be recorded separately in `docs/maintainers/FORMATTING_UX.md`.
+This is the non-binding requirements draft for the next implementation phase,
+Phase 34. ADR-001 is accepted, the Phase 33 architecture PR is merged, and its
+post-merge GitHub Actions run is green. Implemented behavior must be recorded
+separately in `docs/maintainers/FORMATTING_UX.md`.
 
 ## Purpose
 

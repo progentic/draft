@@ -3,13 +3,12 @@
 ## Status
 
 This matrix records the code-outward documentation audit for the implemented
-repository state through Phase 32 plus independent maintenance merged after
-that checkpoint. It does not advance the roadmap phase, accept a proposed ADR,
-or imply that an internal Rust boundary has a visible product workflow.
+repository state through Phase 33 plus independent maintenance merged before
+that checkpoint. It does not imply that an internal Rust boundary has a visible
+product workflow.
 
-Phase 33 and ADR-001 remain under review. Their proposal state is an explicit
-boundary in this matrix, not a documentation defect to resolve outside the
-governed pull request.
+ADR-001 is accepted and Phase 33 is complete. Its accepted deferral is an
+explicit boundary in this matrix and does not imply that PDF export exists.
 
 ## Audit Method
 
@@ -51,7 +50,7 @@ The Gap column uses these coverage states:
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Desktop runtime and managed state | `src-tauri/src/lib.rs`; `application::{network_client,reference_store,job_store,runtime_status}`; `run` | `TOOLCHAIN.md`, `COMMAND_BOUNDARY.md`, `CONFIGURATION.md` | `docs/wiki/Workspace.md`, `docs/wiki/Current-Limitations.md` | Baseline stack decision | `INV-03`, `INV-10`, `INV-13` | Rust application, command, store, and parity tests | Implemented and documented. |
 | Workspace shell and editor | `DraftWorkspace`, `WorkspaceHeader`, `DocumentOutline`, `DocumentInspector`, `DraftEditor`, `EditorToolbar` | `WORKSPACE_UI.md`, `PERFORMANCE_MEASUREMENT.md` | `docs/wiki/Workspace.md` | None | `INV-03` | `src/App.test.tsx`, editor and benchmark tests | Implemented and documented; live publication evidence is recorded separately. |
-| Runtime status and visible failures | `get_runtime_status`; `draft://runtime-status`; `startRuntimeStatusSession`; `useRuntimeStatus`; `RUNTIME_COMMAND_FAILURE_LABELS` | `COMMAND_BOUNDARY.md`, `EVENT_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md`, `ERROR_MESSAGES.md` | `docs/wiki/Troubleshooting.md` | None | `INV-02`, `INV-03` | Rust command/event tests and runtime-status frontend suites | Implemented and documented in canonical sources; `docs/user/WORKSPACE.md` still uses an older event-failure label. PR #1 also edits that file, so reconciliation waits for rebase. |
+| Runtime status and visible failures | `get_runtime_status`; `draft://runtime-status`; `startRuntimeStatusSession`; `useRuntimeStatus`; `RUNTIME_COMMAND_FAILURE_LABELS` | `COMMAND_BOUNDARY.md`, `EVENT_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md`, `ERROR_MESSAGES.md` | `docs/wiki/Troubleshooting.md` | None | `INV-02`, `INV-03` | Rust command/event tests and runtime-status frontend suites | Implemented and documented in canonical sources. |
 | Typed Tauri command client | Six registered Rust commands and matching wrappers under `src/ipc/` | `COMMAND_BOUNDARY.md`, `FRONTEND_COMMAND_CLIENT.md` | No direct user surface | None | `INV-02`, `INV-03` | Command serialization tests, wrapper tests, bridge-name parity scan | Intentionally internal and not user-facing. |
 | Transient worker cancellation | `WorkerCancellationRegistry`, `WorkerRegistration`, `WorkerCancellation`, `cancel_worker` | `CANCELLATION_BOUNDARY.md`, `COMMAND_BOUNDARY.md` | `docs/wiki/Current-Limitations.md` | None | `INV-07` | Cancellation registry, command, helper, and analysis tests | Intentionally internal and not user-facing; no visible worker exists. |
 | Document envelope | `DocumentEnvelope`, `DocumentId`, `DocumentEnvelopeError`, `from_json_value` | `DOCUMENT_ENVELOPE.md` | `docs/wiki/Current-Limitations.md` | None | `INV-04`, `INV-09` | Envelope validation, serialization, citation, and command tests | Intentionally internal and not user-facing; no file controls exist. |
@@ -74,7 +73,7 @@ The Gap column uses these coverage states:
 | Error presentation | Typed Rust errors, TypeScript guards, runtime session state, visible runtime copy | `ERROR_MESSAGES.md`, owning boundary guides | `docs/wiki/Troubleshooting.md` | None | `INV-02`, `INV-03` | Serialization, exhaustive mapping, fallback, and rendered message tests | Implemented and documented; typed but unwired failures intentionally have no speculative user copy. |
 | Verification and repository tooling | `justfile`; `scripts/{bootstrap,build,format,verify,check-*}.sh`; `.github/workflows/verify.yml` | `TOOLCHAIN.md`, `CONFIGURATION.md`, this matrix | No user workflow | Baseline governance policy | `INV-12`, `INV-13` | Script syntax, scans, repository hygiene, and CI/local parity | Intentionally internal and not user-facing. |
 | Packaging and application icons | `src-tauri/icons/**`; five explicit `bundle.icon` paths; inactive bundle setting | `PACKAGING.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-13` for verification parity | Tauri info, unsigned `.app` build, embedded-icon and format audit | Implemented and documented as groundwork, not Phase 42. |
-| PDF export decision | No dependency, command, runtime path, control, or generated PDF | ADR-001 proposed in PR #1 and its proposal documents | `docs/wiki/Current-Limitations.md` | ADR-001 proposed | Current PDF absence scan; named proposal guard remains in PR #1 | Absence scan and full verifier | Proposed and blocked by governance: PR #1 must finish cooling before its wording and guard can become `main` truth. |
+| PDF export decision | No dependency, command, runtime path, control, or generated PDF | ADR-001 and `PDF_EXPORT_DECISION.md` | `docs/wiki/Current-Limitations.md` | ADR-001 accepted | Accepted PDF deferral guard | Absence scan and full verifier | Implemented and documented as an accepted deferral; PDF remains intentionally unavailable. |
 | Public Rust API comments | Externally reachable modules, types, functions, methods, variants, and fields | Owning subsystem guides and this matrix | No user surface | None | None | `cargo rustdoc -- -D missing_docs` audit probe | Documented but enforcement missing: 457 granular lint findings remain, mostly variants, fields, accessors, and module exports. A focused source-documentation change is required before enabling the lint. |
 | Live GitHub Wiki | Canonical pages under `docs/wiki/`; <https://github.com/progentic/draft/wiki> | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks, remote-tree/hash comparison, and rendered navigation review | Implemented and documented: live Wiki commit `5a2b12f` mirrors the four canonical pages byte-for-byte. |
 
@@ -120,6 +119,6 @@ Live Wiki publication verified at commit `5a2b12f`:
 - `CHANGELOG.md` remains released changes only.
 - No product behavior, command, schema, state transition, or phase status is
   changed by this audit.
-- No proposed Phase 33 decision is restated as accepted.
+- Accepted ADR-001 is not restated as implemented PDF behavior.
 - A future visible workflow must add or update both its maintainer guide and a
   page under `docs/wiki/` before merge.

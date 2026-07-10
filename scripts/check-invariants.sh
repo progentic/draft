@@ -1392,7 +1392,7 @@ report_command_surface() {
 
 report_pdf_deferral_status() {
   printf '%s\n' \
-    'INFO PDF export remains absent while proposed ADR-001 is under review; no PDF runtime path is active.'
+    'INFO PDF export remains absent under accepted ADR-001; no PDF runtime path is active.'
 }
 
 main "$@"

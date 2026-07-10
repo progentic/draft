@@ -1,7 +1,7 @@
 # ADR-001: Defer Native PDF Export
 
 Date: 2026-07-10
-Status: Proposed
+Status: Accepted
 Deciders: @iangordon
 
 ## Context

@@ -31,8 +31,8 @@ interface.
   Chicago conformance is not claimed.
 - Automated formatting checks are currently unavailable.
 - You cannot export a DOCX file from the workspace.
-- PDF export is currently unavailable while rendering policy and the
-  implementation boundary remain under review.
+- PDF export is currently unavailable. DRAFT has deferred that work until its
+  rendering policy and implementation boundary are defined and verified.
 
 This wording describes the current state, not a permanent product limitation.
 
