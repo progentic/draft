@@ -3,9 +3,8 @@
 ## Status
 
 This matrix records the code-outward documentation audit for the implemented
-repository state through Phase 34 plus independent maintenance merged before
-that checkpoint. It does not imply that an internal Rust boundary has a visible
-product workflow.
+repository state through the Phase 35 realignment. It does not imply that an
+internal Rust boundary has a visible product workflow.
 
 ADR-001 is accepted and Phase 33 is complete. Its accepted deferral is an
 explicit boundary in this matrix and does not imply that PDF export exists.
@@ -75,7 +74,7 @@ The Gap column uses these coverage states:
 | Packaging and application icons | `src-tauri/icons/**`; five explicit `bundle.icon` paths; inactive bundle setting | `PACKAGING.md`, `CONFIGURATION.md` | `docs/wiki/Current-Limitations.md` | None | `INV-13` for verification parity | Tauri info, unsigned `.app` build, embedded-icon and format audit | Implemented and documented as groundwork, not Phase 42. |
 | PDF export decision | No dependency, command, runtime path, control, or generated PDF | ADR-001 and `PDF_EXPORT_DECISION.md` | `docs/wiki/Current-Limitations.md` | ADR-001 accepted | Accepted PDF deferral guard | Absence scan and full verifier | Implemented and documented as an accepted deferral; PDF remains intentionally unavailable. |
 | Public Rust API comments | Externally reachable modules, types, functions, methods, variants, and fields | Owning subsystem guides and this matrix | No user surface | None | None | `cargo rustdoc -- -D missing_docs` audit probe | Documented but enforcement missing: 457 granular lint findings remain, mostly variants, fields, accessors, and module exports. A focused source-documentation change is required before enabling the lint. |
-| Live GitHub Wiki | Canonical pages under `docs/wiki/`; <https://github.com/progentic/draft/wiki> | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks, remote-tree/hash comparison, and rendered navigation review | Live commit `1daf72b` matches the merged Phase 33 source. Phase 34 source updates are prepared; publication is pending merge. |
+| Live GitHub Wiki | Canonical pages under `docs/wiki/`; <https://github.com/progentic/draft/wiki> | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks, remote-tree/hash comparison, and rendered navigation review | Implemented and documented: live commit `43ac0bc` matches all four merged canonical pages byte-for-byte. |
 
 ## Detected Drift And Resolution
 
@@ -101,7 +100,7 @@ of truth.
 
 ## Live Publication Evidence
 
-Live Wiki publication verified through Phase 33 at commit `1daf72b`:
+Live Wiki publication verified through Phase 34 at commit `43ac0bc`:
 
 - the remote Wiki tree contains only `Home.md`, `Workspace.md`,
   `Troubleshooting.md`, and `Current-Limitations.md`;
@@ -114,9 +113,9 @@ Live Wiki publication verified through Phase 33 at commit `1daf72b`:
 - no `.md` navigation target, initialization placeholder, or live-only wording
   remains.
 
-Phase 34 changes the canonical Workspace, Troubleshooting, and Current
-Limitations sources. Those updates must be published after the Phase 34 merge,
-then checked against the merged files before publication is considered current.
+The Phase 34 Workspace, Troubleshooting, and Current Limitations updates were
+published after the verified main merge. Remote hashes and rendered headings,
+lists, and navigation were checked against the merged canonical sources.
 
 ## Audit Boundaries
 

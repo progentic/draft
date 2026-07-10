@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 34 are complete. Phase 35 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 35 are complete. Phase 36 is
+the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -65,6 +65,13 @@ them for the current run, and explicitly apply a permitted heading level. Run
 generation and target checks prevent stale findings from changing the editor.
 This workflow does not claim complete style conformance or add persistence,
 automatic repair, citation conversion, or export controls.
+
+Phase 35 reconciles formatting and export documentation with the implemented
+Phase 31 through Phase 34 boundaries. It records the live Wiki publication,
+corrects command/client and visibility drift, and strengthens documentation
+checks without changing product behavior. Non-binding Phase 36 offline-mode
+requirements are bounded in `docs/drafts/OFFLINE_MODE.md` before implementation
+begins.
 
 ---
 

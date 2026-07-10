@@ -634,3 +634,75 @@ bash scripts/verify.sh
 
 Phase 30 is a truth-alignment checkpoint only. It adds no product capability.
 Phase 31 may begin only within the bounded formatting-check requirements draft.
+
+## Phase 35 - 2026-07-10
+
+The audited implementation baseline is merge commit `78f2a65`, the completed
+Phase 34 formatting-review checkpoint. Pull-request and post-merge verification
+passed:
+
+- <https://github.com/progentic/draft/actions/runs/29129042346>
+- <https://github.com/progentic/draft/actions/runs/29129273237>
+
+### Surfaces reviewed
+
+- the Phase 31 pure formatting domain, Phase 34 review action adapter and typed
+  command, TypeScript IPC validator, snapshot/target guards, hook, panel,
+  toolbar integration, styles, and focused tests;
+- the Phase 32 DOCX compiler, package builder, atomic export service, limits,
+  failure policy, source preservation, and absence of a visible export control;
+- accepted ADR-001, its maintainer record, invariant guard, and user-facing PDF
+  limitation;
+- architecture, invariants, roadmap, phasemap, documentation ownership,
+  configuration, error inventory, toolchain, command/client guides, workspace
+  guides, coverage matrix, Wiki source, and enforcement scripts; and
+- the live Wiki repository and rendered Workspace, Troubleshooting, and Current
+  Limitations pages.
+
+### Drift corrected
+
+- `FORMATTING_CHECKS.md` no longer claims findings are invisible or cannot be
+  invoked. It now separates the unchanged pure Phase 31 checker from the Phase
+  34 command, action, and editor integration.
+- `COMMAND_BOUNDARY.md` and `FRONTEND_COMMAND_CLIENT.md` now document
+  `run_formatting_review`, `runFormattingReview`, all closed inputs, actions,
+  failures, and stale-target enforcement.
+- The architecture command example now uses the implemented formatting-review
+  command name.
+- The coverage matrix records live Wiki commit `43ac0bc`, whose four pages
+  match merged canonical source byte-for-byte.
+- Documentation checks now require the Phase 35 checkpoint and the
+  formatting/export cross-surface alignment.
+
+### Formatting and export truth
+
+- APA 7, MLA 9, and Chicago 17 author-date are closed consistency identifiers,
+  not complete conformance claims.
+- Structure and citation findings are transient. Heading changes require an
+  explicit current-target user action; citation mismatches remain inspect-only.
+- DOCX compilation and atomic target replacement are implemented internally,
+  but no command, dialog, frontend control, or released export workflow exists.
+- PDF export remains unavailable under accepted ADR-001. No renderer,
+  conversion runtime, dependency, command, control, or packaged resource exists.
+- README remains the marketing landing page and receives no implementation
+  status or repository documentation.
+
+### Verification evidence
+
+Phase 35 uses the unchanged aggregate gate:
+
+```bash
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+git diff --check
+bash scripts/verify.sh
+```
+
+Phase 35 is a truth-alignment checkpoint only. It adds no product code,
+dependency, command, schema, workflow, or capability. Phase 36 may begin only
+after this documentation-only change passes local, pull-request, and post-merge
+verification and only within the non-binding requirements in
+`docs/drafts/OFFLINE_MODE.md`. The draft defines a Rust-owned session gate,
+typed denial before metadata or browser work, continued local behavior, and
+explicit exclusions for probing, retry queues, persistence, telemetry, proxies,
+credentials, and secret storage.

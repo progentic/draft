@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 34 are complete. Phase 35 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 35 are complete. Phase 36 is
+the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -144,6 +144,13 @@ closed and Rust-owned, heading edits require an explicit user command, and
 generation plus target checks reject stale results. No finding persistence,
 complete style conformance, citation conversion, export control, or automatic
 repair is added. Phase 35 is the next realignment boundary.
+
+Phase 35 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The audit
+reconciles the pure checker, typed review command/client, transient workspace
+actions, strict internal DOCX foundation, accepted PDF deferral, user limits,
+and live Wiki publication. It adds no product code or new capability. Phase 36
+is the next implementation phase; its offline degraded behavior and exclusions
+are bounded in the non-binding `docs/drafts/OFFLINE_MODE.md`.
 
 ---
 

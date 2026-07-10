@@ -585,8 +585,9 @@ Phase 31 documents the pure Rust formatting review boundary in
 closed style identifiers, heading and citation limits, outline checks,
 citation-style consistency, deterministic content-free findings, and the
 absence of complete style claims, parsing, mutation, persistence, filesystem,
-export, Python, Tauri, or frontend authority. Phase 32 DOCX-export requirements
-are bounded in the non-binding `docs/drafts/DOCX_EXPORT.md`.
+export, Python, Tauri, or frontend authority inside that pure checker. Phase 32
+DOCX-export requirements are bounded in the non-binding
+`docs/drafts/DOCX_EXPORT.md`.
 
 Phase 32 documents strict Rust-owned DOCX compilation and atomic export in
 `docs/maintainers/DOCX_EXPORT.md`. The non-binding requirements remain in
@@ -612,6 +613,14 @@ closed actions, and stale-target protection without turning the three style
 identifiers into complete conformance claims. Documentation checks require the
 maintainer guide, current phase checkpoint, visible failure recovery, and
 coverage-matrix linkage.
+
+Phase 35 reconciles the complete formatting/export boundary in
+`docs/maintainers/REALIGNMENT.md`. It updates the Phase 31 checker guide and
+shared command/client guides for the Phase 34 integration, confirms DOCX remains
+an internal strict export foundation, preserves the accepted PDF deferral, and
+records live Wiki commit `43ac0bc`. Focused documentation checks enforce these
+cross-links and reject the prior invisible-formatting wording. No product code
+or public README claim changes in this realignment phase.
 
 Recommended checks:
 
