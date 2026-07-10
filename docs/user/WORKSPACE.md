@@ -23,6 +23,21 @@ The editor supports the current Tiptap formatting set:
 Formatting controls operate on the active selection. Their selected state
 changes with the current cursor position.
 
+## Formatting review
+
+Choose **Formatting review** in the toolbar to open the review band. Select APA
+7, MLA 9, or Chicago 17 author-date, then choose **Check formatting**. DRAFT
+groups current findings under Structure and Citations.
+
+Use **Inspect** to move to the affected current heading or citation. Some
+heading findings offer an explicit level change. DRAFT applies that change only
+after you choose it and only if the document has not changed since the check.
+**Dismiss** hides a finding for the current result only.
+
+These checks cover heading structure and citation-style declarations. They do
+not certify complete compliance with a style manual, reformat citations, save
+findings, or change the document automatically.
+
 ## Outline and document details
 
 The outline lists headings from the current editor content. Selecting an

@@ -20,6 +20,7 @@ then offer a specific, useful message without exposing implementation details.
 | Document save | `unsupported_file_location`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | No visible workflow currently consumes this wrapper. |
 | Citation resolution | `invalid_citation`, `reference_not_found`, `reference_store` | The citation node renders a bounded unavailable state; no product-wide message mapping exists. |
 | External access | `invalid_url`, `invalid_doi`, `invalid_search_query`, `browser_unavailable` | No visible workflow currently consumes this wrapper. |
+| Formatting review | `too_many_headings`, `too_many_citations`, `invalid_heading_level`, `empty_heading_title`, `heading_title_too_long`, `invalid_citekey` | Visible in the formatting review band with code-specific bounded messages. |
 
 Every command wrapper also distinguishes an invalid response from a transport
 failure. Runtime events add an invalid-payload failure. Document, citation, and
@@ -56,6 +57,8 @@ guidance lives in `docs/wiki/Troubleshooting.md`:
 | Unknown core command failure | Restart DRAFT and report the version and exact message if it repeats. |
 | Invalid response or event payload | Restart DRAFT and report the version if the status remains invalid. |
 | Transport failure | Use the desktop app rather than browser preview, restart, and report the operating-system and DRAFT versions if it repeats. |
+| Formatting input cannot be checked | Correct the identified heading or citation when possible, then run the formatting check again. Split an unusually large document when the heading or citation count is the stated limit. |
+| Formatting response is invalid or core is unavailable | Run the check again. Restart DRAFT and report the version and exact message if the failure repeats. |
 
 Maintainer copy, rendered copy, and the Wiki recovery page must change together.
 Typed errors for commands with no visible workflow stay in the inventory only;

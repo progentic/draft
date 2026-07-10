@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 33 is deliberately smaller than the
+The implemented application through Phase 34 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -104,6 +104,11 @@ full system described in this architecture:
   It compares APA 7, MLA 9, or Chicago 17 author-date declarations and checks
   heading-level structure without parsing or mutating a document. These are
   consistency checks, not complete style-manual conformance.
+- Rust exposes that domain through one typed formatting-review command. React
+  builds one bounded snapshot from the current editor, validates the closed
+  response, and shows transient Structure and Citation findings. A heading
+  level changes only after explicit user input and only while the captured run
+  generation and target node still match.
 - Rust compiles a strict bounded Tiptap subset into deterministic in-memory DOCX
   packages and atomically replaces only Rust-owned `.docx` targets. Unsupported
   nodes, marks, fields, and citations fail explicitly; no source document or
@@ -126,9 +131,9 @@ full system described in this architecture:
   bibliography workflow, provider lookup or browser-handoff control, production
   model provider, analysis start command, frontend analysis listener, visible
   analysis workflow, visible text-analysis issue cards or controls, PDF import
-  control or watcher, job scheduler or processing worker, document-integrated
-  formatting workflow, citation renderer, visible DOCX export control, or PDF
-  export path is implemented.
+  control or watcher, job scheduler or processing worker, complete
+  style-manual formatting, citation conversion, finding persistence, citation
+  renderer, visible DOCX export control, or PDF export path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -180,11 +185,16 @@ Ownership:
 
 Formatting automation must not mutate the source document without a Rust-owned transaction or explicit user action.
 
-Phase 31 implements only a pure review boundary. Its immutable snapshot declares
+Phase 31 implements a pure review boundary. Its immutable snapshot declares
 one closed style, ordered heading levels, and ordered citation styles. Findings
 identify a non-level-one first heading, skipped heading level, or citation-style
-mismatch by index. No document extraction, style rendering, persistence, IPC,
-frontend workflow, or source mutation is present.
+mismatch by index. Phase 34 adds one typed command and transient review surface
+around that checker. React extracts only the bounded current snapshot, and a
+generation plus exact-node guard rejects stale inspect or apply actions.
+Heading changes require explicit user input through the normal Tiptap
+transaction; citation findings remain inspect-only. No style rendering,
+persistence, automatic repair, filesystem, network, Python, worker, or export
+authority is present.
 
 Phase 32 adds a separate Rust-only DOCX foundation. It validates a strict
 paragraph, heading, text, hard-break, and inline-mark subset; builds fixed

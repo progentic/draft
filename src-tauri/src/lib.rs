@@ -32,6 +32,7 @@ pub fn run() {
             commands::document_open::open_document,
             commands::document_save::save_document,
             commands::external_access::open_external_access,
+            commands::formatting_review::run_formatting_review,
             commands::runtime_status::get_runtime_status,
             commands::worker_cancellation::cancel_worker
         ])

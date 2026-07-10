@@ -9,6 +9,7 @@ import {
   Heading2,
   Italic,
   List,
+  ListChecks,
   ListOrdered,
   Quote,
   Redo2,
@@ -18,11 +19,15 @@ import {
 
 interface EditorToolbarProps {
   editor: Editor | null;
+  formattingReviewOpen: boolean;
+  onToggleFormattingReview: () => void;
 }
 
 interface ToolbarButtonProps {
   active?: boolean;
+  controls?: string;
   disabled?: boolean;
+  expanded?: boolean;
   icon: LucideIcon;
   label: string;
   onPress: () => void;
@@ -67,6 +72,25 @@ export function EditorToolbar(props: EditorToolbarProps) {
       <InlineTools editor={props.editor} state={state} />
       <span className="toolbar-separator" aria-hidden="true" />
       <StructureTools editor={props.editor} state={state} />
+      <span className="toolbar-separator" aria-hidden="true" />
+      <ReviewTools
+        isOpen={props.formattingReviewOpen}
+        onToggle={props.onToggleFormattingReview}
+      />
+    </div>
+  );
+}
+
+function ReviewTools(props: { isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div className="toolbar-group" role="group" aria-label="Review">
+      <ToolbarButton
+        controls="formatting-review-panel"
+        expanded={props.isOpen}
+        icon={ListChecks}
+        label="Formatting review"
+        onPress={props.onToggle}
+      />
     </div>
   );
 }
@@ -159,6 +183,8 @@ function ToolbarButton(props: ToolbarButtonProps) {
     <button
       className="icon-button icon-button--toolbar"
       type="button"
+      aria-controls={props.controls}
+      aria-expanded={props.expanded}
       aria-label={props.label}
       aria-pressed={props.active}
       data-toolbar-button=""

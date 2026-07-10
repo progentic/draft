@@ -605,6 +605,14 @@ claims, and bundled paths while the prerequisite rendering policies remain
 unresolved. The one-time owner waiver for the remaining cooling period is
 recorded with the Phase 33 decision and does not change `GOVERNANCE.md`.
 
+Phase 34 documents the visible formatting review workflow in
+`docs/maintainers/FORMATTING_UX.md`, `docs/user/WORKSPACE.md`, and the canonical
+Wiki sources. The architecture and `INV-16` record the typed command, transient
+closed actions, and stale-target protection without turning the three style
+identifiers into complete conformance claims. Documentation checks require the
+maintainer guide, current phase checkpoint, visible failure recovery, and
+coverage-matrix linkage.
+
 Recommended checks:
 
 - Markdown formatting

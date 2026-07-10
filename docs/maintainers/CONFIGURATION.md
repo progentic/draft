@@ -131,6 +131,7 @@ period. It cannot detect an unreported same-size in-place modification.
 | `MAX_HEADING_TITLE_BYTES` | 512 bytes | `formatting/checks.rs` | Per-heading title bound. |
 | Heading levels | 1 through 6 | `formatting/checks.rs` | Accepted outline range. |
 | Formatting styles | `apa7`, `mla9`, `chicago17_author_date` | `formatting/checks.rs` | Closed consistency identifiers, not complete style conformance. |
+| `DEFAULT_FORMATTING_STYLE` | `apa7` | `src/ipc/formattingReview.ts` | Initial review selection; either other closed identifier may be selected before a run. |
 | `MAX_DOCX_SOURCE_BYTES` | 8 MiB | `exports/docx.rs` | Serialized source-document bound. |
 | `MAX_DOCX_NODES` | 100,000 | `exports/docx.rs` | Structural object count bound. |
 | `MAX_DOCX_NESTING_DEPTH` | 16 | `exports/docx.rs` | Recursive parser depth bound. |

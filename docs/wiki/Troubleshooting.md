@@ -50,4 +50,20 @@ The current interface does not save documents. Reloading the workspace or
 closing DRAFT discards edits. There is no recovery path for a discarded
 pre-release editor session. Keep important work in another saved document.
 
+## Formatting Check Needs To Run Again
+
+`The document changed. Run the formatting check again.` means the checked
+snapshot or its target is no longer current. Run the check again before using
+Inspect or a heading-level action.
+
+If DRAFT says the document has too many headings or citations, split the work
+into a smaller document before checking it. For another heading or citation
+validation message, correct that item when possible and rerun the check.
+
+`DRAFT received an invalid formatting response.` or
+`Formatting review could not reach the DRAFT core.` means the review did not
+receive a usable result.
+Run the check again. Restart DRAFT and report the version and exact message if
+the failure repeats.
+
 Return to [Home](Home).

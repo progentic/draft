@@ -193,11 +193,11 @@ impl FormattingFinding {
         self.target
     }
 
-    pub fn title(&self) -> &str {
+    pub fn title(&self) -> &'static str {
         self.title
     }
 
-    pub fn explanation(&self) -> &str {
+    pub fn explanation(&self) -> &'static str {
         self.explanation
     }
 }

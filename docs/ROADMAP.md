@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 33 are complete. Phase 34 is
-the next implementation phase.
+**Current execution checkpoint:** Phases 0 through 34 are complete. Phase 35 is
+the next documentation and drift realignment phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -58,6 +58,13 @@ accepted. Phase 33 completed after the architecture PR passed local, exact
 merge-tree, pull-request, and post-merge GitHub Actions verification. The
 repository owner documented a one-time, non-precedential waiver of the remaining
 cooling period in PR #1; `GOVERNANCE.md` and its standing rule are unchanged.
+
+Phase 34 adds a transient formatting review band to the workspace. Users can
+run the bounded Phase 31 consistency checks, inspect grouped findings, dismiss
+them for the current run, and explicitly apply a permitted heading level. Run
+generation and target checks prevent stale findings from changing the editor.
+This workflow does not claim complete style conformance or add persistence,
+automatic repair, citation conversion, or export controls.
 
 ---
 

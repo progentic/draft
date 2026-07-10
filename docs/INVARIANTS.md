@@ -76,7 +76,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
 | `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
-| `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and a finding cannot mutate or export source content. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot, checks three closed style identifiers and heading structure, and returns content-free indexed findings. Twelve Rust tests and authority scans deny document parsing, mutation, persistence, filesystem, export, Python, network, worker, Tauri, and frontend behavior. | The `verify` job runs the same Phase 31 tests and formatting-boundary scans through `scripts/verify.sh`. |
+| `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and no finding changes content without an explicit current-target user action. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot and returns content-free indexed findings. Phase 34 adds a typed command, closed actions, generation invalidation, and exact-node guards. Citation findings remain inspect-only; heading apply requires user input. Tests and scans deny persistence, filesystem, export, PDF, Python, network, worker, and automatic mutation authority. | The `verify` job runs the Rust domain/command tests, frontend IPC/generation/target/interaction tests, and formatting-boundary scans through `scripts/verify.sh`. |
 
 ---
 
@@ -635,14 +635,26 @@ contains a closed code, fixed Rust-owned severity and wording, and a heading or
 citation index. It contains no source title, citekey, document text, score,
 replacement, patch, apply instruction, path, or document identity.
 
-No application state, command, event, frontend model, Python helper,
-persistence, filesystem call, network call, worker, parser, save, or export path
-can invoke or extend this boundary at the current checkpoint.
+Phase 34 exposes the checker through one typed command. Rust pairs each finding
+with closed actions: inspect and dismiss for every finding, plus one bounded
+heading level where the domain relationship determines it. Citation findings
+never receive apply authority.
+
+The frontend ties each response to a unique run and editor generation. Any
+editor update or newer run invalidates the result. Inspect and apply verify that
+the indexed node still has the captured type and content before acting. Only an
+explicit user-triggered heading action uses the normal Tiptap transaction;
+dismissal remains transient.
+
+No event, persistence, filesystem call, network call, Python helper, worker,
+parser, save, export, PDF path, automatic repair, or complete style-manual claim
+can extend this boundary at the current checkpoint.
 
 Minimum verification:
 
 ```bash
 cargo test --manifest-path src-tauri/Cargo.toml --locked --offline formatting::
+npm test -- --run src/ipc/formattingReview.test.ts src/features/formatting-review src/App.test.tsx
 bash scripts/check-invariants.sh
 ```
 

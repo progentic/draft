@@ -29,7 +29,11 @@ interface.
 
 - The toolbar formats the current editor selection, but complete APA, MLA, or
   Chicago conformance is not claimed.
-- Automated formatting checks are currently unavailable.
+- Formatting review currently checks heading structure and citation-style
+  declarations only. Findings are transient and citation mismatches are
+  inspect-only.
+- DRAFT does not automatically repair formatting or certify complete
+  style-manual compliance.
 - You cannot export a DOCX file from the workspace.
 - PDF export is currently unavailable. DRAFT has deferred that work until its
   rendering policy and implementation boundary are defined and verified.
