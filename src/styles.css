@@ -92,6 +92,8 @@ button:focus-visible,
 .wordmark {
   min-width: 0;
   gap: 8px;
+  margin: 0;
+  font: inherit;
 }
 
 .wordmark__mark {
