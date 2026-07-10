@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 24 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 25 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -13,8 +13,8 @@ reference record, local SQLite store, versioned citation-node resolution
 boundary, pure bibliography-consistency check, centralized network client, and
 typed DOI metadata providers plus a Rust-owned system-browser handoff. Rust
 also owns explicit PDF validation and watched-file stable-write intake without
-adding a watcher dependency. The Phase 5, Phase 10, Phase 15, and Phase 20
-audits are recorded in
+adding a watcher dependency. The Phase 5, Phase 10, Phase 15, Phase 20, and
+Phase 25 audits are recorded in
 `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,

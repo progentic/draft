@@ -31,6 +31,7 @@ check_required_documents() {
     docs/ARCHITECTURE.md
     docs/CODING_STYLE.md
     docs/DOCUMENTATION.md
+    docs/drafts/BACKGROUND_JOBS.md
     docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md
     docs/drafts/DOCUMENT_ENVELOPE.md
     docs/drafts/EXTERNAL_BROWSER_HANDOFF.md
@@ -137,7 +138,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 24 are complete'
+  local checkpoint='Phases 0 through 25 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

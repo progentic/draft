@@ -420,3 +420,108 @@ bash scripts/verify.sh
 All Phase 20 citation/reference documentation, source-of-truth, repository,
 and verification drift within scope is reconciled. Phase 21 may begin only
 within the bounded network-client readiness draft.
+
+## Phase 25 - 2026-07-10
+
+The audited implementation baseline is commit `721ad97`, the completed Phase
+24 PDF-intake checkpoint. Its hosted verification run passed:
+
+<https://github.com/progentic/draft/actions/runs/29070280377>
+
+### Surfaces reviewed
+
+- the public README, changelog, license, `.gitignore`, and local `AGENTS.md`
+- architecture, governance, invariants, coding style, documentation policy,
+  roadmap, and phasemap
+- every draft, user guide, maintainer guide, and prior realignment record
+- Rust research, network, import, citation, reference, document, command,
+  event, worker, and application modules plus their tests
+- TypeScript IPC, citation, editor, feature, component, and workspace surfaces
+- Cargo, npm, Python, Tauri, TypeScript, and Rust toolchain manifests
+- local scripts, `justfile`, GitHub Actions, and hosted run history
+- tracked, ignored, generated, duplicate, and untracked repository state
+
+### Drift corrected
+
+- Roadmap and phasemap wording now records Phase 24 as Rust-owned PDF intake,
+  not a completed user import workflow.
+- Architecture distinguishes a process-local `PendingPdfImport` candidate from
+  the target Phase 26 persistent job record and explicitly says that no watcher,
+  scheduler, queue, persistent job store, or background product worker exists.
+- `INV-08` now records the implemented one-second quiet period, unchanged-size
+  check, signature read, and candidate outcome instead of saying processing
+  begins.
+- The stable-size documentation now states that an unreported, same-size
+  in-place content modification cannot be detected. A delivered event still
+  resets the quiet period even when byte length is unchanged.
+- The direct-document-write scan's exact PDF test-file exclusion is explained:
+  it permits temporary chunked fixture writes only, while the production import
+  source remains under a separate no-mutation scan.
+- Documentation sanity now requires the bounded Phase 26 background-job draft
+  and roadmap/phasemap agreement through Phase 25.
+
+### Research boundary truth
+
+- Crossref, Semantic Scholar, and Unpaywall metadata lookup remains Rust-owned,
+  bounded, typed, and non-persistent.
+- Publisher, institutional, DOI, and Google Scholar targets remain validated in
+  Rust and delegated to the system browser without credential or WebView opener
+  authority.
+- Phase 24 validates explicit PDFs and supplied watched-file observations. It
+  does not subscribe to filesystem events.
+- A pending PDF value is an intake candidate. It starts no work and survives no
+  process restart. No background worker, queue, job persistence layer, import
+  command, file dialog, or visible import flow exists.
+- The fixture-write exclusion is limited to
+  `src-tauri/src/imports/pdf_tests.rs`; production intake cannot copy, move,
+  delete, rename, or write source files.
+
+### Repository and public documentation
+
+- `README.md` remains the concise product landing page established before this
+  checkpoint. Phase 24 changed no public-facing capability, so Phase 25 leaves
+  it untouched.
+- `CHANGELOG.md` still reports that no versioned release exists and receives no
+  synthetic phase entry.
+- No product source, dependency, command, capability, UI, workflow, or build
+  configuration changes in this realignment phase.
+- `docs/adr`, `docs/contracts`, and `docs/wiki` remain absent intentionally; no
+  decision or stable contract completed the governance lifecycle.
+
+### Next-phase readiness
+
+`docs/drafts/BACKGROUND_JOBS.md` bounds Phase 26 before implementation. It
+requires a Rust-owned versioned SQLite state machine, exact lifecycle states and
+transitions, transactional claims, durable cancellation, checkpoint-preserving
+recovery, typed failures, close/reopen tests, and persistence before work.
+
+The draft explicitly excludes a watcher, scheduler loop, real worker, frontend
+job model, visible import flow, parsing, metadata work, network calls, Python
+helpers, and AI orchestration. Phase 26 must replace the persistent-job absence
+gate with behavioral persistence and recovery checks when the state machine is
+implemented.
+
+### Verification evidence
+
+The checkpoint uses these executable gates:
+
+```bash
+npm test
+cargo fmt --all --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --locked --offline --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+cargo check --locked --offline --manifest-path src-tauri/Cargo.toml
+cargo test --locked --offline --manifest-path src-tauri/Cargo.toml
+npm run typecheck
+npm run build:frontend
+python -m unittest discover -s python/tests -v
+bash -n scripts/*.sh scripts/lib/*.sh
+bash scripts/check-invariants.sh
+bash scripts/check-docs.sh
+bash scripts/check-ci-local-parity.sh
+bash scripts/check-repository.sh
+git diff --check
+bash scripts/verify.sh
+```
+
+Phase 25 is a truth-alignment checkpoint only. It adds no product capability.
+Phase 26 may begin only within the bounded background-job requirements draft.

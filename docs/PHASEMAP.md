@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 24 are complete. Phase 25 is
-the next mandatory documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 25 are complete. Phase 26 is
+the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -67,6 +67,12 @@ one-second quiet interval, unchanged byte length, and stable signature read.
 The resulting pending value starts no work and is not the Phase 26 persistent
 job state machine.
 
+Phase 25 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The audit
+confirms that Phase 24 produces intake candidates only: no filesystem watcher,
+background worker, queue, persistent job store, or visible import workflow
+exists. Phase 26 requirements remain non-binding in
+`docs/drafts/BACKGROUND_JOBS.md` until implementation begins.
+
 ---
 
 ## 1. Phase Rules
@@ -117,9 +123,9 @@ Do not weaken an invariant to finish a phase. If an invariant is wrong, change i
 | 21 | Network client | Central Rust network client exists. | No ad-hoc HTTP clients outside the accepted network module. |
 | 22 | Metadata lookup | Crossref, Semantic Scholar, and Unpaywall lookup path exists. | Rate limit, timeout, offline, and malformed-response paths are typed. |
 | 23 | External browser handoff | Publisher, institutional, and Google Scholar access opens in system browser only. | No scraping, proxying, or credential capture path exists. |
-| 24 | PDF import | Explicit import and watched-folder import enter a pending state safely. | Stable-write confirmation test passes. |
-| 25 | Documentation and drift realignment | Research workflow docs match implemented boundaries. | External-service boundary is documented and enforced. |
-| 26 | Background jobs | Persistent job state machine exists. | Crash/restart resumes from last checkpoint. |
+| 24 | PDF intake | Explicit and watched-file candidates pass Rust-owned intake checks. | Stable-write confirmation test passes without starting work. |
+| 25 | Documentation and drift realignment | Research workflow docs match implemented boundaries. | Candidate/job distinctions and absent workflow claims match code. |
+| 26 | Background jobs | Rust-owned persistent job state machine exists. | Reopen recovery preserves the last checkpoint and valid transitions. |
 | 27 | AI orchestration | Rust owns model calls, context assembly, streaming, and cancellation. | AI output is distinguishable from verified evidence. |
 | 28 | Python helper contract | Python helper worker protocol exists. | Helpers receive typed input, emit typed output, and cannot own persistence or secrets. |
 | 29 | Text-analysis checks | Grammar, clarity, tone, cohesion, or voice checks surface as reviewable findings. | Findings are explainable and non-destructive. |

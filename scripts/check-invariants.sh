@@ -715,6 +715,8 @@ require_atomic_writer_tests() {
 check_document_write_boundary() {
   local atomic_writer_path="$1"
 
+  # This exact test file writes only temporary chunked PDF fixtures. Production
+  # import mutation remains denied separately by check_pdf_import_contract.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \

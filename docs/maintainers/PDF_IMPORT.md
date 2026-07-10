@@ -108,8 +108,15 @@ the Rust-owned intake called by that future lifecycle. It also does not persist
 candidates across process restart, parse PDF contents, or expose an import
 workflow. Those behaviors must not be inferred from the `Pending` name.
 
+Stable-write confirmation compares byte length, not file contents. An in-place
+modification that preserves byte length can pass confirmation when no
+filesystem event is delivered. Any delivered event resets the one-second quiet
+period even if size is unchanged. A future watcher integration must account for
+platform event reliability or strengthen the snapshot rule before processing
+can rely on content identity.
+
 ## Next Boundary
 
-Phase 25 is the mandatory documentation and drift realignment for the complete
-research boundary through PDF intake. Phase 26 may then add the persistent job
-state machine.
+Phase 25 audited the complete research boundary through PDF intake without
+adding behavior. Phase 26 may add only the persistent state machine bounded by
+`docs/drafts/BACKGROUND_JOBS.md`.

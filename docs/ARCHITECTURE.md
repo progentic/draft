@@ -434,6 +434,10 @@ Relevant invariant: `INV-01` in `INVARIANTS.md`.
 
 ## 10. Background Job Pattern
 
+This section defines the target contract for Phase 26 and later work. At the
+Phase 25 checkpoint, no persistent job store, scheduler, queue, or background
+product worker exists.
+
 Retraction checking, PDF metadata resolution, formatting checks, and long text-analysis runs are async, external-service-dependent or CPU-bound, and must survive interruption without silently losing state.
 
 Minimum state shape:
@@ -461,7 +465,9 @@ cancel_requested
 
 ### 10.1 Watched-Folder Import: Stable-Write Requirement
 
-Rust owns filesystem watching for PDF import. The frontend never watches the filesystem directly.
+Any filesystem watching added later must be Rust-owned. The frontend never
+watches the filesystem directly, and no watcher exists at the Phase 25
+checkpoint.
 
 A watched file may enter the import pipeline only after Rust confirms the file is stable. A file appearing on disk is not enough.
 
@@ -477,7 +483,10 @@ observations, requires one quiet second, confirms the byte length is unchanged,
 then validates the PDF signature while rechecking file length. Paths are
 canonical and confined to one watched root. The resulting
 `PendingPdfImport` is a process-local candidate only; no work begins until a
-later persistent job owns it.
+later persistent job owns it. This size-based gate cannot detect an in-place
+content change that keeps the same byte length when no filesystem event is
+delivered; any delivered event resets the quiet period even when size is
+unchanged.
 
 Relevant invariants: `INV-05` and `INV-08` in `INVARIANTS.md`.
 

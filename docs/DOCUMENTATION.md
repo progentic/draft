@@ -502,6 +502,14 @@ symlink and watched-root boundaries, chunked-write debounce, stable-size
 confirmation, signature validation, pending provenance, and the absence of
 premature IPC, persistence, network, or watcher authority.
 
+Phase 25 reconciles the complete research boundary through PDF intake. The
+audit evidence in `docs/maintainers/REALIGNMENT.md` records the candidate/job
+distinction, the current one-second quiet and stable-size contract, its
+same-size in-place modification limitation, and the absence of a watcher,
+worker, queue, persistent import store, or visible import flow. Phase 26
+requirements are bounded before implementation in the non-binding
+`docs/drafts/BACKGROUND_JOBS.md`.
+
 Recommended checks:
 
 - Markdown formatting

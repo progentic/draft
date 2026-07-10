@@ -8,8 +8,13 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 24 are complete. Phase 25 is
-the next mandatory documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 25 are complete. Phase 26 is
+the next implementation phase.
+
+Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
+supplied watched-file observations but adds no watcher, persistent job, worker,
+queue, or visible import workflow. Phase 25 audited that boundary without
+adding product behavior.
 
 ---
 

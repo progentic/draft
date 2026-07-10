@@ -60,6 +60,12 @@ If the length changed without a recorded event, the intake records a new
 observation at confirmation time and returns `Waiting`. Only a stable valid PDF
 returns `Pending`.
 
+This is a size-based rule. It cannot detect an in-place content modification
+that preserves byte length when no filesystem event is delivered. A delivered
+event still resets the one-second quiet period even when the observed length is
+unchanged. Phase 24 does not add a content hash, modification-time comparison,
+file lock, or other stronger snapshot signal.
+
 ## Typed Failures
 
 Failures distinguish unsupported file type, unavailable file, non-regular
