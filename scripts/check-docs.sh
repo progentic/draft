@@ -374,7 +374,7 @@ check_wiki_sources() {
   require_document_text "${home}" '(Current-Limitations.md)'
   require_document_text "${workspace}" '(Troubleshooting.md)'
   require_document_text "${workspace}" '(Current-Limitations.md)'
-  require_document_text docs/DOCUMENTATION.md 'Files under `docs/wiki/` are the canonical source'
+  require_document_text docs/DOCUMENTATION.md 'canonical source for the public GitHub Wiki'
 }
 
 check_visible_error_recovery() {
