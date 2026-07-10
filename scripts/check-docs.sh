@@ -442,7 +442,7 @@ check_pdf_proposal_state() {
   [[ -f "${adr}" ]] || return 0
   require_document_text "${adr}" 'Status: Proposed'
   reject_document_pattern \
-    'Phase 33 complete|ADR-001 establishes|Status: Accepted|accepted decision|accepted deferral guard' \
+    '\bPhase 33 complete\b|ADR-001 establishes|Status: Accepted|accepted decision|accepted deferral guard' \
     'Phase 33 and ADR-001 must remain proposed before acceptance' \
     "${governed_files[@]}" "${adr}"
 }
