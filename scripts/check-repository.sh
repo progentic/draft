@@ -70,6 +70,7 @@ check_required_sources() {
     src-tauri/src/commands/document_save.rs
     src-tauri/src/commands/external_access.rs
     src-tauri/src/commands/worker_cancellation.rs
+    src-tauri/src/application/job_store.rs
     src-tauri/src/application/network_client.rs
     src-tauri/src/documents/atomic_write.rs
     src-tauri/src/documents/dialog.rs
@@ -86,6 +87,10 @@ check_required_sources() {
     src-tauri/src/imports/mod.rs
     src-tauri/src/imports/pdf.rs
     src-tauri/src/imports/pdf_tests.rs
+    src-tauri/src/jobs/mod.rs
+    src-tauri/src/jobs/pdf_import.rs
+    src-tauri/src/jobs/store.rs
+    src-tauri/src/jobs/store_tests.rs
     src-tauri/src/network/client.rs
     src-tauri/src/network/client_tests.rs
     src-tauri/src/network/mod.rs

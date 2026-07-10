@@ -29,6 +29,7 @@ main() {
   check_metadata_lookup_contract
   check_external_browser_handoff_contract
   check_pdf_import_contract
+  check_background_job_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -463,6 +464,61 @@ check_pdf_import_contract() {
   printf 'PASS INV-08 Phase 24 PDF intake contract\n'
 }
 
+check_background_job_contract() {
+  local model_path="src-tauri/src/jobs/pdf_import.rs"
+  local store_path="src-tauri/src/jobs/store.rs"
+  local test_path="src-tauri/src/jobs/store_tests.rs"
+  local initialization_path="src-tauri/src/application/job_store.rs"
+  local required_tests=(
+    candidate_promotion_persists_pending_job
+    repeated_promotion_returns_existing_job_without_reset
+    separately_validated_candidates_are_not_path_deduplicated
+    concurrent_promotions_return_one_durable_job
+    concurrent_claims_allow_one_owner
+    claim_capability_is_hashed_and_debug_redacted
+    foreign_claim_cannot_checkpoint_or_finish
+    checkpoint_and_typed_failure_survive_retry_and_reopen
+    retry_and_reopen_require_expected_terminal_state_and_attempt
+    durable_cancellation_blocks_progress_until_owner_acknowledges
+    restart_invalidates_old_claim_and_reassignment_uses_new_token
+    restart_turns_cancelled_in_progress_job_terminal
+    terminal_resolution_is_immutable
+    terminal_failures_are_bounded_and_typed
+    malformed_stored_identity_fails_rehydration
+  )
+  local test_name
+
+  require_file "${model_path}"
+  require_file "${store_path}"
+  require_file "${test_path}"
+  require_file "${initialization_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_source_pattern 'CREATE TABLE pdf_import_jobs (' "${store_path}"
+  require_source_pattern 'record_id TEXT NOT NULL UNIQUE' "${store_path}"
+  require_source_pattern 'TransactionBehavior::Immediate' "${store_path}"
+  require_source_pattern 'claim_token_hash BLOB' "${store_path}"
+  require_source_pattern 'Sha256::digest' "${store_path}"
+  require_source_pattern 'Err(PdfImportJobStoreError::ClaimOwnershipLost)' "${store_path}"
+  require_source_pattern 'application::job_store::initialize_job_store(app)?;' src-tauri/src/lib.rs
+  require_source_pattern 'sha2 = "0.10.9"' src-tauri/Cargo.toml
+  assert_no_matches "Phase 26 raw claim capability exposure" \
+    'claim_token\s+TEXT|derive\([^\n]*Serialize|\bpub\s+fn\s+token\s*\(|\b(?:println|eprintln|dbg)!\s*\(|\b(?:tracing|log)::' \
+    "${model_path}" "${store_path}"
+  assert_no_matches "Phase 26 processing, network, or reference authority" \
+    '\breqwest\b|\bNetworkClient\b|\bReferenceStore\b|\bnotify::|\bRecommendedWatcher\b|(?:std::thread|tokio)::spawn\s*\(' \
+    "${model_path}" "${store_path}"
+  assert_no_matches "Phase 26 source PDF mutation" \
+    '\bfs::(?:write|remove_file|rename|copy)\s*\(|\bOpenOptions\b|\.write_all\s*\(' \
+    "${model_path}" "${store_path}"
+  assert_no_matches "Phase 26 Tauri job command" \
+    '\bPdfImportJob\b|\bpromote_candidate\b|\bclaim_token_hash\b' src-tauri/src/commands
+  assert_no_matches "Phase 26 frontend job authority" \
+    '\bPdfImportJob\b|\bpromote_candidate\b|\bclaim_token\b|\bjob_state\b' src
+  printf 'PASS INV-05 Phase 26 persistent PDF job contract\n'
+}
+
 require_citation_sources() {
   require_file src-tauri/src/citations/node.rs
   require_file src-tauri/src/citations/node_tests.rs
@@ -595,10 +651,12 @@ check_reference_store_contract() {
   require_source_pattern 'PRAGMA user_version = 1;' "${source_path}"
   require_source_pattern ') STRICT;' "${source_path}"
   require_source_pattern 'features = ["bundled"]' src-tauri/Cargo.toml
-  assert_no_matches "Phase 17 ad hoc SQLite access" \
+  assert_no_matches "ad hoc SQLite access outside owned stores" \
     '\brusqlite\b|Connection::open\s*\(' \
     --glob '!src-tauri/src/references/store.rs' \
-    --glob '!src-tauri/src/references/store_tests.rs' src-tauri/src
+    --glob '!src-tauri/src/references/store_tests.rs' \
+    --glob '!src-tauri/src/jobs/store.rs' \
+    --glob '!src-tauri/src/jobs/store_tests.rs' src-tauri/src
   assert_no_matches "Phase 17 reference store Tauri surface" \
     '#\[tauri::command\]|\btauri::' "${source_path}"
   printf 'PASS Phase 17 local reference store contract\n'
@@ -715,12 +773,13 @@ require_atomic_writer_tests() {
 check_document_write_boundary() {
   local atomic_writer_path="$1"
 
-  # This exact test file writes only temporary chunked PDF fixtures. Production
-  # import mutation remains denied separately by check_pdf_import_contract.
+  # These exact test files write only temporary PDF fixtures. Production intake
+  # and job mutation remain denied by their separate source scans.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
     --glob '!src-tauri/src/imports/pdf_tests.rs' \
+    --glob '!src-tauri/src/jobs/store_tests.rs' \
     --glob '!src-tauri/src/references/store_tests.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
@@ -818,9 +877,6 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "INV-05 persistent job surface before Phase 26" \
-    '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
-    src src-tauri/src
   assert_no_matches "INV-11 helper protocol before Phase 28" \
     '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
     python/draft_helpers
@@ -912,7 +968,7 @@ report_command_surface() {
 
 report_deferred_behavior_checks() {
   printf '%s\n' \
-    'INFO Future feature absence gates are active; behavioral checks replace them in each owning phase.'
+    'INFO The remaining future feature absence gate stays active until its owning phase adds behavioral checks.'
 }
 
 main "$@"

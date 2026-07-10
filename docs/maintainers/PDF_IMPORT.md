@@ -54,8 +54,9 @@ timing.
 path remains private to Rust and is not serializable. `PdfImportId` is generated
 with UUID v4 so a later persistent job can adopt an opaque Rust-owned identity.
 
-No background work begins at candidate creation. Phase 26 must persist a job
-before parsing, metadata resolution, copying, or other resumable work starts.
+No background work begins at candidate creation. Phase 26 can promote the
+candidate into one persistent job before parsing, metadata resolution, copying,
+or other resumable work starts; it still starts none of that work.
 
 ## Failure Shape
 
@@ -104,9 +105,10 @@ checks require every Phase 24 source and guide.
 ## Known Limitations
 
 Phase 24 does not subscribe to operating-system filesystem events. It provides
-the Rust-owned intake called by that future lifecycle. It also does not persist
-candidates across process restart, parse PDF contents, or expose an import
-workflow. Those behaviors must not be inferred from the `Pending` name.
+the Rust-owned intake called by that future lifecycle. The candidate itself is
+process-local until Phase 26 promotion. Neither phase parses PDF contents or
+exposes an import workflow. Those behaviors must not be inferred from the
+`Pending` or job state names.
 
 Stable-write confirmation compares byte length, not file contents. An in-place
 modification that preserves byte length can pass confirmation when no
@@ -117,6 +119,6 @@ can rely on content identity.
 
 ## Next Boundary
 
-Phase 25 audited the complete research boundary through PDF intake without
-adding behavior. Phase 26 may add only the persistent state machine bounded by
-`docs/drafts/BACKGROUND_JOBS.md`.
+Phase 26 adds only the persistent state machine documented in
+`docs/maintainers/BACKGROUND_JOBS.md`. Watcher execution and PDF processing
+remain future boundaries.

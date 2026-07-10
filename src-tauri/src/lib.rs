@@ -4,6 +4,7 @@ mod commands;
 pub mod documents;
 mod events;
 pub mod imports;
+pub mod jobs;
 pub mod network;
 pub mod references;
 pub mod research;
@@ -18,6 +19,7 @@ pub fn run() {
         .setup(|app| {
             application::network_client::initialize_network_client(app)?;
             application::reference_store::initialize_reference_store(app)?;
+            application::job_store::initialize_job_store(app)?;
             Ok(())
         })
         .manage(documents::registry::DocumentRegistry::new())

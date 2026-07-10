@@ -8,13 +8,18 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 25 are complete. Phase 26 is
+**Current execution checkpoint:** Phases 0 through 26 are complete. Phase 27 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
 queue, or visible import workflow. Phase 25 audited that boundary without
 adding product behavior.
+
+Phase 26 promotes one validated candidate identity into one durable,
+recoverable PDF import job. It implements lifecycle state only; PDF processing,
+watcher execution, workers, networking, reference mutation, and UI remain
+deferred.
 
 ---
 

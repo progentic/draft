@@ -387,6 +387,6 @@ Every architecture PR must answer:
 - Keep the implemented document-envelope, reference-record, reference-store,
   citation-node, bibliography-consistency, network-client, metadata-lookup,
   external-browser-handoff, and PDF-import requirements non-binding until the
-  contract lifecycle permits acceptance. The Phase 26 background-job draft is
-  also non-binding. Create Python-helper and formatting drafts in their owning
-  phases.
+  contract lifecycle permits acceptance. The implemented Phase 26
+  background-job requirements are also non-binding. Create Python-helper and
+  formatting drafts in their owning phases.

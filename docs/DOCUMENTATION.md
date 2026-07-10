@@ -510,6 +510,14 @@ worker, queue, persistent import store, or visible import flow. Phase 26
 requirements are bounded before implementation in the non-binding
 `docs/drafts/BACKGROUND_JOBS.md`.
 
+Phase 26 documents the Rust-owned persistent PDF import-job lifecycle in
+`docs/maintainers/BACKGROUND_JOBS.md`. Rust tests and invariant scans enforce
+transactional candidate promotion, candidate-ID deduplication, one hashed
+opaque claim, ownership on every in-progress mutation, checkpoint and attempt
+persistence, durable cancellation, stale-token rejection, crash recovery,
+terminal immutability, and the absence of parsing, networking, watcher, worker,
+reference, Tauri-command, or frontend authority.
+
 Recommended checks:
 
 - Markdown formatting

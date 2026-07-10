@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 25 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 26 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -13,15 +13,17 @@ reference record, local SQLite store, versioned citation-node resolution
 boundary, pure bibliography-consistency check, centralized network client, and
 typed DOI metadata providers plus a Rust-owned system-browser handoff. Rust
 also owns explicit PDF validation and watched-file stable-write intake without
-adding a watcher dependency. The Phase 5, Phase 10, Phase 15, Phase 20, and
-Phase 25 audits are recorded in
+adding a watcher dependency, plus a persistent PDF import-job state machine
+with hashed opaque claims and restart recovery. The Phase 5, Phase 10, Phase
+15, Phase 20, and Phase 25 audits are recorded in
 `docs/maintainers/REALIGNMENT.md`.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
-filesystem watcher, persistent import jobs, release automation, or packaging.
+filesystem watcher, import processing worker or scheduler, release automation,
+or packaging.
 
 ## Toolchain decisions
 
@@ -34,6 +36,8 @@ filesystem watcher, persistent import jobs, release automation, or packaging.
   parent directory on Unix.
 - `rusqlite` with bundled SQLite provides cross-platform local reference
   persistence without depending on a system SQLite installation.
+- The same locked SQLite library provides the separate versioned PDF job store.
+  SHA-256 stores only claim-token digests; raw UUID v4 claims stay in Rust.
 - `reqwest` 0.13.4 with only its Rustls feature provides the centralized
   HTTPS-only client without cookie or system-proxy features.
 - `tauri-plugin-opener` 2.5.4 provides the Rust-only default-browser adapter.
@@ -113,7 +117,7 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake scans, cross-bridge name parity, and tests
+  intake/job scans, cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

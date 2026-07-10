@@ -179,6 +179,10 @@ impl PdfImportId {
     pub fn as_uuid(&self) -> Uuid {
         self.0
     }
+
+    pub(crate) fn from_uuid(value: Uuid) -> Self {
+        Self(value)
+    }
 }
 
 impl PendingPdfImport {

@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 25 are complete. Phase 26 is
+**Current execution checkpoint:** Phases 0 through 26 are complete. Phase 27 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -71,7 +71,15 @@ Phase 25 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The audit
 confirms that Phase 24 produces intake candidates only: no filesystem watcher,
 background worker, queue, persistent job store, or visible import workflow
 exists. Phase 26 requirements remain non-binding in
-`docs/drafts/BACKGROUND_JOBS.md` until implementation begins.
+`docs/drafts/BACKGROUND_JOBS.md`; Phase 25 fixed them before implementation
+began.
+
+Phase 26 implemented behavior is recorded in
+`docs/maintainers/BACKGROUND_JOBS.md`. A Phase 24 candidate is promoted
+transactionally by `PdfImportId`; concurrent promotion returns one durable job,
+and concurrent claim allows one opaque-token owner. Checkpoints, typed failures,
+cancellation intent, attempts, and recovery persist without adding a worker,
+scheduler, watcher, parser, network call, reference mutation, or UI workflow.
 
 ---
 

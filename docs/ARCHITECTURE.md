@@ -79,8 +79,12 @@ full system described in this architecture:
   and Google Scholar queries before handing one URL to the default system
   browser. The WebView has no direct opener API or capability.
 - Rust can validate an explicitly approved PDF or confirm a watched PDF after
-  one quiet second and an unchanged byte length. It produces a Rust-only
-  pending candidate without starting or persisting a processing job.
+  one quiet second and an unchanged byte length. Phase 26 can promote that
+  Rust-only candidate into one durable PDF import job without starting
+  processing.
+- Rust owns a versioned SQLite PDF import-job store. Candidate promotion is
+  identity-deduplicated, in-progress updates require a hashed opaque claim, and
+  startup recovery invalidates stale claims while preserving checkpoints.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -97,8 +101,8 @@ full system described in this architecture:
 - The current workspace does not expose open/save controls yet. No close command,
   autosave, recovery, reference CRUD UI, citation insertion, rendered
   bibliography workflow, provider lookup or browser-handoff control, analysis
-  worker, PDF import control or watcher, formatter, export path, or
-  non-reference durable database is implemented.
+  worker, PDF import control or watcher, job scheduler or processing worker,
+  formatter, or export path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -434,9 +438,9 @@ Relevant invariant: `INV-01` in `INVARIANTS.md`.
 
 ## 10. Background Job Pattern
 
-This section defines the target contract for Phase 26 and later work. At the
-Phase 25 checkpoint, no persistent job store, scheduler, queue, or background
-product worker exists.
+Phase 26 implements the first bounded form of this pattern for PDF import jobs.
+No scheduler, queue consumer, background product worker, progress event, or
+frontend job surface exists.
 
 Retraction checking, PDF metadata resolution, formatting checks, and long text-analysis runs are async, external-service-dependent or CPU-bound, and must survive interruption without silently losing state.
 
@@ -446,7 +450,10 @@ Minimum state shape:
 Pending -> InProgress -> Resolved | Failed(reason) | NeedsManualInput | Cancelled
 ```
 
-State must be persisted per record in SQLite, not held only in memory. A crash mid-check must not drop the job silently. State transitions are emitted as events so the frontend can reflect status without polling.
+State must be persisted per record in SQLite, not held only in memory. A crash
+mid-check must not drop the job silently. Later worker integrations must emit
+state changes as events so the frontend can reflect status without polling;
+Phase 26 emits no job events because it starts no work.
 
 Required minimum persisted fields:
 
@@ -463,10 +470,18 @@ updated_at
 cancel_requested
 ```
 
+The Phase 26 PDF job store also persists immutable candidate details, a claim
+timestamp, and only the SHA-256 digest of an opaque UUID v4 claim token.
+Promotion is atomic and idempotent by `PdfImportId`; separately validated
+candidates are not merged by path or size. Every in-progress mutation checks
+the current digest and expected state in its transactional update. Recovery
+clears the prior claim and returns interrupted work to `Pending`, or to
+`Cancelled` when durable cancellation intent was already set.
+
 ### 10.1 Watched-Folder Import: Stable-Write Requirement
 
 Any filesystem watching added later must be Rust-owned. The frontend never
-watches the filesystem directly, and no watcher exists at the Phase 25
+watches the filesystem directly, and no watcher exists at the Phase 26
 checkpoint.
 
 A watched file may enter the import pipeline only after Rust confirms the file is stable. A file appearing on disk is not enough.
@@ -483,10 +498,10 @@ observations, requires one quiet second, confirms the byte length is unchanged,
 then validates the PDF signature while rechecking file length. Paths are
 canonical and confined to one watched root. The resulting
 `PendingPdfImport` is a process-local candidate only; no work begins until a
-later persistent job owns it. This size-based gate cannot detect an in-place
-content change that keeps the same byte length when no filesystem event is
-delivered; any delivered event resets the quiet period even when size is
-unchanged.
+durable job owns it. Phase 26 can perform that promotion before work, but does
+not process the job. This size-based gate cannot detect an in-place content
+change that keeps the same byte length when no filesystem event is delivered;
+any delivered event resets the quiet period even when size is unchanged.
 
 Relevant invariants: `INV-05` and `INV-08` in `INVARIANTS.md`.
 

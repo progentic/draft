@@ -46,6 +46,7 @@ check_required_documents() {
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/CANCELLATION_BOUNDARY.md
+    docs/maintainers/BACKGROUND_JOBS.md
     docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md
     docs/maintainers/CITATION_NODE.md
     docs/maintainers/COMMAND_BOUNDARY.md
@@ -138,7 +139,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 25 are complete'
+  local checkpoint='Phases 0 through 26 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
