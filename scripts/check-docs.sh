@@ -374,10 +374,20 @@ check_wiki_sources() {
   require_document_text "${home}" '(Current-Limitations)'
   require_document_text "${workspace}" '(Troubleshooting)'
   require_document_text "${workspace}" '(Current-Limitations)'
+  require_document_text docs/wiki/Current-Limitations.md '(Home)'
+  require_document_text docs/wiki/Troubleshooting.md '(Home)'
+  require_document_text docs/wiki/Workspace.md '(Home)'
   require_document_text docs/DOCUMENTATION.md 'canonical source for the public GitHub Wiki'
   reject_document_pattern \
     '\]\([^)]*\.md\)' \
     'Wiki links must use extensionless GitHub Wiki page names' \
+    docs/wiki/Current-Limitations.md \
+    docs/wiki/Home.md \
+    docs/wiki/Troubleshooting.md \
+    docs/wiki/Workspace.md
+  reject_document_pattern \
+    'Welcome to the draft wiki!' \
+    'Wiki sources must not contain the initialization placeholder' \
     docs/wiki/Current-Limitations.md \
     docs/wiki/Home.md \
     docs/wiki/Troubleshooting.md \

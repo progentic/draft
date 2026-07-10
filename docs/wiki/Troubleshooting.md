@@ -49,3 +49,5 @@ Restart DRAFT and report the DRAFT version and exact message if it repeats.
 The current interface does not save documents. Reloading the workspace or
 closing DRAFT discards edits. There is no recovery path for a discarded
 pre-release editor session. Keep important work in another saved document.
+
+Return to [Home](Home).

@@ -49,3 +49,5 @@ This wording describes the current state, not a permanent product limitation.
 - DRAFT does not currently include product telemetry.
 - Opening research links and sending text to external services are not currently
   available from the workspace.
+
+Return to [Home](Home).
