@@ -13,10 +13,14 @@ for maintainers but is not an accepted contract under `GOVERNANCE.md` section
 reference records. It persists only validated `ReferenceRecord` values and
 validates stored data again on every read.
 
-Phase 17 does not register the store as Tauri state or expose commands. The
-visible workspace has no reference-library workflow, so launching DRAFT does
-not create a database. A future Rust-owned workflow must resolve the Tauri
-application-data directory and initialize this store explicitly.
+Phase 18 registers the store as managed Tauri state during desktop startup.
+Rust resolves the Tauri application-data directory and opens the database
+before command handling begins. Startup fails closed when location, migration,
+or schema verification fails.
+
+The only command that reads the store is `resolve_citation`; it performs exact
+citekey resolution and returns no record metadata. No create, update, delete,
+list, or visible reference-library workflow exists yet.
 
 ## Dependency and Location
 
@@ -131,18 +135,18 @@ deterministic listing, corrupt stored data, indexed/payload mismatch,
 concurrent create, poisoned state, and stable typed failures.
 
 `scripts/check-invariants.sh` requires the store source, schema constant,
-bundled dependency, transaction/schema primitives, and all 26 named tests. It
+bundled dependency, transaction/schema primitives, and all 27 named tests. It
 rejects SQLite use outside the store boundary and rejects Tauri APIs inside the
-store. The citation, network, import, job, and helper absence gates remain
-active.
+store. Phase 18 replaces the citation absence gate with behavior checks; the
+bibliography, network, import, job, and helper gates remain active.
 
 `scripts/check-repository.sh` requires the production store and test support to
 remain visible to Git. The same checks run through `scripts/verify.sh` locally
 and in the GitHub Actions `verify` job.
 
-## Phase 18 Gate
+## Phase 18 Integration
 
-Phase 18 may define a versioned Tiptap citation node that resolves a citekey
-against validated reference records. It must not embed full record metadata,
-bypass Rust validation, add network lookup, or turn rendered citation text into
-source data.
+Phase 18 defines the versioned Tiptap citation node and exact store-backed
+resolution path documented in `docs/maintainers/CITATION_NODE.md`. It does not
+change the store schema, expose CRUD, embed full record metadata, add network
+lookup, or turn display markers into source data.

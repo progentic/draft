@@ -258,6 +258,7 @@ mod tests {
     };
 
     use super::*;
+    use crate::citations::node::CitationNodeError;
     use crate::documents::test_support::TestDocumentPath;
     use serde_json::json;
 
@@ -322,6 +323,25 @@ mod tests {
             Err(OpenDocumentError::InvalidEnvelope {
                 cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
             }),
+        );
+    }
+
+    #[test]
+    fn invalid_citation_open_fails_before_registry_entry() {
+        let target = TestDocumentPath::new("invalid-citation-open");
+        let snapshot = envelope_with_invalid_citation("Invalid citation open");
+        target.write(&serde_json::to_vec(&snapshot).unwrap());
+        let registry = DocumentRegistry::new();
+
+        assert_eq!(
+            open_document(&registry, Some(target.path().to_owned())),
+            Err(OpenDocumentError::InvalidEnvelope {
+                cause: invalid_citation_error(),
+            }),
+        );
+        assert_eq!(
+            registry.source_path(document_id(&envelope_value("Known identity"))),
+            Err(DocumentRegistryError::NotOpen),
         );
     }
 
@@ -490,6 +510,22 @@ mod tests {
     }
 
     #[test]
+    fn invalid_citation_save_fails_before_path_selection() {
+        let registry = DocumentRegistry::new();
+
+        assert_eq!(
+            save_document(
+                &registry,
+                envelope_with_invalid_citation("Invalid citation save"),
+                || panic!("path selection must not run"),
+            ),
+            Err(SaveDocumentError::InvalidEnvelope {
+                cause: invalid_citation_error(),
+            }),
+        );
+    }
+
+    #[test]
     fn save_does_not_reopen_dialog_for_loaded_document() {
         let target = TestDocumentPath::new("retained-path");
         target.write(&serialized_envelope("Loaded"));
@@ -639,6 +675,25 @@ mod tests {
                 "content": [{ "type": "paragraph", "content": [] }]
             }
         })
+    }
+
+    fn envelope_with_invalid_citation(title: &str) -> Value {
+        let mut envelope = envelope_value(title);
+        envelope["document"]["content"] = json!([{
+            "type": "paragraph",
+            "content": [{
+                "type": "citation",
+                "attrs": { "citekey": "smith2025", "render_style": "apa7" }
+            }]
+        }]);
+        envelope
+    }
+
+    fn invalid_citation_error() -> DocumentEnvelopeError {
+        DocumentEnvelopeError::InvalidCitationNode {
+            path: "document.content[0].content[0]".to_owned(),
+            cause: CitationNodeError::MissingSchemaVersion,
+        }
     }
 
     fn read_json(path: &Path) -> Value {

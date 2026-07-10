@@ -4,6 +4,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
+use crate::citations::node::{CitationNodeError, validate_document_citations};
+
 const SCHEMA_VERSION_FIELD: &str = "schema_version";
 const DOCUMENT_ID_FIELD: &str = "document_id";
 const TITLE_FIELD: &str = "title";
@@ -42,10 +44,14 @@ pub struct DocumentId(Uuid);
 #[serde(tag = "code", rename_all = "snake_case")]
 pub enum DocumentEnvelopeError {
     InvalidEnvelopeObject,
-    UnknownEnvelopeField { field: String },
+    UnknownEnvelopeField {
+        field: String,
+    },
     MissingSchemaVersion,
     InvalidSchemaVersion,
-    UnsupportedSchemaVersion { found: u64 },
+    UnsupportedSchemaVersion {
+        found: u64,
+    },
     MissingDocumentId,
     InvalidDocumentId,
     MissingTitle,
@@ -53,6 +59,10 @@ pub enum DocumentEnvelopeError {
     MissingDocument,
     InvalidDocumentRoot,
     InvalidDocumentContent,
+    InvalidCitationNode {
+        path: String,
+        cause: CitationNodeError,
+    },
 }
 
 impl DocumentEnvelope {
@@ -129,6 +139,7 @@ impl DocumentEnvelopeError {
             Self::MissingDocument => "document envelope is missing document",
             Self::InvalidDocumentRoot => "document must be a Tiptap doc object",
             Self::InvalidDocumentContent => "document content must be an array",
+            Self::InvalidCitationNode { .. } => "document contains an invalid citation node",
         }
     }
 }
@@ -228,6 +239,12 @@ fn parse_document(value: Value) -> Result<Value, DocumentEnvelopeError> {
         .ok_or(DocumentEnvelopeError::InvalidDocumentRoot)?;
     validate_document_type(document)?;
     validate_document_content(document)?;
+    validate_document_citations(&value).map_err(|error| {
+        DocumentEnvelopeError::InvalidCitationNode {
+            path: error.path,
+            cause: error.cause,
+        }
+    })?;
     Ok(value)
 }
 
@@ -409,6 +426,28 @@ mod tests {
     }
 
     #[test]
+    fn valid_nested_citation_round_trips() {
+        let expected = envelope_with_citation(citation_attrs());
+        let envelope = parse_envelope(expected.clone());
+
+        assert_eq!(serde_json::to_value(envelope).unwrap(), expected);
+    }
+
+    #[test]
+    fn invalid_nested_citation_fails_with_path() {
+        let mut attrs = citation_attrs();
+        attrs.as_object_mut().unwrap().remove("schema_version");
+
+        assert_eq!(
+            DocumentEnvelope::from_json_value(envelope_with_citation(attrs)),
+            Err(DocumentEnvelopeError::InvalidCitationNode {
+                path: "document.content[0].content[0]".to_owned(),
+                cause: CitationNodeError::MissingSchemaVersion,
+            }),
+        );
+    }
+
+    #[test]
     fn envelope_failure_shape_is_stable() {
         let errors = [
             DocumentEnvelopeError::MissingSchemaVersion,
@@ -417,6 +456,10 @@ mod tests {
                 field: "references".to_owned(),
             },
             DocumentEnvelopeError::InvalidDocumentContent,
+            DocumentEnvelopeError::InvalidCitationNode {
+                path: "document.content[0]".to_owned(),
+                cause: CitationNodeError::UnsupportedRenderStyle,
+            },
         ];
 
         assert_eq!(
@@ -425,7 +468,12 @@ mod tests {
                 { "code": "missing_schema_version" },
                 { "code": "unsupported_schema_version", "found": 2 },
                 { "code": "unknown_envelope_field", "field": "references" },
-                { "code": "invalid_document_content" }
+                { "code": "invalid_document_content" },
+                {
+                    "code": "invalid_citation_node",
+                    "path": "document.content[0]",
+                    "cause": { "code": "unsupported_render_style" }
+                }
             ]),
         );
     }
@@ -479,6 +527,29 @@ mod tests {
                     "content": [{ "type": "text", "text": "naïve — 日本語" }]
                 }]
             }
+        })
+    }
+
+    fn envelope_with_citation(attrs: Value) -> Value {
+        json!({
+            "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
+            "document_id": DOCUMENT_ID,
+            "title": "Cited document",
+            "document": {
+                "type": "doc",
+                "content": [{
+                    "type": "paragraph",
+                    "content": [{ "type": "citation", "attrs": attrs }]
+                }]
+            }
+        })
+    }
+
+    fn citation_attrs() -> Value {
+        json!({
+            "schema_version": 1,
+            "citekey": "smith2025",
+            "render_style": "apa7"
         })
     }
 }

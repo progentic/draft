@@ -42,6 +42,12 @@ check_required_sources() {
     package-lock.json
     src/ipc/eventClient.ts
     src/ipc/client.ts
+    src/citations/citationNode.test.ts
+    src/citations/citationNode.ts
+    src/editor/CitationNode.test.ts
+    src/editor/CitationNode.ts
+    src/ipc/citationResolution.test.ts
+    src/ipc/citationResolution.ts
     src/ipc/documentEnvelope.test.ts
     src/ipc/documentEnvelope.ts
     src/ipc/documentErrors.ts
@@ -58,6 +64,7 @@ check_required_sources() {
     src-tauri/Cargo.lock
     src-tauri/capabilities/main.json
     src-tauri/src/commands/document_open.rs
+    src-tauri/src/commands/citation_resolution.rs
     src-tauri/src/commands/document_save.rs
     src-tauri/src/commands/worker_cancellation.rs
     src-tauri/src/documents/atomic_write.rs
@@ -65,6 +72,10 @@ check_required_sources() {
     src-tauri/src/documents/envelope.rs
     src-tauri/src/documents/persistence.rs
     src-tauri/src/documents/registry.rs
+    src-tauri/src/citations/node.rs
+    src-tauri/src/citations/node_tests.rs
+    src-tauri/src/citations/resolution.rs
+    src-tauri/src/citations/resolution_tests.rs
     src-tauri/src/events/runtime_status.rs
     src-tauri/src/references/mod.rs
     src-tauri/src/references/record.rs

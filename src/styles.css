@@ -414,6 +414,32 @@ button:focus-visible,
   background: #c5e6df;
 }
 
+.draft-editor [data-draft-citation] {
+  display: inline;
+  padding: 1px 3px;
+  color: #175f58;
+  background: #e2f0ed;
+  border-bottom: 1px solid #9bc8c1;
+  border-radius: 3px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875em;
+}
+
+.draft-editor [data-citation-state="invalid"],
+.draft-editor [data-citation-state="unavailable"],
+.draft-editor [data-citation-state="failed"] {
+  color: #8f352c;
+  background: #f8e8e5;
+  border-bottom-color: #d8a39d;
+}
+
+.draft-editor [data-citation-state="resolving"],
+.draft-editor [data-citation-state="requires-resolution"] {
+  color: #71511f;
+  background: #f7edd9;
+  border-bottom-color: #d8b97b;
+}
+
 .inspector-section {
   padding: 16px 14px 18px;
   border-bottom: 1px solid var(--line);

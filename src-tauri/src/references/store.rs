@@ -155,6 +155,18 @@ impl ReferenceStore {
             .lock()
             .map_err(|_| ReferenceStoreError::StoreUnavailable)
     }
+
+    #[cfg(test)]
+    pub(crate) fn replace_payload_for_test(&self, citekey: &str, payload: &str) {
+        self.connection
+            .lock()
+            .unwrap()
+            .execute(
+                "UPDATE reference_records SET payload_json = ?2 WHERE citekey = ?1",
+                params![citekey, payload],
+            )
+            .unwrap();
+    }
 }
 
 impl fmt::Display for ReferenceStoreError {

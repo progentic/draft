@@ -455,8 +455,13 @@ persistence.
 Phase 17 documents the implemented Rust-owned SQLite reference store in
 `docs/maintainers/REFERENCE_STORE.md`. Store tests and invariant scans enforce
 schema initialization, migration dispatch, transactional CRUD, uniqueness,
-reopen behavior, corruption handling, SQLite confinement, and the absence of a
-Tauri or frontend reference lifecycle.
+reopen behavior, corruption handling, and SQLite confinement.
+
+Phase 18 documents the implemented citation-node boundary in
+`docs/maintainers/CITATION_NODE.md`. Rust/frontend tests and invariant scans
+enforce exact attrs, nested envelope validation, pre-mutation open/save
+rejection, managed-store resolution, typed IPC, fail-closed Tiptap states,
+stale-response suppression, and the absence of embedded reference metadata.
 
 Recommended checks:
 

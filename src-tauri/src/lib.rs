@@ -1,4 +1,5 @@
 mod application;
+pub mod citations;
 mod commands;
 pub mod documents;
 mod events;
@@ -10,9 +11,14 @@ pub mod workers;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            application::reference_store::initialize_reference_store(app)?;
+            Ok(())
+        })
         .manage(documents::registry::DocumentRegistry::new())
         .manage(workers::cancellation::WorkerCancellationRegistry::new())
         .invoke_handler(tauri::generate_handler![
+            commands::citation_resolution::resolve_citation,
             commands::document_open::open_document,
             commands::document_save::save_document,
             commands::runtime_status::get_runtime_status,

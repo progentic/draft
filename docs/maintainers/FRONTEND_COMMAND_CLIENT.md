@@ -22,6 +22,7 @@ transport failures out of presentation components.
 | Mid | `cancelWorker` | Owns the cancellation command contract and bounded result mapping. |
 | Mid | `openDocument` | Validates Rust-loaded envelopes without receiving a path. |
 | Mid | `saveDocument` | Sends one explicit snapshot and validates save outcomes. |
+| Mid | `resolveCitation` | Validates resolution responses and typed citation failures. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -118,6 +119,19 @@ complete replacement occurred but parent-directory synchronization failed.
 The wrapper preserves these bounded codes without exposing a selected path or
 raw filesystem detail.
 
+## Citation resolution wrapper
+
+Phase 18 adds `resolveCitation` under `src/ipc/`. It sends the three validated
+node attrs to `resolve_citation`, validates the exact Rust response, and rejects
+a marker that does not match the returned citekey. Command failures preserve a
+typed invalid-citation cause, `reference_not_found`, or a bounded store cause.
+Unknown failures become transport errors without retaining raw details.
+
+The Tiptap node view calls this wrapper only after the frontend schema mirror
+accepts the attrs. Rust still validates again and remains authoritative. The
+response contains no reference metadata; the resulting marker is disposable
+presentation state. See `docs/maintainers/CITATION_NODE.md`.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -137,6 +151,7 @@ Frontend tests prove:
 - cancellation command errors and exact request arguments
 - document open/save command names and exact request arguments
 - envelope, cancellation, nested error, and malformed-response handling
+- citation attrs, response marker, command-error, and transport classification
 - workspace rendering of the connected Rust version
 
 Run the focused evidence with:
@@ -160,5 +175,6 @@ bash scripts/check-invariants.sh
 Phase 8 event transport is documented in
 `docs/maintainers/EVENT_BOUNDARY.md`. It remains separate from this
 request/response abstraction. Phase 9 worker lifecycle rules are documented in
-`docs/maintainers/CANCELLATION_BOUNDARY.md`. Phase 13/14 file lifecycle rules are
-documented in `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
+`docs/maintainers/CANCELLATION_BOUNDARY.md`. Phase 13/14 file lifecycle rules
+are documented in `docs/maintainers/DOCUMENT_SAVE_LOAD.md`, and Phase 18
+citation behavior in `docs/maintainers/CITATION_NODE.md`.

@@ -148,7 +148,9 @@ nested error code used by document commands.
 
 Frontend tests cover envelope mirroring, exact command arguments, opened/saved/
 cancelled responses, malformed responses, registry failures, typed write-stage
-failures, durability uncertainty, and transport classification.
+failures, durability uncertainty, citation-node causes, and transport
+classification. Phase 18 adds open/save tests proving malformed citation attrs
+fail before registry insertion or path selection.
 
 `scripts/check-invariants.sh` requires these tests and sources, checks command
 name parity, rejects frontend path/dialog authority, and rejects direct target
@@ -162,6 +164,8 @@ envelope and registry guides, user workspace claims, local verification, and
 GitHub Actions. The evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`.
 
-Phase 16 may define and validate an in-memory reference record. It must not
-extend the document envelope or add reference persistence, citation nodes,
-network lookup, imports, bibliography behavior, or workspace file controls.
+Phase 18 validates citation nodes nested inside the existing envelope without
+adding top-level fields or changing envelope version 1. The implementation is
+documented in `docs/maintainers/CITATION_NODE.md`. Reference metadata,
+bibliography behavior, network lookup, imports, and workspace file controls
+remain outside the document file contract.

@@ -9,11 +9,12 @@ for maintainers but is not an accepted contract under `GOVERNANCE.md` section
 
 ## Scope
 
-Phase 16 defines and validates one in-memory version 1 reference record in
+Phase 16 defines and validates one version 1 reference record in
 `src-tauri/src/references/record.rs`. Rust is the only validation authority.
-No command, TypeScript mirror, React state, reference store, database, file,
-network client, import path, citation node, bibliography, or document-envelope
-field is added.
+Phase 17 persists that type in the local store, and Phase 18 resolves citation
+citekeys against it. No full record crosses IPC or enters TypeScript, React
+state, citation attrs, or document-envelope fields. Network, import, and
+bibliography behavior remain absent.
 
 The record contains these declared top-level fields:
 
@@ -191,5 +192,7 @@ documented in `docs/maintainers/REFERENCE_STORE.md`. The store enforces stable
 identity and case-sensitive citekey uniqueness, but it does not change this
 record schema or bypass `ReferenceRecord::from_json_value` on reads.
 
-Citation nodes, bibliography rendering, network lookup, PDF import, and
-document-envelope metadata embedding remain absent.
+Phase 18 citation nodes resolve only a validated citekey through the store, as
+documented in `docs/maintainers/CITATION_NODE.md`. Full record metadata remains
+absent from document nodes and frontend state. Bibliography rendering, network
+lookup, PDF import, and document-envelope metadata fields remain absent.

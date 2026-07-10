@@ -81,6 +81,19 @@ fails. The commands expose no path field to the frontend. The full lifecycle
 and atomic-write behavior are documented in
 `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
 
+## Citation resolution command
+
+Phase 18 adds `resolve_citation`. It accepts one untrusted `attrs` JSON value so
+Rust can return typed missing, malformed, and unsupported-field failures instead
+of transport-deserialization strings. Domain validation requires version 1,
+the shared citekey shape, and `apa7`, then resolves the exact citekey through
+managed `ReferenceStore` state.
+
+The response carries only schema version, citekey, render style, and a
+disposable display marker. Typed errors distinguish invalid attrs, a missing
+reference, and bounded unavailable/read/corruption store categories. The full
+contract is documented in `docs/maintainers/CITATION_NODE.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -90,6 +103,7 @@ and atomic-write behavior are documented in
 | Mid | `cancel_worker` | Validates the worker ID and maps cancellation outcomes to command DTOs. |
 | Mid | `open_document` | Selects a file in Rust and delegates validated loading. |
 | Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
+| Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -122,8 +136,8 @@ must make the result observable to the frontend.
 
 Rust tests cover valid and blank version inputs, exact command signatures,
 bounded request deserialization, stable JSON for success and error values,
-cancellation lifecycle outcomes, Phase 13 document commands, and Phase 14
-atomic-write failure shapes.
+cancellation lifecycle outcomes, Phase 13 document commands, Phase 14
+atomic-write failure shapes, and Phase 18 citation resolution.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -148,5 +162,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/CANCELLATION_BOUNDARY.md`.
 - Phases 13 and 14 establish document file behavior described in
   `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
+- Phase 18 establishes citation validation and resolution described in
+  `docs/maintainers/CITATION_NODE.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.

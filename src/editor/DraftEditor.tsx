@@ -2,6 +2,8 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import type { Editor, JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
+import { CitationNode } from "./CitationNode";
+
 interface DraftEditorProps {
   editor: Editor | null;
 }
@@ -48,6 +50,7 @@ export function useDraftEditor() {
           levels: [1, 2, 3],
         },
       }),
+      CitationNode,
     ],
   });
 }

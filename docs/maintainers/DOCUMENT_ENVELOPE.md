@@ -27,9 +27,10 @@ The version 1 JSON shape is:
 }
 ```
 
-The envelope has no path, timestamps, reference records, citation metadata,
-analysis output, formatting findings, or export state. Unknown top-level fields
-fail validation instead of becoming implicit schema extensions.
+The envelope has no path, timestamps, reference records, top-level citation
+metadata, analysis output, formatting findings, or export state. Versioned
+citation-node attrs may exist only inside Tiptap document content. Unknown
+top-level fields fail validation instead of becoming implicit schema extensions.
 
 ## Rust Authority
 
@@ -58,9 +59,11 @@ Validation is deterministic:
 5. Require `title` to be a string that is non-empty after trimming.
 6. Require `document` to be an object with `type: "doc"`.
 7. Require `document.content` to be an array.
+8. Validate every nested `citation` node through the Phase 18 Rust contract.
 
-Phase 11 preserves all nested document JSON as data. Full Tiptap node and
-attribute validation belongs to later editor-schema work.
+All non-citation nested document JSON remains opaque data. Phase 18 validates
+only the citation node fields and attrs required by `INV-04`; it does not turn
+the envelope into a general Tiptap schema validator.
 
 ## Failure Shape
 
@@ -78,6 +81,7 @@ Field-specific context is included where the caller needs it.
 | `missing_title` / `invalid_title` | Title is absent, non-string, or blank. |
 | `missing_document` / `invalid_document_root` | Document is absent or not a `doc` object. |
 | `invalid_document_content` | Root content is absent or not an array. |
+| `invalid_citation_node` | Nested citation data is invalid; includes structural `path` and typed `cause`. |
 
 Invalid inputs are never normalized, migrated, or replaced with defaults.
 
@@ -100,10 +104,15 @@ Actions `verify` job.
 Focused Rust coverage includes minimal deserialization, stable serialization,
 round trips, every missing field, unknown fields, malformed and unsupported
 versions, malformed identity and title metadata, invalid root/content shapes,
-stable typed errors, and nested Unicode JSON preservation.
+stable typed errors, nested Unicode JSON preservation, and valid/invalid nested
+citation behavior.
 
 ## Registry Integration
 
 Phase 12 stores this validated domain type behind one Rust-owned live handle per
 document. `docs/maintainers/DOCUMENT_REGISTRY.md` records that behavior. File
 lifecycle and atomic writes are implemented by Phases 13 and 14.
+
+Phase 18 citation scanning is documented in
+`docs/maintainers/CITATION_NODE.md`. It changes validation behavior but does not
+add an envelope field or change `DOCUMENT_ENVELOPE_SCHEMA_VERSION`.

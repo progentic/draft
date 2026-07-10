@@ -2,19 +2,21 @@
 
 ## Current phase
 
-Phase 17 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 18 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
 open/save commands, a hardened atomic replacement path, and a validated
-in-memory reference record plus local SQLite store. The Phase 5, Phase 10, and
-Phase 15 audits are recorded in `docs/maintainers/REALIGNMENT.md`.
+reference record, local SQLite store, and versioned citation-node resolution
+boundary. The Phase 5, Phase 10, and Phase 15 audits are recorded in
+`docs/maintainers/REALIGNMENT.md`.
 
-This checkpoint does not include reference IPC or visible controls, workspace
-file controls, a close command, autosave, recovery, product research or
-analysis workflows, release automation, or packaging.
+This checkpoint does not include reference CRUD IPC, visible citation controls,
+complete citation formatting, bibliographies, workspace file controls, a close
+command, autosave, recovery, product research or analysis workflows, release
+automation, or packaging.
 
 ## Toolchain decisions
 
@@ -36,6 +38,8 @@ analysis workflows, release automation, or packaging.
   workers without frontend-generated IDs.
 - Frontend dependencies use npm with `package-lock.json` committed.
 - TypeScript, React, and Tiptap run inside the Tauri WebView.
+- `@tiptap/core` provides the explicit custom inline citation-node API at the
+  same locked version as the React and starter-kit packages.
 - `@tauri-apps/api/core` is isolated behind typed wrappers in `src/ipc/`.
 - `@tauri-apps/api/event` is isolated behind typed listeners in `src/ipc/`.
 - Tauri capabilities grant the main WebView event listen/unlisten access only.
@@ -95,9 +99,11 @@ frontend dependencies fail with an actionable message.
 The verifier runs:
 
 - npm dependency-tree validation
-- React/Tiptap workspace plus typed command, event, and cancellation client tests
+- React/Tiptap workspace plus typed command, event, cancellation, citation,
+  and document client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
-  registry/persistence/atomic-write scans, cross-bridge name parity, and tests
+  registry/persistence/atomic-write/citation scans, cross-bridge name parity,
+  and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

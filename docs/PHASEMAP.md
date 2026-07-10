@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 17 are complete. Phase 18 is
-the next implementation phase; citation-node implementation has not started.
+**Current execution checkpoint:** Phases 0 through 18 are complete. Phase 19 is
+the next implementation phase; bibliography-consistency work has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -29,8 +29,13 @@ behavior.
 
 Phase 17 requirements remain in the non-binding
 `docs/drafts/REFERENCE_STORE.md`, and implemented SQLite behavior is recorded
-in `docs/maintainers/REFERENCE_STORE.md`. The store is not exposed through IPC
-and is not initialized by the visible workspace.
+in `docs/maintainers/REFERENCE_STORE.md`.
+
+Phase 18 requirements remain in the non-binding
+`docs/drafts/CITATION_NODE.md`, and implemented validation, resolution, IPC,
+and Tiptap behavior is recorded in `docs/maintainers/CITATION_NODE.md`. The
+reference store now initializes as Rust-managed state for exact citekey
+resolution, but CRUD controls and full citation formatting remain absent.
 
 ---
 

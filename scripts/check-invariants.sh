@@ -23,6 +23,7 @@ main() {
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
+  check_citation_node_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -198,6 +199,8 @@ check_document_envelope_contract() {
     invalid_document_content_fails
     unicode_and_nested_tiptap_json_round_trip
     envelope_failure_shape_is_stable
+    valid_nested_citation_round_trips
+    invalid_nested_citation_fails_with_path
   )
   local test_name
 
@@ -210,6 +213,76 @@ check_document_envelope_contract() {
     '(?:std|tokio)::fs|\b(?:File|OpenOptions|PathBuf)\b|#\[tauri::command\]' \
     "${source_path}"
   printf 'PASS Phase 11 document envelope contract\n'
+}
+
+check_citation_node_contract() {
+  local node_path="src-tauri/src/citations/node.rs"
+  local node_test_path="src-tauri/src/citations/node_tests.rs"
+  local resolution_path="src-tauri/src/citations/resolution.rs"
+  local resolution_test_path="src-tauri/src/citations/resolution_tests.rs"
+  local required_node_tests=(
+    valid_citation_attrs_deserialize
+    citation_attrs_serialization_is_stable
+    citation_attrs_round_trip_is_stable
+    non_object_citation_attrs_fail
+    unknown_citation_fields_fail
+    missing_citation_fields_fail_predictably
+    malformed_and_unsupported_citation_versions_fail
+    malformed_citation_citekeys_fail
+    unsupported_render_styles_fail
+    nested_document_citations_validate
+    invalid_nested_citation_reports_path_and_cause
+    unrelated_tiptap_nodes_remain_opaque
+    citation_failure_shape_is_stable
+  )
+  local required_resolution_tests=(
+    known_citation_resolves_to_disposable_marker
+    invalid_citation_fails_before_store_lookup
+    missing_reference_fails_explicitly
+    corrupt_reference_store_failure_is_preserved
+    citation_resolution_failure_shape_is_stable
+  )
+  local test_name
+
+  require_citation_sources
+  require_citation_schema_version "${node_path}"
+  for test_name in "${required_node_tests[@]}"; do
+    require_rust_test "${test_name}" "${node_test_path}"
+  done
+  for test_name in "${required_resolution_tests[@]}"; do
+    require_rust_test "${test_name}" "${resolution_test_path}"
+  done
+  require_source_pattern 'marks: ""' src/editor/CitationNode.ts
+  require_source_pattern 'data-citation-state' src/editor/CitationNode.ts
+  require_source_pattern 'hasValidCitationNodes(value.document)' src/ipc/documentEnvelope.ts
+  assert_no_matches "INV-04 embedded citation metadata" \
+    '\b(?:title|contributors|issued|identifiers|csl_json)\s*:' \
+    src/citations src/editor/CitationNode.ts
+  printf 'PASS INV-04 citation node contract\n'
+}
+
+require_citation_sources() {
+  require_file src-tauri/src/citations/node.rs
+  require_file src-tauri/src/citations/node_tests.rs
+  require_file src-tauri/src/citations/resolution.rs
+  require_file src-tauri/src/citations/resolution_tests.rs
+  require_file src-tauri/src/commands/citation_resolution.rs
+  require_file src/citations/citationNode.test.ts
+  require_file src/citations/citationNode.ts
+  require_file src/editor/CitationNode.test.ts
+  require_file src/editor/CitationNode.ts
+  require_file src/ipc/citationResolution.test.ts
+  require_file src/ipc/citationResolution.ts
+}
+
+require_citation_schema_version() {
+  local source_path="$1"
+  local declaration='pub const CITATION_NODE_SCHEMA_VERSION: u64 = 1;'
+
+  if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
+    printf 'FAILED Phase 18 citation schema version declaration\n' >&2
+    return 1
+  fi
 }
 
 require_envelope_schema_version() {
@@ -382,6 +455,8 @@ check_document_file_contract() {
     save_rejects_source_path_owned_by_another_document
     durability_failure_advances_registry_to_complete_source
     concurrent_saves_keep_disk_and_registry_consistent
+    invalid_citation_open_fails_before_registry_entry
+    invalid_citation_save_fails_before_path_selection
   )
   local test_name
 
@@ -538,8 +613,8 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "INV-04 citation surface before Phase 18" \
-    '\bCitationNode\b|\bcitation_node\b|\binsert_citation\b' src src-tauri/src
+  assert_no_matches "Phase 19 bibliography surface" \
+    '\bBibliography\b|\bbibliography_' src src-tauri/src
   assert_no_matches "INV-05 persistent job surface before Phase 26" \
     '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
     src src-tauri/src

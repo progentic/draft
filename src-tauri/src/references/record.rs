@@ -528,7 +528,7 @@ fn parse_citekey(value: Value) -> Result<String, ReferenceRecordError> {
     }
 }
 
-fn is_valid_citekey(citekey: &str) -> bool {
+pub(crate) fn is_valid_citekey(citekey: &str) -> bool {
     let mut characters = citekey.chars();
     characters
         .next()

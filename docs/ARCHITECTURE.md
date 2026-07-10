@@ -41,12 +41,12 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 17 is deliberately smaller than the
+The implemented application through Phase 18 is deliberately smaller than the
 full system described in this architecture:
 
-- Rust exposes typed runtime-status, worker-cancellation, document-open, and
-  document-save commands with command-specific request, response, and error
-  types.
+- Rust exposes typed runtime-status, worker-cancellation, document-open,
+  document-save, and citation-resolution commands with command-specific
+  request, response, and error types.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
 - Rust emits the typed finite `draft://runtime-status` event, and the frontend
   validates it before React displays connection state.
@@ -55,14 +55,18 @@ full system described in this architecture:
 - Rust owns the version 1 document envelope, UUID identity parsing, root-shape
   validation, typed failures, and Serde round trips. Typed open/save commands
   now carry that envelope, while Rust remains the validation authority.
-- Rust owns a separate version 1 in-memory reference record with UUID identity,
+- Rust owns a separate version 1 reference record with UUID identity,
   citekey, structured contributors, partial date, identifiers, provenance,
-  resolution state, typed failures, and Serde round trips. It is not stored or
-  attached to a document.
+  resolution state, typed failures, and Serde round trips. Full records are
+  stored locally but are never attached to a document.
 - Rust owns a SQLite reference-store module with transactional CRUD,
   case-sensitive citekey uniqueness, schema initialization, migration dispatch,
-  indexed/payload consistency checks, and typed corruption failures. No runtime
-  command or visible workflow opens it yet.
+  indexed/payload consistency checks, and typed corruption failures. The store
+  initializes as managed Rust state for citation resolution; CRUD IPC and a
+  visible library workflow remain absent.
+- Rust validates exact version 1 citation attrs inside document JSON before
+  open/save mutation and resolves citekeys through the local store. The typed
+  response contains only a disposable display marker, not reference metadata.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -73,10 +77,13 @@ full system described in this architecture:
   prior state, and a post-replacement durability failure advances the registry
   to the complete on-disk snapshot while returning a typed error.
 - React and Tiptap own only the transient writing surface and presentation
-  state. Reloading still discards the current document.
+  state. The citation node preserves three attrs and shows explicit invalid,
+  resolving, resolved, unavailable, or failed states. Reloading still discards
+  the current document.
 - The current workspace does not expose open/save controls yet. No close command,
-  autosave, recovery, reference library, citation behavior, network client,
-  analysis worker, formatter, export path, or durable database is implemented.
+  autosave, recovery, reference CRUD UI, citation insertion, bibliography,
+  network client, analysis worker, formatter, export path, or non-reference
+  durable database is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -325,7 +332,11 @@ Phase 17 implements the Rust-owned local store in
 SQLite, indexes UUID/citekey/schema fields, serializes writes with immediate
 transactions, and validates stored payloads on every read. Production path
 policy is `<app_data_dir>/references.sqlite3`; Rust must resolve the app-data
-directory when a future runtime workflow initializes the store.
+directory before opening the production store.
+
+Phase 18 initializes that store as managed Tauri state solely for the typed
+`resolve_citation` path documented in `maintainers/CITATION_NODE.md`. The
+frontend receives no full record data, and no reference CRUD command exists.
 
 ---
 
@@ -353,6 +364,12 @@ Rules:
 - A citation node whose attrs do not match the current schema is a migration case, not a silent render case.
 - Invalid citation attrs must fail closed with a validation or migration error.
 - Rendered citation text may be cached for UI performance only if it is explicitly marked as disposable display cache. It is not source data.
+
+Phase 18 implements this boundary with exact Rust attrs validation, nested
+document scanning, local-store resolution, typed IPC, and explicit Tiptap
+display states. The current `[@citekey]` marker confirms resolution for the
+editor only; it is not complete APA output. Citation insertion, bibliography
+generation, consistency checks, and export remain later work.
 
 Relevant invariant: `INV-04` in `INVARIANTS.md`.
 
