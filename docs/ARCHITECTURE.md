@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 20 is deliberately smaller than the
+The implemented application through Phase 21 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -71,6 +71,9 @@ full system described in this architecture:
   bibliography of validated reference records. The pure check reports missing,
   orphaned, and duplicate citekeys without reading the complete shared library
   or mutating either input.
+- Rust owns one HTTPS-only network client with controlled application identity,
+  explicit connect/request timeouts, bounded construction failures, and no
+  request method yet. Tauri setup registers it as managed Rust state.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -86,8 +89,8 @@ full system described in this architecture:
   the current document.
 - The current workspace does not expose open/save controls yet. No close command,
   autosave, recovery, reference CRUD UI, citation insertion, rendered
-  bibliography workflow, network client, analysis worker, formatter, export
-  path, or non-reference durable database is implemented.
+  bibliography workflow, provider metadata lookup, analysis worker, formatter,
+  export path, or non-reference durable database is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -552,6 +555,12 @@ External API calls do not each open independent HTTP clients. Rust owns a centra
 - Logging policy that avoids secrets and sensitive document text.
 
 This belongs to the network client, not to individual features. Feature code must not bypass it by creating ad hoc HTTP clients.
+
+Phase 21 implements the construction boundary documented in
+`maintainers/NETWORK_CLIENT.md`. Rust builds one HTTPS-only client during
+startup with controlled User-Agent and timeout policy. It exposes no request
+operation yet, so provider lookup, rate limiting, backoff, and offline
+classification remain Phase 22 behavior.
 
 Relevant invariant: `INV-10` in `INVARIANTS.md`.
 

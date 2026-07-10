@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 20 are complete. Phase 21 is
-the next implementation phase; the centralized network client has not started.
+**Current execution checkpoint:** Phases 0 through 21 are complete. Phase 22 is
+the next implementation phase; provider metadata lookup has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -47,8 +47,10 @@ workflow.
 
 Phase 20 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The
 non-binding Phase 21 readiness requirements live in
-`docs/drafts/NETWORK_CLIENT.md`; no centralized client or provider lookup path
-exists yet.
+`docs/drafts/NETWORK_CLIENT.md`, and implemented construction behavior is
+recorded in `docs/maintainers/NETWORK_CLIENT.md`. The HTTPS-only managed client
+has controlled identity and timeout policy but exposes no request operation, so
+provider lookup remains absent.
 
 ---
 

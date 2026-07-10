@@ -475,6 +475,12 @@ shape, and hosted CI evidence. The audit is recorded in
 `docs/maintainers/REALIGNMENT.md`, and bounded Phase 21 readiness requirements
 live in the non-binding `docs/drafts/NETWORK_CLIENT.md`.
 
+Phase 21 documents centralized Rust network-client construction in
+`docs/maintainers/NETWORK_CLIENT.md`. Rust tests and invariant scans enforce
+controlled User-Agent and timeout policy, HTTPS-only configuration, managed
+startup state, bounded failures, no request execution, and no ad hoc client
+authority outside the accepted network module.
+
 Recommended checks:
 
 - Markdown formatting

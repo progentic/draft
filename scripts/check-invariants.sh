@@ -25,6 +25,7 @@ main() {
   check_reference_store_contract
   check_citation_node_contract
   check_bibliography_consistency_contract
+  check_network_client_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -290,6 +291,38 @@ check_bibliography_consistency_contract() {
   assert_no_matches "Phase 19 frontend bibliography authority" \
     '\bBibliographyConsistency\b|\bbibliography_' src
   printf 'PASS Phase 19 bibliography consistency contract\n'
+}
+
+check_network_client_contract() {
+  local source_path="src-tauri/src/network/client.rs"
+  local test_path="src-tauri/src/network/client_tests.rs"
+  local initializer_path="src-tauri/src/application/network_client.rs"
+  local required_tests=(
+    current_manifest_builds_network_client
+    user_agent_policy_is_deterministic
+    request_and_connect_timeouts_are_explicit
+    invalid_application_versions_fail
+    network_client_failure_shape_is_bounded
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_file "${test_path}"
+  require_file "${initializer_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_source_pattern 'reqwest = { version = "0.13.4", default-features = false, features = ["rustls"] }' src-tauri/Cargo.toml
+  require_source_pattern '.user_agent(&policy.user_agent)' "${source_path}"
+  require_source_pattern '.connect_timeout(policy.connect_timeout)' "${source_path}"
+  require_source_pattern '.timeout(policy.request_timeout)' "${source_path}"
+  require_source_pattern '.https_only(true)' "${source_path}"
+  require_source_pattern 'app.manage(NetworkClient::new()?)' "${initializer_path}"
+  assert_no_matches "Phase 21 network request execution" \
+    '\.(?:send|execute)\s*\(' src-tauri/src/network
+  assert_no_matches "Phase 21 cookie or raw error surface" \
+    '\bcookie_store\b|\breqwest::Error\b' src-tauri/src/network src-tauri/Cargo.toml
+  printf 'PASS INV-10 centralized network client contract\n'
 }
 
 require_citation_sources() {
@@ -644,8 +677,6 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "Phase 21 network client before Phase 21" \
-    '\bNetworkClient\b|reqwest::Client::(?:new|builder)\s*\(' src-tauri/src
   assert_no_matches "INV-05 persistent job surface before Phase 26" \
     '\bBackgroundJob\b|\bPersistentJob\b|\bbackground_job\b|\bjob_state\b' \
     src src-tauri/src
@@ -689,7 +720,7 @@ require_matching_count() {
 
 check_rust_network_boundary() {
   assert_no_matches "INV-10 ad hoc Rust network clients" \
-    'reqwest::Client::new\s*\(|reqwest::get\s*\(|ureq::|hyper::Client' \
+    '\breqwest\b|\bureq\b|hyper::Client' \
     --glob '!network/**' --glob '!src-tauri/src/network/**' src-tauri/src
 }
 

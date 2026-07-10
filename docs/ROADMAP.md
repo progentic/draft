@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 20 are complete. Phase 21 is
-the next implementation phase; the centralized network client has not started.
+**Current execution checkpoint:** Phases 0 through 21 are complete. Phase 22 is
+the next implementation phase; provider metadata lookup has not started.
 
 ---
 

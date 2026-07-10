@@ -385,6 +385,6 @@ Every architecture PR must answer:
 - Decide and pin the Python dependency manager before adding a third-party
   helper dependency.
 - Keep the implemented document-envelope, reference-record, reference-store,
-  citation-node, and bibliography-consistency requirements non-binding until
-  the contract lifecycle permits acceptance. Create Python-helper and
-  formatting drafts in their owning phases.
+  citation-node, bibliography-consistency, and network-client requirements
+  non-binding until the contract lifecycle permits acceptance. Create
+  Python-helper and formatting drafts in their owning phases.

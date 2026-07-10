@@ -67,6 +67,7 @@ check_required_sources() {
     src-tauri/src/commands/citation_resolution.rs
     src-tauri/src/commands/document_save.rs
     src-tauri/src/commands/worker_cancellation.rs
+    src-tauri/src/application/network_client.rs
     src-tauri/src/documents/atomic_write.rs
     src-tauri/src/documents/dialog.rs
     src-tauri/src/documents/envelope.rs
@@ -79,6 +80,9 @@ check_required_sources() {
     src-tauri/src/citations/resolution.rs
     src-tauri/src/citations/resolution_tests.rs
     src-tauri/src/events/runtime_status.rs
+    src-tauri/src/network/client.rs
+    src-tauri/src/network/client_tests.rs
+    src-tauri/src/network/mod.rs
     src-tauri/src/references/mod.rs
     src-tauri/src/references/record.rs
     src-tauri/src/references/store.rs

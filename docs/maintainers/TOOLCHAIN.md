@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 20 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 21 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -17,7 +17,7 @@ Phase 15, and Phase 20 audits are recorded in
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
-centralized network client, release automation, or packaging.
+provider metadata lookup, release automation, or packaging.
 
 ## Toolchain decisions
 
@@ -30,6 +30,8 @@ centralized network client, release automation, or packaging.
   parent directory on Unix.
 - `rusqlite` with bundled SQLite provides cross-platform local reference
   persistence without depending on a system SQLite installation.
+- `reqwest` 0.13.4 with only its Rustls feature provides the centralized
+  HTTPS-only client without cookie or system-proxy features.
 - A Rust `Mutex<HashMap<...>>` serializes process-local document handle
   ownership without introducing persistence.
 - A separate Rust `Mutex<()>` serializes document open/save lifecycle
@@ -103,8 +105,8 @@ The verifier runs:
 - React/Tiptap workspace plus typed command, event, cancellation, citation,
   and document client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
-  registry/persistence/atomic-write/citation/bibliography scans, cross-bridge
-  name parity, and tests
+  registry/persistence/atomic-write/citation/bibliography/network scans,
+  cross-bridge name parity, and tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

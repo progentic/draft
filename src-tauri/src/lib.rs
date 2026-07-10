@@ -3,6 +3,7 @@ pub mod citations;
 mod commands;
 pub mod documents;
 mod events;
+pub mod network;
 pub mod references;
 pub mod workers;
 
@@ -12,6 +13,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            application::network_client::initialize_network_client(app)?;
             application::reference_store::initialize_reference_store(app)?;
             Ok(())
         })
