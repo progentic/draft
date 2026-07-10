@@ -369,12 +369,19 @@ check_wiki_sources() {
   local home='docs/wiki/Home.md'
   local workspace='docs/wiki/Workspace.md'
 
-  require_document_text "${home}" '(Workspace.md)'
-  require_document_text "${home}" '(Troubleshooting.md)'
-  require_document_text "${home}" '(Current-Limitations.md)'
-  require_document_text "${workspace}" '(Troubleshooting.md)'
-  require_document_text "${workspace}" '(Current-Limitations.md)'
+  require_document_text "${home}" '(Workspace)'
+  require_document_text "${home}" '(Troubleshooting)'
+  require_document_text "${home}" '(Current-Limitations)'
+  require_document_text "${workspace}" '(Troubleshooting)'
+  require_document_text "${workspace}" '(Current-Limitations)'
   require_document_text docs/DOCUMENTATION.md 'canonical source for the public GitHub Wiki'
+  reject_document_pattern \
+    '\]\([^)]*\.md\)' \
+    'Wiki links must use extensionless GitHub Wiki page names' \
+    docs/wiki/Current-Limitations.md \
+    docs/wiki/Home.md \
+    docs/wiki/Troubleshooting.md \
+    docs/wiki/Workspace.md
 }
 
 check_visible_error_recovery() {
@@ -448,14 +455,14 @@ reject_document_pattern() {
   local status
 
   if rg --line-number "${pattern}" "${documents[@]}"; then
-    echo "Documentation contains forbidden proposal-state language: ${message}" >&2
+    echo "Documentation contains forbidden content: ${message}" >&2
     return 1
   else
     status=$?
   fi
 
   if [[ "${status}" -ne 1 ]]; then
-    echo 'Proposal-state documentation scan could not run' >&2
+    echo 'Documentation exclusion scan could not run' >&2
     return "${status}"
   fi
 }

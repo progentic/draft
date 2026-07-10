@@ -8,9 +8,9 @@ desktop core is available. Your editor content is temporary at this stage.
 
 ## Start Here
 
-- [Using the workspace](Workspace.md)
-- [Troubleshooting](Troubleshooting.md)
-- [Current limitations](Current-Limitations.md)
+- [Using the workspace](Workspace)
+- [Troubleshooting](Troubleshooting)
+- [Current limitations](Current-Limitations)
 
 ## Before You Begin
 

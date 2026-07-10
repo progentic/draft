@@ -35,7 +35,7 @@ the desktop core status:
 - `Core v<version>` when the connection is ready; or
 - a specific unavailable message when startup or status validation fails.
 
-See [Troubleshooting](Troubleshooting.md) for recovery steps.
+See [Troubleshooting](Troubleshooting) for recovery steps.
 
 ## Protect Your Work
 
@@ -43,5 +43,5 @@ The current interface does not create, open, save, close, or reopen document
 files. Reloading or closing DRAFT discards editor changes. Keep important text
 in another saved document until file controls are available.
 
-See [Current limitations](Current-Limitations.md) for the complete current
+See [Current limitations](Current-Limitations) for the complete current
 workflow boundary.
