@@ -45,3 +45,5 @@ in another saved document until file controls are available.
 
 See [Current limitations](Current-Limitations) for the complete current
 workflow boundary.
+
+Return to [Home](Home).
