@@ -290,8 +290,22 @@ mod tests {
         assert_eq!(
             reopened,
             OpenDocumentOutcome::Opened {
-                envelope: validated_envelope(updated),
+                envelope: validated_envelope(updated.clone()),
             },
+        );
+        assert_eq!(
+            open_document(&registry, Some(target.path().to_owned())),
+            Err(OpenDocumentError::Registry {
+                cause: DocumentRegistryError::AlreadyOpen,
+            }),
+        );
+        assert_eq!(
+            registry.close(document_id(&updated)),
+            Ok(validated_envelope(updated.clone())),
+        );
+        assert_eq!(
+            registry.close(document_id(&updated)),
+            Err(DocumentRegistryError::NotOpen),
         );
     }
 
