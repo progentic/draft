@@ -1,6 +1,8 @@
 import type { Editor } from "@tiptap/react";
 import { useEditorState } from "@tiptap/react";
 import type { LucideIcon } from "lucide-react";
+import type { FocusEvent, KeyboardEvent } from "react";
+import { useLayoutEffect, useRef } from "react";
 import {
   Bold,
   Heading1,
@@ -27,6 +29,7 @@ interface ToolbarButtonProps {
 }
 
 type ToolbarState = typeof EMPTY_TOOLBAR_STATE;
+type ToolbarNavigationKey = "ArrowLeft" | "ArrowRight" | "End" | "Home";
 
 const EMPTY_TOOLBAR_STATE = {
   blockquote: false,
@@ -43,9 +46,22 @@ const EMPTY_TOOLBAR_STATE = {
 
 export function EditorToolbar(props: EditorToolbarProps) {
   const state = useToolbarState(props.editor);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => normalizeToolbarTabStop(toolbarRef.current), [
+    state.canRedo,
+    state.canUndo,
+  ]);
 
   return (
-    <div className="editor-toolbar" role="toolbar" aria-label="Text formatting">
+    <div
+      ref={toolbarRef}
+      className="editor-toolbar"
+      role="toolbar"
+      aria-label="Text formatting"
+      aria-orientation="horizontal"
+      onKeyDown={navigateToolbar}
+    >
       <HistoryTools editor={props.editor} state={state} />
       <span className="toolbar-separator" aria-hidden="true" />
       <InlineTools editor={props.editor} state={state} />
@@ -57,7 +73,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
 
 function HistoryTools(props: { editor: Editor | null; state: ToolbarState }) {
   return (
-    <div className="toolbar-group" aria-label="History">
+    <div className="toolbar-group" role="group" aria-label="History">
       <ToolbarButton
         disabled={!props.state.canUndo}
         icon={Undo2}
@@ -76,7 +92,7 @@ function HistoryTools(props: { editor: Editor | null; state: ToolbarState }) {
 
 function InlineTools(props: { editor: Editor | null; state: ToolbarState }) {
   return (
-    <div className="toolbar-group" aria-label="Inline formatting">
+    <div className="toolbar-group" role="group" aria-label="Inline formatting">
       <ToolbarButton
         active={props.state.bold}
         icon={Bold}
@@ -101,7 +117,7 @@ function InlineTools(props: { editor: Editor | null; state: ToolbarState }) {
 
 function StructureTools(props: { editor: Editor | null; state: ToolbarState }) {
   return (
-    <div className="toolbar-group" aria-label="Structure">
+    <div className="toolbar-group" role="group" aria-label="Structure">
       <ToolbarButton
         active={props.state.headingOne}
         icon={Heading1}
@@ -144,14 +160,90 @@ function ToolbarButton(props: ToolbarButtonProps) {
       className="icon-button icon-button--toolbar"
       type="button"
       aria-label={props.label}
-      aria-pressed={props.active ?? false}
+      aria-pressed={props.active}
+      data-toolbar-button=""
       disabled={props.disabled}
       title={props.label}
       onClick={props.onPress}
+      onFocus={claimToolbarTabStop}
     >
       <Icon aria-hidden="true" size={17} strokeWidth={1.9} />
     </button>
   );
+}
+
+function navigateToolbar(event: KeyboardEvent<HTMLDivElement>) {
+  if (
+    !isToolbarNavigationKey(event.key) ||
+    !(event.target instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const buttons = enabledToolbarButtons(event.currentTarget);
+  const currentIndex = buttons.indexOf(event.target);
+  if (currentIndex < 0) {
+    return;
+  }
+
+  event.preventDefault();
+  focusToolbarButton(buttons, nextToolbarIndex(event.key, currentIndex, buttons.length));
+}
+
+function claimToolbarTabStop(event: FocusEvent<HTMLButtonElement>) {
+  const toolbar = event.currentTarget.closest<HTMLDivElement>('[role="toolbar"]');
+  if (toolbar) {
+    setToolbarTabStop(toolbarButtons(toolbar), event.currentTarget);
+  }
+}
+
+function normalizeToolbarTabStop(toolbar: HTMLDivElement | null) {
+  if (!toolbar) {
+    return;
+  }
+
+  const buttons = toolbarButtons(toolbar);
+  const current = buttons.find((button) => button.tabIndex === 0 && !button.disabled);
+  const fallback = buttons.find((button) => !button.disabled);
+  setToolbarTabStop(buttons, current ?? fallback);
+}
+
+function focusToolbarButton(buttons: HTMLButtonElement[], targetIndex: number) {
+  const target = buttons[targetIndex];
+  if (target) {
+    setToolbarTabStop(buttons, target);
+    target.focus();
+  }
+}
+
+function setToolbarTabStop(
+  buttons: HTMLButtonElement[],
+  target: HTMLButtonElement | undefined,
+) {
+  buttons.forEach((button) => {
+    button.tabIndex = button === target ? 0 : -1;
+  });
+}
+
+function toolbarButtons(toolbar: HTMLDivElement) {
+  return Array.from(toolbar.querySelectorAll<HTMLButtonElement>("[data-toolbar-button]"));
+}
+
+function enabledToolbarButtons(toolbar: HTMLDivElement) {
+  return toolbarButtons(toolbar).filter((button) => !button.disabled);
+}
+
+function nextToolbarIndex(key: ToolbarNavigationKey, current: number, count: number) {
+  if (key === "Home" || key === "End") {
+    return key === "Home" ? 0 : count - 1;
+  }
+
+  const step = key === "ArrowRight" ? 1 : -1;
+  return (current + step + count) % count;
+}
+
+function isToolbarNavigationKey(key: string): key is ToolbarNavigationKey {
+  return key === "ArrowLeft" || key === "ArrowRight" || key === "Home" || key === "End";
 }
 
 function useToolbarState(editor: Editor | null) {

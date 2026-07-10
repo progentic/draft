@@ -61,6 +61,52 @@ describe("DRAFT workspace shell", () => {
     expect(boldButton.getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("exposes a horizontal formatting toolbar with one Tab entry", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toolbar = screen.getByRole("toolbar", { name: "Text formatting" });
+    const outlineEntry = screen.getByRole("button", { name: "H1Untitled document" });
+    const undoButton = screen.getByRole("button", { name: "Undo" });
+    const boldButton = screen.getByRole("button", { name: "Bold" });
+    const enabledButtons = Array.from(
+      toolbar.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+    );
+
+    expect(toolbar.getAttribute("aria-orientation")).toBe("horizontal");
+    expect(enabledButtons.filter((button) => button.tabIndex === 0)).toEqual([boldButton]);
+    expect(undoButton.hasAttribute("aria-pressed")).toBe(false);
+
+    outlineEntry.focus();
+    await user.tab();
+    expect(document.activeElement).toBe(boldButton);
+  });
+
+  it("moves toolbar focus with horizontal navigation keys", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const boldButton = screen.getByRole("button", { name: "Bold" });
+    const italicButton = screen.getByRole("button", { name: "Italic" });
+    const blockQuoteButton = screen.getByRole("button", { name: "Block quote" });
+
+    boldButton.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(italicButton);
+
+    await user.keyboard("{End}");
+    expect(document.activeElement).toBe(blockQuoteButton);
+
+    await user.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(boldButton);
+
+    await user.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(blockQuoteButton);
+
+    await user.keyboard("{Home}");
+    expect(document.activeElement).toBe(boldButton);
+  });
+
   it.each([
     ["transport", "Core unavailable"],
     ["command", "Core event failed"],
