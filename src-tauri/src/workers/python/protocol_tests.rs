@@ -1,5 +1,7 @@
 use serde_json::{Value, json};
 
+use crate::workers::python::TextAnalysisFindingCode;
+
 use super::*;
 
 #[test]
@@ -35,7 +37,12 @@ fn matching_success_response_is_validated() {
     let request = request("Résumé");
     let response = success_response(&request, 8);
 
-    assert_eq!(decode_success(&request, &response).unwrap().utf8_bytes(), 8);
+    assert_eq!(
+        decode_contract_probe_success(&request, &response)
+            .unwrap()
+            .utf8_bytes(),
+        8
+    );
 }
 
 #[test]
@@ -45,11 +52,11 @@ fn unknown_or_malformed_success_output_fails_closed() {
     response["unexpected"] = Value::Bool(true);
 
     assert_eq!(
-        decode_success(&request, &serde_json::to_vec(&response).unwrap()),
+        decode_contract_probe_success(&request, &serde_json::to_vec(&response).unwrap()),
         Err(PythonHelperProtocolError::InvalidSuccess)
     );
     assert_eq!(
-        decode_success(&request, b"not-json"),
+        decode_contract_probe_success(&request, b"not-json"),
         Err(PythonHelperProtocolError::InvalidSuccess)
     );
 }
@@ -61,7 +68,7 @@ fn response_identity_and_versions_must_match_request() {
         let mut response = success_value(&request, 4);
         response[field] = json!(2);
         assert_eq!(
-            decode_success(&request, &serde_json::to_vec(&response).unwrap()),
+            decode_contract_probe_success(&request, &serde_json::to_vec(&response).unwrap()),
             Err(PythonHelperProtocolError::ResponseMismatch)
         );
     }
@@ -69,7 +76,7 @@ fn response_identity_and_versions_must_match_request() {
     let mut response = success_value(&request, 4);
     response["requestId"] = json!(Uuid::new_v4());
     assert_eq!(
-        decode_success(&request, &serde_json::to_vec(&response).unwrap()),
+        decode_contract_probe_success(&request, &serde_json::to_vec(&response).unwrap()),
         Err(PythonHelperProtocolError::ResponseMismatch)
     );
 }
@@ -78,7 +85,74 @@ fn response_identity_and_versions_must_match_request() {
 fn impossible_contract_probe_result_fails_validation() {
     let request = request("text");
     assert_eq!(
-        decode_success(&request, &success_response(&request, 5)),
+        decode_contract_probe_success(&request, &success_response(&request, 5)),
+        Err(PythonHelperProtocolError::InvalidSuccess)
+    );
+}
+
+#[test]
+fn text_analysis_request_is_versioned_and_allowlisted() {
+    let request =
+        PythonHelperRequest::text_analysis(TextAnalysisInput::new("Review this.").unwrap());
+    let value = serde_json::to_value(request).unwrap();
+
+    assert_eq!(value["protocolVersion"], 1);
+    assert_eq!(value["helper"], "text_analysis");
+    assert_eq!(value["helperVersion"], 1);
+    assert_eq!(value["input"]["locale"], "en-US");
+}
+
+#[test]
+fn text_analysis_success_shape_is_strict_and_typed() {
+    let request = PythonHelperRequest::text_analysis(TextAnalysisInput::new("Café café").unwrap());
+    let response = json!({
+        "protocolVersion": 1,
+        "requestId": request.request_id,
+        "helper": "text_analysis",
+        "helperVersion": 1,
+        "status": "ok",
+        "result": {
+            "findings": [{
+                "code": "repeated_word",
+                "startByte": 6,
+                "endByte": 11
+            }]
+        }
+    });
+
+    let result =
+        decode_text_analysis_success(&request, &serde_json::to_vec(&response).unwrap()).unwrap();
+    assert_eq!(
+        result.findings()[0].code(),
+        TextAnalysisFindingCode::RepeatedWord
+    );
+
+    for field in ["replacement", "sourceText"] {
+        let mut invalid = response.clone();
+        invalid["result"]["findings"][0][field] = json!("must fail");
+        assert_eq!(
+            decode_text_analysis_success(&request, &serde_json::to_vec(&invalid).unwrap()),
+            Err(PythonHelperProtocolError::InvalidSuccess)
+        );
+    }
+}
+
+#[test]
+fn unknown_text_analysis_code_fails_closed() {
+    let request = PythonHelperRequest::text_analysis(TextAnalysisInput::new("review").unwrap());
+    let response = json!({
+        "protocolVersion": 1,
+        "requestId": request.request_id,
+        "helper": "text_analysis",
+        "helperVersion": 1,
+        "status": "ok",
+        "result": {
+            "findings": [{ "code": "quality_score", "startByte": 0, "endByte": 6 }]
+        }
+    });
+
+    assert_eq!(
+        decode_text_analysis_success(&request, &serde_json::to_vec(&response).unwrap()),
         Err(PythonHelperProtocolError::InvalidSuccess)
     );
 }

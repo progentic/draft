@@ -93,6 +93,10 @@ full system described in this architecture:
   closed allowlist, isolated environment, bounded standard streams, timeout,
   cooperative cancellation, child reaping, and typed output validation. Its
   contract probe proves the process boundary but performs no product analysis.
+- Rust validates five deterministic text-analysis finding codes and UTF-8 byte
+  ranges returned by the helper, then supplies fixed categories, severities,
+  titles, and explanations. Findings are immutable, non-persistent review
+  prompts with no replacement or apply authority.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -110,8 +114,9 @@ full system described in this architecture:
   autosave, recovery, reference CRUD UI, citation insertion, rendered
   bibliography workflow, provider lookup or browser-handoff control, production
   model provider, analysis start command, frontend analysis listener, visible
-  analysis or text-analysis workflow, PDF import control or watcher, job
-  scheduler or processing worker, formatter, or export path is implemented.
+  analysis workflow, visible text-analysis issue cards or controls, PDF import
+  control or watcher, job scheduler or processing worker, formatter, or export
+  path is implemented.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -174,6 +179,13 @@ Ownership:
 - TypeScript/React displays issues, explanations, and proposed edits.
 
 Text-analysis may suggest changes. Applying changes to the document must go through the same document mutation path as any other edit.
+
+Phase 29 implements five narrow local review heuristics: adjacent repeated
+words, sentences over 30 lexical words, all-capital words of at least five
+letters, repeated substantial sentence openers, and mixed singular/plural
+first-person pronouns. Python returns only closed codes and UTF-8 byte ranges.
+Rust validates those ranges and owns all explanatory wording. No score,
+replacement, persistence, command, event, frontend, or edit path exists.
 
 ---
 

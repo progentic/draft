@@ -3,14 +3,24 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use super::text_analysis::{
+    TextAnalysisInput, TextAnalysisResult, TextAnalysisWireResult, validate_text_analysis_result,
+};
+
 /// Current helper protocol version accepted across the Rust/Python boundary.
 pub const PYTHON_HELPER_PROTOCOL_VERSION: u16 = 1;
 
 /// Current version of the allowlisted protocol-only contract probe.
 pub const CONTRACT_PROBE_VERSION: u16 = 1;
 
+/// Current version of the deterministic text-analysis helper.
+pub const TEXT_ANALYSIS_VERSION: u16 = 1;
+
 /// Maximum UTF-8 input text accepted by the contract probe.
 pub const MAX_CONTRACT_PROBE_TEXT_BYTES: usize = 32 * 1024;
+
+/// Maximum UTF-8 input text accepted by deterministic text analysis.
+pub const MAX_TEXT_ANALYSIS_TEXT_BYTES: usize = 32 * 1024;
 
 /// Maximum serialized request written to helper stdin.
 pub const MAX_PYTHON_HELPER_REQUEST_BYTES: usize = 64 * 1024;
@@ -19,6 +29,7 @@ pub const MAX_PYTHON_HELPER_REQUEST_BYTES: usize = 64 * 1024;
 #[serde(rename_all = "snake_case")]
 pub(crate) enum PythonHelperKind {
     ContractProbe,
+    TextAnalysis,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -85,14 +96,14 @@ pub(crate) enum PythonHelperProtocolError {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-struct PythonHelperSuccessResponse {
+struct PythonHelperSuccessResponse<R> {
     protocol_version: u16,
     request_id: Uuid,
     helper: PythonHelperKind,
     helper_version: u16,
     #[serde(rename = "status")]
     _status: PythonHelperSuccessStatus,
-    result: ContractProbeWireResult,
+    result: R,
 }
 
 #[derive(Deserialize)]
@@ -165,6 +176,23 @@ impl PythonHelperRequest {
     pub(crate) fn expected_utf8_bytes(&self) -> usize {
         self.input.text.len()
     }
+
+    pub(crate) fn text_analysis(input: TextAnalysisInput) -> Self {
+        Self {
+            protocol_version: PYTHON_HELPER_PROTOCOL_VERSION,
+            request_id: Uuid::new_v4(),
+            helper: PythonHelperKind::TextAnalysis,
+            helper_version: TEXT_ANALYSIS_VERSION,
+            input: PythonHelperRequestInput {
+                text: input.text,
+                locale: input.locale,
+            },
+        }
+    }
+
+    pub(crate) fn text(&self) -> &str {
+        &self.input.text
+    }
 }
 
 impl fmt::Display for PythonHelperRequestError {
@@ -189,12 +217,13 @@ pub(crate) fn encode_request(
     Ok(encoded)
 }
 
-pub(crate) fn decode_success(
+pub(crate) fn decode_contract_probe_success(
     request: &PythonHelperRequest,
     response: &[u8],
 ) -> Result<ContractProbeResult, PythonHelperProtocolError> {
-    let response = serde_json::from_slice::<PythonHelperSuccessResponse>(response)
-        .map_err(|_| PythonHelperProtocolError::InvalidSuccess)?;
+    let response =
+        serde_json::from_slice::<PythonHelperSuccessResponse<ContractProbeWireResult>>(response)
+            .map_err(|_| PythonHelperProtocolError::InvalidSuccess)?;
     require_matching_response(request, &response)?;
     if response.result.utf8_bytes != request.expected_utf8_bytes() {
         return Err(PythonHelperProtocolError::InvalidSuccess);
@@ -202,6 +231,18 @@ pub(crate) fn decode_success(
     Ok(ContractProbeResult {
         utf8_bytes: response.result.utf8_bytes,
     })
+}
+
+pub(crate) fn decode_text_analysis_success(
+    request: &PythonHelperRequest,
+    response: &[u8],
+) -> Result<TextAnalysisResult, PythonHelperProtocolError> {
+    let response =
+        serde_json::from_slice::<PythonHelperSuccessResponse<TextAnalysisWireResult>>(response)
+            .map_err(|_| PythonHelperProtocolError::InvalidSuccess)?;
+    require_matching_response(request, &response)?;
+    validate_text_analysis_result(request.text(), response.result)
+        .map_err(|_| PythonHelperProtocolError::InvalidSuccess)
 }
 
 pub(crate) fn decode_failure(
@@ -215,9 +256,9 @@ pub(crate) fn decode_failure(
     Ok(response.code)
 }
 
-fn require_matching_response(
+fn require_matching_response<R>(
     request: &PythonHelperRequest,
-    response: &PythonHelperSuccessResponse,
+    response: &PythonHelperSuccessResponse<R>,
 ) -> Result<(), PythonHelperProtocolError> {
     if response.protocol_version == request.protocol_version
         && response.request_id == request.request_id

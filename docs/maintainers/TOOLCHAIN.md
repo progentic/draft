@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 28 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 29 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -26,14 +26,20 @@ standard streams, timeout, cancellation, and child reaping. The current
 `contract_probe` verifies only that boundary and is not a product analysis
 feature.
 
+The helper allowlist now also includes deterministic `text_analysis` version 1.
+Python returns only five closed review codes and UTF-8 ranges; Rust validates
+them and supplies fixed grammar, clarity, tone, cohesion, and voice review
+wording. No score, replacement, persistence, command, frontend, or mutation
+path is added.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
 filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
-text-analysis findings or controls, packaged Python runtime discovery, release
-automation, or packaging.
+visible text-analysis controls, finding persistence or accepted-edit workflow,
+packaged Python runtime discovery, release automation, or packaging.
 
 ## Toolchain decisions
 
@@ -133,7 +139,8 @@ The verifier runs:
   document, and external-access client tests
 - Rust formatting, Clippy, compile checks, command/event/cancellation/envelope/
   registry/persistence/atomic-write/citation/bibliography/network/browser/PDF
-  intake/job/AI/Python-helper scans, cross-bridge name parity, and tests
+  intake/job/AI/Python-helper/text-analysis scans, cross-bridge name parity, and
+  tests
 - TypeScript type checking and a frontend production build
 - Python unit tests without bytecode or test caches
 - Bash syntax checks

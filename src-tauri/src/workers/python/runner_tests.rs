@@ -5,7 +5,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::workers::cancellation::{CancelWorkerOutcome, WorkerCancellationRegistry};
+use crate::workers::{
+    cancellation::{CancelWorkerOutcome, WorkerCancellationRegistry},
+    python::{TextAnalysisCategory, TextAnalysisFinding, TextAnalysisFindingCode},
+};
 
 use super::*;
 
@@ -36,6 +39,54 @@ fn isolated_worker_round_trip_is_typed_and_unicode_safe() {
         registry.cancel(worker_id),
         Ok(CancelWorkerOutcome::AlreadyEnded)
     );
+}
+
+#[test]
+fn text_analysis_round_trip_returns_explainable_non_destructive_findings() {
+    let runner = PythonHelperRunner::new(python_executable(), package_root()).unwrap();
+    let registry = WorkerCancellationRegistry::new();
+    let registration = registry.register().unwrap();
+    let input =
+        TextAnalysisInput::new("Café café. Because this is IMPORTANT. Because we revise it.")
+            .unwrap();
+
+    let result =
+        tauri::async_runtime::block_on(runner.run_text_analysis(input, registration)).unwrap();
+
+    let categories = result
+        .findings()
+        .iter()
+        .map(TextAnalysisFinding::category)
+        .collect::<Vec<_>>();
+    assert!(categories.contains(&TextAnalysisCategory::Grammar));
+    assert!(categories.contains(&TextAnalysisCategory::Tone));
+    assert!(categories.contains(&TextAnalysisCategory::Cohesion));
+    assert!(result.findings().iter().all(|finding| {
+        !finding.title().is_empty()
+            && !finding.explanation().contains("Café")
+            && finding.start_byte() < finding.end_byte()
+    }));
+}
+
+#[test]
+fn overlapping_text_analysis_codes_keep_deterministic_wire_order() {
+    let runner = PythonHelperRunner::new(python_executable(), package_root()).unwrap();
+    let registry = WorkerCancellationRegistry::new();
+    let registration = registry.register().unwrap();
+
+    let result = tauri::async_runtime::block_on(runner.run_text_analysis(
+        TextAnalysisInput::new("LOUDER LOUDER").unwrap(),
+        registration,
+    ))
+    .unwrap();
+
+    assert!(
+        result
+            .findings()
+            .iter()
+            .any(|finding| finding.code() == TextAnalysisFindingCode::RepeatedWord)
+    );
+    assert_eq!(result.findings().len(), 3);
 }
 
 #[test]

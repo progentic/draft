@@ -75,6 +75,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-12` | Accepted | Bash is local/CI orchestration only. The product runtime must not use Bash for document processing, credential handling, external network access, or user-supplied path execution. | `ARCHITECTURE.md` §4.4 and `GOVERNANCE.md` §8 | Phase 2 runs Bash syntax checks and scans Rust for Bash runtime execution. `shellcheck` and `shfmt` run when installed. | The Phase 3 `verify` job runs Bash syntax and runtime-boundary checks. Optional tools run when present. |
 | `INV-13` | Accepted | Local verification and GitHub Actions verification use the same underlying scripts where practical. A check that blocks CI must be runnable locally unless it depends on GitHub metadata. | `ARCHITECTURE.md` §14 and `GOVERNANCE.md` §8 | The root `justfile` delegates to repository scripts, with direct Bash fallbacks. | `.github/workflows/verify.yml` calls `scripts/verify.sh`; `scripts/check-ci-local-parity.sh` enforces that mapping. |
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
+| `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
 
 ---
 
@@ -561,6 +562,35 @@ bash scripts/check-invariants.sh
 
 ---
 
+### INV-15: Review-Only Text Analysis
+
+Text-analysis findings identify passages for human review. They do not prove an
+error and do not authorize a change. Phase 29 helper output contains only a
+closed code and a half-open UTF-8 byte range. Rust rejects unknown, duplicate,
+unsorted, excessive, reversed, out-of-bounds, or non-character-boundary
+findings before constructing an immutable result.
+
+Rust owns each code's category, severity, title, and explanation. Python cannot
+inject source text or user-facing prose. No finding contains a score,
+replacement, apply instruction, document identity, source path, citation,
+reference, or persistence field.
+
+The current result is process-local and has no Tauri command, event, frontend
+model, durable store, or document mutation path. Any future accepted-edit flow
+must require an explicit user action and pass through the existing Rust-owned
+document mutation and save boundaries.
+
+Minimum verification:
+
+```bash
+cargo test --manifest-path src-tauri/Cargo.toml --locked --offline workers::python::
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=python \
+  python3 -m unittest discover -s python/tests -v
+bash scripts/check-invariants.sh
+```
+
+---
+
 ## 5. Required Local Command Surface
 
 The root `justfile` must expose these commands:
@@ -661,10 +691,11 @@ Phase 21 centralized network-client construction, Phase 22 metadata lookup and
 request policy, Phase 23 external browser handoff, direct frontend opener APIs,
 Phase 24 PDF intake and stable-write confirmation, Phase 26 persistent job
 ownership and recovery, Phase 27 bounded AI orchestration and generated-output
-provenance, Phase 28 Python helper protocol/process confinement, ad hoc Rust
-network clients, and Bash invocation from product runtime. The verifier also
-checks locked offline builds, tests, required source visibility, generated-file
-hygiene, and documentation sanity.
+provenance, Phase 28 Python helper protocol/process confinement, Phase 29
+review-only text-analysis findings, ad hoc Rust network clients, and Bash
+invocation from product runtime. The verifier also checks locked offline builds,
+tests, required source visibility, generated-file hygiene, and documentation
+sanity.
 
 Phase 3 runs that same aggregate command in `.github/workflows/verify.yml`:
 

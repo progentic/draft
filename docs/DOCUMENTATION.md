@@ -536,6 +536,15 @@ environment, timeout, cancellation, kill/reap behavior, typed failures, empty
 Python dependency set, and the absence of networking, credentials, persistence,
 mutation, Tauri, frontend, or product text-analysis authority.
 
+Phase 29 documents deterministic text-review findings in
+`docs/maintainers/TEXT_ANALYSIS.md`. The non-binding requirements remain in
+`docs/drafts/TEXT_ANALYSIS.md`. Rust and Python tests plus invariant scans
+enforce five closed finding codes, fixed thresholds and explanations, sorted
+bounded output, UTF-8 byte-range safety, false-positive guards, deterministic
+real-process results, and the absence of scores, source copies, replacements,
+apply behavior, persistence, document mutation, Tauri, frontend, or networking
+authority.
+
 Recommended checks:
 
 - Markdown formatting

@@ -390,4 +390,5 @@ Every architecture PR must answer:
   contract lifecycle permits acceptance. The implemented Phase 26
   background-job requirements and Phase 27 AI-orchestration requirements are
   also non-binding. The implemented Phase 28 Python-helper requirements remain
-  non-binding as well. Create formatting drafts in their owning phases.
+  non-binding as well, as do the implemented Phase 29 text-analysis
+  requirements. Create formatting drafts in their owning phases.

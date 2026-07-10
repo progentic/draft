@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 28 are complete. Phase 29 is
+**Current execution checkpoint:** Phases 0 through 29 are complete. Phase 30 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -97,6 +97,14 @@ cancellation, child reaping, and output validation. The sole allowlisted
 `contract_probe` proves the boundary without adding text-analysis findings,
 Tauri or frontend controls, persistence, document mutation, networking, or a
 packaged Python runtime.
+
+Phase 29 requirements and implemented behavior are recorded in
+`docs/drafts/TEXT_ANALYSIS.md` and
+`docs/maintainers/TEXT_ANALYSIS.md`. The Python helper now emits bounded closed
+codes and UTF-8 byte ranges for five deterministic review heuristics. Rust
+validates ordering, counts, ranges, and identity, then supplies fixed
+explanations. No score, replacement, mutation, persistence, Tauri command,
+event, frontend model, or visible issue workflow exists.
 
 ---
 

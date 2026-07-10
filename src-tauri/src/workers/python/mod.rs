@@ -2,8 +2,13 @@
 
 mod protocol;
 mod runner;
+mod text_analysis;
 
 pub use protocol::{
     ContractProbeInput, ContractProbeResult, PythonHelperFailureCode, PythonHelperRequestError,
 };
 pub use runner::{PythonHelperConfigurationError, PythonHelperRunError, PythonHelperRunner};
+pub use text_analysis::{
+    TextAnalysisCategory, TextAnalysisFinding, TextAnalysisFindingCode, TextAnalysisInput,
+    TextAnalysisResult, TextAnalysisSeverity,
+};

@@ -17,8 +17,10 @@ use crate::workers::cancellation::{WorkerCancellation, WorkerRegistration};
 
 use super::protocol::{
     ContractProbeInput, ContractProbeResult, PythonHelperFailureCode, PythonHelperProtocolError,
-    PythonHelperRequest, decode_failure, decode_success, encode_request,
+    PythonHelperRequest, decode_contract_probe_success, decode_failure,
+    decode_text_analysis_success, encode_request,
 };
+use super::text_analysis::{TextAnalysisInput, TextAnalysisResult};
 
 /// Maximum helper stdout retained by the Rust process boundary.
 pub const MAX_PYTHON_HELPER_STDOUT_BYTES: usize = 64 * 1024;
@@ -127,15 +129,36 @@ impl PythonHelperRunner {
         input: ContractProbeInput,
         registration: WorkerRegistration,
     ) -> Result<ContractProbeResult, PythonHelperRunError> {
-        let cancellation = registration.cancellation();
         let request = PythonHelperRequest::contract_probe(input);
-        let encoded = encode_request(&request).map_err(map_protocol_error)?;
+        let capture = self.execute_request(&request, registration).await?;
+        let output = require_successful_output(capture)?;
+        decode_contract_probe_success(&request, &output).map_err(map_protocol_error)
+    }
+
+    /// Runs deterministic text checks without persisting or mutating input.
+    pub async fn run_text_analysis(
+        &self,
+        input: TextAnalysisInput,
+        registration: WorkerRegistration,
+    ) -> Result<TextAnalysisResult, PythonHelperRunError> {
+        let request = PythonHelperRequest::text_analysis(input);
+        let capture = self.execute_request(&request, registration).await?;
+        let output = require_successful_output(capture)?;
+        decode_text_analysis_success(&request, &output).map_err(map_protocol_error)
+    }
+
+    async fn execute_request(
+        &self,
+        request: &PythonHelperRequest,
+        registration: WorkerRegistration,
+    ) -> Result<ProcessCapture, PythonHelperRunError> {
+        let cancellation = registration.cancellation();
+        let encoded = encode_request(request).map_err(map_protocol_error)?;
         if cancellation.is_cancelled() {
             return Err(PythonHelperRunError::Cancelled);
         }
         let child = self.spawn_helper()?;
-        let capture = run_child(child, encoded, cancellation, self.program.timeout).await?;
-        classify_capture(&request, capture)
+        run_child(child, encoded, cancellation, self.program.timeout).await
     }
 
     fn spawn_helper(&self) -> Result<Child, PythonHelperRunError> {
@@ -323,16 +346,13 @@ async fn terminate_child(child: &mut Child) {
     let _ = child.wait().await;
 }
 
-fn classify_capture(
-    request: &PythonHelperRequest,
-    capture: ProcessCapture,
-) -> Result<ContractProbeResult, PythonHelperRunError> {
+fn require_successful_output(capture: ProcessCapture) -> Result<Vec<u8>, PythonHelperRunError> {
     if capture.stdout.overflowed {
         return Err(PythonHelperRunError::StdoutTooLarge);
     }
     if capture.status.success() {
         require_clean_stderr(&capture.stderr)?;
-        decode_success(request, &capture.stdout.bytes).map_err(map_protocol_error)
+        Ok(capture.stdout.bytes)
     } else {
         let code = decode_failure(&capture.stdout.bytes)
             .map_err(|_| PythonHelperRunError::ExecutionFailed)?;

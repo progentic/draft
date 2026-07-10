@@ -124,6 +124,8 @@ check_required_sources() {
     src-tauri/src/workers/python/protocol_tests.rs
     src-tauri/src/workers/python/runner.rs
     src-tauri/src/workers/python/runner_tests.rs
+    src-tauri/src/workers/python/text_analysis.rs
+    src-tauri/src/workers/python/text_analysis_tests.rs
     src-tauri/src/workers/python/worker_fixture.py
     python/draft_helpers/__init__.py
     python/draft_helpers/worker.py

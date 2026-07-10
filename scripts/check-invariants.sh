@@ -21,6 +21,7 @@ main() {
   check_event_capability
   check_worker_cancellation_contract
   check_python_helper_contract
+  check_text_analysis_contract
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -280,6 +281,90 @@ check_python_helper_contract() {
   assert_no_matches "Phase 28 frontend helper authority" \
     '\bPythonHelper\b|\bcontract_probe\b|\bContractProbe\b' src
   printf 'PASS INV-11 Phase 28 Python helper contract\n'
+}
+
+check_text_analysis_contract() {
+  local protocol_path="src-tauri/src/workers/python/protocol.rs"
+  local model_path="src-tauri/src/workers/python/text_analysis.rs"
+  local model_test_path="src-tauri/src/workers/python/text_analysis_tests.rs"
+  local runner_test_path="src-tauri/src/workers/python/runner_tests.rs"
+  local worker_path="python/draft_helpers/worker.py"
+  local python_test_path="python/tests/test_worker.py"
+  local required_rust_tests=(
+    text_analysis_request_is_versioned_and_allowlisted
+    text_analysis_success_shape_is_strict_and_typed
+    unknown_text_analysis_code_fails_closed
+    finding_codes_map_to_fixed_explainable_policies
+    unicode_ranges_must_use_utf8_character_boundaries
+    empty_reversed_and_out_of_bounds_ranges_fail_closed
+    duplicate_and_unsorted_findings_fail_closed
+    equal_ranges_follow_lexical_wire_code_order
+    excessive_finding_count_fails_closed
+    finding_model_has_no_replacement_or_source_text_field
+    text_analysis_round_trip_returns_explainable_non_destructive_findings
+    overlapping_text_analysis_codes_keep_deterministic_wire_order
+  )
+  local required_python_tests=(
+    test_text_analysis_returns_all_review_categories
+    test_text_analysis_thresholds_are_explicit
+    test_text_analysis_offsets_use_utf8_bytes
+    test_text_analysis_is_deterministic_sorted_and_bounded
+    test_text_analysis_false_positive_guards
+  )
+  local test_name
+
+  require_file "${protocol_path}"
+  require_file "${model_path}"
+  require_file "${model_test_path}"
+  require_file "${runner_test_path}"
+  require_file "${worker_path}"
+  require_file "${python_test_path}"
+  require_file docs/drafts/TEXT_ANALYSIS.md
+  require_file docs/maintainers/TEXT_ANALYSIS.md
+  for test_name in "${required_rust_tests[@]}"; do
+    require_rust_test "${test_name}" src-tauri/src/workers/python
+  done
+  for test_name in "${required_python_tests[@]}"; do
+    require_source_pattern "def ${test_name}" "${python_test_path}"
+  done
+  require_source_pattern 'TEXT_ANALYSIS_VERSION: u16 = 1' "${protocol_path}"
+  require_source_pattern 'MAX_TEXT_ANALYSIS_TEXT_BYTES: usize = 32 * 1024' "${protocol_path}"
+  require_source_pattern 'TextAnalysis,' "${protocol_path}"
+  require_source_pattern 'MAX_TEXT_ANALYSIS_FINDINGS: usize = 100' "${model_path}"
+  require_source_pattern 'text.is_char_boundary(start_byte)' "${model_path}"
+  require_source_pattern 'text.is_char_boundary(end_byte)' "${model_path}"
+  require_source_pattern 'previous >= current' "${model_path}"
+  require_source_pattern 'title: "Repeated word"' "${model_path}"
+  require_source_pattern 'title: "Long sentence"' "${model_path}"
+  require_source_pattern 'title: "Extended capital emphasis"' "${model_path}"
+  require_source_pattern 'title: "Repeated sentence opening"' "${model_path}"
+  require_source_pattern 'title: "First-person perspective shift"' "${model_path}"
+  require_source_pattern 'TEXT_ANALYSIS_HELPER = "text_analysis"' "${worker_path}"
+  require_source_pattern 'TEXT_ANALYSIS_VERSION = 1' "${worker_path}"
+  require_source_pattern 'MAX_FINDINGS = 100' "${worker_path}"
+  require_source_pattern 'MAX_FINDINGS_PER_CHECK = 20' "${worker_path}"
+  require_source_pattern 'LONG_SENTENCE_WORDS = 30' "${worker_path}"
+  require_source_pattern 'MIN_ALL_CAPS_LETTERS = 5' "${worker_path}"
+  require_source_pattern 'MIN_REPEATED_OPENER_LETTERS = 4' "${worker_path}"
+  require_source_pattern 'def _repeated_word_findings' "${worker_path}"
+  require_source_pattern 'def _long_sentence_findings' "${worker_path}"
+  require_source_pattern 'def _all_caps_findings' "${worker_path}"
+  require_source_pattern 'def _repeated_opener_findings' "${worker_path}"
+  require_source_pattern 'def _mixed_first_person_findings' "${worker_path}"
+  assert_no_matches "INV-15 replacement, scoring, or apply authority" \
+    '\b(?:replacement|suggestion|apply|quality_score|readability_score)\b' \
+    "${protocol_path}" "${model_path}" "${worker_path}"
+  assert_no_matches "INV-15 text-analysis persistence or mutation authority" \
+    '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|\bDocumentEnvelope\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
+    "${protocol_path}" "${model_path}" "${worker_path}"
+  assert_no_matches "Phase 29 Tauri, network, or detached-task authority" \
+    '#\[tauri::command\]|\btauri::|\breqwest\b|\bNetworkClient\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
+    "${protocol_path}" "${model_path}" "${worker_path}"
+  assert_no_matches "Phase 29 application or command text-analysis authority" \
+    '\bTextAnalysis\b|\btext_analysis\b' src-tauri/src/application src-tauri/src/commands
+  assert_no_matches "Phase 29 frontend text-analysis authority" \
+    '\bTextAnalysis\b|\btext_analysis\b|\bRepeatedWord\b' src
+  printf 'PASS INV-15 Phase 29 review-only text-analysis contract\n'
 }
 
 check_document_envelope_contract() {
@@ -1049,9 +1134,9 @@ require_documented_values() {
 }
 
 check_future_feature_absence_gates() {
-  assert_no_matches "Phase 29 text-analysis behavior" \
-    '\b(?:TextAnalysis|GrammarFinding|ClarityFinding|ToneFinding|CohesionFinding|VoiceFinding|analyze_text|run_text_analysis)\b' \
-    python/draft_helpers src-tauri/src/workers/python src
+  assert_no_matches "Phase 31 formatting-check behavior" \
+    '\b(?:FormattingFinding|FormattingResult|ApaStyleCheck|MlaStyleCheck|ChicagoStyleCheck|run_formatting_checks)\b' \
+    python/draft_helpers src-tauri/src src
   printf 'PASS future feature absence gates\n'
 }
 
