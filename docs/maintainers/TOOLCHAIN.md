@@ -2,19 +2,19 @@
 
 ## Current phase
 
-Phase 15 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 16 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
-open/save commands, and a hardened atomic replacement path. The Phase 5,
-Phase 10, and Phase 15 audits are recorded in
+open/save commands, a hardened atomic replacement path, and a validated
+in-memory reference record. The Phase 5, Phase 10, and Phase 15 audits are recorded in
 `docs/maintainers/REALIGNMENT.md`.
 
-This checkpoint does not include workspace file controls, a close command,
-autosave, recovery, product research or analysis workflows, release
-automation, or packaging.
+This checkpoint does not include reference persistence, workspace file
+controls, a close command, autosave, recovery, product research or analysis
+workflows, release automation, or packaging.
 
 ## Toolchain decisions
 

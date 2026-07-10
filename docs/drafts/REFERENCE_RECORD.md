@@ -2,7 +2,7 @@
 
 **Status:** Draft, non-binding
 
-**Implementation checkpoint:** Phase 16 not started
+**Implementation checkpoint:** Phase 16 complete
 
 **Owners:** Rust core
 
@@ -10,17 +10,18 @@
 
 ## Purpose
 
-This draft bounds Phase 16 to one versioned, validated, in-memory reference
-record. It does not authorize a reference store, document-envelope changes,
-citation nodes, bibliography generation, network lookup, PDF import, or
-workspace integration.
+This draft records the requirements used for Phase 16. The implemented
+checkpoint is documented in `docs/maintainers/REFERENCE_RECORD.md`. This file
+remains non-binding and does not authorize a reference store,
+document-envelope changes, citation nodes, bibliography generation, network
+lookup, PDF import, or workspace integration.
 
 The record is future reference-library source data. It is not a citation-node
 payload and must never be embedded as full metadata in the document envelope.
 
 ## Candidate Version 1 Shape
 
-Phase 16 should implement this normalized shape:
+Phase 16 implements this normalized shape:
 
 ```json
 {
@@ -68,7 +69,7 @@ remain predictable. Unknown top-level or nested fields fail validation.
 Rust is the durable validation authority. Phase 16 does not require a
 TypeScript mirror because no command or UI consumes the record yet.
 
-Phase 16 must validate:
+Phase 16 validates:
 
 - `schema_version` is the integer `1`
 - `reference_id` is a UUID
@@ -171,9 +172,9 @@ distinguish at least:
 Indexed list failures should include the failing contributor or ISBN index
 without echoing the rejected user value.
 
-## Serialization Tests
+## Implemented Serialization Tests
 
-Phase 16 tests must prove:
+Phase 16 tests prove:
 
 - the minimum valid record deserializes
 - all declared fields serialize with stable names
@@ -188,7 +189,7 @@ Tests compare parsed JSON values rather than relying on key order or whitespace.
 
 ## Explicit Phase 16 Non-goals
 
-Phase 16 must not add:
+Phase 16 does not add:
 
 - SQLite, files, a `ReferenceStore`, CRUD, or migrations
 - a Tauri command, TypeScript IPC wrapper, React state, or visible controls
@@ -204,6 +205,6 @@ remain green.
 
 ## Promotion Gate
 
-This draft may guide Phase 16 implementation but may not move to
+This draft records Phase 16 requirements but may not move to
 `docs/contracts/` until it satisfies the proposal, review, stability,
 frontmatter, and acceptance requirements in `GOVERNANCE.md` section 7.

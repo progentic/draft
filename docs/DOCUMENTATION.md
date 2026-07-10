@@ -446,6 +446,12 @@ The checkpoint evidence is recorded in `docs/maintainers/REALIGNMENT.md`, and
 the bounded Phase 16 readiness requirements live in the non-binding
 `docs/drafts/REFERENCE_RECORD.md`.
 
+Phase 16 documents the implemented Rust-owned version 1 reference record in
+`docs/maintainers/REFERENCE_RECORD.md`. Rust tests and the invariant scan enforce
+declared fields, nested validation, provenance semantics, typed failures,
+structured JSON round trips, Rust-only authority, and the absence of Phase 17
+persistence.
+
 Recommended checks:
 
 - Markdown formatting

@@ -384,7 +384,6 @@ Every architecture PR must answer:
   baseline.
 - Decide and pin the Python dependency manager before adding a third-party
   helper dependency.
-- Keep the implemented document-envelope requirements non-binding until the
-  contract lifecycle permits acceptance. Use the Phase 15 reference-record
-  readiness draft to bound Phase 16 without promoting it early. Create
+- Keep the implemented document-envelope and reference-record requirements
+  non-binding until the contract lifecycle permits acceptance. Create
   citation-node, Python-helper, and formatting drafts in their owning phases.

@@ -21,6 +21,7 @@ main() {
   check_event_capability
   check_worker_cancellation_contract
   check_document_envelope_contract
+  check_reference_record_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -216,6 +217,59 @@ require_envelope_schema_version() {
 
   if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
     printf 'FAILED Phase 11 schema version declaration\n' >&2
+    return 1
+  fi
+}
+
+check_reference_record_contract() {
+  local source_path="src-tauri/src/references/record.rs"
+  local required_tests=(
+    minimal_reference_deserializes
+    reference_serialization_is_stable
+    reference_round_trip_is_stable
+    person_and_organization_contributors_round_trip
+    partial_and_absent_issued_dates_round_trip
+    unicode_bibliographic_text_round_trip
+    supported_reference_kinds_round_trip
+    supported_contributor_roles_and_partial_names_round_trip
+    supported_resolution_states_round_trip
+    supported_provenance_sources_and_overrides_round_trip
+    nullable_bibliographic_fields_round_trip
+    missing_required_fields_fail_predictably
+    non_object_reference_fails
+    unknown_top_level_and_nested_fields_fail
+    malformed_and_unsupported_schema_versions_fail
+    malformed_identity_and_citekey_fail
+    unsupported_reference_kinds_fail
+    blank_titles_fail
+    malformed_contributors_fail
+    malformed_issued_dates_fail
+    malformed_optional_bibliographic_fields_fail
+    malformed_identifiers_fail
+    malformed_resolution_and_provenance_fail
+    reference_failure_shape_is_stable
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_reference_schema_version "${source_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${source_path}"
+  done
+  assert_no_matches "Phase 16 reference runtime authority" \
+    '(?:std|tokio)::fs|\b(?:File|OpenOptions|PathBuf|Mutex|RwLock|HashMap)\b|#\[tauri::command\]|\b(?:rusqlite|sqlx|diesel)\b' \
+    src-tauri/src/references
+  assert_no_matches "Phase 16 frontend reference authority" \
+    '\bReferenceRecord\b|\breference_record\b' src
+  printf 'PASS Phase 16 reference record contract\n'
+}
+
+require_reference_schema_version() {
+  local source_path="$1"
+  local declaration='pub const REFERENCE_RECORD_SCHEMA_VERSION: u64 = 1;'
+
+  if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
+    printf 'FAILED Phase 16 schema version declaration\n' >&2
     return 1
   fi
 }

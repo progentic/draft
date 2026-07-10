@@ -572,8 +572,9 @@ command and event placement, typed event contract coverage, Python network and
 process imports, generic Rust command errors, typed command contract coverage,
 the Phase 11 document-envelope schema and malformed-shape tests, the Phase 12
 single-live-handle registry contract, Phase 13 validated load/save, Phase 14
-atomic-save hardening, the Phase 17 reference-store absence gate, ad hoc Rust
-network clients, and Bash invocation from
+atomic-save hardening, the Phase 16 reference-record schema and malformed-shape
+tests, the Phase 17 reference-store absence gate, ad hoc Rust network clients,
+and Bash invocation from
 product runtime. The verifier also checks locked offline builds, tests,
 required source visibility, generated-file hygiene, and documentation sanity.
 

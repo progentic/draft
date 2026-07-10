@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 15 is deliberately smaller than the
+The implemented application through Phase 16 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open, and
@@ -55,6 +55,10 @@ full system described in this architecture:
 - Rust owns the version 1 document envelope, UUID identity parsing, root-shape
   validation, typed failures, and Serde round trips. Typed open/save commands
   now carry that envelope, while Rust remains the validation authority.
+- Rust owns a separate version 1 in-memory reference record with UUID identity,
+  citekey, structured contributors, partial date, identifiers, provenance,
+  resolution state, typed failures, and Serde round trips. It is not stored or
+  attached to a document.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -305,6 +309,12 @@ The local database is not a cache of global scholarship. It is bounded to what t
 Metadata search hits documented services directly per query. Nothing is pre-populated. A reference record becomes local only after user action or an explicit application workflow stores it.
 
 The detailed reference-record schema is deferred to a downstream data-model contract. That contract must define fields, provenance, resolution state, merge behavior, manual-edit behavior, and source-reliability scoring inputs.
+
+Phase 16 implements the non-binding in-memory schema checkpoint in
+`maintainers/REFERENCE_RECORD.md`. Rust validates one record and preserves
+manual-override provenance as data. It does not persist records, enforce
+library-wide citekey uniqueness, resolve metadata, merge sources, compute
+reliability, expose IPC, or alter the document envelope.
 
 ---
 

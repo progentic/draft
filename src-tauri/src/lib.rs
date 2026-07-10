@@ -2,6 +2,7 @@ mod application;
 mod commands;
 pub mod documents;
 mod events;
+pub mod references;
 pub mod workers;
 
 /// Starts the DRAFT desktop runtime.

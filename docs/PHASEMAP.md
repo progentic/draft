@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 15 are complete. Phase 16 is
-the next implementation phase; reference-record implementation has not started.
+**Current execution checkpoint:** Phases 0 through 16 are complete. Phase 17 is
+the next implementation phase; reference persistence has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -20,10 +20,12 @@ Phase 14 hardens the atomic replacement primitive with deterministic
 interruption checkpoints, failed-replacement cleanup, serialized file
 lifecycle operations, and disk/registry concurrency tests.
 
-Phase 15 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The
-non-binding Phase 16 requirements are bounded in
-`docs/drafts/REFERENCE_RECORD.md`; they do not authorize a reference store,
-citation node, document-envelope extension, network lookup, or import behavior.
+Phase 15 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. Phase 16
+requirements remain in the non-binding `docs/drafts/REFERENCE_RECORD.md`, and
+implemented behavior is recorded in
+`docs/maintainers/REFERENCE_RECORD.md`. Phase 16 does not authorize a reference
+store, citation node, document-envelope extension, network lookup, or import
+behavior.
 
 ---
 

@@ -66,6 +66,8 @@ check_required_sources() {
     src-tauri/src/documents/persistence.rs
     src-tauri/src/documents/registry.rs
     src-tauri/src/events/runtime_status.rs
+    src-tauri/src/references/mod.rs
+    src-tauri/src/references/record.rs
     src-tauri/src/workers/cancellation.rs
     src-tauri/icons/icon.png
   )
