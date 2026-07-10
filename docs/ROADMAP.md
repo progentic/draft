@@ -9,7 +9,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
 **Current execution checkpoint:** Phases 0 through 32 are complete. Phase 33 is
-the next implementation phase.
+under architecture review and is not complete.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -50,6 +50,13 @@ preserves supported paragraphs, headings, text, hard breaks, and inline marks;
 unsupported content and citations fail instead of disappearing. No visible
 export workflow exists. Phase 33 must decide PDF export through an ADR before
 any PDF dependency or runtime path is added.
+
+Proposed ADR-001 selects explicit deferral. It compares native Rust generation,
+HTML/CSS rendering, DOCX conversion, operating-system printing, and deferral,
+then keeps PDF unavailable until rendering and verification policies are
+accepted. The ADR, Phase 33, and their living-document updates remain unaccepted
+until the architecture PR completes its 24-hour cooling period, passes local and
+GitHub Actions verification, and merges through governance.
 
 ---
 
