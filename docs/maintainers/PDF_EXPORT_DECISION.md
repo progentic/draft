@@ -2,17 +2,17 @@
 
 ## Status
 
-This guide records the Phase 33 proposal under review in ADR-001. The ADR is
-`Proposed`, not accepted, and Phase 33 is not complete. The requirements in
-`docs/drafts/PDF_EXPORT_DECISION.md` remain non-binding until they complete the
-governance lifecycle in `docs/GOVERNANCE.md`.
+This guide records the accepted Phase 33 decision in ADR-001. The ADR is
+`Accepted`, Phase 33 is complete, and PDF export remains mechanically absent.
+The requirements in `docs/drafts/PDF_EXPORT_DECISION.md` remain a non-binding
+record of the decision gate rather than an implementation contract.
 
-## Proposed Decision
+## Accepted Decision
 
 Defer native PDF generation until DRAFT has accepted the rendering policies and
 verification contract needed for reliable output.
 
-The proposal adds no product behavior. DOCX remains the only implemented export
+The decision adds no product behavior. DOCX remains the only implemented export
 foundation, and no visible DOCX or PDF workflow exists. There is no PDF library,
 renderer, binary, font bundle, conversion process, command, Tauri capability,
 frontend control, Python helper, network service, or packaged resource.
@@ -62,18 +62,37 @@ not evidence that a PDF renderer meets these prerequisites.
 denies PDF export symbols and frontend claims plus known renderer dependencies,
 conversion executables, and bundled runtime paths.
 
-The guard preserves absence; it does not prove PDF behavior and does not make
-ADR-001 accepted. Replacing or narrowing it requires governed implementation
-evidence for parser validation, resource bounds, deterministic failures, and
-source preservation.
+The guard preserves absence; it does not prove PDF behavior. Replacing or
+narrowing it requires governed implementation evidence for parser validation,
+resource bounds, deterministic failures, and source preservation.
 
-## Governance Gate
+## Acceptance Record
 
-The architecture PR must remain open for at least 24 hours, carry the
-`architecture` label, include the required self-review, and pass local and
-GitHub Actions verification. Before merge, verification must be rerun, ADR-001
-must be updated to `Accepted`, and the living documents must record Phase 33 as
-complete. Merge is the acceptance event.
+PR #1 carried the `architecture` label, recorded the required self-review and
+alternatives, preserved the reviewed head, passed local and pull-request
+verification, and passed an exact prospective merge-tree verification. It
+merged as `5587866`, which accepted the decision under `GOVERNANCE.md`. The
+post-merge `main` Verify run also passed before this completion record began.
 
-Phase 34 implementation cannot begin until the Phase 33 PR merges and its
-post-merge GitHub Actions run is green.
+The repository owner authorized this exception in PR #1:
+
+> **One-time owner override**
+>
+> The repository owner is manually waiving the remaining portion of the 24-hour cooling period for ADR-001.
+>
+> This is a one-off decision for this PR only. It does not change `GOVERNANCE.md`, weaken the standing cooling-period rule, or create a reusable expedited path.
+>
+> Rationale:
+>
+> * ADR-001 has remained open and unchanged long enough for review.
+> * The alternatives and consequences have already been documented.
+> * Hosted verification is green.
+> * No new PDF requirement or contradictory architecture has appeared.
+> * The unresolved PR is blocking the active roadmap path.
+>
+> The override is authorized directly by the repository owner.
+>
+> ADR-001 may proceed through final review and merge. Future architectural PRs remain subject to the full cooling period unless separately authorized and documented.
+
+The override is historical evidence for this decision only. It does not amend
+governance or authorize an expedited path for another architectural PR.

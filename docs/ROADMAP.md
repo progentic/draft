@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 32 are complete. Phase 33 is
-under architecture review and is not complete.
+**Current execution checkpoint:** Phases 0 through 33 are complete. Phase 34 is
+the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -48,15 +48,16 @@ or expose a workflow. Phase 32 requirements now bound the DOCX export foundation
 Phase 32 adds a strict Rust-only DOCX compiler and atomic export service. It
 preserves supported paragraphs, headings, text, hard breaks, and inline marks;
 unsupported content and citations fail instead of disappearing. No visible
-export workflow exists. Phase 33 must decide PDF export through an ADR before
-any PDF dependency or runtime path is added.
+export workflow exists. Phase 33 decided PDF export through ADR-001 without
+adding a PDF dependency or runtime path.
 
-Proposed ADR-001 selects explicit deferral. It compares native Rust generation,
+Accepted ADR-001 selects explicit deferral. It compares native Rust generation,
 HTML/CSS rendering, DOCX conversion, operating-system printing, and deferral,
 then keeps PDF unavailable until rendering and verification policies are
-accepted. The ADR, Phase 33, and their living-document updates remain unaccepted
-until the architecture PR completes its 24-hour cooling period, passes local and
-GitHub Actions verification, and merges through governance.
+accepted. Phase 33 completed after the architecture PR passed local, exact
+merge-tree, pull-request, and post-merge GitHub Actions verification. The
+repository owner documented a one-time, non-precedential waiver of the remaining
+cooling period in PR #1; `GOVERNANCE.md` and its standing rule are unchanged.
 
 ---
 

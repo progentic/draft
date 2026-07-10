@@ -34,9 +34,10 @@ These values are session information only.
 
 The session area also reports the desktop core connection. `Core v<version>`
 means the workspace reached the trusted Rust runtime and validated its status
-event. `Core unavailable` means the desktop transport was not available. `Core
-event failed` means Rust could not deliver the status update. `Core status
-invalid` means the app rejected an unexpected response or event payload. A
+event. `Core unavailable` means the desktop transport was not available.
+`DRAFT could not deliver the core status event.` means Rust could not deliver
+the status update. `Core status invalid` means the app rejected an unexpected
+response or event payload. A
 standalone browser preview has no Tauri core and shows the unavailable state;
 the desktop application provides the command and event connection.
 
@@ -62,8 +63,8 @@ WebView until file controls are integrated.
 
 The current workspace has no export controls. DRAFT has an internal DOCX
 foundation, but users cannot start that export from the workspace yet. PDF
-export is not currently available because its rendering policy and
-implementation boundary are still under review.
+export is not currently available. DRAFT has deferred that work until its
+rendering policy and implementation boundary are defined and verified.
 
 DRAFT must define reliable rules for fonts, page layout, accessibility, and
 consistent output across supported platforms before PDF work can begin. No PDF

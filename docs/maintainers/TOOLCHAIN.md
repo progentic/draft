@@ -2,8 +2,8 @@
 
 ## Current phase
 
-Phase 32 is complete at the current checkpoint. Phase 33 is under architecture
-review and is not complete. The Phase 1 toolchain remains locked, the Phase 2
+Phases 0 through 33 are complete at the current checkpoint. Phase 34 is the
+next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -55,7 +55,7 @@ accepted-edit workflow, document-integrated formatting, citation rendering,
 DOCX export controls, PDF export, packaged Python runtime discovery, release
 automation, or packaging.
 
-Proposed ADR-001 defers choosing a PDF engine. No PDF library, renderer, binary,
+Accepted ADR-001 defers choosing a PDF engine. No PDF library, renderer, binary,
 font bundle, conversion process, command, frontend control, or packaged resource
 is part of the toolchain. Reconsideration requires accepted font, layout,
 accessibility, cross-platform rendering, dependency/licensing, resource-bound,

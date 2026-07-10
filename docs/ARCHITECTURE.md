@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 32 is deliberately smaller than the
+The implemented application through Phase 33 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -192,11 +192,11 @@ escaped XML parts in a deterministic stored ZIP; and reuses the atomic writer
 for `.docx` targets. It adds no citation rendering, application state, Tauri
 command, frontend control, PDF path, or source mutation.
 
-ADR-001 proposes deferring native PDF generation until DRAFT has accepted
+ADR-001 defers native PDF generation until DRAFT has accepted
 policies for fonts, pagination and layout, accessibility, cross-platform
 rendering, dependencies and licensing, bounded resources, parser-based output
-verification, deterministic failures, and source preservation. While that ADR
-is under review, no PDF dependency, renderer, runtime path, command, process,
+verification, deterministic failures, and source preservation. Under that
+accepted decision, no PDF dependency, renderer, runtime path, command, process,
 frontend control, or capability claim is authorized.
 
 ### 3.4 Text-analysis
@@ -623,9 +623,9 @@ Export rules:
 Phase 32 implements the internal `.docx` operation for a strict fail-closed
 subset. Compilation completes in memory before atomic target replacement.
 Source DRAFT bytes and live registry state are outside the export mutation
-surface. PDF export remains unimplemented. Proposed ADR-001 would keep it
-deferred until the prerequisite rendering policies and verification contract
-are accepted through governance.
+surface. PDF export remains unimplemented. Accepted ADR-001 keeps it deferred
+until the prerequisite rendering policies and verification contract are
+accepted through governance.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 
