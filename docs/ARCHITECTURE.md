@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 21 is deliberately smaller than the
+The implemented application through Phase 22 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -72,8 +72,9 @@ full system described in this architecture:
   orphaned, and duplicate citekeys without reading the complete shared library
   or mutating either input.
 - Rust owns one HTTPS-only network client with controlled application identity,
-  explicit connect/request timeouts, bounded construction failures, and no
-  request method yet. Tauri setup registers it as managed Rust state.
+  explicit timeouts, per-provider rate limiting and backoff, bounded responses,
+  and typed transport failures. Crossref, Semantic Scholar, and Unpaywall
+  modules use it for DOI metadata lookup and return non-persistent candidates.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -556,11 +557,12 @@ External API calls do not each open independent HTTP clients. Rust owns a centra
 
 This belongs to the network client, not to individual features. Feature code must not bypass it by creating ad hoc HTTP clients.
 
-Phase 21 implements the construction boundary documented in
-`maintainers/NETWORK_CLIENT.md`. Rust builds one HTTPS-only client during
-startup with controlled User-Agent and timeout policy. It exposes no request
-operation yet, so provider lookup, rate limiting, backoff, and offline
-classification remain Phase 22 behavior.
+Phases 21 and 22 implement the boundary documented in
+`maintainers/NETWORK_CLIENT.md` and `maintainers/METADATA_LOOKUP.md`. Rust builds
+one HTTPS-only client during startup and owns request execution, per-provider
+rate limiting, capped backoff, bounded response reads, and typed transport
+classification. Provider modules build validated DOI requests and normalize
+candidate metadata without persistence or frontend authority.
 
 Relevant invariant: `INV-10` in `INVARIANTS.md`.
 

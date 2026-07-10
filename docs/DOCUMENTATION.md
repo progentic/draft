@@ -478,8 +478,15 @@ live in the non-binding `docs/drafts/NETWORK_CLIENT.md`.
 Phase 21 documents centralized Rust network-client construction in
 `docs/maintainers/NETWORK_CLIENT.md`. Rust tests and invariant scans enforce
 controlled User-Agent and timeout policy, HTTPS-only configuration, managed
-startup state, bounded failures, no request execution, and no ad hoc client
-authority outside the accepted network module.
+startup state, bounded failures, and no ad hoc client authority outside the
+accepted network module.
+
+Phase 22 documents DOI metadata lookup in
+`docs/maintainers/METADATA_LOOKUP.md`. The non-binding requirements remain in
+`docs/drafts/METADATA_LOOKUP.md`. Rust tests and invariant scans enforce input
+validation, exact provider requests, candidate normalization, per-provider
+rate limits, bounded backoff and responses, typed failures, no persistence or
+IPC authority, and no external requests in tests.
 
 Recommended checks:
 

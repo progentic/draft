@@ -26,6 +26,7 @@ main() {
   check_citation_node_contract
   check_bibliography_consistency_contract
   check_network_client_contract
+  check_metadata_lookup_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -303,6 +304,13 @@ check_network_client_contract() {
     request_and_connect_timeouts_are_explicit
     invalid_application_versions_fail
     network_client_failure_shape_is_bounded
+    request_gate_enforces_per_service_interval
+    request_gate_keeps_services_independent
+    server_rate_limits_apply_exponential_backoff
+    retry_after_seconds_are_bounded
+    transport_failures_are_typed
+    response_statuses_are_typed
+    response_limit_rejects_oversized_body
   )
   local test_name
 
@@ -317,12 +325,57 @@ check_network_client_contract() {
   require_source_pattern '.connect_timeout(policy.connect_timeout)' "${source_path}"
   require_source_pattern '.timeout(policy.request_timeout)' "${source_path}"
   require_source_pattern '.https_only(true)' "${source_path}"
+  require_source_pattern 'MAX_METADATA_RESPONSE_BYTES' "${source_path}"
+  require_source_pattern 'MAX_RATE_LIMIT_BACKOFF' "${source_path}"
   require_source_pattern 'app.manage(NetworkClient::new()?)' "${initializer_path}"
-  assert_no_matches "Phase 21 network request execution" \
-    '\.(?:send|execute)\s*\(' src-tauri/src/network
-  assert_no_matches "Phase 21 cookie or raw error surface" \
-    '\bcookie_store\b|\breqwest::Error\b' src-tauri/src/network src-tauri/Cargo.toml
+  require_source_pattern '.send().await' "${source_path}"
+  assert_no_matches "Phase 22 network request execution outside centralized client" \
+    '\.(?:send|execute)\s*\(' --glob '!client.rs' src-tauri/src/network
+  assert_no_matches "Phase 22 cookie configuration" \
+    '\bcookie_store\b' src-tauri/src/network src-tauri/Cargo.toml
   printf 'PASS INV-10 centralized network client contract\n'
+}
+
+check_metadata_lookup_contract() {
+  local metadata_path="src-tauri/src/research/metadata.rs"
+  local metadata_test_path="src-tauri/src/research/metadata_tests.rs"
+  local provider_directory="src-tauri/src/research/providers"
+  local required_tests=(
+    doi_is_validated_and_normalized
+    malformed_dois_fail_before_network_work
+    contact_email_is_validated_and_normalized
+    malformed_contact_emails_fail_before_network_work
+    normalized_metadata_rejects_invalid_required_fields
+    network_failures_map_without_raw_details
+    crossref_request_uses_doi_and_polite_contact
+    crossref_response_normalizes_candidate_metadata
+    crossref_response_rejects_malformed_or_mismatched_data
+    semantic_scholar_request_uses_doi_identifier_and_bounded_fields
+    semantic_scholar_response_normalizes_candidate_metadata
+    semantic_scholar_response_rejects_malformed_or_mismatched_data
+    unpaywall_request_uses_doi_and_required_contact
+    unpaywall_response_normalizes_candidate_metadata
+    unpaywall_response_rejects_malformed_or_mismatched_data
+  )
+  local test_name
+
+  require_file "${metadata_path}"
+  require_file "${metadata_test_path}"
+  require_file "${provider_directory}/crossref.rs"
+  require_file "${provider_directory}/semantic_scholar.rs"
+  require_file "${provider_directory}/unpaywall.rs"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" src-tauri/src/research
+  done
+  require_source_pattern 'https://api.crossref.org/v1' "${provider_directory}/crossref.rs"
+  require_source_pattern 'https://api.semanticscholar.org/graph/v1' "${provider_directory}/semantic_scholar.rs"
+  require_source_pattern 'https://api.unpaywall.org/v2' "${provider_directory}/unpaywall.rs"
+  assert_no_matches "Phase 22 metadata persistence or IPC authority" \
+    '\bReferenceStore\b|\brusqlite\b|\btauri::|#\[tauri::command\]|(?:std|tokio)::fs' \
+    src-tauri/src/research
+  assert_no_matches "Phase 22 frontend metadata authority" \
+    '\bCrossref\b|\bSemanticScholar\b|\bUnpaywall\b|\bMetadataRecord\b' src
+  printf 'PASS Phase 22 metadata lookup contract\n'
 }
 
 require_citation_sources() {

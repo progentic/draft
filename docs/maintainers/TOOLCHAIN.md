@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 21 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 22 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -10,7 +10,8 @@ boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
 open/save commands, a hardened atomic replacement path, and a validated
 reference record, local SQLite store, versioned citation-node resolution
-boundary, and pure bibliography-consistency check. The Phase 5, Phase 10,
+boundary, pure bibliography-consistency check, centralized network client, and
+typed DOI metadata providers. The Phase 5, Phase 10,
 Phase 15, and Phase 20 audits are recorded in
 `docs/maintainers/REALIGNMENT.md`.
 

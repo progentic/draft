@@ -2,7 +2,7 @@
 
 ## Status
 
-This is an implemented Phase 21 checkpoint guide. It records current behavior
+This is an implemented Phase 22 checkpoint guide. It records current behavior
 for maintainers but is not an accepted contract under `GOVERNANCE.md` section
 7. The non-binding requirements remain in `docs/drafts/NETWORK_CLIENT.md` until
 the contract lifecycle is complete.
@@ -10,12 +10,9 @@ the contract lifecycle is complete.
 ## Scope
 
 `src-tauri/src/network/client.rs` owns the only configured outbound HTTP client
-in product source. Phase 21 constructs that client, registers it as Tauri-managed
-Rust state, and exposes no request operation.
-
-Construction performs no DNS lookup, socket connection, provider request,
-retry, background work, persistence, or frontend IPC. Provider-specific
-metadata lookup begins in Phase 22.
+and the only request execution in product source. Phase 21 constructed the
+client; Phase 22 adds the bounded metadata request operation used by three
+provider modules. No frontend IPC, persistence, or background work is added.
 
 ## Dependency and TLS
 
@@ -49,8 +46,9 @@ The current timeout policy is:
 | Connect timeout | 10 seconds | Bounds connection establishment. |
 | Request timeout | 30 seconds | Bounds one complete future request. |
 
-The constants are named and documented in source. Provider-specific retry,
-backoff, rate-limit queues, and offline behavior remain Phase 22 work.
+The client also enforces a one-second interval per provider, exponential 429
+backoff capped at 60 seconds, bounded `Retry-After` seconds, and a one-megabyte
+response limit.
 
 ## Runtime Ownership
 
@@ -58,9 +56,9 @@ backoff, rate-limit queues, and offline behavior remain Phase 22 work.
 during Tauri setup and registers it with `app.manage`. Startup fails closed if
 construction fails.
 
-The managed type retains the configured `reqwest::Client` privately. It has no
-raw-client accessor and no request method at this checkpoint. Phase 22 must add
-only the minimum internal operation required by real provider modules.
+The managed type retains the configured `reqwest::Client` privately and has no
+raw-client accessor. `get_metadata` is the single bounded request operation for
+Rust provider modules.
 
 The frontend and Python package receive no network object, URL, response, or
 transport authority.
@@ -73,12 +71,12 @@ transport authority.
 - `ClientBuildFailed`.
 
 The error does not retain or expose raw `reqwest` details, environment values,
-URLs, paths, document content, or credentials. No error crosses IPC in Phase
-21 because no network command exists.
+URLs, paths, document content, or credentials. No error crosses IPC because no
+network command exists.
 
 ## Security Boundaries
 
-Phase 21 deliberately excludes:
+The current boundary excludes:
 
 - cookie-store support or browser-session state;
 - publisher, institutional, library, or Google Scholar credentials;
@@ -103,29 +101,30 @@ unchanged.
 
 ## Verification
 
-Five Rust tests cover:
+Twelve Rust tests cover construction plus request policy:
 
 - current manifest metadata construction;
 - deterministic User-Agent policy;
 - explicit connect and request timeouts;
 - malformed application versions; and
-- bounded failure messages.
+- bounded failure messages;
+- independent provider intervals and capped backoff;
+- typed transport and status failures; and
+- bounded response accumulation.
 
 `scripts/check-invariants.sh` requires the source, tests, application
 initializer, managed-state registration, exact direct dependency features,
-HTTPS-only configuration, named timeout constants, and all five tests. It
-rejects request execution, cookie configuration, raw `reqwest` errors, and any
-`reqwest` use outside `src-tauri/src/network/`.
+HTTPS-only configuration, named timeout and response constants, and all twelve
+tests. It confines request execution to the centralized client, rejects cookie
+configuration, and rejects `reqwest` use outside `src-tauri/src/network/`.
 
-`scripts/check-repository.sh` requires every Phase 21 source to remain visible
+`scripts/check-repository.sh` requires every network source to remain visible
 to Git. `scripts/check-docs.sh` requires this guide and roadmap/phasemap
-agreement through Phase 21. The aggregate verifier runs the same checks locally
+agreement through Phase 22. The aggregate verifier runs the same checks locally
 and in GitHub Actions.
 
-## Phase 22 Gate
+## Phase 23 Gate
 
-Phase 22 may add typed Crossref, Semantic Scholar, and Unpaywall metadata
-lookup through this client. It must define provider-specific request and
-response shapes, rate-limit, timeout, offline, and malformed-response behavior
-before implementation. It must not add scraping, browser automation,
-credential capture, or a direct frontend network path.
+Phase 23 may add system-browser handoff for external access. It must not add
+scraping, browser-session automation, credential capture, or a direct frontend
+network path.

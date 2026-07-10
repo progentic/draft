@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 21 are complete. Phase 22 is
-the next implementation phase; provider metadata lookup has not started.
+**Current execution checkpoint:** Phases 0 through 22 are complete. Phase 23 is
+the next implementation phase; external browser handoff has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -45,12 +45,13 @@ unique sorted missing, orphaned, and duplicate citekeys, and treats repeated
 in-text citations as valid. It adds no persistence, IPC, formatting, or visible
 workflow.
 
-Phase 20 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The
-non-binding Phase 21 readiness requirements live in
-`docs/drafts/NETWORK_CLIENT.md`, and implemented construction behavior is
-recorded in `docs/maintainers/NETWORK_CLIENT.md`. The HTTPS-only managed client
-has controlled identity and timeout policy but exposes no request operation, so
-provider lookup remains absent.
+Phase 20 evidence is recorded in `docs/maintainers/REALIGNMENT.md`. Phase 21
+network construction is recorded in `docs/maintainers/NETWORK_CLIENT.md`.
+Phase 22 requirements and behavior are recorded in
+`docs/drafts/METADATA_LOOKUP.md` and
+`docs/maintainers/METADATA_LOOKUP.md`. Crossref, Semantic Scholar, and
+Unpaywall DOI lookups now route through the centralized client and return
+non-persistent normalized candidates with typed bounded failures.
 
 ---
 

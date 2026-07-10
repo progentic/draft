@@ -35,6 +35,7 @@ check_required_documents() {
     docs/drafts/DOCUMENT_ENVELOPE.md
     docs/drafts/CITATION_NODE.md
     docs/drafts/NETWORK_CLIENT.md
+    docs/drafts/METADATA_LOOKUP.md
     docs/drafts/REFERENCE_RECORD.md
     docs/drafts/REFERENCE_STORE.md
     docs/GOVERNANCE.md
@@ -51,6 +52,7 @@ check_required_documents() {
     docs/maintainers/EVENT_BOUNDARY.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md
     docs/maintainers/NETWORK_CLIENT.md
+    docs/maintainers/METADATA_LOOKUP.md
     docs/maintainers/REFERENCE_RECORD.md
     docs/maintainers/REFERENCE_STORE.md
     docs/maintainers/REALIGNMENT.md
@@ -131,7 +133,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 21 are complete'
+  local checkpoint='Phases 0 through 22 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

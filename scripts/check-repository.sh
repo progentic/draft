@@ -83,6 +83,16 @@ check_required_sources() {
     src-tauri/src/network/client.rs
     src-tauri/src/network/client_tests.rs
     src-tauri/src/network/mod.rs
+    src-tauri/src/research/metadata.rs
+    src-tauri/src/research/metadata_tests.rs
+    src-tauri/src/research/mod.rs
+    src-tauri/src/research/providers/crossref.rs
+    src-tauri/src/research/providers/crossref_tests.rs
+    src-tauri/src/research/providers/mod.rs
+    src-tauri/src/research/providers/semantic_scholar.rs
+    src-tauri/src/research/providers/semantic_scholar_tests.rs
+    src-tauri/src/research/providers/unpaywall.rs
+    src-tauri/src/research/providers/unpaywall_tests.rs
     src-tauri/src/references/mod.rs
     src-tauri/src/references/record.rs
     src-tauri/src/references/store.rs
