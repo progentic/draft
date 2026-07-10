@@ -31,14 +31,17 @@ describe("getRuntimeStatus", () => {
     });
   });
 
-  it("preserves the command-specific error code", async () => {
-    invokeMock.mockRejectedValue({ code: "event_delivery_failed" });
+  it.each(["invalid_application_version", "event_delivery_failed"] as const)(
+    "preserves the %s command-specific error code",
+    async (code) => {
+      invokeMock.mockRejectedValue({ code });
 
-    await expect(getRuntimeStatus()).resolves.toEqual({
-      status: "error",
-      error: { type: "command", code: "event_delivery_failed" },
-    });
-  });
+      await expect(getRuntimeStatus()).resolves.toEqual({
+        status: "error",
+        error: { type: "command", code },
+      });
+    },
+  );
 
   it("maps unknown failures to a transport error without leaking details", async () => {
     invokeMock.mockRejectedValue(new Error("Tauri runtime is unavailable"));

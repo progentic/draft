@@ -15,11 +15,25 @@ interface DocumentMetrics {
   words: number;
 }
 
+type RuntimeUnavailableReason = Extract<
+  RuntimeConnectionState,
+  { phase: "unavailable" }
+>["reason"];
+type RuntimeCommandFailureCode = Extract<
+  RuntimeUnavailableReason,
+  { type: "command" }
+>["code"];
+
 const EMPTY_METRICS: DocumentMetrics = {
   characters: 0,
   headings: 0,
   words: 0,
 };
+
+const RUNTIME_COMMAND_FAILURE_LABELS = {
+  invalid_application_version: "DRAFT received an unsupported application version.",
+  event_delivery_failed: "DRAFT could not deliver the core status event.",
+} satisfies Record<RuntimeCommandFailureCode, string>;
 
 export function DocumentInspector(props: DocumentInspectorProps) {
   const metrics = useDocumentMetrics(props.editor);
@@ -78,18 +92,28 @@ function runtimeStatusView(status: RuntimeConnectionState) {
   return { label: runtimeUnavailableLabel(status.reason), modifier: "unavailable" };
 }
 
-function runtimeUnavailableLabel(
-  reason: Extract<RuntimeConnectionState, { phase: "unavailable" }>["reason"],
-) {
-  if (reason === "command") {
-    return "Core event failed";
+function runtimeUnavailableLabel(reason: RuntimeUnavailableReason) {
+  if (reason.type === "command") {
+    return runtimeCommandFailureLabel(reason.code);
   }
 
-  if (reason === "invalid-payload" || reason === "invalid-response") {
+  if (reason.type === "invalid-payload" || reason.type === "invalid-response") {
     return "Core status invalid";
   }
 
   return "Core unavailable";
+}
+
+function runtimeCommandFailureLabel(code: string) {
+  if (isRuntimeCommandFailureCode(code)) {
+    return RUNTIME_COMMAND_FAILURE_LABELS[code];
+  }
+
+  return "DRAFT could not read the core status.";
+}
+
+function isRuntimeCommandFailureCode(code: string): code is RuntimeCommandFailureCode {
+  return Object.prototype.hasOwnProperty.call(RUNTIME_COMMAND_FAILURE_LABELS, code);
 }
 
 function StatisticsSection(props: { metrics: DocumentMetrics }) {
