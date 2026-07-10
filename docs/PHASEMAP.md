@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 16 are complete. Phase 17 is
-the next implementation phase; reference persistence has not started.
+**Current execution checkpoint:** Phases 0 through 17 are complete. Phase 18 is
+the next implementation phase; citation-node implementation has not started.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -26,6 +26,11 @@ implemented behavior is recorded in
 `docs/maintainers/REFERENCE_RECORD.md`. Phase 16 does not authorize a reference
 store, citation node, document-envelope extension, network lookup, or import
 behavior.
+
+Phase 17 requirements remain in the non-binding
+`docs/drafts/REFERENCE_STORE.md`, and implemented SQLite behavior is recorded
+in `docs/maintainers/REFERENCE_STORE.md`. The store is not exposed through IPC
+and is not initialized by the visible workspace.
 
 ---
 

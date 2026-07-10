@@ -22,6 +22,7 @@ main() {
   check_worker_cancellation_contract
   check_document_envelope_contract
   check_reference_record_contract
+  check_reference_store_contract
   check_document_registry_contract
   check_document_file_contract
   check_bridge_name_parity
@@ -258,7 +259,7 @@ check_reference_record_contract() {
   done
   assert_no_matches "Phase 16 reference runtime authority" \
     '(?:std|tokio)::fs|\b(?:File|OpenOptions|PathBuf|Mutex|RwLock|HashMap)\b|#\[tauri::command\]|\b(?:rusqlite|sqlx|diesel)\b' \
-    src-tauri/src/references
+    "${source_path}"
   assert_no_matches "Phase 16 frontend reference authority" \
     '\bReferenceRecord\b|\breference_record\b' src
   printf 'PASS Phase 16 reference record contract\n'
@@ -270,6 +271,70 @@ require_reference_schema_version() {
 
   if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
     printf 'FAILED Phase 16 schema version declaration\n' >&2
+    return 1
+  fi
+}
+
+check_reference_store_contract() {
+  local source_path="src-tauri/src/references/store.rs"
+  local test_path="src-tauri/src/references/store_tests.rs"
+  local required_tests=(
+    reference_store_path_uses_app_data_directory
+    new_store_initializes_schema_and_table
+    schema_initialization_is_idempotent
+    unsupported_store_schema_fails_explicitly
+    claimed_current_schema_requires_expected_table
+    claimed_current_schema_requires_expected_constraints
+    store_creates_missing_parent_directory
+    unavailable_parent_returns_storage_error
+    directory_database_path_returns_open_error
+    malformed_database_returns_schema_read_error
+    conflicting_zero_version_schema_returns_migration_error
+    create_read_and_reopen_preserve_record
+    duplicate_identity_and_citekey_fail_explicitly
+    citekey_uniqueness_is_case_sensitive
+    update_replaces_payload_and_citekey
+    conflicting_update_preserves_both_records
+    delete_returns_record_and_removes_it
+    list_is_deterministic_by_citekey
+    missing_update_and_delete_fail_explicitly
+    malformed_stored_json_fails_without_deleting_row
+    missing_live_table_returns_read_error
+    invalid_stored_record_returns_typed_cause
+    mismatched_stored_indexes_fail_closed
+    mismatched_stored_schema_fails_closed
+    concurrent_create_allows_one_record
+    poisoned_store_returns_unavailable
+    store_failure_shape_is_stable
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_file "${test_path}"
+  require_reference_store_schema_version "${source_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_source_pattern 'Mutex<Connection>' "${source_path}"
+  require_source_pattern 'TransactionBehavior::Immediate' "${source_path}"
+  require_source_pattern 'PRAGMA user_version = 1;' "${source_path}"
+  require_source_pattern ') STRICT;' "${source_path}"
+  require_source_pattern 'features = ["bundled"]' src-tauri/Cargo.toml
+  assert_no_matches "Phase 17 ad hoc SQLite access" \
+    '\brusqlite\b|Connection::open\s*\(' \
+    --glob '!src-tauri/src/references/store.rs' \
+    --glob '!src-tauri/src/references/store_tests.rs' src-tauri/src
+  assert_no_matches "Phase 17 reference store Tauri surface" \
+    '#\[tauri::command\]|\btauri::' "${source_path}"
+  printf 'PASS Phase 17 local reference store contract\n'
+}
+
+require_reference_store_schema_version() {
+  local source_path="$1"
+  local declaration='pub const REFERENCE_STORE_SCHEMA_VERSION: u64 = 1;'
+
+  if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
+    printf 'FAILED Phase 17 store schema version declaration\n' >&2
     return 1
   fi
 }
@@ -375,7 +440,8 @@ check_document_write_boundary() {
 
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
-    --glob "!${atomic_writer_path}" src-tauri/src
+    --glob "!${atomic_writer_path}" \
+    --glob '!src-tauri/src/references/store_tests.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
   require_source_pattern '.persist(target_path)' "${atomic_writer_path}"
@@ -479,9 +545,6 @@ check_future_feature_absence_gates() {
     src src-tauri/src
   assert_no_matches "INV-08 watched import before Phase 24" \
     '\bimport_pdf\b|\bwatched_folder\b|\bstable_write\b' src src-tauri/src
-  assert_no_matches "Phase 17 reference store before persistence phase" \
-    '\bReference(?:Store|Repository)\b|\breference_(?:store|repository|records)\b' \
-    src src-tauri/src
   assert_no_matches "INV-11 helper protocol before Phase 28" \
     '(?m)^\s*(?:def|class)\s+(?:run_|analyze|format|[[:alnum:]_]+Request\b|[[:alnum:]_]+Response\b)' \
     python/draft_helpers

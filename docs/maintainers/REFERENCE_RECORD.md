@@ -176,19 +176,20 @@ Twenty-four Rust tests cover:
 
 `scripts/check-invariants.sh` requires the source, schema constant, and all 24
 named tests. It rejects filesystem, synchronization, database, and Tauri command
-APIs in the reference module, rejects frontend reference authority, and keeps
-the Phase 17 reference-store absence gate active.
+APIs in the record module and rejects frontend reference authority. Phase 17
+replaces the former store-absence gate with the behavioral checks documented in
+`docs/maintainers/REFERENCE_STORE.md`.
 
 The same checks run through `scripts/verify.sh` locally and in the GitHub
 Actions `verify` job. `scripts/check-repository.sh` requires the reference
 module to remain visible to Git.
 
-## Phase 17 Gate
+## Phase 17 Integration
 
-Phase 17 may persist validated records in a Rust-owned local store and enforce
-library-wide uniqueness. It must define CRUD failure behavior, transaction
-authority, storage location, schema initialization, and a migration stub before
-the current store-absence gate is replaced.
+Phase 17 persists validated records through the Rust-owned SQLite module
+documented in `docs/maintainers/REFERENCE_STORE.md`. The store enforces stable
+identity and case-sensitive citekey uniqueness, but it does not change this
+record schema or bypass `ReferenceRecord::from_json_value` on reads.
 
-Phase 17 must not add citation nodes, bibliography rendering, network lookup,
-PDF import, or document-envelope metadata embedding.
+Citation nodes, bibliography rendering, network lookup, PDF import, and
+document-envelope metadata embedding remain absent.

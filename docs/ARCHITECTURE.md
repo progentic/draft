@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 16 is deliberately smaller than the
+The implemented application through Phase 17 is deliberately smaller than the
 full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open, and
@@ -59,6 +59,10 @@ full system described in this architecture:
   citekey, structured contributors, partial date, identifiers, provenance,
   resolution state, typed failures, and Serde round trips. It is not stored or
   attached to a document.
+- Rust owns a SQLite reference-store module with transactional CRUD,
+  case-sensitive citekey uniqueness, schema initialization, migration dispatch,
+  indexed/payload consistency checks, and typed corruption failures. No runtime
+  command or visible workflow opens it yet.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -315,6 +319,13 @@ Phase 16 implements the non-binding in-memory schema checkpoint in
 manual-override provenance as data. It does not persist records, enforce
 library-wide citekey uniqueness, resolve metadata, merge sources, compute
 reliability, expose IPC, or alter the document envelope.
+
+Phase 17 implements the Rust-owned local store in
+`maintainers/REFERENCE_STORE.md`. The store persists validated record JSON in
+SQLite, indexes UUID/citekey/schema fields, serializes writes with immediate
+transactions, and validates stored payloads on every read. Production path
+policy is `<app_data_dir>/references.sqlite3`; Rust must resolve the app-data
+directory when a future runtime workflow initializes the store.
 
 ---
 

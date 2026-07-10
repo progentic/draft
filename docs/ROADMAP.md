@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 16 are complete. Phase 17 is
-the next implementation phase; reference persistence has not started.
+**Current execution checkpoint:** Phases 0 through 17 are complete. Phase 18 is
+the next implementation phase; citation-node implementation has not started.
 
 ---
 

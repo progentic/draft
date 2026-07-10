@@ -33,6 +33,7 @@ check_required_documents() {
     docs/DOCUMENTATION.md
     docs/drafts/DOCUMENT_ENVELOPE.md
     docs/drafts/REFERENCE_RECORD.md
+    docs/drafts/REFERENCE_STORE.md
     docs/GOVERNANCE.md
     docs/INVARIANTS.md
     docs/PHASEMAP.md
@@ -45,6 +46,7 @@ check_required_documents() {
     docs/maintainers/EVENT_BOUNDARY.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md
     docs/maintainers/REFERENCE_RECORD.md
+    docs/maintainers/REFERENCE_STORE.md
     docs/maintainers/REALIGNMENT.md
     docs/maintainers/TOOLCHAIN.md
     docs/user/WORKSPACE.md
@@ -123,7 +125,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 16 are complete'
+  local checkpoint='Phases 0 through 17 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then

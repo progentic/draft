@@ -452,6 +452,12 @@ declared fields, nested validation, provenance semantics, typed failures,
 structured JSON round trips, Rust-only authority, and the absence of Phase 17
 persistence.
 
+Phase 17 documents the implemented Rust-owned SQLite reference store in
+`docs/maintainers/REFERENCE_STORE.md`. Store tests and invariant scans enforce
+schema initialization, migration dispatch, transactional CRUD, uniqueness,
+reopen behavior, corruption handling, SQLite confinement, and the absence of a
+Tauri or frontend reference lifecycle.
+
 Recommended checks:
 
 - Markdown formatting

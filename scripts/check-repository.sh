@@ -68,6 +68,9 @@ check_required_sources() {
     src-tauri/src/events/runtime_status.rs
     src-tauri/src/references/mod.rs
     src-tauri/src/references/record.rs
+    src-tauri/src/references/store.rs
+    src-tauri/src/references/store_tests.rs
+    src-tauri/src/references/test_support.rs
     src-tauri/src/workers/cancellation.rs
     src-tauri/icons/icon.png
   )

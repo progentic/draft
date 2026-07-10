@@ -2,19 +2,19 @@
 
 ## Current phase
 
-Phase 16 is complete at the current checkpoint. The Phase 1 toolchain remains
+Phase 17 is complete at the current checkpoint. The Phase 1 toolchain remains
 locked, the Phase 2 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
 boundaries are enforced. Rust also owns a validated version 1 document
 envelope, a process-local single-live-handle registry, typed native-dialog
 open/save commands, a hardened atomic replacement path, and a validated
-in-memory reference record. The Phase 5, Phase 10, and Phase 15 audits are recorded in
-`docs/maintainers/REALIGNMENT.md`.
+in-memory reference record plus local SQLite store. The Phase 5, Phase 10, and
+Phase 15 audits are recorded in `docs/maintainers/REALIGNMENT.md`.
 
-This checkpoint does not include reference persistence, workspace file
-controls, a close command, autosave, recovery, product research or analysis
-workflows, release automation, or packaging.
+This checkpoint does not include reference IPC or visible controls, workspace
+file controls, a close command, autosave, recovery, product research or
+analysis workflows, release automation, or packaging.
 
 ## Toolchain decisions
 
@@ -25,6 +25,8 @@ workflows, release automation, or packaging.
 - `tempfile` provides owned same-directory temporary files and platform-specific
   atomic replacement. DRAFT synchronizes content before replacement and the
   parent directory on Unix.
+- `rusqlite` with bundled SQLite provides cross-platform local reference
+  persistence without depending on a system SQLite installation.
 - A Rust `Mutex<HashMap<...>>` serializes process-local document handle
   ownership without introducing persistence.
 - A separate Rust `Mutex<()>` serializes document open/save lifecycle
