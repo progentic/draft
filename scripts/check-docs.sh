@@ -129,8 +129,7 @@ check_required_documents() {
 check_v1_usability_documentation() {
   local contract='docs/contracts/V1_USABILITY_ACCEPTANCE.md'
 
-  require_document_text "${contract}" 'status: Proposed'
-  require_document_text "${contract}" 'It remains non-binding until accepted'
+  require_document_text "${contract}" 'status: Accepted'
   require_document_text "${contract}" '## Required Qualities'
   require_document_text "${contract}" '## Supported v1 Workflow'
   require_document_text "${contract}" '## First-Time-User Task Validation'
