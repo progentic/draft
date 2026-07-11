@@ -39,7 +39,7 @@ main() {
   check_pdf_import_contract
   check_background_job_contract
   check_ai_orchestration_contract
-  check_v1_analysis_proposal_guard
+  check_v1_analysis_decision_guard
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
@@ -78,7 +78,7 @@ check_v1_usability_contract() {
   require_source_pattern 'At least 80 percent of participants' "${contract}"
   require_source_pattern 'median below 4 creates a Phase 47 finding' "${contract}"
   require_source_pattern "Any open \`UX-0\` or \`UX-1\` blocks Phase 49." "${contract}"
-  require_source_pattern 'The analysis step remains blocked while ADR-002 is Proposed.' \
+  require_source_pattern 'Accepted ADR-002 authorizes Phase 46 to implement local deterministic text' \
     "${contract}"
 
   for invariant_id in "${invariant_ids[@]}"; do
@@ -1202,7 +1202,7 @@ check_ai_orchestration_contract() {
   printf 'PASS INV-14 Phase 27 AI orchestration contract\n'
 }
 
-check_v1_analysis_proposal_guard() {
+check_v1_analysis_decision_guard() {
   local adr="docs/adr/002-limit-v1-analysis-to-local-text.md"
   local draft="docs/drafts/V1_LOCAL_ANALYSIS.md"
   local model_artifacts
@@ -1210,11 +1210,11 @@ check_v1_analysis_proposal_guard() {
 
   require_file "${adr}"
   require_file "${draft}"
-  require_source_pattern 'Status: Proposed' "${adr}"
+  require_source_pattern 'Status: Accepted' "${adr}"
   require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
   require_source_pattern '## Analysis Layers' "${adr}"
   require_source_pattern 'permitted v1 findings are exactly' "${adr}"
-  require_source_pattern 'no Phase 46 analysis implementation' "${draft}"
+  require_source_pattern 'RC-03` remains open until Phase 46' "${draft}"
   assert_no_matches "ADR-002 production model dependencies" \
     '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
     src-tauri/Cargo.toml package.json pyproject.toml
@@ -1259,7 +1259,7 @@ check_v1_analysis_proposal_guard() {
     return "${status}"
   fi
   printf 'PASS ADR-002 packaged model artifacts\n'
-  printf 'PASS ADR-002 proposed v1 local-analysis guard\n'
+  printf 'PASS ADR-002 accepted v1 local-analysis guard\n'
 }
 
 require_citation_sources() {

@@ -1,8 +1,9 @@
 # ADR-002: Limit v1 Analysis to Local Text Review
 
 Date: 2026-07-11
-Status: Proposed
+Status: Accepted
 Deciders: @progentic
+Accepted through: PR #32
 
 ## Context
 
@@ -154,20 +155,20 @@ documentation, and release-candidate checks.
 
 ## Enforcement
 
-While this ADR is proposed, a named guard keeps the existing model orchestration
+Under this accepted ADR, a named guard keeps the existing model orchestration
 boundary internal. It rejects external model SDK dependencies, provider endpoint
 constants, provider credential environment variables, packaged model files,
 runtime model-download logic, analysis-domain network calls, frontend provider
 or secret authority, arbitrary model endpoints, and generative-analysis bridge
 surfaces. The documentation check rejects unsupported capability claims,
-requires proposal-state language, and keeps `RC-03` open.
+requires accepted decision-state language, and keeps `RC-03` open.
 
 Rust remains authoritative for helper discovery, execution, validation, limits,
 and typed failure mapping. The frontend may submit one bounded snapshot through
 the accepted command boundary and display validated findings; it cannot call a
 provider, access secret storage, choose an endpoint, or execute analysis logic.
 
-After acceptance, Phase 46 must replace the text-analysis absence checks with
+Phase 46 must replace the text-analysis absence checks with
 behavioral evidence for representative, empty, malformed, and size-boundary
 inputs; identical repeated output; explicit thresholds; controlled locale and
 versions; stable ordering independent of map or set iteration; typed failures;

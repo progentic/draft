@@ -216,13 +216,12 @@ distribution. The v1 usability rule is now binding and mechanically checked.
 Its accepted criteria live in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`.
 Phase 46 is next.
 
-Proposed ADR-002 would limit v1.0.0 analysis to the five existing local,
-deterministic text-review checks. It is under architecture review, so `RC-03`
-remains open and no Phase 46 analysis workflow may rely on the proposal yet.
-External providers, credentials, document transmission, generative output, and
-packaged model runtimes remain absent.
+Accepted ADR-002 limits v1.0.0 analysis to the five existing local,
+deterministic text-review checks. `RC-03` remains open until Phase 46 implements
+and verifies the visible workflow. External providers, credentials, document
+transmission, generative output, and packaged model runtimes remain absent.
 
-Its proposed contract separates internal measurements, five explicitly bounded
+Its accepted contract separates internal measurements, five explicitly bounded
 heuristics, and excluded model-backed interpretation. Phase 46 cannot expose a
 sixth analysis class or semantic capability under a generic local-analysis
 label.

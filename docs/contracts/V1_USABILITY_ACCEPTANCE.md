@@ -23,8 +23,8 @@ Passing tests proves that DRAFT behaves as implemented. It does not prove that
 users can understand or successfully use it. v1.0.0 requires both mechanical
 correctness and demonstrated user comprehension.
 
-This contract does not reopen Phase 45, accept ADR-002, close an `RC-*` or
-`GATE-*` row, or claim that a currently absent workflow exists.
+This contract does not reopen Phase 45, close an `RC-*` or `GATE-*` row, or
+claim that a currently absent workflow exists.
 
 ## Required Qualities
 
@@ -55,9 +55,10 @@ The authoritative release workflow is:
 10. Export a supported DOCX document.
 11. Confirm that export did not change the DRAFT source.
 
-The analysis step remains blocked while ADR-002 is Proposed. This contract does
-not authorize Phase 46 to rely on that proposal. If ADR-002 is accepted, the
-local text-analysis portion is limited to its exact five-check scope.
+Accepted ADR-002 authorizes Phase 46 to implement local deterministic text
+analysis. The local text-analysis portion remains limited to its exact
+five-check scope, and `RC-03` remains open until the workflow is implemented
+and verified.
 
 ## Phase 46 - Understandable Visible Workflows
 

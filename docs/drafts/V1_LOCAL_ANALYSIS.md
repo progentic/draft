@@ -1,7 +1,7 @@
 # V1 Local Analysis Contract
 
-**Status:** Draft, non-binding
-**Decision dependency:** Proposed ADR-002
+**Status:** Accepted implementation contract
+**Decision dependency:** Accepted ADR-002
 **Target phase:** Phase 46
 
 ## Purpose
@@ -94,7 +94,6 @@ packaged model, automatic edits, or durable finding history.
 
 ## Acceptance Boundary
 
-This draft becomes implementation guidance only after the ADR-002 governance
-gate closes.
-Until then, `RC-03` remains open and no Phase 46 analysis implementation may
-begin.
+ADR-002 is accepted, so this contract now governs Phase 46 implementation.
+`RC-03` remains open until Phase 46 supplies the required production behavior,
+tests, documentation, and packaged evidence.

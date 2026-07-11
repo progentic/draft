@@ -201,17 +201,17 @@ keeps `UserDocument` and `VerifiedSourceEvidence` distinct, while every stream
 update is `GeneratedAnalysis`. Provider integration, credentials, network
 execution, persistence, Tauri start IPC, and UI remain future work.
 
-Proposed ADR-002 is under review. It would keep that model orchestration seam
+Accepted ADR-002 keeps that model orchestration seam
 internal for v1.0.0 and make the separately bounded local deterministic
 text-analysis helper the only production analysis path for the initial release.
-The proposal adds no current command, provider, credential, external request,
-model runtime, or visible workflow and is not accepted architecture until its
-governed PR merges.
+The accepted decision adds no current command, provider, credential, external
+request, model runtime, or visible workflow. Phase 46 must still implement and
+verify the local path before `RC-03` can close.
 
-The proposal separates deterministic measurements, deterministic heuristics,
+The decision separates deterministic measurements, deterministic heuristics,
 and model-backed interpretation. Measurements may support exactly the five
 existing text-review checks internally. Those five heuristics are the complete
-proposed Phase 46 user-visible analysis scope and remain non-authoritative
+Phase 46 user-visible analysis scope and remain non-authoritative
 signals. Semantic, generative, or inferential model-backed interpretation is
 outside v1.0.0.
 

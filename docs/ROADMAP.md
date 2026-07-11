@@ -140,8 +140,8 @@ live in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`. Phase 46 is next.
 
 Phase 46 must make each supported workflow discoverable, understandable,
 predictable, recoverable, keyboard-operable, and explicit about current state.
-Any local text-analysis workflow remains blocked until ADR-002 is accepted and
-must then use the exact governed five-check scope without model-backed claims.
+The local text-analysis workflow must use ADR-002's exact governed five-check
+scope without model-backed claims.
 
 Phase 47 is Usability and Perceived Performance Validation. It audits every
 visible label, menu, control, state, and realistic workload, then combines
@@ -154,13 +154,12 @@ open `UX-0` or `UX-1` findings. Phase 50 requires a concise first-run entry
 point, user release notes, supported-capability guidance, shortcuts, recovery
 help, and a verified download and launch path.
 
-The repository owner selected local deterministic text analysis as the proposed
-v1.0.0 analysis boundary. ADR-002 is under architecture review and `RC-03`
-remains open. Phase 46 analysis implementation cannot begin until the proposal
-is accepted; no provider, credential, network transmission, generative model,
-or packaged model runtime is implied by this proposal.
+Accepted ADR-002 selects local deterministic text analysis as the v1.0.0
+analysis boundary. `RC-03` remains open until Phase 46 implements and verifies
+the visible workflow. No provider, credential, network transmission, generative
+model, or packaged model runtime is authorized.
 
-The proposal treats measurements as internal inputs, exactly five named
+The decision treats measurements as internal inputs, exactly five named
 heuristics as non-authoritative review signals, and semantic, generative, or
 inferential model-backed interpretation as outside v1.0.0. Supporting counts or
 patterns cannot silently become additional product capabilities.
