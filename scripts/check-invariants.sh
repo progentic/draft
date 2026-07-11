@@ -76,7 +76,7 @@ check_v1_usability_contract() {
     "${contract}"
   require_source_pattern 'At least 80 percent of participants' "${contract}"
   require_source_pattern 'median below 4 creates a Phase 47 finding' "${contract}"
-  require_source_pattern 'Any open `UX-0` or `UX-1` blocks Phase 49.' "${contract}"
+  require_source_pattern "Any open \`UX-0\` or \`UX-1\` blocks Phase 49." "${contract}"
   require_source_pattern 'The analysis step remains blocked while ADR-002 is Proposed.' \
     "${contract}"
 
