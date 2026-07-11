@@ -143,6 +143,11 @@ remains open. Phase 46 analysis implementation cannot begin until the proposal
 is accepted; no provider, credential, network transmission, generative model,
 or packaged model runtime is implied by this proposal.
 
+The proposal treats measurements as internal inputs, exactly five named
+heuristics as non-authoritative review signals, and semantic, generative, or
+inferential model-backed interpretation as outside v1.0.0. Supporting counts or
+patterns cannot silently become additional product capabilities.
+
 ---
 
 ## 1. Product Direction

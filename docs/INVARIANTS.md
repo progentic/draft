@@ -631,6 +631,14 @@ ADR is accepted, the proposal guard rejects production model providers,
 credentials, external-model requests, generative-analysis IPC, and frontend
 generative claims.
 
+The guard also preserves the proposal's three-layer distinction: internal
+measurements cannot become unnamed product capabilities, the five existing
+heuristics must remain explicitly bounded signals, and model-backed semantic,
+generative, or inferential interpretation remains absent. It denies provider
+SDKs and endpoints, credential environment variables, model artifacts and
+downloads, direct frontend provider access, and unsupported documentation or UI
+claims.
+
 Minimum verification:
 
 ```bash

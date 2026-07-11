@@ -208,6 +208,13 @@ The proposal adds no current command, provider, credential, external request,
 model runtime, or visible workflow and is not accepted architecture until its
 governed PR merges.
 
+The proposal separates deterministic measurements, deterministic heuristics,
+and model-backed interpretation. Measurements may support exactly the five
+existing text-review checks internally. Those five heuristics are the complete
+proposed Phase 46 user-visible analysis scope and remain non-authoritative
+signals. Semantic, generative, or inferential model-backed interpretation is
+outside v1.0.0.
+
 ### 3.3 Formatting
 
 Formatting includes APA, MLA, Chicago, heading structure, layout consistency, document-ready export, and bibliography generation.

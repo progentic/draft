@@ -105,6 +105,11 @@ before any external provider integration. The proposal does not change current
 implementation or authorize the Phase 46 local text-analysis workflow before
 acceptance.
 
+Under the proposal, this module represents model-backed interpretation and is
+not a v1 product path. Deterministic measurements may support only the five
+enumerated local heuristics; they do not make this orchestration surface
+available or authorize semantic, generative, or inferential claims.
+
 ## Configuration Index
 
 Context, identity, chunk, count, and cumulative stream bounds are indexed in

@@ -89,6 +89,12 @@ model, credential, and generative-analysis product authority while the owner
 decision cools. `RC-03` remains open and no Phase 46 analysis implementation is
 authorized by the proposal alone.
 
+The guard also rejects model SDK dependencies and endpoints, provider
+credential environment variables, packaged model artifacts, runtime model
+downloads, direct frontend provider or secret authority, and unsupported public
+capability language. It preserves the exact five-check ceiling and the
+measurement, heuristic, and model-backed interpretation distinction.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,

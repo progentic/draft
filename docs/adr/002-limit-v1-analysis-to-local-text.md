@@ -33,8 +33,9 @@ following alternatives were considered:
 - **Local deterministic text analysis:** Exposes the existing bounded grammar,
   clarity, tone, cohesion, and voice heuristics without a network, credential,
   or model runtime.
-- **Defer every analysis workflow:** Avoids new product surface, but leaves an
-  implemented local review capability inaccessible and keeps `RC-03` open.
+- **Retain `RC-03` unchanged and delay release:** Avoids narrowing the blocker,
+  but leaves an implemented local review capability inaccessible and prevents
+  the release from advancing without a provider decision.
 
 ## Owner Authorization
 
@@ -85,10 +86,47 @@ Phase 46 may revise `RC-03` to close only when the local workflow is visible,
 typed, bounded, cancel-safe where applicable, accessible, packaged, and
 documented without unsupported AI claims.
 
+## Analysis Layers
+
+The v1 boundary distinguishes three layers. Determinism describes repeatability,
+not truth or correctness.
+
+**Deterministic measurement** covers objective, mechanically reproducible
+observations such as word and sentence counts, lengths, frequencies, structural
+presence, and exact pattern matches. Phase 46 may use those measurements only
+to support the five enumerated checks; this ADR does not authorize additional
+user-visible analysis classes.
+
+**Deterministic heuristics** covers repeatable but interpretive signals. The
+permitted v1 findings are exactly:
+
+- repeated adjacent word;
+- sentence longer than the explicit word threshold;
+- extended all-capital emphasis;
+- repeated consecutive sentence opener; and
+- mixed singular and plural first-person perspective.
+
+These findings must be presented as possible review concerns, not conclusions,
+quality judgments, or proof of an error. Adding another visible deterministic
+analysis class requires an explicit accepted contract update with named
+behavior, bounds, wording, and tests.
+
+**Model-backed interpretation** covers argument-quality assessment, synthesis
+evaluation, intent inference, substantive critique, conceptual comparison, and
+generated revision advice. It is outside v1.0.0 along with every external or
+packaged model path.
+
+The product, marketing, menus, documentation, and errors must not describe the
+v1 workflow as intelligence, semantic understanding, reasoning, quality
+assessment, originality detection, human-likeness detection, AI detection,
+AI-powered analysis, semantic analysis, LLM analysis, or generative feedback.
+
 ## Consequences
 
 The initial release can provide useful language review without transmitting
-document text or asking users for a service credential. Offline behavior is
+document text outside the local Rust-owned helper process or asking users for a
+service credential. Input travels only through bounded local process pipes and
+must not be persisted, logged, or sent over a network. Offline behavior is
 simple, repeatable output can be tested exactly, and the existing source-safety
 and review-only boundaries remain unchanged.
 
@@ -102,6 +140,12 @@ a later architecture cycle before that work can begin. It also requires Phase
 46 to package and invoke the deterministic helper through Rust rather than
 reimplementing checks in the frontend.
 
+DRAFT therefore has a narrower competitive story for v1.0.0. Marketing cannot
+imply generative analysis, semantic analysis, AI-assisted revision, model-based
+synthesis, or provider-backed research assistance. Some users may expect those
+capabilities from this product category; accurate absence wording is part of
+the release contract, not optional positioning polish.
+
 Affected downstream surfaces are `ARCHITECTURE.md`, `INVARIANTS.md`,
 `ROADMAP.md`, `PHASEMAP.md`, `docs/maintainers/AI_ORCHESTRATION.md`,
 `docs/maintainers/TEXT_ANALYSIS.md`,
@@ -111,15 +155,25 @@ documentation, and release-candidate checks.
 ## Enforcement
 
 While this ADR is proposed, a named guard keeps the existing model orchestration
-boundary internal and denies production provider, credential, external-model,
-and frontend generative-analysis surfaces. The documentation check requires
-proposal-state language and keeps `RC-03` open.
+boundary internal. It rejects external model SDK dependencies, provider endpoint
+constants, provider credential environment variables, packaged model files,
+runtime model-download logic, analysis-domain network calls, frontend provider
+or secret authority, arbitrary model endpoints, and generative-analysis bridge
+surfaces. The documentation check rejects unsupported capability claims,
+requires proposal-state language, and keeps `RC-03` open.
+
+Rust remains authoritative for helper discovery, execution, validation, limits,
+and typed failure mapping. The frontend may submit one bounded snapshot through
+the accepted command boundary and display validated findings; it cannot call a
+provider, access secret storage, choose an endpoint, or execute analysis logic.
 
 After acceptance, Phase 46 must replace the text-analysis absence checks with
 behavioral evidence for representative, empty, malformed, and size-boundary
-inputs; deterministic ordering; typed failures; local packaged execution;
-accessible presentation; and the absence of network and credential authority.
-Local verification and GitHub Actions must run the same enforcement.
+inputs; identical repeated output; explicit thresholds; controlled locale and
+versions; stable ordering independent of map or set iteration; typed failures;
+offline and packaged execution; accessible presentation; and the absence of
+network and credential authority. Local verification and GitHub Actions must
+run the same enforcement.
 
 ## Links
 

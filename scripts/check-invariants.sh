@@ -11,7 +11,7 @@ source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
 main() {
   cd "$(repository_root)"
-  require_tools rg sort wc
+  require_tools git rg sort wc
 
   check_credential_fields
   check_secret_store_contract
@@ -1168,21 +1168,54 @@ check_ai_orchestration_contract() {
 check_v1_analysis_proposal_guard() {
   local adr="docs/adr/002-limit-v1-analysis-to-local-text.md"
   local draft="docs/drafts/V1_LOCAL_ANALYSIS.md"
+  local model_artifacts
+  local status
 
   require_file "${adr}"
   require_file "${draft}"
   require_source_pattern 'Status: Proposed' "${adr}"
   require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
+  require_source_pattern '## Analysis Layers' "${adr}"
+  require_source_pattern 'permitted v1 findings are exactly' "${adr}"
   require_source_pattern 'no Phase 46 analysis implementation' "${draft}"
   assert_no_matches "ADR-002 production model dependencies" \
-    '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|genai|llama-cpp|mistralrs|ollama-rs|openai-api-rs|rig-core)["\x27]?[[:space:]]*(?:=|:)' \
+    '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
     src-tauri/Cargo.toml package.json pyproject.toml
+  assert_no_matches "ADR-002 provider endpoints or credential environment" \
+    '(?i)\b(?:OPENAI|ANTHROPIC|COHERE|GEMINI|MISTRAL|OLLAMA|MODEL_PROVIDER)_(?:API_KEY|TOKEN|BASE_URL|ENDPOINT)\b|https?://[^[:space:]"\x27]*(?:openai|anthropic|cohere|generativelanguage|mistral|ollama)' \
+    src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
+  assert_no_matches "ADR-002 runtime model download authority" \
+    '(?i)\b(?:download|fetch|pull)_(?:model|weights)\b|\b(?:hf_hub|huggingface_hub|modelscope)\b|https?://huggingface\.co' \
+    --glob '!check-invariants.sh' \
+    src-tauri/src src scripts src-tauri/tauri.conf.json package.json pyproject.toml
   assert_no_matches "ADR-002 model-provider product authority" \
     '\b(?:OpenAi|OpenAI|Anthropic|Claude|Ollama|Llama|Mistral|ModelProvider|ProviderCredential)\b|https?://[^[:space:]"\x27]*(?:openai|anthropic|ollama)' \
     src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
+  assert_no_matches "ADR-002 direct frontend provider or secret authority" \
+    '\b(?:ModelProvider|ProviderCredential|ProviderEndpoint|SecretStore|SecretValue|loadSecret|storeSecret|providerApiKey)\b' \
+    --glob '!*.test.*' src
+  assert_no_matches "ADR-002 direct frontend provider transport" \
+    '\bfetch[[:space:]]*\(|\bnew[[:space:]]+(?:WebSocket|EventSource)[[:space:]]*\(' \
+    --glob '!*.test.*' src
   assert_no_matches "ADR-002 generative analysis bridge" \
     '#\[tauri::command\][[:space:]]*(?:pub[^[:space:]]+[[:space:]]+)?(?:start|run|generate)_ai|draft://(?:ai|analysis)|\b(?:runAiAnalysis|startAiAnalysis|generateAnalysis)\b' \
     src-tauri/src/commands src-tauri/src/events src
+  assert_no_matches "ADR-002 unsupported visible capability language" \
+    '(?i)\b(?:AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness(?: detection)?|AI detection|quality assessment|intelligence|reasoning)\b' \
+    --glob '!*.test.*' README.md docs/user docs/wiki src
+
+  if model_artifacts="$(git ls-files | rg '(?i)\.(?:gguf|onnx|safetensors|pt|pth|tflite)$')"; then
+    printf '%s\n' "${model_artifacts}" >&2
+    echo 'FAILED ADR-002 packaged model artifacts' >&2
+    return 1
+  else
+    status=$?
+  fi
+  if [[ "${status}" -ne 1 ]]; then
+    echo 'FAILED ADR-002 packaged model artifact scan could not run' >&2
+    return "${status}"
+  fi
+  printf 'PASS ADR-002 packaged model artifacts\n'
   printf 'PASS ADR-002 proposed v1 local-analysis guard\n'
 }
 

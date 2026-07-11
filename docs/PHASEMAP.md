@@ -221,6 +221,11 @@ remains open and no Phase 46 analysis workflow may rely on the proposal yet.
 External providers, credentials, document transmission, generative output, and
 packaged model runtimes remain absent.
 
+Its proposed contract separates internal measurements, five explicitly bounded
+heuristics, and excluded model-backed interpretation. Phase 46 cannot expose a
+sixth analysis class or semantic capability under a generic local-analysis
+label.
+
 ---
 
 ## 1. Phase Rules

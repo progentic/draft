@@ -123,6 +123,12 @@ scope. The proposal does not imply generative, semantic, model-backed,
 comprehensive grammar, provider, credential, network, or packaged-model
 capabilities, and no visible workflow exists yet.
 
+Counts, lengths, and exact patterns are supporting measurements only. The five
+findings are deterministic heuristics: repeatable signals that may still be
+wrong and must not be presented as conclusions. Model-backed interpretation is
+a separate excluded class. Phase 46 cannot turn another measurement into a
+sixth visible analysis capability without a governed contract update.
+
 ## Configuration Index
 
 Finding counts, locale, and deterministic heuristic thresholds are indexed in
