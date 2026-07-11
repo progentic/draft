@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 39 are complete. Phase 40 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 40 are complete. Phase 41 is
+the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -182,7 +182,10 @@ only the four already-visible failure surfaces to exhaustive bounded copy and
 closed recovery dispositions. Labels refer only to existing connectivity and
 formatting retry controls; terminal states preserve current input without
 inventing a hidden workflow.
-Phase 40 is the next mandatory documentation and drift realignment boundary.
+
+Phase 40 audit evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The
+checkpoint reconciles security, offline, diagnostic, error-presentation, and
+user guidance without adding product behavior. Phase 41 is next.
 
 ---
 

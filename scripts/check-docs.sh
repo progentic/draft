@@ -183,11 +183,12 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 39 are complete'
+  local checkpoint='Phases 0 through 40 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
-    ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
-    echo "ROADMAP.md and PHASEMAP.md must agree on the completed phase checkpoint" >&2
+    ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md || \
+    ! rg --quiet --fixed-strings "${checkpoint}" docs/maintainers/TOOLCHAIN.md; then
+    echo "Roadmap, phasemap, and toolchain must agree on the completed phase checkpoint" >&2
     return 1
   fi
 }
@@ -202,7 +203,7 @@ check_coverage_matrix() {
   require_document_text "${matrix}" 'Live Wiki publication verified'
   require_document_text "${matrix}" '1bddd52'
   require_document_text docs/DOCUMENTATION.md '1bddd52'
-  require_document_text docs/maintainers/REALIGNMENT.md '## Phase 35 - 2026-07-10'
+  require_document_text docs/maintainers/REALIGNMENT.md '## Phase 40 - 2026-07-11'
 }
 
 check_matrix_subsystems() {
@@ -560,6 +561,8 @@ check_error_ux_documentation() {
   require_document_text "${draft}" 'non-binding requirements draft for Phase 39'
   require_document_text docs/wiki/Workspace.md 'After a failed check, the existing button reads'
   require_document_text docs/wiki/Troubleshooting.md '## Citation Cannot Be Resolved'
+  require_document_text docs/user/WORKSPACE.md '## Citation messages'
+  require_document_text docs/user/WORKSPACE.md 'the prior confirmed mode remains visible'
   require_document_text docs/INVARIANTS.md 'Phase 39 retains each visible typed failure through the presentation boundary.'
 }
 

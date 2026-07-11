@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phases 0 through 37 are complete at the current checkpoint. Phase 38 is the
+Phases 0 through 40 are complete at the current checkpoint. Phase 41 is the
 next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
@@ -19,7 +19,8 @@ with hashed opaque claims and restart recovery. A provider-independent Rust AI
 boundary now assembles bounded provenance-tagged context and coordinates typed,
 cancellable generated-analysis streams without a production provider or
 network call. The Phase 5, Phase 10, Phase 15, Phase 20, Phase 25, Phase 30,
-and Phase 35 audits are recorded in `docs/maintainers/REALIGNMENT.md`.
+Phase 35, and Phase 40 audits are recorded in
+`docs/maintainers/REALIGNMENT.md`.
 
 Rust also owns a versioned Python helper runner with a canonical fixed
 entrypoint, closed protocol allowlist, isolated cleared environment, bounded
@@ -53,6 +54,11 @@ Keychain, Credential Manager, or Secret Service, while `zeroize` 1.9.0 clears
 owned secret bytes on drop. The store has no command, event, frontend,
 provider, network, config, database, filesystem, environment, or log surface.
 
+Rust also owns one strict local diagnostic snapshot command and validating
+TypeScript wrapper. No component consumes it. The frontend separately maps
+only the four already-visible runtime, connectivity, formatting, and citation
+failure surfaces to bounded copy and closed recovery dispositions.
+
 Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
 features disabled for deterministic stored package entries. Compilation is
@@ -66,9 +72,9 @@ filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
 credential settings or prompts,
 visible text-analysis controls, formatting finding persistence, citation style
-conversion, complete document formatting, citation rendering,
+conversion, complete document formatting, citation insertion or management,
 DOCX export controls, PDF export, packaged Python runtime discovery, release
-automation, or packaging.
+automation, packaging completion, or a visible diagnostics workflow.
 
 Accepted ADR-001 defers choosing a PDF engine. No PDF library, renderer, binary,
 font bundle, conversion process, command, frontend control, or packaged resource

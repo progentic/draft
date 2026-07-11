@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 39 are complete. Phase 40 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 40 are complete. Phase 41 is
+the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -100,8 +100,11 @@ citation-rendering failures that already reach visible frontend surfaces. Each
 known variant has stable bounded copy and a retryable, actionable, or terminal
 disposition. Existing connectivity and formatting controls keep native
 semantics, repeated failures replace one message without moving focus, and
-typed-but-unwired backend failures remain unexposed. Phase 40 must reconcile security, offline,
-diagnostic, error, and user documentation without adding product behavior.
+typed-but-unwired backend failures remain unexposed.
+
+Phase 40 reconciles security, offline, diagnostic, error-presentation, and user
+documentation without adding product behavior. Its evidence is recorded in
+`docs/maintainers/REALIGNMENT.md`. Phase 41 is the next implementation boundary.
 
 ---
 
