@@ -624,6 +624,13 @@ or frontend stream. Adding any verification or promotion path from generated
 analysis to evidence requires an explicit governed contract and tests that keep
 the two states distinguishable.
 
+Proposed ADR-002 is under review and does not yet change this invariant. Its
+proposal keeps provider-backed orchestration internal for v1.0.0 and would
+expose only the separate deterministic local text-analysis boundary. Until the
+ADR is accepted, the proposal guard rejects production model providers,
+credentials, external-model requests, generative-analysis IPC, and frontend
+generative claims.
+
 Minimum verification:
 
 ```bash

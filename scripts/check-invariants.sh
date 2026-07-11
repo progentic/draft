@@ -39,6 +39,7 @@ main() {
   check_pdf_import_contract
   check_background_job_contract
   check_ai_orchestration_contract
+  check_v1_analysis_proposal_guard
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
@@ -1162,6 +1163,27 @@ check_ai_orchestration_contract() {
   assert_no_matches "Phase 27 Python helper coupling" \
     '\bdraft_helpers\b|\bpython(?:3)?\b|\.py\b' src-tauri/src/analysis "${event_path}"
   printf 'PASS INV-14 Phase 27 AI orchestration contract\n'
+}
+
+check_v1_analysis_proposal_guard() {
+  local adr="docs/adr/002-limit-v1-analysis-to-local-text.md"
+  local draft="docs/drafts/V1_LOCAL_ANALYSIS.md"
+
+  require_file "${adr}"
+  require_file "${draft}"
+  require_source_pattern 'Status: Proposed' "${adr}"
+  require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
+  require_source_pattern 'no Phase 46 analysis implementation' "${draft}"
+  assert_no_matches "ADR-002 production model dependencies" \
+    '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|genai|llama-cpp|mistralrs|ollama-rs|openai-api-rs|rig-core)["\x27]?[[:space:]]*(?:=|:)' \
+    src-tauri/Cargo.toml package.json pyproject.toml
+  assert_no_matches "ADR-002 model-provider product authority" \
+    '\b(?:OpenAi|OpenAI|Anthropic|Claude|Ollama|Llama|Mistral|ModelProvider|ProviderCredential)\b|https?://[^[:space:]"\x27]*(?:openai|anthropic|ollama)' \
+    src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
+  assert_no_matches "ADR-002 generative analysis bridge" \
+    '#\[tauri::command\][[:space:]]*(?:pub[^[:space:]]+[[:space:]]+)?(?:start|run|generate)_ai|draft://(?:ai|analysis)|\b(?:runAiAnalysis|startAiAnalysis|generateAnalysis)\b' \
+    src-tauri/src/commands src-tauri/src/events src
+  printf 'PASS ADR-002 proposed v1 local-analysis guard\n'
 }
 
 require_citation_sources() {

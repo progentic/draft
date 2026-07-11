@@ -215,6 +215,12 @@ responsiveness, Phase 48 owns CSP/security, and Phase 49 owns candidate
 distribution. The v1 usability rule is now binding and mechanically checked.
 Phase 46 is next.
 
+Proposed ADR-002 would limit v1.0.0 analysis to the five existing local,
+deterministic text-review checks. It is under architecture review, so `RC-03`
+remains open and no Phase 46 analysis workflow may rely on the proposal yet.
+External providers, credentials, document transmission, generative output, and
+packaged model runtimes remain absent.
+
 ---
 
 ## 1. Phase Rules

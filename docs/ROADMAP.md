@@ -137,6 +137,12 @@ workflow blockers to Phase 46, keeps responsiveness in Phase 47, CSP/security
 in Phase 48, and candidate distribution in Phase 49. Usability and interaction
 clarity are now binding v1 release conditions. Phase 46 is next.
 
+The repository owner selected local deterministic text analysis as the proposed
+v1.0.0 analysis boundary. ADR-002 is under architecture review and `RC-03`
+remains open. Phase 46 analysis implementation cannot begin until the proposal
+is accepted; no provider, credential, network transmission, generative model,
+or packaged model runtime is implied by this proposal.
+
 ---
 
 ## 1. Product Direction

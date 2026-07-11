@@ -201,6 +201,13 @@ keeps `UserDocument` and `VerifiedSourceEvidence` distinct, while every stream
 update is `GeneratedAnalysis`. Provider integration, credentials, network
 execution, persistence, Tauri start IPC, and UI remain future work.
 
+Proposed ADR-002 is under review. It would keep that model orchestration seam
+internal for v1.0.0 and make the separately bounded local deterministic
+text-analysis helper the only production analysis path for the initial release.
+The proposal adds no current command, provider, credential, external request,
+model runtime, or visible workflow and is not accepted architecture until its
+governed PR merges.
+
 ### 3.3 Formatting
 
 Formatting includes APA, MLA, Chicago, heading structure, layout consistency, document-ready export, and bibliography generation.

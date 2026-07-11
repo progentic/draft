@@ -83,6 +83,12 @@ usability rule in the roadmap, phasemap, and RC ledger; verifies that
 `RC-01` through `RC-04` remain open for Phase 46; and keeps CSP, responsiveness,
 and distribution assigned to their later gates.
 
+Proposed ADR-002 is under architecture review. Its proposal guard keeps the
+provider-independent model orchestration boundary internal and denies external
+model, credential, and generative-analysis product authority while the owner
+decision cools. `RC-03` remains open and no Phase 46 analysis implementation is
+authorized by the proposal alone.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
