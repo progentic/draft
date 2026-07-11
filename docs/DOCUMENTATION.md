@@ -652,6 +652,10 @@ redaction, closed failures, and absence of new runtime authority. The original
 requirements remain non-binding in `docs/drafts/AUDIT_DIAGNOSTICS.md`; Phase 39
 is bounded separately in `docs/drafts/ERROR_UX.md`.
 
+The merged Phase 38 limitation is published to the live GitHub Wiki at commit
+`96e15c7`. All four live pages match their canonical sources, and rendered
+headings, lists, and navigation were verified after post-merge `main` passed.
+
 Recommended checks:
 
 - Markdown formatting
