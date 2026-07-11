@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 36 are complete. Phase 37 is
+**Current execution checkpoint:** Phases 0 through 37 are complete. Phase 38 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -159,6 +159,14 @@ system-browser boundaries fail before external work when offline. The header
 control is transient and accessible; no persistence, connectivity probe,
 retry queue, alternate transport, telemetry, proxy, credential, or secret
 storage is added. Phase 37 is the next implementation phase.
+
+Phase 37 implemented behavior is recorded in
+`docs/maintainers/SECRET_STORAGE.md`. Tauri manages one lazy Rust store backed
+by the native desktop credential manager. Bounded service API-key values are
+zeroized and never cross IPC or another untrusted boundary. No credential,
+provider, command, event, frontend state, prompt, fallback store, or network
+integration is added. Phase 38 remains separate and is bounded in the
+non-binding `docs/drafts/AUDIT_DIAGNOSTICS.md`.
 
 ---
 

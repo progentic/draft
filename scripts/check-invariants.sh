@@ -14,6 +14,7 @@ main() {
   require_tools rg sort wc
 
   check_credential_fields
+  check_secret_store_contract
   check_frontend_boundary
   check_python_boundary
   check_command_errors
@@ -51,6 +52,62 @@ check_credential_fields() {
   assert_no_matches "INV-01 credential fields" \
     '\b(?:publisher|institution|scholar|library)_(?:username|password)\b|\bapi_key_for_publisher\b' \
     src src-tauri/src python
+}
+
+check_secret_store_contract() {
+  local store_path="src-tauri/src/secrets/store.rs"
+  local test_path="src-tauri/src/secrets/store/tests.rs"
+  local initializer_path="src-tauri/src/application/secret_store.rs"
+  local required_tests=(
+    identifiers_accept_only_bounded_normalized_service_names
+    secret_values_are_nonempty_bounded_and_not_in_errors
+    store_load_replace_and_delete_are_deterministic
+    malformed_backend_values_fail_as_invalid_stored_secrets
+    backend_failures_map_to_closed_store_errors
+    keyring_failures_drop_raw_details_during_mapping
+    native_store_is_safe_to_manage_without_accessing_a_credential
+  )
+  local test_name
+
+  require_file "${store_path}"
+  require_file "${test_path}"
+  require_file "${initializer_path}"
+  require_file docs/drafts/SECRET_STORAGE.md
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+  require_source_pattern 'keyring = "4.1.4"' src-tauri/Cargo.toml
+  require_source_pattern 'zeroize = "1.9.0"' src-tauri/Cargo.toml
+  require_source_pattern 'NATIVE_SERVICE_NAME: &str = "com.progentic.draft"' "${store_path}"
+  require_source_pattern 'MAX_INTEGRATION_NAME_BYTES: usize = 64' "${store_path}"
+  require_source_pattern 'MAX_SECRET_BYTES: usize = 4_096' "${store_path}"
+  require_source_pattern 'Zeroizing<Vec<u8>>' "${store_path}"
+  require_source_pattern 'bytes.zeroize();' "${store_path}"
+  require_source_pattern '.set_secret(secret.expose_secret())' "${store_path}"
+  require_source_pattern '.get_secret()' "${store_path}"
+  require_source_pattern 'app.manage(SecretStore::native())' "${initializer_path}"
+  require_source_pattern 'initialize_secret_store(app)' src-tauri/src/lib.rs
+
+  assert_no_matches "Phase 37 secret persistence, transport, environment, or logging" \
+    '#\[tauri::command\]|\bserde\b|\brusqlite\b|(?:std|tokio)::fs|\breqwest\b|\bNetworkClient\b|\bPythonHelper\b|\bstd::env\b|\benv::|\b(?:println|eprintln|dbg|trace|debug|info|warn|error)!\s*\(' \
+    src-tauri/src/secrets
+  assert_no_matches "Phase 37 secret value formatting, cloning, or serialization" \
+    '(?s)#\[derive\([^\]]*(?:Debug|Clone|Serialize|Deserialize)[^\]]*\)\]\s*pub struct SecretValue|impl\s+(?:(?:fmt|serde)::)?(?:Debug|Display|Clone|Serialize|Deserialize)\s+for\s+SecretValue' \
+    "${store_path}"
+  assert_no_matches "Phase 37 secret command or event surface" \
+    '\bSecret(?:Store|Value|Id|DeleteOutcome|StoreError)\b' \
+    src-tauri/src/commands src-tauri/src/events
+  assert_no_matches "Phase 37 frontend secret surface" \
+    '(?i)\bapi[_-]?key\b|\bpassword\b|\bcredential\b|\bsecret\b' src
+  assert_no_matches "Phase 37 Python secret surface" \
+    '(?i)\bapi[_-]?key\b|\bpassword\b|\bcredential\b|\bsecret\b|\bkeyring\b' python
+  assert_no_matches "Phase 37 ad hoc native credential access" \
+    '\bkeyring::' --glob '!src-tauri/src/secrets/store.rs' \
+    --glob '!src-tauri/src/secrets/store/tests.rs' \
+    src-tauri/src
+  assert_no_matches "Phase 37 text-password keyring API" \
+    '\.(?:set|get)_password\s*\(' src-tauri/src/secrets
+  printf 'PASS INV-01 Phase 37 OS-native secret store contract\n'
 }
 
 check_frontend_boundary() {

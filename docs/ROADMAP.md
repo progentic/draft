@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 36 are complete. Phase 37 is
+**Current execution checkpoint:** Phases 0 through 37 are complete. Phase 38 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -79,6 +79,13 @@ before external work while local editing and formatting review remain
 available. The mode is not persisted, does not probe operating-system
 connectivity, and adds no retry queue, telemetry, proxy, credential, or secret
 storage behavior. Phase 37 remains a separate native secret-storage boundary.
+
+Phase 37 adds a lazy Rust-owned service API-key store backed by Keychain,
+Credential Manager, or Secret Service. Secret values are bounded, zeroized on
+drop, and never cross Tauri, frontend, Python, config, SQLite, filesystem,
+environment, or logging boundaries. No key, provider, command, settings
+control, or credential prompt is added. Non-binding Phase 38 audit and
+diagnostics requirements are bounded in `docs/drafts/AUDIT_DIAGNOSTICS.md`.
 
 ---
 

@@ -61,7 +61,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 
 | ID | Status | Invariant | Protects | Local development enforcement | GitHub Actions enforcement |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. | `ARCHITECTURE.md` §9 and `GOVERNANCE.md` §9 | Phase 23 adds a Rust-owned default-browser handoff with no login fields, rejects URL userinfo, and mechanically denies embedded/direct opener authority. The Phase 2 credential scan remains active; full secret, schema, helper-input, and log checks remain open. | The `verify` job runs the same handoff tests, opener scans, and credential scan. Full secret, schema, helper-input, and log checks remain open. |
+| `INV-01` | Accepted | Institutional and publisher credentials never pass through DRAFT process memory, config, logs, database, document files, Python helpers, Bash scripts, or storage. Service API keys use only the Rust-owned OS-native secret store and never enter frontend-reachable storage. | `ARCHITECTURE.md` §4.2 and §9 and `GOVERNANCE.md` §9 | Phase 23 keeps login sessions in the system browser. Phase 37 adds a lazy native service API-key store with bounded zeroizing values, closed errors, injected non-native tests, and scans denying IPC, events, frontend/Python state, config, SQLite, filesystem, environment, logs, fallback storage, and ad hoc keyring access. | The `verify` job runs the same handoff and Phase 37 secret-store tests plus credential, authority, dependency, value-trait, and native-adapter scans. |
 | `INV-02` | Accepted | No Tauri command returns an untyped or generic error. | `ARCHITECTURE.md` §5.1 and §12 | Phases 6, 9, 13, 18, and 23 establish typed runtime-status, cancellation, document-file, citation-resolution, and browser-handoff commands. The invariant scan rejects generic errors, requires matching command registration and contract-test counts, and compares registered Rust names with frontend wrappers. | The `verify` job runs the same Rust tests, command-contract counts, and bridge-name parity scan. |
 | `INV-03` | Accepted | Frontend code never calls external network services, filesystem APIs, secret stores, or external opener APIs directly. All trusted work goes through Rust commands. | `ARCHITECTURE.md` §4.1, §9, and §13 | `scripts/check-invariants.sh` blocks direct trusted APIs, opener bindings, `window.open`, and raw command/event APIs outside `src/ipc/`. Typed wrappers carry bounded inputs without paths, SQLite authority, full reference metadata, or browser-session authority. | The `verify` job runs the same frontend tests, boundary scans, and bridge-name parity check. |
 | `INV-04` | Accepted | Citation node attrs are validated against a declared schema version before render, analysis, formatting, save, or export. Invalid or unknown versions are migration cases, never silent render cases. | `ARCHITECTURE.md` §8 and §11 | Phase 18 requires exact Rust attrs tests, nested envelope and pre-mutation open/save rejection, store-backed resolution, typed IPC guards, Tiptap fail-closed tests, and an embedded-metadata scan. Phase 19 reuses validated attrs for deterministic bibliography-consistency tests. Phase 32 rejects every validated citation explicitly rather than exporting its editor marker. | The `verify` job runs the same Rust/frontend tests, consistency and DOCX citation-rejection tests, and citation invariant scans through `scripts/verify.sh`. |
@@ -137,6 +137,18 @@ Generic `api_key` is allowed only for documented API integrations stored through
 Phase 23 accepts no login fields. Publisher and institutional browser targets
 reject URL username and password components before launch. The handoff uses the
 default system browser and cannot inspect or receive the resulting session.
+
+Phase 37 adds one lazy `SecretStore` for service API keys only. Its fixed
+`com.progentic.draft` native namespace uses bounded normalized internal account
+slots. `SecretValue` owns `Zeroizing<Vec<u8>>`, has no clone, formatting, or
+serialization implementation, and never crosses a Tauri command or event.
+
+The production adapter uses binary Keychain, Credential Manager, or Secret
+Service operations through the pinned Rust keyring dependency. Native details
+are discarded during closed error mapping. Tests inject an in-memory backend
+and never access a real credential manager. There is no frontend, Python,
+config, SQLite, filesystem, environment, log, provider, network, or fallback
+secret path.
 
 ---
 

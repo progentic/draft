@@ -22,6 +22,7 @@ then offer a specific, useful message without exposing implementation details.
 | External access | `invalid_url`, `invalid_doi`, `invalid_search_query`, `offline`, `connectivity_unavailable`, `browser_unavailable` | No visible research workflow currently consumes this wrapper. |
 | Connectivity mode | `connectivity_unavailable` | The header retains the last confirmed mode and announces a failed change, or offers a retry when no mode was read. |
 | Formatting review | `too_many_headings`, `too_many_citations`, `invalid_heading_level`, `empty_heading_title`, `heading_title_too_long`, `invalid_citekey` | Visible in the formatting review band with code-specific bounded messages. |
+| Native secret storage | `InvalidIdentifier`, `EmptySecret`, `SecretTooLong`, `AccessDenied`, `StoreUnavailable`, `AmbiguousEntry`, `InvalidStoredSecret`, `Unsupported` | Rust-only internal errors; no command or visible credential workflow exists. |
 
 Every command wrapper also distinguishes an invalid response from a transport
 failure. Runtime events add an invalid-payload failure. Document, citation, and

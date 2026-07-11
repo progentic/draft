@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phases 0 through 36 are complete at the current checkpoint. Phase 37 is the
+Phases 0 through 37 are complete at the current checkpoint. Phase 38 is the
 next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
@@ -48,6 +48,11 @@ frontend clients expose only the effective closed mode. The header toggle adds
 no dependency, persistence, connectivity monitor, retry queue, or alternate
 transport.
 
+Rust also owns a lazy OS-native service API-key store. `keyring` 4.1.4 selects
+Keychain, Credential Manager, or Secret Service, while `zeroize` 1.9.0 clears
+owned secret bytes on drop. The store has no command, event, frontend,
+provider, network, config, database, filesystem, environment, or log surface.
+
 Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
 features disabled for deterministic stored package entries. Compilation is
@@ -59,6 +64,7 @@ a close command, autosave, recovery, product research or analysis workflows,
 provider metadata lookup UI, browser-handoff controls, PDF import controls,
 filesystem watcher, import processing worker or scheduler, production model
 provider, model credentials, analysis start command or frontend listener,
+credential settings or prompts,
 visible text-analysis controls, formatting finding persistence, citation style
 conversion, complete document formatting, citation rendering,
 DOCX export controls, PDF export, packaged Python runtime discovery, release

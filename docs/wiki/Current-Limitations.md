@@ -56,5 +56,7 @@ This wording describes the current state, not a permanent product limitation.
 - Offline mode is process-local and resets to online when DRAFT restarts.
 - DRAFT does not monitor operating-system connectivity, retry or queue external
   work, or persist the mode.
+- API keys, external-service providers, credential prompts, and credential
+  settings are not currently available in the workspace.
 
 Return to [Home](Home).
