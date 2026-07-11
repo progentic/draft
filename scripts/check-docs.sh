@@ -572,9 +572,9 @@ check_error_ux_documentation() {
 check_critical_path_documentation() {
   local guide='docs/maintainers/CRITICAL_PATHS.md'
 
-  require_document_text "${guide}" 'registered only under `cfg(test)`'
+  require_document_text "${guide}" "registered only under \`cfg(test)\`"
   require_document_text "${guide}" 'reopen restores the last committed envelope'
-  require_document_text "${guide}" '`UnsupportedCitation`'
+  require_document_text "${guide}" "\`UnsupportedCitation\`"
   require_document_text "${guide}" 'package reopens'
   require_document_text "${guide}" 'adds no application command'
   require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 41'
