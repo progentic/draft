@@ -6,6 +6,11 @@ This is the implemented Phase 44 release-candidate hardening baseline as
 reconciled by Phase 45. It is not a release-candidate declaration and does not
 authorize a tag, signed package, or publication.
 
+The proposed `docs/contracts/V1_USABILITY_ACCEPTANCE.md` contract would make
+user comprehension and supported-workflow completion executable release gates.
+It remains non-binding during `contract-doc` review and does not close any row,
+authorize implementation, or imply that an absent workflow exists.
+
 The realignment baseline is merged Phase 44 commit `37d0228`. Its post-merge
 hosted verification passed. At the audit time, GitHub had no open issues or open pull
 requests, and no published releases. Repository scans found no production
@@ -36,11 +41,11 @@ closure condition. Removing a row is not closure.
 | RC-03 | Release blocker | Open | AI orchestration and text-analysis findings have no production provider, start command, packaged helper discovery, or visible review workflow. | Analysis workflow | Phase 46 | The supported analysis and text-review workflow is visible, distinguishes generated output from evidence, supports required cancellation, and passes packaged interaction tests. |
 | RC-04 | Release blocker | Open | DOCX compilation is internal-only and no export control exists. | Export workflow | Phase 46 | The supported DOCX path is reachable through a clear Rust-owned target flow and passes packaged source-preservation and recovery tests. |
 | RC-05 | Release blocker | Open | Tauri CSP is `null`. | Security review | Phase 48 | A restrictive packaged-app CSP is configured, enforced structurally, and verified against every required local asset and IPC flow. |
-| RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 49 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, and built from the exact candidate commit without adding updater or upload authority implicitly. |
+| RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 49 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, and built from the exact candidate commit without adding updater or upload authority implicitly; after contract acceptance, it also passes the complete packaged usability workflow. |
 | GATE-45 | Must close before Phase 49 | Closed | Phase 45 reconciles release, roadmap, public, maintainer, Wiki, and enforcement truth without changing product behavior. | Documentation and governance | Phase 45 | The realignment assigns every blocker and binds the v1 usability and interaction-clarity rule without claiming implementation. |
-| GATE-46 | Must close before Phase 49 | Open | The mandatory accessibility and interaction-clarity pass has not run. | Frontend accessibility | Phase 46 | Critical flows pass keyboard, focus, naming, announcement, discoverability, label, terminology, and unavailable-state review. |
-| GATE-47 | Must close before Phase 49 | Open | Realistic startup, editor, operation-feedback, and large-document responsiveness have not been measured. | Performance | Phase 47 | Measured limits and perceived-wait behavior meet the accepted release thresholds or remain explicit blockers. |
-| GATE-48 | Must close before Phase 49 | Open | The final trust-boundary and packaged CSP review has not run. | Security | Phase 48 | Invariant, dependency, capability, CSP, path, archive/XML, secret, network, and frontend-authority review is green with findings closed or blocking. |
+| GATE-46 | Must close before Phase 49 | Open | The mandatory accessibility and interaction-clarity pass has not run. | Frontend accessibility and workflow clarity | Phase 46 | After contract acceptance, critical flows satisfy its discoverability, understanding, state, recovery, keyboard, focus, naming, announcement, terminology, and unavailable-state criteria. |
+| GATE-47 | Must close before Phase 49 | Open | The current responsiveness review has not run; the proposal would add visible-language, workflow-usability, and first-time-user validation. | Performance; proposed usability expansion | Phase 47 | Current measured limits and perceived waits must pass; after contract acceptance, at least five uncoached participants also meet every critical-task, 80-percent task/terminology/recovery, and median-satisfaction threshold. |
+| GATE-48 | Must close before Phase 49 | Open | The final trust-boundary and packaged CSP review has not run; the proposal would add secure usability. | Security | Phase 48 | Current invariant, dependency, capability, CSP, path, archive/XML, secret, network, and frontend-authority review passes; after contract acceptance, security wording, safe recovery, and work preservation also pass. |
 
 ## Accepted v1 Limitations
 
@@ -80,16 +85,44 @@ This is a release condition, not informal polish. Phase 46 owns control
 discoverability, labels, menu terminology, unavailable states, keyboard and
 focus behavior, announcements, and supported-workflow completion. Phase 47
 owns feedback during operations, ambiguous waiting states, and measured and
-perceived responsiveness.
+perceived responsiveness. The complete workflow, evidence schema, thresholds,
+and phase-specific gates are defined in
+`docs/contracts/V1_USABILITY_ACCEPTANCE.md`.
+
+## Usability Finding Taxonomy
+
+This taxonomy is proposed and non-binding until the contract is accepted.
+
+- **UX-0:** data loss, inaccessible critical action, or inability to complete
+  the primary workflow. Any open `UX-0` blocks Phase 49.
+- **UX-1:** misleading label, hidden primary control, unrecoverable confusion,
+  or unsupported capability claim. Any open `UX-1` blocks Phase 49.
+- **UX-2:** meaningful friction that should be fixed before release. Every
+  `UX-2` requires a recorded fix, accepted limitation, or owner-approved
+  deferral with rationale.
+- **UX-3:** an enhancement suitable for later maintenance.
+
+Findings and dispositions belong in
+`docs/maintainers/V1_USABILITY_EVIDENCE.md`. The evidence ledger is created
+when Phase 46 produces real workflow evidence; this baseline does not create
+empty or fabricated results.
 
 ## Closure Sequence
 
+The existing blocker order remains binding. The proposed usability thresholds
+and evidence additions below apply only after contract acceptance:
+
 1. Phase 46 must close `RC-01` through `RC-04` before it can close `GATE-46`.
-2. Phase 47 measures realistic workloads and closes `GATE-47` only when slow or
-   ambiguous interactions are fixed or remain explicit release blockers.
-3. Phase 48 closes `RC-05` and `GATE-48` through the final security review.
+2. Phase 47 closes `GATE-47` only after the complete visible-language audit,
+   realistic scenarios, measured/perceived responsiveness checks, and
+   first-time-user thresholds pass or produce explicit blockers.
+3. Phase 48 closes `RC-05` and `GATE-48` through the final security and
+   secure-usability review.
 4. Phase 49 may close `RC-06` and cut a candidate only when every prior row is
-   closed with its named evidence.
+   closed, the exact package passes the complete workflow, no `UX-0` or `UX-1`
+   remains open, and every `UX-2` has a recorded disposition.
+5. Phase 50 may tag and publish only after first-run, Start Here, shortcut,
+   troubleshooting, user release-note, download, and launch evidence is green.
 
 Phase 45 closes only `GATE-45`. It does not close a product, security,
 performance, accessibility, or distribution blocker.
@@ -110,8 +143,9 @@ Phase 44 exits when:
 - `scripts/check-release-candidate.sh` passes locally and in hosted CI; and
 - the full verifier passes.
 
-Phase 49 entry is stricter: every `RC-*` and `GATE-*` row must be closed with
-the named evidence. Phase 44 hardening and Phase 45 realignment do not satisfy
+Phase 49 entry is stricter: every prior-phase `RC-*` and `GATE-*` row must be
+closed with the named evidence, and the usability ledger must contain no open
+`UX-0` or `UX-1`. Phase 44 hardening and Phase 45 realignment do not satisfy
 that future gate.
 
 ## Explicit Exclusions

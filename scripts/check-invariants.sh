@@ -43,6 +43,7 @@ main() {
   check_document_file_contract
   check_critical_path_contract
   check_data_migration_contract
+  check_v1_usability_contract
   check_bridge_name_parity
   check_pdf_export_deferral_guard
   check_rust_network_boundary
@@ -50,6 +51,42 @@ main() {
   report_pdf_deferral_status
 
   printf 'Invariant boundary scans passed.\n'
+}
+
+check_v1_usability_contract() {
+  local contract='docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+  local invariant_id
+  local invariant_ids=(
+    INV-UX-01
+    INV-UX-02
+    INV-UX-03
+    INV-UX-04
+    INV-UX-05
+    INV-UX-06
+  )
+
+  require_file "${contract}"
+  require_source_pattern 'status: Proposed' "${contract}"
+  require_source_pattern 'owners: [frontend, core, release]' "${contract}"
+  require_source_pattern 'DRAFT v1.0.0 is not releasable unless a first-time user' \
+    "${contract}"
+  require_source_pattern 'Passing tests proves that DRAFT behaves as implemented.' \
+    "${contract}"
+  require_source_pattern 'at least five people who have not worked on the' \
+    "${contract}"
+  require_source_pattern 'At least 80 percent of participants' "${contract}"
+  require_source_pattern 'median below 4 creates a Phase 47 finding' "${contract}"
+  require_source_pattern "Any open \`UX-0\` or \`UX-1\` blocks Phase 49." "${contract}"
+  require_source_pattern 'The analysis step remains blocked while ADR-002 is Proposed.' \
+    "${contract}"
+
+  for invariant_id in "${invariant_ids[@]}"; do
+    require_source_pattern "| \`${invariant_id}\` | Proposed |" \
+      docs/INVARIANTS.md
+    require_source_pattern "${invariant_id}" "${contract}"
+  done
+
+  printf 'PASS INV-UX-01 through INV-UX-06 v1 usability contract\n'
 }
 
 check_credential_fields() {
