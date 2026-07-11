@@ -66,4 +66,17 @@ receive a usable result.
 Run the check again. Restart DRAFT and report the version and exact message if
 the failure repeats.
 
+## Connectivity Mode Unavailable
+
+`Mode unavailable` means the workspace could not read the Rust-owned session
+mode. Choose the control again to retry. Restart DRAFT and report the version
+and exact visible message if it repeats.
+
+`Online - change failed` or `Offline - change failed` means DRAFT kept the
+visible prior mode because the requested change failed. Retry the change or
+continue local work in the displayed mode.
+
+Offline mode is a DRAFT session policy, not a network-status indicator. It
+resets to online when DRAFT restarts.
+
 Return to [Home](Home).

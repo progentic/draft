@@ -78,7 +78,9 @@ button:focus-visible,
 
 .workspace-header__brand-group,
 .workspace-header__document,
+.workspace-header__session,
 .session-status,
+.connectivity-control,
 .wordmark {
   display: flex;
   align-items: center;
@@ -132,11 +134,63 @@ button:focus-visible,
   white-space: nowrap;
 }
 
-.session-status {
+.workspace-header__session {
+  min-width: 0;
   justify-self: end;
+  gap: 9px;
+}
+
+.session-status {
   gap: 7px;
   color: #e6d8c2;
   font-size: 0.75rem;
+}
+
+.connectivity-control {
+  min-width: 0;
+}
+
+.connectivity-toggle {
+  display: inline-flex;
+  min-width: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  color: #dbe7e3;
+  background: #303634;
+  border: 1px solid #49504d;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.connectivity-toggle:hover:not(:disabled) {
+  color: #ffffff;
+  background: #3b4340;
+  border-color: #68716d;
+}
+
+.connectivity-toggle[aria-pressed="true"] {
+  color: #fff0d4;
+  background: #624a24;
+  border-color: #8b6b35;
+}
+
+.connectivity-toggle:disabled {
+  color: #969e9a;
+  cursor: default;
+}
+
+.connectivity-feedback {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .session-status__dot,
@@ -883,6 +937,14 @@ button:focus-visible,
 
   .session-status span:last-child {
     display: none;
+  }
+
+  .connectivity-toggle__label {
+    display: none;
+  }
+
+  .connectivity-toggle {
+    padding: 4px;
   }
 
   .editor-scroll {

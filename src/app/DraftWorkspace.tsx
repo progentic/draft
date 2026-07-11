@@ -6,12 +6,14 @@ import { DocumentOutline } from "../components/DocumentOutline";
 import { WorkspaceHeader } from "../components/WorkspaceHeader";
 import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
 import { EditorToolbar } from "../editor/EditorToolbar";
+import { useConnectivityMode } from "../features/connectivity/useConnectivityMode";
 import { FormattingReviewPanel } from "../features/formatting-review/FormattingReviewPanel";
 import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
 import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 
 export function DraftWorkspace() {
   const editor = useDraftEditor();
+  const connectivity = useConnectivityMode();
   const runtimeStatus = useRuntimeStatus();
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [isFormattingReviewOpen, setIsFormattingReviewOpen] = useState(false);
@@ -19,7 +21,10 @@ export function DraftWorkspace() {
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
       <WorkspaceHeader
+        connectivityState={connectivity.state}
         isOutlineOpen={isOutlineOpen}
+        onRefreshConnectivity={() => void connectivity.refresh()}
+        onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}
         onToggleOutline={() => setIsOutlineOpen((isOpen) => !isOpen)}
       />
       <WorkspaceBody

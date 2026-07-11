@@ -3,6 +3,8 @@ use std::{error::Error, fmt};
 use serde::Serialize;
 use url::Url;
 
+use crate::network::connectivity::{ConnectivityPolicy, ConnectivityPolicyError};
+
 use super::metadata::Doi;
 
 const MAX_EXTERNAL_URL_LENGTH: usize = 2_048;
@@ -35,6 +37,8 @@ pub(crate) enum ExternalAccessError {
     InvalidUrl,
     InvalidDoi,
     InvalidSearchQuery,
+    Offline,
+    ConnectivityUnavailable,
     BrowserUnavailable,
 }
 
@@ -49,9 +53,13 @@ pub(crate) trait ExternalUrlOpener {
 
 /// Validates one target and opens it in the default system browser.
 pub(crate) fn open_in_system_browser(
+    connectivity: &ConnectivityPolicy,
     opener: &impl ExternalUrlOpener,
     input: ExternalAccessInput,
 ) -> Result<ExternalAccessDestination, ExternalAccessError> {
+    connectivity
+        .require_online()
+        .map_err(ExternalAccessError::from)?;
     let (destination, url) = external_access_url(input)?;
     opener
         .open_external_url(&url)
@@ -65,12 +73,23 @@ impl fmt::Display for ExternalAccessError {
             Self::InvalidUrl => "external URL is invalid",
             Self::InvalidDoi => "DOI is invalid",
             Self::InvalidSearchQuery => "Google Scholar query is invalid",
+            Self::Offline => "external access is paused while DRAFT is offline",
+            Self::ConnectivityUnavailable => "connectivity state is unavailable",
             Self::BrowserUnavailable => "system browser could not be opened",
         })
     }
 }
 
 impl Error for ExternalAccessError {}
+
+impl From<ConnectivityPolicyError> for ExternalAccessError {
+    fn from(error: ConnectivityPolicyError) -> Self {
+        match error {
+            ConnectivityPolicyError::Offline => Self::Offline,
+            ConnectivityPolicyError::Unavailable => Self::ConnectivityUnavailable,
+        }
+    }
+}
 
 fn external_access_url(
     input: ExternalAccessInput,

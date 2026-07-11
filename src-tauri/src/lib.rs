@@ -29,6 +29,8 @@ pub fn run() {
         .manage(workers::cancellation::WorkerCancellationRegistry::new())
         .invoke_handler(tauri::generate_handler![
             commands::citation_resolution::resolve_citation,
+            commands::connectivity::get_connectivity_mode,
+            commands::connectivity::set_connectivity_mode,
             commands::document_open::open_document,
             commands::document_save::save_document,
             commands::external_access::open_external_access,

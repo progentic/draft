@@ -41,12 +41,13 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 34, audited in Phase 35, is
+The implemented application through Phase 36 is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
-  document-save, citation-resolution, and external-access commands with
-  command-specific request, response, and error types.
+  document-save, citation-resolution, external-access, formatting-review, and
+  connectivity-mode commands with command-specific request, response, and
+  error types.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
 - Rust emits the typed finite `draft://runtime-status` event, and the frontend
   validates it before React displays connection state.
@@ -77,6 +78,10 @@ deliberately smaller than the full system described in this architecture:
   explicit timeouts, per-provider rate limiting and backoff, bounded responses,
   and typed transport failures. Crossref, Semantic Scholar, and Unpaywall
   modules use it for DOI metadata lookup and return non-persistent candidates.
+- Rust owns one process-local online/offline policy shared by that client and
+  the system-browser handoff. The workspace can request one closed session
+  value, but Rust stores and enforces it before external work. New sessions
+  default online; the value is not persisted and no connectivity probe runs.
 - Rust validates publisher and institutional HTTPS URLs, DOI resolver targets,
   and Google Scholar queries before handing one URL to the default system
   browser. The WebView has no direct opener API or capability.
@@ -665,11 +670,16 @@ Relevant invariant: `INV-02` in `INVARIANTS.md`.
 
 ### 12.1 Offline Behavior
 
-DRAFT must run in a defined degraded state when there is no network connection.
+DRAFT runs in a defined degraded state when the user selects offline mode or a
+network connection attempt returns the typed offline failure.
 
-- Commands that require network access return a distinct offline variant rather than a generic timeout.
+- Rust owns the explicit session policy and denies new metadata requests and
+  system-browser handoffs before transport or opener work while it is offline.
+- Commands that require external access return a distinct offline variant rather than a generic timeout.
 - Local citation formatting, document editing, local reference-library access, local formatting checks, local text-analysis helpers, and saving remain functional offline.
-- Reconnection is not actively polled for. The next user action that needs the network will succeed or fail normally once connectivity returns.
+- Reconnection is not actively polled for. Explicit mode remains offline until
+  the user returns online or restarts DRAFT; transport failures do not silently
+  change the selected mode.
 
 ---
 

@@ -74,6 +74,7 @@ neither performs a data migration from an older known schema yet.
 
 | Symbol | Current setting | Source | Meaning |
 | :--- | :--- | :--- | :--- |
+| `DEFAULT_CONNECTIVITY_MODE` | `online` | `network/connectivity.rs` | Initial process-local mode for every new application session. |
 | `NETWORK_CONNECT_TIMEOUT` | 10 seconds | `network/client.rs` | Connection-establishment bound. |
 | `NETWORK_REQUEST_TIMEOUT` | 30 seconds | `network/client.rs` | Complete request bound. |
 | `PROVIDER_REQUEST_INTERVAL` | 1 second | `network/client.rs` | Minimum interval per metadata provider. |

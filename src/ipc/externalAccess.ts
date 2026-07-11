@@ -22,6 +22,8 @@ export type ExternalAccessCommandErrorCode =
   | "invalid_url"
   | "invalid_doi"
   | "invalid_search_query"
+  | "offline"
+  | "connectivity_unavailable"
   | "browser_unavailable";
 
 export type ExternalAccessClientError =
@@ -90,6 +92,8 @@ function isCommandErrorCode(value: unknown): value is ExternalAccessCommandError
     value === "invalid_url" ||
     value === "invalid_doi" ||
     value === "invalid_search_query" ||
+    value === "offline" ||
+    value === "connectivity_unavailable" ||
     value === "browser_unavailable"
   );
 }

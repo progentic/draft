@@ -16,6 +16,9 @@ system accepts or rejects the launch.
 Phase 23 adds no visible workspace control. The typed Rust command and
 TypeScript wrapper are ready for a later research workflow to call.
 
+Phase 36 requires the shared Rust-owned session policy before this boundary.
+Offline mode rejects the handoff before request validation or browser work.
+
 ## Request Boundary
 
 The command accepts a tagged request:
@@ -41,6 +44,7 @@ cannot replace either service origin.
 | Layer | Item | Responsibility |
 | :--- | :--- | :--- |
 | High | `open_external_access` | Maps the typed IPC request and response. |
+| Mid | `ConnectivityPolicy` | Denies external work while the session is offline. |
 | Mid | `open_in_system_browser` | Coordinates target validation and one launch. |
 | Mid | `external_access_url` | Selects target-specific URL construction. |
 | Low | URL and query validators | Reject malformed or credential-bearing input. |
@@ -65,6 +69,8 @@ The command does not return the opened URL. Typed errors are:
 { "code": "invalid_url" }
 { "code": "invalid_doi" }
 { "code": "invalid_search_query" }
+{ "code": "offline" }
+{ "code": "connectivity_unavailable" }
 { "code": "browser_unavailable" }
 ```
 
@@ -83,11 +89,12 @@ cookie, token, scraping, proxying, interception, or browser automation path.
 
 ## Verification
 
-Six Rust domain tests cover valid publisher/institutional URLs, denied schemes
+Seven Rust domain tests cover valid publisher/institutional URLs, denied schemes
 and URL credentials, DOI URL construction, Google Scholar URL construction,
-invalid input before launch, and bounded launch failures. Four command tests
+invalid input before launch, bounded launch failures, and offline denial before
+validation or opener invocation. Four command tests
 cover the standard typed signature, request, response, and error shapes.
-Thirteen frontend tests cover every target, exact arguments, destination
+Fifteen frontend tests cover every target, exact arguments, destination
 mismatch, malformed responses, all command errors, and bounded transport
 errors.
 
@@ -99,6 +106,9 @@ launchers, and network or persistence authority in the handoff modules.
 No test invokes `SystemBrowser`, opens an application, or performs a network
 request. The aggregate verifier runs the same evidence locally and in GitHub
 Actions.
+
+The complete Phase 36 policy is documented in
+`docs/maintainers/OFFLINE_MODE.md`.
 
 ## Next Boundary
 

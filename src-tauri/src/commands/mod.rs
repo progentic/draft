@@ -1,4 +1,5 @@
 pub(crate) mod citation_resolution;
+pub(crate) mod connectivity;
 pub(crate) mod document_open;
 pub(crate) mod document_save;
 pub(crate) mod external_access;

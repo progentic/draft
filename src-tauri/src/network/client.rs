@@ -2,9 +2,11 @@ use std::{
     collections::HashMap,
     error::Error,
     fmt,
-    sync::Mutex,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+
+use super::connectivity::{ConnectivityPolicy, ConnectivityPolicyError};
 
 const PRODUCT_NAME: &str = "DRAFT";
 const PRODUCT_URL: &str = "https://github.com/progentic/draft";
@@ -26,6 +28,7 @@ pub const MAX_RATE_LIMIT_BACKOFF: Duration = Duration::from_secs(60);
 
 /// Shared configured HTTP transport owned by the Rust core.
 pub struct NetworkClient {
+    connectivity: Arc<ConnectivityPolicy>,
     http: reqwest::Client,
     request_gate: Mutex<RequestGate>,
 }
@@ -81,8 +84,8 @@ struct ServiceRateState {
 
 impl NetworkClient {
     /// Builds the production client without issuing an external request.
-    pub fn new() -> Result<Self, NetworkClientError> {
-        build_network_client(env!("CARGO_PKG_VERSION"))
+    pub fn new(connectivity: Arc<ConnectivityPolicy>) -> Result<Self, NetworkClientError> {
+        build_network_client(env!("CARGO_PKG_VERSION"), connectivity)
     }
 
     /// Executes one bounded metadata GET through the centralized transport.
@@ -91,9 +94,19 @@ impl NetworkClient {
         service: NetworkService,
         url: &str,
     ) -> Result<Vec<u8>, NetworkRequestError> {
+        self.require_online()?;
         self.reserve_request(service)?;
         let response = self.send_get(url).await?;
         self.handle_response(service, response).await
+    }
+
+    fn require_online(&self) -> Result<(), NetworkRequestError> {
+        self.connectivity
+            .require_online()
+            .map_err(|error| match error {
+                ConnectivityPolicyError::Offline => NetworkRequestError::Offline,
+                ConnectivityPolicyError::Unavailable => NetworkRequestError::ClientUnavailable,
+            })
     }
 
     fn reserve_request(&self, service: NetworkService) -> Result<(), NetworkRequestError> {
@@ -200,7 +213,10 @@ impl NetworkRequestError {
     }
 }
 
-fn build_network_client(version: &str) -> Result<NetworkClient, NetworkClientError> {
+fn build_network_client(
+    version: &str,
+    connectivity: Arc<ConnectivityPolicy>,
+) -> Result<NetworkClient, NetworkClientError> {
     let policy = network_client_policy(version)?;
     let http = reqwest::Client::builder()
         .user_agent(&policy.user_agent)
@@ -210,6 +226,7 @@ fn build_network_client(version: &str) -> Result<NetworkClient, NetworkClientErr
         .build()
         .map_err(|_| NetworkClientError::ClientBuildFailed)?;
     Ok(NetworkClient {
+        connectivity,
         http,
         request_gate: Mutex::new(RequestGate::default()),
     })

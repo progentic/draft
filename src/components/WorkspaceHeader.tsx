@@ -1,7 +1,14 @@
 import { FileText, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
+import { ConnectivityModeControl } from "../features/connectivity/ConnectivityModeControl";
+import type { ConnectivityModeState } from "../features/connectivity/useConnectivityMode";
+import type { ConnectivityMode } from "../ipc/connectivityMode";
+
 interface WorkspaceHeaderProps {
   isOutlineOpen: boolean;
+  connectivityState: ConnectivityModeState;
+  onRefreshConnectivity: () => void;
+  onSetConnectivityMode: (mode: ConnectivityMode) => void;
   onToggleOutline: () => void;
 }
 
@@ -10,7 +17,7 @@ export function WorkspaceHeader(props: WorkspaceHeaderProps) {
     <header className="workspace-header">
       <HeaderBrand {...props} />
       <DocumentIdentity />
-      <SessionStatus />
+      <HeaderSession {...props} />
     </header>
   );
 }
@@ -49,11 +56,18 @@ function DocumentIdentity() {
   );
 }
 
-function SessionStatus() {
+function HeaderSession(props: WorkspaceHeaderProps) {
   return (
-    <div className="session-status" role="status">
-      <span className="session-status__dot" aria-hidden="true" />
-      <span>Not saved</span>
+    <div className="workspace-header__session">
+      <div className="session-status" role="status">
+        <span className="session-status__dot" aria-hidden="true" />
+        <span>Not saved</span>
+      </div>
+      <ConnectivityModeControl
+        state={props.connectivityState}
+        onRefresh={props.onRefreshConnectivity}
+        onSetMode={props.onSetConnectivityMode}
+      />
     </div>
   );
 }

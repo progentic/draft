@@ -46,6 +46,8 @@ describe("openExternalAccess", () => {
     "invalid_url",
     "invalid_doi",
     "invalid_search_query",
+    "offline",
+    "connectivity_unavailable",
     "browser_unavailable",
   ] as const)("preserves the %s command error", async (code) => {
     invokeMock.mockRejectedValue({ code });

@@ -122,6 +122,17 @@ performs no persistence, filesystem, network, Python, worker, or export work.
 The complete integration is documented in
 `docs/maintainers/FORMATTING_UX.md`.
 
+## Connectivity mode commands
+
+Phase 36 adds `get_connectivity_mode` and `set_connectivity_mode`. The read
+command accepts an empty request. The set command accepts only `online` or
+`offline`. Both return the effective Rust-owned mode and expose only
+`connectivity_unavailable` when shared state cannot be read.
+
+The commands change process-local session policy only. They accept no URL,
+provider, proxy, credential, retry instruction, or persistence option. The
+complete behavior is documented in `docs/maintainers/OFFLINE_MODE.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -134,6 +145,8 @@ The complete integration is documented in
 | Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
 | Mid | `open_external_access` | Validates a research destination and delegates one system-browser launch. |
 | Mid | `run_formatting_review` | Validates one bounded snapshot and maps pure findings to closed actions. |
+| Mid | `get_connectivity_mode` | Returns the effective Rust-owned session mode. |
+| Mid | `set_connectivity_mode` | Applies one closed process-local mode. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -170,6 +183,8 @@ cancellation lifecycle outcomes, Phase 13 document commands, Phase 14
 atomic-write failure shapes, Phase 18 citation resolution, and Phase 23
 external browser handoff. Phase 34 adds the same signature, request, response,
 error, and rejected-content evidence for formatting review.
+Phase 36 adds two complete command-contract sets for connectivity get/set and
+extends external access with typed offline policy failures.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -200,5 +215,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
 - Phase 34 establishes the bounded formatting review command described in
   `docs/maintainers/FORMATTING_UX.md`.
+- Phase 36 establishes the session connectivity commands described in
+  `docs/maintainers/OFFLINE_MODE.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.
