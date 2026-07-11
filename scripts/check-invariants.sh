@@ -11,7 +11,7 @@ source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
 main() {
   cd "$(repository_root)"
-  require_tools rg sort wc
+  require_tools git rg sort wc
 
   check_credential_fields
   check_secret_store_contract
@@ -39,6 +39,7 @@ main() {
   check_pdf_import_contract
   check_background_job_contract
   check_ai_orchestration_contract
+  check_v1_analysis_proposal_guard
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
@@ -1199,6 +1200,66 @@ check_ai_orchestration_contract() {
   assert_no_matches "Phase 27 Python helper coupling" \
     '\bdraft_helpers\b|\bpython(?:3)?\b|\.py\b' src-tauri/src/analysis "${event_path}"
   printf 'PASS INV-14 Phase 27 AI orchestration contract\n'
+}
+
+check_v1_analysis_proposal_guard() {
+  local adr="docs/adr/002-limit-v1-analysis-to-local-text.md"
+  local draft="docs/drafts/V1_LOCAL_ANALYSIS.md"
+  local model_artifacts
+  local status
+
+  require_file "${adr}"
+  require_file "${draft}"
+  require_source_pattern 'Status: Proposed' "${adr}"
+  require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
+  require_source_pattern '## Analysis Layers' "${adr}"
+  require_source_pattern 'permitted v1 findings are exactly' "${adr}"
+  require_source_pattern 'no Phase 46 analysis implementation' "${draft}"
+  assert_no_matches "ADR-002 production model dependencies" \
+    '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
+    src-tauri/Cargo.toml package.json pyproject.toml
+  assert_no_matches "ADR-002 direct frontend HTTP or provider dependencies" \
+    '(?i)"(?:@anthropic-ai/sdk|@google/generative-ai|@mistralai/mistralai|@openai/agents|axios|got|ky|openai|superagent|undici)"[[:space:]]*:' \
+    package.json
+  assert_no_matches "ADR-002 frontend provider SDK imports" \
+    '(?i)\b(?:from|import)[[:space:]]*[\(]?[[:space:]]*["\x27](?:@anthropic-ai/sdk|@google/generative-ai|@mistralai/mistralai|@openai/agents|openai)["\x27]' \
+    src
+  assert_no_matches "ADR-002 provider endpoints or credential environment" \
+    '(?i)\b(?:OPENAI|ANTHROPIC|COHERE|GEMINI|MISTRAL|OLLAMA|MODEL_PROVIDER)_(?:API_KEY|TOKEN|BASE_URL|ENDPOINT)\b|https?://[^[:space:]"\x27]*(?:openai|anthropic|cohere|generativelanguage|mistral|ollama)' \
+    src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
+  assert_no_matches "ADR-002 runtime model download authority" \
+    '(?i)\b(?:download|fetch|pull)_(?:model|weights)\b|\b(?:hf_hub|huggingface_hub|modelscope)\b|https?://huggingface\.co' \
+    --glob '!check-invariants.sh' \
+    src-tauri/src src scripts src-tauri/tauri.conf.json package.json pyproject.toml
+  assert_no_matches "ADR-002 model-provider product authority" \
+    '\b(?:OpenAi|OpenAI|Anthropic|Claude|Ollama|Llama|Mistral|ModelProvider|ProviderCredential)\b|https?://[^[:space:]"\x27]*(?:openai|anthropic|ollama)' \
+    src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
+  assert_no_matches "ADR-002 direct frontend provider or secret authority" \
+    '\b(?:ModelProvider|ProviderCredential|ProviderEndpoint|SecretStore|SecretValue|loadSecret|storeSecret|providerApiKey)\b' \
+    src
+  assert_no_matches "ADR-002 direct frontend provider transport" \
+    '\bfetch[[:space:]]*\(|\bXMLHttpRequest\b|\bnew[[:space:]]+(?:WebSocket|EventSource)[[:space:]]*\(' \
+    src
+  assert_no_matches "ADR-002 generative analysis bridge" \
+    '#\[tauri::command\][[:space:]]*(?:pub[^[:space:]]+[[:space:]]+)?(?:start|run|generate)_ai|draft://(?:ai|analysis)|\b(?:runAiAnalysis|startAiAnalysis|generateAnalysis)\b' \
+    src-tauri/src/commands src-tauri/src/events src
+  assert_no_matches "ADR-002 unsupported visible capability language" \
+    '(?i)^(?!.*\b(?:not|no|without|unavailable|unimplemented|excluded|outside|deferred|cannot|can\x27t|doesn\x27t|does not|must not|remain absent)\b).*\b(?:AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness(?: detection)?|AI detection|intelligent assessment|quality assessment|intelligence|reasoning)\b' \
+    README.md CHANGELOG.md docs/user docs/wiki src
+
+  if model_artifacts="$(git ls-files | rg '(?i)\.(?:gguf|onnx|safetensors|pt|pth|tflite)$')"; then
+    printf '%s\n' "${model_artifacts}" >&2
+    echo 'FAILED ADR-002 packaged model artifacts' >&2
+    return 1
+  else
+    status=$?
+  fi
+  if [[ "${status}" -ne 1 ]]; then
+    echo 'FAILED ADR-002 packaged model artifact scan could not run' >&2
+    return "${status}"
+  fi
+  printf 'PASS ADR-002 packaged model artifacts\n'
+  printf 'PASS ADR-002 proposed v1 local-analysis guard\n'
 }
 
 require_citation_sources() {

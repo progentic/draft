@@ -46,6 +46,10 @@ check_phase45_release_rule() {
     docs/maintainers/RELEASE_CANDIDATE.md
   require_literal '| GATE-45 | Must close before Phase 49 | Closed |' \
     docs/maintainers/RELEASE_CANDIDATE.md
+  require_literal 'Status: Proposed' \
+    docs/adr/002-limit-v1-analysis-to-local-text.md
+  require_literal '| RC-03 | Release blocker | Open | Proposed ADR-002 is under review. The local deterministic analysis path' \
+    docs/maintainers/RELEASE_CANDIDATE.md
 }
 
 check_v1_usability_acceptance() {

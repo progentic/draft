@@ -154,6 +154,17 @@ open `UX-0` or `UX-1` findings. Phase 50 requires a concise first-run entry
 point, user release notes, supported-capability guidance, shortcuts, recovery
 help, and a verified download and launch path.
 
+The repository owner selected local deterministic text analysis as the proposed
+v1.0.0 analysis boundary. ADR-002 is under architecture review and `RC-03`
+remains open. Phase 46 analysis implementation cannot begin until the proposal
+is accepted; no provider, credential, network transmission, generative model,
+or packaged model runtime is implied by this proposal.
+
+The proposal treats measurements as internal inputs, exactly five named
+heuristics as non-authoritative review signals, and semantic, generative, or
+inferential model-backed interpretation as outside v1.0.0. Supporting counts or
+patterns cannot silently become additional product capabilities.
+
 ---
 
 ## 1. Product Direction

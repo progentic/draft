@@ -34,6 +34,7 @@ main() {
   check_packaging_documentation
   check_data_migration_documentation
   check_release_candidate_documentation
+  check_v1_analysis_decision_state
   check_v1_usability_documentation
   check_readme_scope
   check_pdf_decision_state
@@ -68,6 +69,7 @@ check_required_documents() {
     docs/drafts/PDF_EXPORT_DECISION.md
     docs/drafts/PYTHON_HELPERS.md
     docs/drafts/TEXT_ANALYSIS.md
+    docs/drafts/V1_LOCAL_ANALYSIS.md
     docs/drafts/METADATA_LOOKUP.md
     docs/drafts/REFERENCE_RECORD.md
     docs/drafts/REFERENCE_STORE.md
@@ -756,6 +758,58 @@ check_readme_scope() {
 
   if [[ "${status}" -ne 1 ]]; then
     echo 'README scope scan could not run' >&2
+    return "${status}"
+  fi
+}
+
+check_v1_analysis_decision_state() {
+  local adr='docs/adr/002-limit-v1-analysis-to-local-text.md'
+  local draft='docs/drafts/V1_LOCAL_ANALYSIS.md'
+  local release_contract='docs/maintainers/RELEASE_CANDIDATE.md'
+  local proposal_files=(
+    docs/ARCHITECTURE.md
+    docs/INVARIANTS.md
+    docs/PHASEMAP.md
+    docs/ROADMAP.md
+    docs/maintainers/AI_ORCHESTRATION.md
+    docs/maintainers/DOCUMENTATION_COVERAGE.md
+    docs/maintainers/RELEASE_CANDIDATE.md
+    docs/maintainers/TEXT_ANALYSIS.md
+    docs/maintainers/TOOLCHAIN.md
+  )
+
+  require_document_text "${adr}" 'Status: Proposed'
+  require_document_text "${adr}" '**Owner Decision: v1.0.0 Analysis Boundary**'
+  require_document_text "${adr}" 'For DRAFT v1.0.0, production analysis is limited to local deterministic text'
+  require_document_text "${adr}" '## Analysis Layers'
+  require_document_text "${adr}" 'permitted v1 findings are exactly:'
+  require_document_text "${draft}" '**Decision dependency:** Proposed ADR-002'
+  require_document_text "${draft}" '## RC-03 Closure Contract'
+  require_document_text "${draft}" 'The five permitted user-visible analyses are'
+  require_document_text "${draft}" 'remains open and no Phase 46 analysis implementation'
+  require_document_text "${release_contract}" '| RC-03 | Release blocker | Open | Proposed ADR-002 is under review. The local deterministic analysis path'
+  for proposal_file in "${proposal_files[@]}"; do
+    require_document_text "${proposal_file}" 'ADR-002'
+  done
+  reject_document_pattern \
+    'Status: Accepted|^[[:space:]]*(?:Accepted ADR-002|ADR-002 is accepted)|\| RC-03 \| Release blocker \| Closed \|' \
+    'ADR-002 and RC-03 must remain proposed and open before the governed merge' \
+    "${adr}" "${draft}" "${proposal_files[@]}"
+  reject_public_analysis_claims
+}
+
+reject_public_analysis_claims() {
+  local pattern='(?i)^(?!.*\b(?:not|no|without|unavailable|unimplemented|excluded|outside|deferred|cannot|can\x27t|doesn\x27t|does not|must not|remain absent)\b).*\b(?:AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness(?: detection)?|AI detection|intelligent assessment|quality assessment|intelligence|reasoning)\b'
+  local status
+
+  if rg --line-number --pcre2 "${pattern}" README.md CHANGELOG.md docs/user docs/wiki; then
+    echo 'Public documentation claims unsupported model-backed v1 analysis' >&2
+    return 1
+  else
+    status=$?
+  fi
+  if [[ "${status}" -ne 1 ]]; then
+    echo 'Public analysis capability-language scan could not run' >&2
     return "${status}"
   fi
 }
