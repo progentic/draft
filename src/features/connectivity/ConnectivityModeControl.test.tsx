@@ -53,14 +53,15 @@ describe("ConnectivityModeControl", () => {
       "Online - change failed",
     );
     expect(screen.getByRole("alert").textContent).toBe(
-      "Could not change mode. DRAFT remains online.",
+      "DRAFT could not reach the core to change connectivity mode. DRAFT remains online.",
     );
+    expect(screen.getByRole("alert").getAttribute("aria-atomic")).toBe("true");
   });
 
   it("offers a retry when the effective mode cannot be read", async () => {
     const user = userEvent.setup();
     const onRefresh = vi.fn();
-    render(
+    const { rerender } = render(
       <ConnectivityModeControl
         state={{ phase: "failed", error: { type: "invalid-response" } }}
         onRefresh={onRefresh}
@@ -68,7 +69,22 @@ describe("ConnectivityModeControl", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Retry connectivity status" }));
+    const retry = screen.getByRole("button", { name: "Retry connectivity status" });
+    expect(retry.getAttribute("type")).toBe("button");
+    expect(screen.getByRole("alert").textContent).toContain("invalid connectivity response");
+
+    retry.focus();
+    rerender(
+      <ConnectivityModeControl
+        state={{ phase: "failed", error: { type: "invalid-response" } }}
+        onRefresh={onRefresh}
+        onSetMode={vi.fn()}
+      />,
+    );
+    expect(document.activeElement).toBe(retry);
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+
+    await user.click(retry);
     expect(onRefresh).toHaveBeenCalledOnce();
   });
 });

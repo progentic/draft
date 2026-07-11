@@ -120,10 +120,13 @@ shows one explicit state:
 - `unavailable`
 - `failed`
 
-Only a Rust-returned success may show the display marker. Missing references
-and failures show `Citation unavailable`. A revision counter prevents a late
-response for old attrs from replacing a newer marker, and destroyed node views
-ignore pending responses.
+Only a Rust-returned success may show the display marker. Phase 39 gives invalid
+attrs, missing references, store failures, invalid responses, and transport
+failures distinct bounded copy. It never suggests a citation-management action
+that the workspace does not expose. Each live node is one atomic polite region.
+A revision counter prevents a late response for old attrs from replacing a
+newer marker, and destroyed node views ignore pending responses. The mapping
+policy is documented in `docs/maintainers/ERROR_UX.md`.
 
 No insertion toolbar or citation editor exists yet, so the visible default
 document contains no citation node.

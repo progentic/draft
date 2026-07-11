@@ -58,6 +58,11 @@ offline` or `Go online`, remains reachable at minimum width, and announces a
 failed change while preserving the last confirmed mode. A browser-only preview
 offers a retry because no Tauri core is present.
 
+Phase 39 keeps command, invalid-response, and transport copy distinct. An
+unreadable mode reuses the existing retry control; a failed change reuses the
+existing mode toggle. No failure presentation creates another connectivity
+action. See `docs/maintainers/ERROR_UX.md`.
+
 ## Local Behavior
 
 Connectivity policy is not imported by the formatting domain or formatting

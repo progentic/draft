@@ -196,6 +196,7 @@ describe("DRAFT workspace shell", () => {
 
     render(<App />);
 
-    expect(screen.getByText(expectedLabel)).toBeTruthy();
+    const message = screen.getByText(expectedLabel);
+    expect(message.closest('[role="status"]')?.getAttribute("aria-atomic")).toBe("true");
   });
 });

@@ -60,17 +60,19 @@ If DRAFT says the document has too many headings or citations, split the work
 into a smaller document before checking it. For another heading or citation
 validation message, correct that item when possible and rerun the check.
 
-`DRAFT received an invalid formatting response.` or
-`Formatting review could not reach the DRAFT core.` means the review did not
-receive a usable result.
-Run the check again. Restart DRAFT and report the version and exact message if
-the failure repeats.
+`DRAFT received an invalid formatting response. Check again.` means the core
+returned a result the workspace could not use. Choose **Check again**.
+
+`Formatting review could not reach the DRAFT core. Restart DRAFT, then check
+again.` means the operation did not reach the desktop core. Restart DRAFT, then
+choose **Check again**. Report the version and exact message if it repeats.
 
 ## Connectivity Mode Unavailable
 
 `Mode unavailable` means the workspace could not read the Rust-owned session
-mode. Choose the control again to retry. Restart DRAFT and report the version
-and exact visible message if it repeats.
+mode. The alert distinguishes a command failure, an invalid response, and an
+unreachable core. Choose the same control again to retry. Restart DRAFT and
+report the version and exact visible message if it repeats.
 
 `Online - change failed` or `Offline - change failed` means DRAFT kept the
 visible prior mode because the requested change failed. Retry the change or
@@ -78,5 +80,14 @@ continue local work in the displayed mode.
 
 Offline mode is a DRAFT session policy, not a network-status indicator. It
 resets to online when DRAFT restarts.
+
+## Citation Cannot Be Resolved
+
+A citation can show invalid, unavailable, or failed copy inside the document.
+Keep invalid citation input unchanged. DRAFT does not currently expose a
+citation-repair control.
+
+For a read or transport failure, restart DRAFT only when the visible message
+directs it. DRAFT does not currently expose a citation-management workflow.
 
 Return to [Home](Home).

@@ -2,6 +2,7 @@ import type { Editor } from "@tiptap/react";
 import { useEditorState } from "@tiptap/react";
 import { FileCheck2 } from "lucide-react";
 
+import { runtimeFailureMessage } from "../features/error-ux/errorPresentation";
 import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 
 interface DocumentInspectorProps {
@@ -15,25 +16,11 @@ interface DocumentMetrics {
   words: number;
 }
 
-type RuntimeUnavailableReason = Extract<
-  RuntimeConnectionState,
-  { phase: "unavailable" }
->["reason"];
-type RuntimeCommandFailureCode = Extract<
-  RuntimeUnavailableReason,
-  { type: "command" }
->["code"];
-
 const EMPTY_METRICS: DocumentMetrics = {
   characters: 0,
   headings: 0,
   words: 0,
 };
-
-const RUNTIME_COMMAND_FAILURE_LABELS = {
-  invalid_application_version: "DRAFT received an unsupported application version.",
-  event_delivery_failed: "DRAFT could not deliver the core status event.",
-} satisfies Record<RuntimeCommandFailureCode, string>;
 
 export function DocumentInspector(props: DocumentInspectorProps) {
   const metrics = useDocumentMetrics(props.editor);
@@ -73,6 +60,7 @@ function RuntimeStatusRow(props: { runtimeStatus: RuntimeConnectionState }) {
       className={`inspector-status inspector-status--${view.modifier}`}
       role="status"
       aria-live="polite"
+      aria-atomic="true"
     >
       <span className="inspector-status__dot" aria-hidden="true" />
       <span>{view.label}</span>
@@ -89,31 +77,7 @@ function runtimeStatusView(status: RuntimeConnectionState) {
     return { label: `Core v${status.version}`, modifier: "ready" };
   }
 
-  return { label: runtimeUnavailableLabel(status.reason), modifier: "unavailable" };
-}
-
-function runtimeUnavailableLabel(reason: RuntimeUnavailableReason) {
-  if (reason.type === "command") {
-    return runtimeCommandFailureLabel(reason.code);
-  }
-
-  if (reason.type === "invalid-payload" || reason.type === "invalid-response") {
-    return "Core status invalid";
-  }
-
-  return "Core unavailable";
-}
-
-function runtimeCommandFailureLabel(code: string) {
-  if (isRuntimeCommandFailureCode(code)) {
-    return RUNTIME_COMMAND_FAILURE_LABELS[code];
-  }
-
-  return "DRAFT could not read the core status.";
-}
-
-function isRuntimeCommandFailureCode(code: string): code is RuntimeCommandFailureCode {
-  return Object.prototype.hasOwnProperty.call(RUNTIME_COMMAND_FAILURE_LABELS, code);
+  return { label: runtimeFailureMessage(status.reason), modifier: "unavailable" };
 }
 
 function StatisticsSection(props: { metrics: DocumentMetrics }) {

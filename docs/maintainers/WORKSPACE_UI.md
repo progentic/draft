@@ -20,6 +20,7 @@ document, research, analysis, import, export, or background-job workflows.
 | Inspector | `DocumentInspector` | Derives session metrics and maps runtime status to visible copy. |
 | Runtime session | `useRuntimeStatus`, `startRuntimeStatusSession` | Coordinates the typed command and event wrappers without adding durable state. |
 | Connectivity session | `useConnectivityMode`, `ConnectivityModeControl` | Mirrors and changes the Rust-owned online/offline session policy. |
+| Error presentation | `errorPresentation.ts` | Maps only visible typed failures to stable copy and recovery dispositions. |
 
 All editor content, outline visibility, selection, and metrics are WebView state.
 Reloading the WebView discards them. Rust remains authoritative for every
@@ -68,6 +69,10 @@ widths. Pending changes disable repeat activation. Failed changes retain the
 last confirmed visible mode and announce a bounded alert; an unreadable initial
 mode offers a retry.
 
+Command, invalid-response, and transport failures retain distinct messages.
+Retry labels refer only to the existing mode control. The mapping contract is
+documented in `docs/maintainers/ERROR_UX.md`.
+
 The control reports explicit DRAFT policy, not operating-system reachability.
 It does not persist and does not make the frontend authoritative for network or
 browser behavior.
@@ -99,6 +104,11 @@ The same recovery guidance is written for users in
 `ERROR_MESSAGES.md`; they must not receive speculative visible copy before a
 real workflow owns the recovery action.
 
+Phase 39 centralizes presentation for runtime status, connectivity, formatting
+review, and citation rendering. Each visible failure is retryable, actionable,
+or terminal. Unknown runtime command input uses one outer fallback; validated
+known variants remain exhaustive.
+
 ## Formatting Review State
 
 The formatting review represents idle, running, ready, stale, and failed
@@ -118,6 +128,8 @@ interactions, and accessible labels. Other component and hook suites cover
 Tiptap, citation rendering, runtime sessions, and typed wrappers.
 Connectivity suites cover get/set IPC, stale reads, failure retention, toggle
 semantics, retry, and workspace integration.
+The Phase 39 policy suite covers every visible typed variant, disposition,
+existing-control label, and outer fallback.
 
 The reduced-motion contract is checked against the production stylesheet.
 Browser-level inspection is still required when a change affects real focus

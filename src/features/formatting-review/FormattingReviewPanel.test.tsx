@@ -10,7 +10,7 @@ vi.mock("./useFormattingReview", () => ({
 }));
 
 import type { FormattingReviewFinding } from "../../ipc/formattingReview";
-import { FormattingReviewPanel, formattingCommandFailureLabel } from "./FormattingReviewPanel";
+import { FormattingReviewPanel } from "./FormattingReviewPanel";
 
 const run = vi.fn();
 const invalidate = vi.fn();
@@ -67,6 +67,11 @@ describe("FormattingReviewPanel", () => {
     expect(inspect).toHaveBeenCalledWith(heading);
     expect(apply).toHaveBeenCalledWith(heading, 1);
     expect(dismiss).toHaveBeenCalledWith(citation);
+    expect(
+      within(citations).getByRole("button", { name: `Dismiss ${citation.title}` }).getAttribute(
+        "type",
+      ),
+    ).toBe("button");
   });
 
   it("announces stale and typed failure states", () => {
@@ -83,9 +88,17 @@ describe("FormattingReviewPanel", () => {
       run, invalidate, inspect, apply, dismiss,
     });
     rerender(<FormattingReviewPanel editor={editor} isOpen onClose={vi.fn()} />);
+    const retry = screen.getByRole("button", { name: "Check again" });
+    expect(retry.getAttribute("type")).toBe("button");
     expect(screen.getByRole("alert").textContent).toBe(
-      formattingCommandFailureLabel("invalid_citekey"),
+      "DRAFT could not validate a citation. Correct or remove it, then check again.",
     );
+    expect(screen.getByRole("alert").getAttribute("aria-atomic")).toBe("true");
+
+    retry.focus();
+    rerender(<FormattingReviewPanel editor={editor} isOpen onClose={vi.fn()} />);
+    expect(document.activeElement).toBe(retry);
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 });
 

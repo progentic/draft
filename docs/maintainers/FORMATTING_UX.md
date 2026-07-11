@@ -46,13 +46,16 @@ suppression record.
 
 ## Visible States And Failures
 
-The panel represents idle, running, ready, stale, and failed states. Command
-codes are mapped to bounded user messages in `FormattingReviewPanel.tsx`.
-Invalid responses and transport failures have separate generic messages. Raw
-errors, paths, titles, citekeys, and document text are not displayed from a
-failure object.
+The panel represents idle, running, ready, stale, and failed states. Phase 39
+maps every command code in `errorPresentation.ts`. Input failures are
+actionable; invalid-response and transport failures are retryable through the
+existing formatting check. The button reads `Check again` after a prior run.
+No presentation emits an action label for editing work that has no dedicated
+control. Raw errors, paths, titles, citekeys, and document text are never
+displayed from a failure object.
 
 User recovery guidance lives in `docs/wiki/Troubleshooting.md`. The complete
+presentation policy is `docs/maintainers/ERROR_UX.md`. The complete
 configuration and limit index is `docs/maintainers/CONFIGURATION.md`.
 
 ## Verification

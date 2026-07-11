@@ -1,6 +1,7 @@
 import { Wifi, WifiOff } from "lucide-react";
 
 import type { ConnectivityMode } from "../../ipc/connectivityMode";
+import { connectivityFailurePresentation } from "../error-ux/errorPresentation";
 import type { ConnectivityModeState } from "./useConnectivityMode";
 
 interface ConnectivityModeControlProps {
@@ -28,7 +29,7 @@ export function ConnectivityModeControl(props: ConnectivityModeControlProps) {
         <span className="connectivity-toggle__label">{view.visibleLabel}</span>
       </button>
       {props.state.phase === "failed" ? (
-        <span className="connectivity-feedback" role="alert">
+        <span className="connectivity-feedback" role="alert" aria-atomic="true">
           {view.failureLabel}
         </span>
       ) : null}
@@ -52,14 +53,23 @@ function connectivityView(state: ConnectivityModeState) {
   if (state.phase === "checking") {
     return connectivityViewModel(undefined, "Loading mode", "Loading connectivity mode");
   }
+  const failureLabel = state.phase === "failed"
+    ? connectivityFailurePresentation(state.error, mode).message
+    : undefined;
   if (mode === undefined) {
-    return connectivityViewModel(undefined, "Mode unavailable", "Retry connectivity status");
+    return connectivityViewModel(
+      undefined,
+      "Mode unavailable",
+      "Retry connectivity status",
+      failureLabel,
+    );
   }
   const modeLabel = mode === "online" ? "Online" : "Offline";
   return connectivityViewModel(
     mode,
     state.phase === "failed" ? `${modeLabel} - change failed` : modeLabel,
     mode === "online" ? "Work offline" : "Go online",
+    failureLabel,
   );
 }
 
@@ -67,13 +77,12 @@ function connectivityViewModel(
   mode: ConnectivityMode | undefined,
   visibleLabel: string,
   actionLabel: string,
+  failureLabel?: string,
 ) {
   return {
     mode,
     visibleLabel,
     actionLabel,
-    failureLabel: mode === undefined
-      ? "Connectivity mode unavailable."
-      : `Could not change mode. DRAFT remains ${mode}.`,
+    failureLabel,
   };
 }
