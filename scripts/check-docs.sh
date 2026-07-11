@@ -195,7 +195,7 @@ check_coverage_matrix() {
   check_matrix_subsystems "${matrix}"
   require_document_text "${matrix}" '457 granular lint findings remain'
   require_document_text "${matrix}" 'Live Wiki publication verified'
-  require_document_text "${matrix}" '5a92643'
+  require_document_text "${matrix}" '9ab41a3'
   require_document_text docs/maintainers/REALIGNMENT.md '## Phase 35 - 2026-07-10'
 }
 
