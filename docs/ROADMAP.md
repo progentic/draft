@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 35 are complete. Phase 36 is
+**Current execution checkpoint:** Phases 0 through 36 are complete. Phase 37 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -72,6 +72,13 @@ corrects command/client and visibility drift, and strengthens documentation
 checks without changing product behavior. Non-binding Phase 36 offline-mode
 requirements are bounded in `docs/drafts/OFFLINE_MODE.md` before implementation
 begins.
+
+Phase 36 adds a Rust-owned online/offline session policy with a visible header
+toggle. Offline mode denies new metadata requests and system-browser handoffs
+before external work while local editing and formatting review remain
+available. The mode is not persisted, does not probe operating-system
+connectivity, and adds no retry queue, telemetry, proxy, credential, or secret
+storage behavior. Phase 37 remains a separate native secret-storage boundary.
 
 ---
 

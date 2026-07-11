@@ -25,6 +25,7 @@ main() {
   check_wiki_sources
   check_visible_error_recovery
   check_formatting_export_alignment
+  check_offline_mode_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -81,6 +82,7 @@ check_required_documents() {
     docs/maintainers/FORMATTING_CHECKS.md
     docs/maintainers/FORMATTING_UX.md
     docs/maintainers/NETWORK_CLIENT.md
+    docs/maintainers/OFFLINE_MODE.md
     docs/maintainers/PDF_IMPORT.md
     docs/maintainers/PACKAGING.md
     docs/maintainers/PERFORMANCE_MEASUREMENT.md
@@ -172,7 +174,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 35 are complete'
+  local checkpoint='Phases 0 through 36 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -209,6 +211,7 @@ check_matrix_subsystems() {
     'Citation node and resolution'
     'Bibliography consistency'
     'Central network client'
+    'Offline session policy'
     'Metadata providers'
     'External browser handoff'
     'PDF intake candidate'
@@ -243,6 +246,9 @@ check_coverage_symbols() {
     'src-tauri/src/references/store.rs|ReferenceStore'
     'src-tauri/src/citations/bibliography.rs|check_bibliography_consistency'
     'src-tauri/src/network/client.rs|NetworkClient'
+    'src-tauri/src/network/connectivity.rs|ConnectivityPolicy'
+    'src-tauri/src/commands/connectivity.rs|get_connectivity_mode'
+    'src/features/connectivity/useConnectivityMode.ts|useConnectivityMode'
     'src-tauri/src/research/providers/crossref.rs|lookup_crossref'
     'src-tauri/src/imports/pdf.rs|prepare_explicit_pdf'
     'src-tauri/src/jobs/store.rs|PdfImportJobStore'
@@ -279,6 +285,7 @@ check_configuration_index() {
     JOB_STORE_BUSY_TIMEOUT
     MAX_JOB_FAILURE_MESSAGE_BYTES
     NETWORK_CONNECT_TIMEOUT
+    DEFAULT_CONNECTIVITY_MODE
     NETWORK_REQUEST_TIMEOUT
     PROVIDER_REQUEST_INTERVAL
     MAX_METADATA_RESPONSE_BYTES
@@ -359,6 +366,7 @@ check_configuration_backlinks() {
     FORMATTING_UX.md
     METADATA_LOOKUP.md
     NETWORK_CLIENT.md
+    OFFLINE_MODE.md
     PACKAGING.md
     PDF_IMPORT.md
     PYTHON_HELPERS.md
@@ -452,6 +460,26 @@ check_formatting_export_alignment() {
     'No command or visible workflow can invoke it|Findings are not persisted or visible|DOCX-export absence gate remains active' \
     'Phase 35 formatting documentation must describe the implemented review workflow' \
     "${checks}"
+}
+
+check_offline_mode_documentation() {
+  local guide='docs/maintainers/OFFLINE_MODE.md'
+  local draft='docs/drafts/OFFLINE_MODE.md'
+  local workspace='docs/wiki/Workspace.md'
+  local recovery='docs/wiki/Troubleshooting.md'
+
+  require_document_text "${guide}" 'DEFAULT_CONNECTIVITY_MODE'
+  require_document_text "${guide}" 'get_connectivity_mode'
+  require_document_text "${guide}" 'set_connectivity_mode'
+  require_document_text "${guide}" 'does not monitor the operating system'
+  require_document_text "${draft}" 'non-binding requirements draft for Phase 36'
+  require_document_text "${workspace}" '## Work Offline'
+  require_document_text "${workspace}" 'setting resets to'
+  require_document_text "${workspace}" 'online when DRAFT restarts'
+  require_document_text "${recovery}" '## Connectivity Mode Unavailable'
+  require_document_text "${recovery}" 'Online - change failed'
+  require_document_text docs/wiki/Current-Limitations.md 'does not monitor operating-system connectivity'
+  require_document_text docs/INVARIANTS.md "Phase 36 adds one shared \`ConnectivityPolicy\`"
 }
 
 check_readme_scope() {

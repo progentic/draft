@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 35 are complete. Phase 36 is
+**Current execution checkpoint:** Phases 0 through 36 are complete. Phase 37 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -151,6 +151,14 @@ actions, strict internal DOCX foundation, accepted PDF deferral, user limits,
 and live Wiki publication. It adds no product code or new capability. Phase 36
 is the next implementation phase; its offline degraded behavior and exclusions
 are bounded in the non-binding `docs/drafts/OFFLINE_MODE.md`.
+
+Phase 36 implemented behavior is recorded in
+`docs/maintainers/OFFLINE_MODE.md`. One Rust-owned session policy defaults to
+online, typed get/set commands expose the effective mode, and metadata plus
+system-browser boundaries fail before external work when offline. The header
+control is transient and accessible; no persistence, connectivity probe,
+retry queue, alternate transport, telemetry, proxy, credential, or secret
+storage is added. Phase 37 is the next implementation phase.
 
 ---
 

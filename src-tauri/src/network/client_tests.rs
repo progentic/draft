@@ -1,8 +1,40 @@
 use super::*;
+use crate::network::connectivity::{ConnectivityMode, ConnectivityPolicy};
+
+fn network_client() -> NetworkClient {
+    NetworkClient::new(Arc::new(ConnectivityPolicy::default()))
+        .expect("manifest metadata should build the client")
+}
 
 #[test]
 fn current_manifest_builds_network_client() {
-    NetworkClient::new().expect("manifest metadata should build the client");
+    network_client();
+}
+
+#[tokio::test]
+async fn offline_policy_denies_before_url_or_transport_work() {
+    let connectivity = Arc::new(ConnectivityPolicy::default());
+    connectivity.set_mode(ConnectivityMode::Offline).unwrap();
+    let client = NetworkClient::new(connectivity).unwrap();
+
+    assert_eq!(
+        client
+            .get_metadata(NetworkService::Crossref, "not a URL")
+            .await,
+        Err(NetworkRequestError::Offline)
+    );
+}
+
+#[tokio::test]
+async fn online_policy_preserves_url_validation() {
+    let client = network_client();
+
+    assert_eq!(
+        client
+            .get_metadata(NetworkService::Crossref, "not a URL")
+            .await,
+        Err(NetworkRequestError::InvalidUrl)
+    );
 }
 
 #[test]

@@ -53,8 +53,8 @@ response limit.
 ## Runtime Ownership
 
 `application::network_client::initialize_network_client` constructs one client
-during Tauri setup and registers it with `app.manage`. Startup fails closed if
-construction fails.
+during Tauri setup, creates one shared Phase 36 `ConnectivityPolicy`, and
+registers both with `app.manage`. Startup fails closed if construction fails.
 
 The managed type retains the configured `reqwest::Client` privately and has no
 raw-client accessor. `get_metadata` is the single bounded request operation for
@@ -62,6 +62,11 @@ Rust provider modules.
 
 The frontend and Python package receive no network object, URL, response, or
 transport authority.
+
+`get_metadata` requires the shared session to be online before rate
+reservation, URL validation, request construction, or socket work. Explicit
+offline mode returns `NetworkRequestError::Offline`. A connection failure maps
+to the same typed request category but does not change the selected mode.
 
 ## Failure Shape
 
@@ -71,8 +76,9 @@ transport authority.
 - `ClientBuildFailed`.
 
 The error does not retain or expose raw `reqwest` details, environment values,
-URLs, paths, document content, or credentials. No error crosses IPC because no
-network command exists.
+URLs, paths, document content, or credentials. No metadata error crosses IPC
+because no metadata command exists. The separate connectivity commands expose
+only the closed effective mode and `connectivity_unavailable`.
 
 ## Security Boundaries
 
@@ -101,7 +107,7 @@ unchanged.
 
 ## Verification
 
-Twelve Rust tests cover construction plus request policy:
+Fourteen Rust tests cover construction plus request policy:
 
 - current manifest metadata construction;
 - deterministic User-Agent policy;
@@ -110,7 +116,9 @@ Twelve Rust tests cover construction plus request policy:
 - bounded failure messages;
 - independent provider intervals and capped backoff;
 - typed transport and status failures; and
-- bounded response accumulation.
+- bounded response accumulation;
+- offline denial before URL or transport work; and
+- unchanged online URL validation.
 
 `scripts/check-invariants.sh` requires the source, tests, application
 initializer, managed-state registration, exact direct dependency features,
@@ -122,6 +130,9 @@ configuration, and rejects `reqwest` use outside `src-tauri/src/network/`.
 to Git. `scripts/check-docs.sh` requires this guide and roadmap/phasemap
 agreement through Phase 23. The aggregate verifier runs the same checks locally
 and in GitHub Actions.
+
+Phase 36 session policy is documented in
+`docs/maintainers/OFFLINE_MODE.md`.
 
 ## Browser Handoff Boundary
 

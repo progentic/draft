@@ -3,9 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const useRuntimeStatusMock = vi.hoisted(() => vi.fn());
+const useConnectivityModeMock = vi.hoisted(() => vi.fn());
+const setConnectivityModeMock = vi.hoisted(() => vi.fn());
+const refreshConnectivityMock = vi.hoisted(() => vi.fn());
 
 vi.mock("./features/runtime-status/useRuntimeStatus", () => ({
   useRuntimeStatus: useRuntimeStatusMock,
+}));
+
+vi.mock("./features/connectivity/useConnectivityMode", () => ({
+  useConnectivityMode: useConnectivityModeMock,
 }));
 
 import { App } from "./App";
@@ -25,6 +32,14 @@ describe("DRAFT workspace shell", () => {
   beforeEach(() => {
     useRuntimeStatusMock.mockReset();
     useRuntimeStatusMock.mockReturnValue({ phase: "ready", version: "0.1.0" });
+    setConnectivityModeMock.mockReset();
+    refreshConnectivityMock.mockReset();
+    useConnectivityModeMock.mockReset();
+    useConnectivityModeMock.mockReturnValue({
+      state: { phase: "ready", mode: "online" },
+      refresh: refreshConnectivityMock,
+      setMode: setConnectivityModeMock,
+    });
   });
 
   it("renders the editor, navigation, and session state", async () => {
@@ -150,6 +165,18 @@ describe("DRAFT workspace shell", () => {
     await user.click(screen.getByRole("button", { name: "Close formatting review" }));
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(panel.hidden).toBe(true);
+  });
+
+  it("exposes the Rust-owned session connectivity toggle", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const toggle = screen.getByRole("button", { name: "Work offline" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(toggle.textContent).toContain("Online");
+
+    await user.click(toggle);
+    expect(setConnectivityModeMock).toHaveBeenCalledWith("offline");
   });
 
   it.each([

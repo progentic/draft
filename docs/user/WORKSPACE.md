@@ -74,6 +74,14 @@ The visible workspace does not call external services, read local files, or
 write application data. Editor state remains transient inside the application
 WebView until file controls are integrated.
 
+Use the **Online** control in the header to work offline for the current
+session. When offline, DRAFT blocks new metadata requests and research links
+before external work begins. Local editing and formatting review remain
+available. Choose **Go online** to allow those external actions again.
+
+The mode resets to online when DRAFT restarts. It does not report whether the
+operating system has a connection and does not retry or queue requests.
+
 ## Exporting
 
 The current workspace has no export controls. DRAFT has an internal DOCX

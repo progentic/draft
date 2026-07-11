@@ -19,6 +19,7 @@ document, research, analysis, import, export, or background-job workflows.
 | Formatting review | `FormattingReviewPanel`, `useFormattingReview` | Runs bounded checks and owns transient review state and explicit actions. |
 | Inspector | `DocumentInspector` | Derives session metrics and maps runtime status to visible copy. |
 | Runtime session | `useRuntimeStatus`, `startRuntimeStatusSession` | Coordinates the typed command and event wrappers without adding durable state. |
+| Connectivity session | `useConnectivityMode`, `ConnectivityModeControl` | Mirrors and changes the Rust-owned online/offline session policy. |
 
 All editor content, outline visibility, selection, and metrics are WebView state.
 Reloading the WebView discards them. Rust remains authoritative for every
@@ -57,6 +58,19 @@ Formatting buttons use toggle semantics only when they represent persistent
 selection state. Undo and Redo are commands and do not expose `aria-pressed`.
 All icon-only controls have visible focus treatment, accessible names, and
 tooltips.
+
+## Connectivity Control
+
+The header contains one binary session toggle. `Work offline` represents the
+online state; `Go online` represents offline and uses `aria-pressed="true"`.
+The control remains available when the document inspector is hidden at narrow
+widths. Pending changes disable repeat activation. Failed changes retain the
+last confirmed visible mode and announce a bounded alert; an unreadable initial
+mode offers a retry.
+
+The control reports explicit DRAFT policy, not operating-system reachability.
+It does not persist and does not make the frontend authoritative for network or
+browser behavior.
 
 ## Motion And Layout
 
@@ -102,6 +116,8 @@ skipping, review-panel disclosure, runtime labels, and error distinctions.
 Formatting review suites cover IPC validation, generations, editor targets,
 interactions, and accessible labels. Other component and hook suites cover
 Tiptap, citation rendering, runtime sessions, and typed wrappers.
+Connectivity suites cover get/set IPC, stale reads, failure retention, toggle
+semantics, retry, and workspace integration.
 
 The reduced-motion contract is checked against the production stylesheet.
 Browser-level inspection is still required when a change affects real focus

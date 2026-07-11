@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
+use tauri::State;
 
 use crate::{
+    network::connectivity::ConnectivityPolicy,
     research::external_access::{
         ExternalAccessDestination, ExternalAccessError, ExternalAccessInput, open_in_system_browser,
     },
@@ -38,15 +42,18 @@ pub(crate) enum OpenExternalAccessError {
     InvalidUrl,
     InvalidDoi,
     InvalidSearchQuery,
+    Offline,
+    ConnectivityUnavailable,
     BrowserUnavailable,
 }
 
 /// Opens one validated research destination in the default system browser.
 #[tauri::command]
 pub(crate) fn open_external_access(
+    connectivity: State<'_, Arc<ConnectivityPolicy>>,
     request: OpenExternalAccessRequest,
 ) -> Result<OpenExternalAccessResponse, OpenExternalAccessError> {
-    let destination = open_in_system_browser(&SystemBrowser, request.into())?;
+    let destination = open_in_system_browser(&connectivity, &SystemBrowser, request.into())?;
     Ok(OpenExternalAccessResponse::opened(destination))
 }
 
@@ -76,6 +83,8 @@ impl From<ExternalAccessError> for OpenExternalAccessError {
             ExternalAccessError::InvalidUrl => Self::InvalidUrl,
             ExternalAccessError::InvalidDoi => Self::InvalidDoi,
             ExternalAccessError::InvalidSearchQuery => Self::InvalidSearchQuery,
+            ExternalAccessError::Offline => Self::Offline,
+            ExternalAccessError::ConnectivityUnavailable => Self::ConnectivityUnavailable,
             ExternalAccessError::BrowserUnavailable => Self::BrowserUnavailable,
         }
     }
@@ -87,9 +96,11 @@ mod tests {
 
     use super::*;
 
-    const TYPED_COMMAND: fn(
+    const TYPED_COMMAND: for<'a> fn(
+        State<'a, Arc<ConnectivityPolicy>>,
         OpenExternalAccessRequest,
-    ) -> Result<OpenExternalAccessResponse, OpenExternalAccessError> = open_external_access;
+    )
+        -> Result<OpenExternalAccessResponse, OpenExternalAccessError> = open_external_access;
 
     #[test]
     fn command_signature_is_typed() {
@@ -145,6 +156,8 @@ mod tests {
             OpenExternalAccessError::from(ExternalAccessError::InvalidUrl),
             OpenExternalAccessError::from(ExternalAccessError::InvalidDoi),
             OpenExternalAccessError::from(ExternalAccessError::InvalidSearchQuery),
+            OpenExternalAccessError::from(ExternalAccessError::Offline),
+            OpenExternalAccessError::from(ExternalAccessError::ConnectivityUnavailable),
             OpenExternalAccessError::from(ExternalAccessError::BrowserUnavailable),
         ];
 
@@ -154,6 +167,8 @@ mod tests {
                 { "code": "invalid_url" },
                 { "code": "invalid_doi" },
                 { "code": "invalid_search_query" },
+                { "code": "offline" },
+                { "code": "connectivity_unavailable" },
                 { "code": "browser_unavailable" }
             ])
         );

@@ -52,6 +52,17 @@ the desktop core status:
 
 See [Troubleshooting](Troubleshooting) for recovery steps.
 
+## Work Offline
+
+Choose **Online** in the header to work offline for the current session. The
+control changes to **Offline**. DRAFT then blocks new metadata requests and
+research links before external work begins, while local editing and formatting
+review remain available.
+
+Choose **Go online** to allow external actions again. The setting resets to
+online when DRAFT restarts. It does not indicate whether the operating system
+has a connection and does not retry or queue requests.
+
 ## Protect Your Work
 
 The current interface does not create, open, save, close, or reopen document

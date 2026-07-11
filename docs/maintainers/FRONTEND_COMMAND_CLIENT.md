@@ -25,6 +25,7 @@ transport failures out of presentation components.
 | Mid | `resolveCitation` | Validates resolution responses and typed citation failures. |
 | Mid | `openExternalAccess` | Requests one Rust-validated default-browser handoff. |
 | Mid | `runFormattingReview` | Validates one closed formatting response and typed failures. |
+| Mid | `getConnectivityMode`, `setConnectivityMode` | Mirror the effective Rust-owned session policy. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -161,6 +162,20 @@ one run ID and editor generation. The feature rejects older runs and missing,
 moved, or changed targets before inspect or apply. See
 `docs/maintainers/FORMATTING_UX.md`.
 
+## Connectivity mode wrappers
+
+Phase 36 adds separate typed clients for `get_connectivity_mode` and
+`set_connectivity_mode`. Both validate the exact `{ mode }` response and
+preserve `connectivity_unavailable`. The set wrapper also requires Rust to
+return the requested mode. Invalid responses and transport failures remain
+bounded client errors.
+
+`useConnectivityMode` ignores older reads after a newer request, retains the
+last confirmed mode while a change is pending, and preserves it after failure.
+The header control uses only those typed results; it cannot configure the
+network client or bypass Rust enforcement. See
+`docs/maintainers/OFFLINE_MODE.md`.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -185,6 +200,8 @@ Frontend tests prove:
   malformed browser-handoff response handling
 - formatting request arguments, all closed styles and command errors, exact
   actions, stale generations, remapped targets, and explicit review controls
+- connectivity get/set arguments, exact closed responses, mismatched set
+  responses, stale reads, retained failure state, and toggle semantics
 - workspace rendering of the connected Rust version
 - runtime-status presentation for every known command error code
 
@@ -215,3 +232,5 @@ citation behavior in `docs/maintainers/CITATION_NODE.md`. Phase 23 browser
 handoff is documented in `docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md`.
 Phase 34 formatting review is documented in
 `docs/maintainers/FORMATTING_UX.md`.
+Phase 36 connectivity mode is documented in
+`docs/maintainers/OFFLINE_MODE.md`.

@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phases 0 through 35 are complete at the current checkpoint. Phase 36 is the
+Phases 0 through 36 are complete at the current checkpoint. Phase 37 is the
 next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
@@ -41,6 +41,12 @@ filesystem access, Python, network, worker, or export authority. One typed
 command and validated frontend wrapper expose those findings in a transient
 workspace review band. Explicit heading-level actions use Tiptap only while
 the captured run and target node remain current.
+
+One process-local Rust connectivity policy now defaults online and is shared by
+the metadata client and system-browser handoff. Typed get/set commands and
+frontend clients expose only the effective closed mode. The header toggle adds
+no dependency, persistence, connectivity monitor, retry queue, or alternate
+transport.
 
 Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default

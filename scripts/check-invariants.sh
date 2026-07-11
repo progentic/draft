@@ -30,6 +30,7 @@ main() {
   check_citation_node_contract
   check_bibliography_consistency_contract
   check_network_client_contract
+  check_connectivity_contract
   check_metadata_lookup_contract
   check_external_browser_handoff_contract
   check_pdf_import_contract
@@ -683,6 +684,8 @@ check_network_client_contract() {
     transport_failures_are_typed
     response_statuses_are_typed
     response_limit_rejects_oversized_body
+    offline_policy_denies_before_url_or_transport_work
+    online_policy_preserves_url_validation
   )
   local test_name
 
@@ -699,13 +702,64 @@ check_network_client_contract() {
   require_source_pattern '.https_only(true)' "${source_path}"
   require_source_pattern 'MAX_METADATA_RESPONSE_BYTES' "${source_path}"
   require_source_pattern 'MAX_RATE_LIMIT_BACKOFF' "${source_path}"
-  require_source_pattern 'app.manage(NetworkClient::new()?)' "${initializer_path}"
+  require_source_pattern 'Arc::new(ConnectivityPolicy::default())' "${initializer_path}"
+  require_source_pattern 'NetworkClient::new(Arc::clone(&connectivity))?' "${initializer_path}"
+  require_source_pattern 'app.manage(connectivity)' "${initializer_path}"
+  require_source_pattern 'app.manage(client)' "${initializer_path}"
   require_source_pattern '.send().await' "${source_path}"
   assert_no_matches "Phase 22 network request execution outside centralized client" \
     '\.(?:send|execute)\s*\(' --glob '!client.rs' src-tauri/src/network
   assert_no_matches "Phase 22 cookie configuration" \
     '\bcookie_store\b' src-tauri/src/network src-tauri/Cargo.toml
   printf 'PASS INV-10 centralized network client contract\n'
+}
+
+check_connectivity_contract() {
+  local policy_path="src-tauri/src/network/connectivity.rs"
+  local network_path="src-tauri/src/network/client.rs"
+  local browser_path="src-tauri/src/research/external_access.rs"
+  local command_path="src-tauri/src/commands/connectivity.rs"
+  local frontend_paths=(
+    src/ipc/connectivityMode.ts
+    src/ipc/connectivityModeSet.ts
+    src/features/connectivity
+  )
+  local required_tests=(
+    policy_defaults_online_and_round_trips_closed_modes
+    offline_policy_denies_before_url_or_transport_work
+    online_policy_preserves_url_validation
+    offline_policy_denies_before_validation_or_browser_launch
+  )
+  local test_name
+
+  require_file "${policy_path}"
+  require_file "${command_path}"
+  require_file src/ipc/connectivityMode.test.ts
+  require_file src/features/connectivity/useConnectivityMode.test.tsx
+  require_file src/features/connectivity/ConnectivityModeControl.test.tsx
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" src-tauri/src
+  done
+  require_source_pattern 'DEFAULT_CONNECTIVITY_MODE: ConnectivityMode = ConnectivityMode::Online' \
+    "${policy_path}"
+  require_source_pattern 'self.require_online()?;' "${network_path}"
+  require_source_pattern '.require_online()' "${browser_path}"
+  require_source_pattern 'const COMMAND_NAME = "get_connectivity_mode"' \
+    src/ipc/connectivityMode.ts
+  require_source_pattern 'const COMMAND_NAME = "set_connectivity_mode"' \
+    src/ipc/connectivityModeSet.ts
+  require_source_pattern 'ignores an older read after a newer refresh completes' \
+    src/features/connectivity/useConnectivityMode.test.tsx
+  require_source_pattern 'keeps the effective mode visible and announces a failed change' \
+    src/features/connectivity/ConnectivityModeControl.test.tsx
+
+  assert_no_matches "Phase 36 connectivity persistence, probing, or alternate transport" \
+    '\brusqlite\b|(?:std|tokio)::fs|\breqwest\b|\bnavigator\.onLine\b|\bsetInterval\s*\(|\blocalStorage\b|\bfetch\s*\(' \
+    "${policy_path}" "${command_path}" "${frontend_paths[@]}"
+  assert_no_matches "Phase 36 formatting connectivity coupling" \
+    '\bConnectivityMode\b|\bConnectivityPolicy\b|\bconnectivity_mode\b' \
+    src-tauri/src/formatting src/features/formatting-review
+  printf 'PASS INV-10 Phase 36 offline session policy\n'
 }
 
 check_metadata_lookup_contract() {
@@ -764,6 +818,7 @@ check_external_browser_handoff_contract() {
     google_scholar_handoff_builds_bounded_search_url
     malformed_doi_and_query_fail_before_browser_launch
     browser_launch_failures_are_bounded
+    offline_policy_denies_before_validation_or_browser_launch
   )
   local test_name
 

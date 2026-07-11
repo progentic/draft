@@ -622,6 +622,14 @@ records live Wiki commit `43ac0bc`. Focused documentation checks enforce these
 cross-links and reject the prior invisible-formatting wording. No product code
 or public README claim changes in this realignment phase.
 
+Phase 36 documents the implemented Rust-owned session connectivity policy in
+`docs/maintainers/OFFLINE_MODE.md`, the workspace and canonical Wiki sources,
+and the existing network/browser guides. `INV-10` and invariant scans enforce
+pre-dispatch denial, shared Rust state, local formatting independence, and the
+absence of persistence, probing, queues, telemetry, proxies, credentials, or
+alternate network paths. The non-binding requirements remain in
+`docs/drafts/OFFLINE_MODE.md`.
+
 Recommended checks:
 
 - Markdown formatting

@@ -2,19 +2,26 @@ use std::cell::RefCell;
 
 use super::*;
 
+fn open_online(
+    opener: &impl ExternalUrlOpener,
+    input: ExternalAccessInput,
+) -> Result<ExternalAccessDestination, ExternalAccessError> {
+    open_in_system_browser(&ConnectivityPolicy::default(), opener, input)
+}
+
 #[test]
 fn publisher_and_institutional_urls_open_as_validated_https() {
     let browser = RecordingBrowser::available();
 
     assert_eq!(
-        open_in_system_browser(
+        open_online(
             &browser,
             ExternalAccessInput::PublisherUrl(" https://publisher.example/article ".to_owned()),
         ),
         Ok(ExternalAccessDestination::Publisher)
     );
     assert_eq!(
-        open_in_system_browser(
+        open_online(
             &browser,
             ExternalAccessInput::InstitutionalUrl("https://library.example/item".to_owned()),
         ),
@@ -43,7 +50,7 @@ fn non_https_or_credentialed_urls_fail_before_browser_launch() {
         "",
     ] {
         assert_eq!(
-            open_in_system_browser(
+            open_online(
                 &browser,
                 ExternalAccessInput::PublisherUrl(value.to_owned()),
             ),
@@ -51,7 +58,7 @@ fn non_https_or_credentialed_urls_fail_before_browser_launch() {
         );
     }
     assert_eq!(
-        open_in_system_browser(
+        open_online(
             &browser,
             ExternalAccessInput::PublisherUrl(format!(
                 "https://publisher.example/{}",
@@ -68,7 +75,7 @@ fn doi_handoff_builds_resolver_url() {
     let browser = RecordingBrowser::available();
 
     assert_eq!(
-        open_in_system_browser(
+        open_online(
             &browser,
             ExternalAccessInput::Doi(" 10.1000/Example/Part?A ".to_owned()),
         ),
@@ -85,7 +92,7 @@ fn google_scholar_handoff_builds_bounded_search_url() {
     let browser = RecordingBrowser::available();
 
     assert_eq!(
-        open_in_system_browser(
+        open_online(
             &browser,
             ExternalAccessInput::GoogleScholarQuery(" source reliability ".to_owned()),
         ),
@@ -103,13 +110,13 @@ fn malformed_doi_and_query_fail_before_browser_launch() {
 
     for value in ["", "example", "10.x/test"] {
         assert_eq!(
-            open_in_system_browser(&browser, ExternalAccessInput::Doi(value.to_owned())),
+            open_online(&browser, ExternalAccessInput::Doi(value.to_owned())),
             Err(ExternalAccessError::InvalidDoi)
         );
     }
     for value in ["", "   ", "line\nbreak"] {
         assert_eq!(
-            open_in_system_browser(
+            open_online(
                 &browser,
                 ExternalAccessInput::GoogleScholarQuery(value.to_owned()),
             ),
@@ -117,7 +124,7 @@ fn malformed_doi_and_query_fail_before_browser_launch() {
         );
     }
     assert_eq!(
-        open_in_system_browser(
+        open_online(
             &browser,
             ExternalAccessInput::GoogleScholarQuery("x".repeat(MAX_SCHOLAR_QUERY_LENGTH + 1)),
         ),
@@ -130,7 +137,7 @@ fn malformed_doi_and_query_fail_before_browser_launch() {
 fn browser_launch_failures_are_bounded() {
     let browser = RecordingBrowser::unavailable();
 
-    let error = open_in_system_browser(
+    let error = open_online(
         &browser,
         ExternalAccessInput::PublisherUrl("https://publisher.example/article".to_owned()),
     )
@@ -138,6 +145,25 @@ fn browser_launch_failures_are_bounded() {
 
     assert_eq!(error, ExternalAccessError::BrowserUnavailable);
     assert_eq!(error.to_string(), "system browser could not be opened");
+}
+
+#[test]
+fn offline_policy_denies_before_validation_or_browser_launch() {
+    let connectivity = ConnectivityPolicy::default();
+    connectivity
+        .set_mode(crate::network::connectivity::ConnectivityMode::Offline)
+        .unwrap();
+    let browser = RecordingBrowser::available();
+
+    assert_eq!(
+        open_in_system_browser(
+            &connectivity,
+            &browser,
+            ExternalAccessInput::PublisherUrl("not a URL".to_owned()),
+        ),
+        Err(ExternalAccessError::Offline)
+    );
+    assert!(browser.opened_urls().is_empty());
 }
 
 struct RecordingBrowser {
