@@ -41,6 +41,7 @@ check_required_sources() {
     index.html
     package-lock.json
     scripts/check-packaging.sh
+    scripts/check-release-candidate.sh
     scripts/package-macos.sh
     src/ipc/eventClient.ts
     src/ipc/client.ts

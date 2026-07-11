@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 43 are complete. Phase 44 is
-the next implementation phase.
+**Current execution checkpoint:** Phases 0 through 44 are complete. Phase 45 is
+the next documentation and drift realignment phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -123,8 +123,13 @@ Phase 43 establishes the version 1 data-migration baseline for documents,
 nested citation attrs, reference records, and the reference store. DRAFT has no
 released older payload schema, so lower and future versions fail without
 changing source bytes, registry state, or stored rows. Empty reference-store
-initialization remains the only transactional `0 -> 1` transition. Phase 44 is
-next.
+initialization remains the only transactional `0 -> 1` transition.
+
+Phase 44 establishes a checked release-candidate hardening baseline. It
+classifies current product, CSP, and distribution blockers; mandatory pre-49
+gates; accepted v1 limitations; P2 maintenance; and post-v1 work. Passing this
+checkpoint means every known release-relevant finding has an owner, phase, and
+closure condition. It does not declare DRAFT release-ready. Phase 45 is next.
 
 ---
 

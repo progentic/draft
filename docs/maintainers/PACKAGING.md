@@ -63,7 +63,9 @@ The supported Phase 42 package host is macOS on Apple Silicon. The repository
 retains standard Windows and Linux desktop assets, but no Windows, Linux, Intel
 macOS, or mobile package path is verified. A signing identity, notarization
 policy, update channel, installer image, and release automation do not exist
-yet.
+yet. Those distribution and CSP gates are tracked in
+`docs/maintainers/RELEASE_CANDIDATE.md`; this unsigned package is supported-host
+evidence, not final-candidate distribution.
 
 Mobile icon derivatives are generator outputs only. DRAFT remains a desktop
 application and has no iOS or Android product target.

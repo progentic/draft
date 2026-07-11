@@ -42,7 +42,7 @@ implementation choices that can change without altering one of those contracts.
 | :--- | :--- | :--- | :--- |
 | Main window | 1200 by 800 pixels | `src-tauri/tauri.conf.json` | Initial desktop workspace size. |
 | Minimum window | 760 by 560 pixels | `src-tauri/tauri.conf.json` | Smallest supported shell geometry. |
-| Content security policy | `null` | `src-tauri/tauri.conf.json` | No custom CSP is configured yet; this is not a security-completion claim. |
+| Content security policy | `null` | `src-tauri/tauri.conf.json` | No custom CSP is configured yet; Phase 44 records this as release blocker `RC-05` for Phase 48 closure. |
 | WebView capability | event listen and unlisten only | `src-tauri/capabilities/main.json` | Main window can receive typed Rust events; it has no direct filesystem, opener, or network capability. |
 | Bundle activation | `true` | `src-tauri/tauri.conf.json` | Tauri bundling is active for the supported configured target. |
 | Bundle targets | `app` only | `src-tauri/tauri.conf.json` | Phase 42 produces an unsigned macOS application bundle, not a DMG or another platform installer. |

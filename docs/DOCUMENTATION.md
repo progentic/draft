@@ -686,6 +686,13 @@ transactional migration tests, and invariant enforcement in the same phase.
 No user migration article is required until a visible migration or recovery
 workflow exists.
 
+Phase 44 documents the checked hardening baseline in
+`docs/maintainers/RELEASE_CANDIDATE.md`. The inventory must keep release
+blockers, mandatory pre-49 gates, accepted v1 limitations, P2 maintenance, and
+post-v1 work distinct. Every open blocker needs evidence, an owner, a phase,
+and a closure condition. Passing the Phase 44 check must never be described as
+final release-candidate readiness.
+
 Recommended checks:
 
 - Markdown formatting

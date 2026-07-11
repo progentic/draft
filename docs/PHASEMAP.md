@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 43 are complete. Phase 44 is
-the next implementation phase.
+**Current execution checkpoint:** Phases 0 through 44 are complete. Phase 45 is
+the next documentation and drift realignment phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -200,8 +200,14 @@ DMG, publish a release, or claim another supported package target.
 Phase 43 records the fail-closed version 1 migration baseline in
 `docs/maintainers/DATA_MIGRATION.md`. No released older document, citation, or
 reference payload exists to transform. Tests prove lower and future versions
-cannot change document bytes, registry state, or stored reference rows. Phase
-44 is next.
+cannot change document bytes, registry state, or stored reference rows.
+
+Phase 44 records the checked RC-hardening contract in
+`docs/maintainers/RELEASE_CANDIDATE.md`. Open product, CSP, distribution, and
+mandatory review gates remain explicit blockers for Phase 49. Accepted v1
+limitations, P2 maintenance, and post-v1 work are separate. Phase 44 passing is
+an inventory and enforcement result, not a release-candidate declaration.
+Phase 45 is next.
 
 ---
 
