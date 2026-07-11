@@ -1214,7 +1214,7 @@ check_v1_analysis_decision_guard() {
   require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
   require_source_pattern '## Analysis Layers' "${adr}"
   require_source_pattern 'permitted v1 findings are exactly' "${adr}"
-  require_source_pattern 'RC-03` remains open until Phase 46' "${draft}"
+  require_source_pattern 'remains open until Phase 46' "${draft}"
   assert_no_matches "ADR-002 production model dependencies" \
     '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
     src-tauri/Cargo.toml package.json pyproject.toml

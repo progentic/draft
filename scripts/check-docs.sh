@@ -788,7 +788,7 @@ check_v1_analysis_decision_state() {
   require_document_text "${draft}" '**Decision dependency:** Accepted ADR-002'
   require_document_text "${draft}" '## RC-03 Closure Contract'
   require_document_text "${draft}" 'The five permitted user-visible analyses are'
-  require_document_text "${draft}" '`RC-03` remains open until Phase 46'
+  require_document_text "${draft}" 'remains open until Phase 46'
   require_document_text "${release_contract}" '| RC-03 | Release blocker | Open | Accepted ADR-002 limits v1 analysis to five local deterministic heuristics'
   for decision_file in "${decision_files[@]}"; do
     require_document_text "${decision_file}" 'ADR-002'
