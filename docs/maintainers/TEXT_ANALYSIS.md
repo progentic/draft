@@ -117,11 +117,10 @@ dictionary. Perspective changes can be intentional. Findings therefore remain
 advisory review prompts. A later UI must preserve this wording and require an
 explicit edit/save path for any user change.
 
-Proposed ADR-002 is under architecture review. If accepted, Phase 46 will expose
-these five deterministic checks as the complete v1.0.0 production analysis
-scope. The proposal does not imply generative, semantic, model-backed,
+Accepted ADR-002 makes these five deterministic checks the complete v1.0.0
+production analysis scope. It does not imply generative, semantic, model-backed,
 comprehensive grammar, provider, credential, network, or packaged-model
-capabilities, and no visible workflow exists yet.
+capabilities. `RC-03` remains open because no visible workflow exists yet.
 
 Counts, lengths, and exact patterns are supporting measurements only. The five
 findings are deterministic heuristics: repeatable signals that may still be

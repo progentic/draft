@@ -83,11 +83,10 @@ usability rule in the roadmap, phasemap, and RC ledger; verifies that
 `RC-01` through `RC-04` remain open for Phase 46; and keeps CSP, responsiveness,
 and distribution assigned to their later gates.
 
-Proposed ADR-002 is under architecture review. Its proposal guard keeps the
-provider-independent model orchestration boundary internal and denies external
-model, credential, and generative-analysis product authority while the owner
-decision cools. `RC-03` remains open and no Phase 46 analysis implementation is
-authorized by the proposal alone.
+Accepted ADR-002 keeps the provider-independent model orchestration boundary
+internal and denies external model, credential, and generative-analysis product
+authority. `RC-03` remains open until Phase 46 implements and verifies the
+accepted local deterministic workflow.
 
 The guard also rejects model SDK dependencies and endpoints, provider
 credential environment variables, packaged model artifacts, runtime model

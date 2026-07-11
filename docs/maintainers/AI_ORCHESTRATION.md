@@ -99,13 +99,12 @@ workflow. A later phase must introduce credentials and provider integration
 through their accepted boundaries before this orchestration can call an
 external model.
 
-Proposed ADR-002 is under architecture review. It would keep this entire model
+Accepted ADR-002 keeps this entire model
 orchestration boundary internal for v1.0.0 and require a separate future ADR
-before any external provider integration. The proposal does not change current
-implementation or authorize the Phase 46 local text-analysis workflow before
-acceptance.
+before any external provider integration. The decision does not expose this
+module or close the Phase 46 local text-analysis workflow blocker.
 
-Under the proposal, this module represents model-backed interpretation and is
+Under the accepted decision, this module represents model-backed interpretation and is
 not a v1 product path. Deterministic measurements may support only the five
 enumerated local heuristics; they do not make this orchestration surface
 available or authorize semantic, generative, or inferential claims.

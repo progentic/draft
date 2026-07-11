@@ -139,7 +139,7 @@ check_v1_usability_documentation() {
   require_document_text "${contract}" '## Phase 48 - Secure Usability'
   require_document_text "${contract}" '## Phase 49 - Packaged Release-Candidate Gate'
   require_document_text "${contract}" '## Phase 50 - Release Entry Point'
-  require_document_text "${contract}" 'The analysis step remains blocked while ADR-002 is Proposed.'
+  require_document_text "${contract}" 'Accepted ADR-002 authorizes Phase 46 to implement local deterministic text'
   require_document_text docs/ROADMAP.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
   require_document_text docs/PHASEMAP.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
   require_document_text docs/DOCUMENTATION.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
@@ -766,8 +766,9 @@ check_v1_analysis_decision_state() {
   local adr='docs/adr/002-limit-v1-analysis-to-local-text.md'
   local draft='docs/drafts/V1_LOCAL_ANALYSIS.md'
   local release_contract='docs/maintainers/RELEASE_CANDIDATE.md'
-  local proposal_files=(
+  local decision_files=(
     docs/ARCHITECTURE.md
+    docs/contracts/V1_USABILITY_ACCEPTANCE.md
     docs/INVARIANTS.md
     docs/PHASEMAP.md
     docs/ROADMAP.md
@@ -778,23 +779,24 @@ check_v1_analysis_decision_state() {
     docs/maintainers/TOOLCHAIN.md
   )
 
-  require_document_text "${adr}" 'Status: Proposed'
+  require_document_text "${adr}" 'Status: Accepted'
   require_document_text "${adr}" '**Owner Decision: v1.0.0 Analysis Boundary**'
   require_document_text "${adr}" 'For DRAFT v1.0.0, production analysis is limited to local deterministic text'
   require_document_text "${adr}" '## Analysis Layers'
   require_document_text "${adr}" 'permitted v1 findings are exactly:'
-  require_document_text "${draft}" '**Decision dependency:** Proposed ADR-002'
+  require_document_text "${draft}" '**Status:** Accepted implementation contract'
+  require_document_text "${draft}" '**Decision dependency:** Accepted ADR-002'
   require_document_text "${draft}" '## RC-03 Closure Contract'
   require_document_text "${draft}" 'The five permitted user-visible analyses are'
-  require_document_text "${draft}" 'remains open and no Phase 46 analysis implementation'
-  require_document_text "${release_contract}" '| RC-03 | Release blocker | Open | Proposed ADR-002 is under review. The local deterministic analysis path'
-  for proposal_file in "${proposal_files[@]}"; do
-    require_document_text "${proposal_file}" 'ADR-002'
+  require_document_text "${draft}" 'remains open until Phase 46'
+  require_document_text "${release_contract}" '| RC-03 | Release blocker | Open | Accepted ADR-002 limits v1 analysis to five local deterministic heuristics'
+  for decision_file in "${decision_files[@]}"; do
+    require_document_text "${decision_file}" 'ADR-002'
   done
   reject_document_pattern \
-    'Status: Accepted|^[[:space:]]*(?:Accepted ADR-002|ADR-002 is accepted)|\| RC-03 \| Release blocker \| Closed \|' \
-    'ADR-002 and RC-03 must remain proposed and open before the governed merge' \
-    "${adr}" "${draft}" "${proposal_files[@]}"
+    'Status: Proposed|Proposed ADR-002|ADR-002 is under architecture review|\| RC-03 \| Release blocker \| Closed \|' \
+    'ADR-002 must remain accepted and RC-03 open after the governed merge' \
+    "${adr}" "${draft}" "${decision_files[@]}"
   reject_public_analysis_claims
 }
 
