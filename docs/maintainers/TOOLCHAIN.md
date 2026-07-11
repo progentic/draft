@@ -2,8 +2,9 @@
 
 ## Current phase
 
-Phases 0 through 43 are complete at the current checkpoint. Phase 44 is the
-next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
+Phases 0 through 44 are complete at the current checkpoint. Phase 45 is the
+next documentation and drift realignment phase. The Phase 1 toolchain remains
+locked, and the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -71,6 +72,11 @@ production visibility and adds no command or user workflow.
 The package configuration activates only the macOS `app` target. The owned
 `npm run package:macos` entrypoint builds and validates an unsigned native
 Apple Silicon bundle; portable configuration checks run in GitHub Actions.
+
+Phase 44 adds an offline RC-hardening check that validates the classified
+blocker inventory against current CSP, unsigned package, visible workflow,
+pre-release version, tag, and generated-artifact evidence. Passing it does not
+mean the Phase 49 entry gate is satisfied.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,

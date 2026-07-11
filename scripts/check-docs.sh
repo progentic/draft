@@ -32,6 +32,7 @@ main() {
   check_critical_path_documentation
   check_packaging_documentation
   check_data_migration_documentation
+  check_release_candidate_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -104,6 +105,7 @@ check_required_documents() {
     docs/maintainers/METADATA_LOOKUP.md
     docs/maintainers/REFERENCE_RECORD.md
     docs/maintainers/REFERENCE_STORE.md
+    docs/maintainers/RELEASE_CANDIDATE.md
     docs/maintainers/REALIGNMENT.md
     docs/maintainers/SECRET_STORAGE.md
     docs/maintainers/TOOLCHAIN.md
@@ -134,6 +136,20 @@ check_data_migration_documentation() {
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     'Data migration baseline'
   printf 'PASS Phase 43 data migration documentation\n'
+}
+
+check_release_candidate_documentation() {
+  local candidate_doc='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_document_text "${candidate_doc}" \
+    'not a release-candidate declaration'
+  require_document_text "${candidate_doc}" \
+    'An open blocker must name evidence, an owner, a closure phase'
+  require_document_text "${candidate_doc}" 'Phase 49 entry is stricter'
+  require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
+    'Release-candidate hardening'
+  require_document_text docs/maintainers/PACKAGING.md 'RELEASE_CANDIDATE.md'
+  printf 'PASS Phase 44 release-candidate documentation\n'
 }
 
 report_local_agent_instructions() {
@@ -203,7 +219,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 43 are complete'
+  local checkpoint='Phases 0 through 44 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md || \
