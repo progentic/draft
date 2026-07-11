@@ -690,10 +690,23 @@ check_v1_analysis_decision_state() {
     'Status: Accepted|Accepted ADR-002|ADR-002 is accepted|\| RC-03 \| Release blocker \| Closed \|' \
     'ADR-002 and RC-03 must remain proposed and open before the governed merge' \
     "${adr}" "${draft}" "${proposal_files[@]}"
-  reject_document_pattern \
-    '(?i)\b(AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness( detection)?|AI detection|quality assessment|intelligence|reasoning)\b' \
-    'Public documentation must not claim model-backed v1 analysis capabilities' \
-    README.md docs/user docs/wiki
+  reject_public_analysis_claims
+}
+
+reject_public_analysis_claims() {
+  local pattern='(?i)^(?!.*\b(?:not|no|without|unavailable|unimplemented|excluded|outside|deferred|cannot|can\x27t|doesn\x27t|does not|must not|remain absent)\b).*\b(?:AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness(?: detection)?|AI detection|intelligent assessment|quality assessment|intelligence|reasoning)\b'
+  local status
+
+  if rg --line-number --pcre2 "${pattern}" README.md CHANGELOG.md docs/user docs/wiki; then
+    echo 'Public documentation claims unsupported model-backed v1 analysis' >&2
+    return 1
+  else
+    status=$?
+  fi
+  if [[ "${status}" -ne 1 ]]; then
+    echo 'Public analysis capability-language scan could not run' >&2
+    return "${status}"
+  fi
 }
 
 check_pdf_decision_state() {

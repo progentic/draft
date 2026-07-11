@@ -1181,6 +1181,12 @@ check_v1_analysis_proposal_guard() {
   assert_no_matches "ADR-002 production model dependencies" \
     '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
     src-tauri/Cargo.toml package.json pyproject.toml
+  assert_no_matches "ADR-002 direct frontend HTTP or provider dependencies" \
+    '(?i)"(?:@anthropic-ai/sdk|@google/generative-ai|@mistralai/mistralai|@openai/agents|axios|got|ky|openai|superagent|undici)"[[:space:]]*:' \
+    package.json
+  assert_no_matches "ADR-002 frontend provider SDK imports" \
+    '(?i)\b(?:from|import)[[:space:]]*[\(]?[[:space:]]*["\x27](?:@anthropic-ai/sdk|@google/generative-ai|@mistralai/mistralai|@openai/agents|openai)["\x27]' \
+    src
   assert_no_matches "ADR-002 provider endpoints or credential environment" \
     '(?i)\b(?:OPENAI|ANTHROPIC|COHERE|GEMINI|MISTRAL|OLLAMA|MODEL_PROVIDER)_(?:API_KEY|TOKEN|BASE_URL|ENDPOINT)\b|https?://[^[:space:]"\x27]*(?:openai|anthropic|cohere|generativelanguage|mistral|ollama)' \
     src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
@@ -1193,16 +1199,16 @@ check_v1_analysis_proposal_guard() {
     src-tauri/src/analysis src-tauri/src/commands src-tauri/src/application src
   assert_no_matches "ADR-002 direct frontend provider or secret authority" \
     '\b(?:ModelProvider|ProviderCredential|ProviderEndpoint|SecretStore|SecretValue|loadSecret|storeSecret|providerApiKey)\b' \
-    --glob '!*.test.*' src
+    src
   assert_no_matches "ADR-002 direct frontend provider transport" \
-    '\bfetch[[:space:]]*\(|\bnew[[:space:]]+(?:WebSocket|EventSource)[[:space:]]*\(' \
-    --glob '!*.test.*' src
+    '\bfetch[[:space:]]*\(|\bXMLHttpRequest\b|\bnew[[:space:]]+(?:WebSocket|EventSource)[[:space:]]*\(' \
+    src
   assert_no_matches "ADR-002 generative analysis bridge" \
     '#\[tauri::command\][[:space:]]*(?:pub[^[:space:]]+[[:space:]]+)?(?:start|run|generate)_ai|draft://(?:ai|analysis)|\b(?:runAiAnalysis|startAiAnalysis|generateAnalysis)\b' \
     src-tauri/src/commands src-tauri/src/events src
   assert_no_matches "ADR-002 unsupported visible capability language" \
-    '(?i)\b(?:AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness(?: detection)?|AI detection|quality assessment|intelligence|reasoning)\b' \
-    --glob '!*.test.*' README.md docs/user docs/wiki src
+    '(?i)^(?!.*\b(?:not|no|without|unavailable|unimplemented|excluded|outside|deferred|cannot|can\x27t|doesn\x27t|does not|must not|remain absent)\b).*\b(?:AI-powered analysis|semantic analysis|semantic understanding|LLM analysis|generative feedback|originality detection|human-likeness(?: detection)?|AI detection|intelligent assessment|quality assessment|intelligence|reasoning)\b' \
+    README.md CHANGELOG.md docs/user docs/wiki src
 
   if model_artifacts="$(git ls-files | rg '(?i)\.(?:gguf|onnx|safetensors|pt|pth|tflite)$')"; then
     printf '%s\n' "${model_artifacts}" >&2
