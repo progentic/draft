@@ -550,9 +550,9 @@ check_error_ux_documentation() {
   local inventory='docs/maintainers/ERROR_MESSAGES.md'
 
   require_document_text "${guide}" 'four visible surfaces'
-  require_document_text "${guide}" '`retryable`'
-  require_document_text "${guide}" '`actionable`'
-  require_document_text "${guide}" '`terminal`'
+  require_document_text "${guide}" "\`retryable\`"
+  require_document_text "${guide}" "\`actionable\`"
+  require_document_text "${guide}" "\`terminal\`"
   require_document_text "${guide}" 'Labels are allowed only when an already-visible control can honor them.'
   require_document_text "${guide}" 'outer fallbacks'
   require_document_text "${guide}" 'unwired'
