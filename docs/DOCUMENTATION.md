@@ -638,7 +638,10 @@ pinned native adapter, bounded zeroizing values, closed errors, injected tests,
 managed-state registration, and absence of IPC, frontend, Python, config,
 SQLite, filesystem, environment, logging, fallback, or provider authority. The
 original requirements remain non-binding in `docs/drafts/SECRET_STORAGE.md`;
-Phase 38 is bounded separately in `docs/drafts/AUDIT_DIAGNOSTICS.md`.
+Phase 38 is bounded separately in `docs/drafts/AUDIT_DIAGNOSTICS.md`. The merged
+Phase 37 limitation is published to the live GitHub Wiki at commit `9ab41a3`;
+all four live pages match their canonical sources, and rendered navigation was
+verified after the post-merge `main` run passed.
 
 Recommended checks:
 
