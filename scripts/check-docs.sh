@@ -479,7 +479,7 @@ check_offline_mode_documentation() {
   require_document_text "${recovery}" '## Connectivity Mode Unavailable'
   require_document_text "${recovery}" 'Online - change failed'
   require_document_text docs/wiki/Current-Limitations.md 'does not monitor operating-system connectivity'
-  require_document_text docs/INVARIANTS.md 'Phase 36 adds one shared `ConnectivityPolicy`'
+  require_document_text docs/INVARIANTS.md "Phase 36 adds one shared \`ConnectivityPolicy\`"
 }
 
 check_readme_scope() {
