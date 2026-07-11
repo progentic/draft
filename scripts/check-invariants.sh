@@ -66,7 +66,7 @@ check_v1_usability_contract() {
   )
 
   require_file "${contract}"
-  require_source_pattern 'status: Proposed' "${contract}"
+  require_source_pattern 'status: Accepted' "${contract}"
   require_source_pattern 'owners: [frontend, core, release]' "${contract}"
   require_source_pattern 'DRAFT v1.0.0 is not releasable unless a first-time user' \
     "${contract}"
@@ -81,7 +81,7 @@ check_v1_usability_contract() {
     "${contract}"
 
   for invariant_id in "${invariant_ids[@]}"; do
-    require_source_pattern "| \`${invariant_id}\` | Proposed |" \
+    require_source_pattern "| \`${invariant_id}\` | Accepted |" \
       docs/INVARIANTS.md
     require_source_pattern "${invariant_id}" "${contract}"
   done

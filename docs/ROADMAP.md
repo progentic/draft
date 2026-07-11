@@ -135,28 +135,24 @@ Phase 45 reconciles the release sequence without adding product behavior. It
 closes only the documentation/governance gate, assigns the four visible
 workflow blockers to Phase 46, keeps responsiveness in Phase 47, CSP/security
 in Phase 48, and candidate distribution in Phase 49. Usability and interaction
-clarity are now binding v1 release conditions. Proposed downstream acceptance
-criteria are under contract review in
-`docs/contracts/V1_USABILITY_ACCEPTANCE.md`. Phase 46 is next.
+clarity are now binding v1 release conditions. The accepted downstream criteria
+live in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`. Phase 46 is next.
 
-If the contract is accepted, Phase 46 must make each supported workflow
-discoverable, understandable, predictable, recoverable, keyboard-operable, and
-explicit about current state. Any local text-analysis workflow remains blocked
-until ADR-002 is accepted and must then use the exact governed five-check scope
-without model-backed claims.
+Phase 46 must make each supported workflow discoverable, understandable,
+predictable, recoverable, keyboard-operable, and explicit about current state.
+Any local text-analysis workflow remains blocked until ADR-002 is accepted and
+must then use the exact governed five-check scope without model-backed claims.
 
-The proposal would rename Phase 47 to Usability and Perceived Performance
-Validation. It would audit every visible label, menu, control, state, and
-realistic workload, then combine measured responsiveness with uncoached task
-evidence from at least five first-time users. Benchmarks alone would not close
-its gate.
+Phase 47 is Usability and Perceived Performance Validation. It audits every
+visible label, menu, control, state, and realistic workload, then combines
+measured responsiveness with uncoached task evidence from at least five
+first-time users. Benchmarks alone cannot close its gate.
 
-After acceptance, Phase 48 would include secure usability in the final
-trust-boundary review. Phase 49 would rerun the supported workflow from the
-exact candidate package and block on open `UX-0` or `UX-1` findings. Phase 50
-would require a concise first-run entry point, user release notes,
-supported-capability guidance, shortcuts, recovery help, and a verified
-download and launch path.
+Phase 48 includes secure usability in the final trust-boundary review. Phase 49
+reruns the supported workflow from the exact candidate package and blocks on
+open `UX-0` or `UX-1` findings. Phase 50 requires a concise first-run entry
+point, user release notes, supported-capability guidance, shortcuts, recovery
+help, and a verified download and launch path.
 
 ---
 
@@ -407,9 +403,8 @@ The expected output is not more prose for its own sake. The expected output is r
 
 DRAFT may be called `v1.0.0` only when these conditions hold:
 
-- The proposed `docs/contracts/V1_USABILITY_ACCEPTANCE.md` contract is accepted,
-  then passes with its named automated, packaged, and human-comprehension
-  evidence.
+- The accepted `docs/contracts/V1_USABILITY_ACCEPTANCE.md` contract passes with
+  its named automated, packaged, and human-comprehension evidence.
 - DRAFT is not ready for v1.0.0 unless a user can identify the primary controls,
   understand their labels, predict their effects, recover from visible
   failures, and complete the supported document workflow without relying on

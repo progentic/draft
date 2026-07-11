@@ -6,10 +6,9 @@ This is the implemented Phase 44 release-candidate hardening baseline as
 reconciled by Phase 45. It is not a release-candidate declaration and does not
 authorize a tag, signed package, or publication.
 
-The proposed `docs/contracts/V1_USABILITY_ACCEPTANCE.md` contract would make
-user comprehension and supported-workflow completion executable release gates.
-It remains non-binding during `contract-doc` review and does not close any row,
-authorize implementation, or imply that an absent workflow exists.
+The accepted `docs/contracts/V1_USABILITY_ACCEPTANCE.md` contract makes user
+comprehension and supported-workflow completion executable release gates. It
+does not close any row in this ledger or imply that an absent workflow exists.
 
 The realignment baseline is merged Phase 44 commit `37d0228`. Its post-merge
 hosted verification passed. At the audit time, GitHub had no open issues or open pull
@@ -41,11 +40,11 @@ closure condition. Removing a row is not closure.
 | RC-03 | Release blocker | Open | AI orchestration and text-analysis findings have no production provider, start command, packaged helper discovery, or visible review workflow. | Analysis workflow | Phase 46 | The supported analysis and text-review workflow is visible, distinguishes generated output from evidence, supports required cancellation, and passes packaged interaction tests. |
 | RC-04 | Release blocker | Open | DOCX compilation is internal-only and no export control exists. | Export workflow | Phase 46 | The supported DOCX path is reachable through a clear Rust-owned target flow and passes packaged source-preservation and recovery tests. |
 | RC-05 | Release blocker | Open | Tauri CSP is `null`. | Security review | Phase 48 | A restrictive packaged-app CSP is configured, enforced structurally, and verified against every required local asset and IPC flow. |
-| RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 49 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, and built from the exact candidate commit without adding updater or upload authority implicitly; after contract acceptance, it also passes the complete packaged usability workflow. |
+| RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 49 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, built from the exact candidate commit, and passes the complete packaged usability workflow without adding updater or upload authority implicitly. |
 | GATE-45 | Must close before Phase 49 | Closed | Phase 45 reconciles release, roadmap, public, maintainer, Wiki, and enforcement truth without changing product behavior. | Documentation and governance | Phase 45 | The realignment assigns every blocker and binds the v1 usability and interaction-clarity rule without claiming implementation. |
-| GATE-46 | Must close before Phase 49 | Open | The mandatory accessibility and interaction-clarity pass has not run. | Frontend accessibility and workflow clarity | Phase 46 | After contract acceptance, critical flows satisfy its discoverability, understanding, state, recovery, keyboard, focus, naming, announcement, terminology, and unavailable-state criteria. |
-| GATE-47 | Must close before Phase 49 | Open | The current responsiveness review has not run; the proposal would add visible-language, workflow-usability, and first-time-user validation. | Performance; proposed usability expansion | Phase 47 | Current measured limits and perceived waits must pass; after contract acceptance, at least five uncoached participants also meet every critical-task, 80-percent task/terminology/recovery, and median-satisfaction threshold. |
-| GATE-48 | Must close before Phase 49 | Open | The final trust-boundary and packaged CSP review has not run; the proposal would add secure usability. | Security | Phase 48 | Current invariant, dependency, capability, CSP, path, archive/XML, secret, network, and frontend-authority review passes; after contract acceptance, security wording, safe recovery, and work preservation also pass. |
+| GATE-46 | Must close before Phase 49 | Open | The mandatory accessibility and interaction-clarity pass has not run. | Frontend accessibility and workflow clarity | Phase 46 | Critical flows satisfy the accepted discoverability, understanding, state, recovery, keyboard, focus, naming, announcement, terminology, and unavailable-state criteria. |
+| GATE-47 | Must close before Phase 49 | Open | The complete visible-language, workflow-usability, first-time-user, and realistic responsiveness validation has not run. | Usability and perceived performance | Phase 47 | At least five uncoached participants meet every critical-task requirement, each 80-percent task/terminology/recovery threshold, and each median-satisfaction threshold while measured limits and ambiguous waits are resolved or remain blockers. |
+| GATE-48 | Must close before Phase 49 | Open | The final trust-boundary, packaged CSP, and secure-usability review has not run. | Security | Phase 48 | Invariant, dependency, capability, CSP, path, archive/XML, secret, network, frontend-authority, security-wording, safe-recovery, and work-preservation review is green with findings closed or blocking. |
 
 ## Accepted v1 Limitations
 
@@ -91,8 +90,6 @@ and phase-specific gates are defined in
 
 ## Usability Finding Taxonomy
 
-This taxonomy is proposed and non-binding until the contract is accepted.
-
 - **UX-0:** data loss, inaccessible critical action, or inability to complete
   the primary workflow. Any open `UX-0` blocks Phase 49.
 - **UX-1:** misleading label, hidden primary control, unrecoverable confusion,
@@ -108,9 +105,6 @@ when Phase 46 produces real workflow evidence; this baseline does not create
 empty or fabricated results.
 
 ## Closure Sequence
-
-The existing blocker order remains binding. The proposed usability thresholds
-and evidence additions below apply only after contract acceptance:
 
 1. Phase 46 must close `RC-01` through `RC-04` before it can close `GATE-46`.
 2. Phase 47 closes `GATE-47` only after the complete visible-language audit,

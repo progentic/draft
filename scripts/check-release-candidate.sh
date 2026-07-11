@@ -53,7 +53,7 @@ check_v1_usability_acceptance() {
   local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
 
   require_file "${contract}"
-  require_literal 'status: Proposed' "${contract}"
+  require_literal 'status: Accepted' "${contract}"
   require_literal '## Supported v1 Workflow' "${contract}"
   require_literal '## First-Time-User Task Validation' "${contract}"
   require_literal '## Measurable Release Thresholds' "${contract}"
@@ -63,26 +63,11 @@ check_v1_usability_acceptance() {
   require_gate_usability_row GATE-46
   require_gate_usability_row GATE-47
   require_gate_usability_row GATE-48
-  require_proposed_usability_gates_open
 
   require_usability_evidence_if_closed GATE-46 '## Phase 46' "${ledger}"
   require_usability_evidence_if_closed GATE-47 '## Phase 47' "${ledger}"
   require_usability_evidence_if_closed GATE-48 '## Phase 48' "${ledger}"
   require_candidate_usability_evidence_if_closed "${ledger}"
-}
-
-require_proposed_usability_gates_open() {
-  local blocker_id
-  local gate_id
-
-  for blocker_id in RC-01 RC-02 RC-03 RC-04 RC-05 RC-06; do
-    require_literal "| ${blocker_id} | Release blocker | Open |" \
-      docs/maintainers/RELEASE_CANDIDATE.md
-  done
-  for gate_id in GATE-46 GATE-47 GATE-48; do
-    require_literal "| ${gate_id} | Must close before Phase 49 | Open |" \
-      docs/maintainers/RELEASE_CANDIDATE.md
-  done
 }
 
 require_gate_usability_row() {

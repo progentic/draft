@@ -1,5 +1,5 @@
 ---
-status: Proposed
+status: Accepted
 adr: None - refines the accepted Phase 45 release rule
 upholds: [INV-UX-01, INV-UX-02, INV-UX-03, INV-UX-04, INV-UX-05, INV-UX-06]
 owners: [frontend, core, release]
@@ -9,11 +9,10 @@ owners: [frontend, core, release]
 
 ## Purpose
 
-This proposed contract turns the binding Phase 45 usability rule into
+This accepted contract turns the binding Phase 45 usability rule into
 executable release criteria for Phases 46 through 50. It defines the supported
 workflow, required human evidence, measurable thresholds, and release-blocking
-finding classes. It remains non-binding until accepted through contract review
-and merge.
+finding classes.
 
 > DRAFT v1.0.0 is not releasable unless a first-time user can understand the
 > application's purpose, identify the primary controls, complete the supported
