@@ -5,13 +5,12 @@ import { useState } from "react";
 import {
   DEFAULT_FORMATTING_STYLE,
   type FormattingAction,
-  type FormattingReviewClientError,
-  type FormattingReviewCommandErrorCode,
   type FormattingReviewFinding,
   type FormattingStyle,
 } from "../../ipc/formattingReview";
+import { formattingFailureMessage } from "../error-ux/errorPresentation";
 import { useFormattingReview } from "./useFormattingReview";
-import type { FormattingReviewFailure, FormattingReviewState } from "./useFormattingReview";
+import type { FormattingReviewState } from "./useFormattingReview";
 
 interface FormattingReviewPanelProps {
   editor: Editor | null;
@@ -24,15 +23,6 @@ const FORMATTING_STYLE_LABELS = {
   mla9: "MLA 9",
   chicago17_author_date: "Chicago 17 author-date",
 } satisfies Record<FormattingStyle, string>;
-
-const FORMATTING_COMMAND_FAILURE_LABELS = {
-  too_many_headings: "This document has too many headings for one formatting check.",
-  too_many_citations: "This document has too many citations for one formatting check.",
-  invalid_heading_level: "DRAFT could not validate a heading level in this document.",
-  empty_heading_title: "DRAFT could not validate an empty heading in this document.",
-  heading_title_too_long: "DRAFT could not check a heading because its title is too long.",
-  invalid_citekey: "DRAFT could not validate a citation in this document.",
-} satisfies Record<FormattingReviewCommandErrorCode, string>;
 
 export function FormattingReviewPanel(props: FormattingReviewPanelProps) {
   const [style, setStyle] = useState<FormattingStyle>(DEFAULT_FORMATTING_STYLE);
@@ -48,7 +38,7 @@ export function FormattingReviewPanel(props: FormattingReviewPanelProps) {
     >
       <FormattingReviewHeader
         canRun={props.editor !== null}
-        isRunning={review.state.phase === "running"}
+        runLabel={formattingRunLabel(review.state)}
         style={style}
         onClose={props.onClose}
         onRun={() => void review.run(style)}
@@ -69,7 +59,7 @@ export function FormattingReviewPanel(props: FormattingReviewPanelProps) {
 
 function FormattingReviewHeader(props: {
   canRun: boolean;
-  isRunning: boolean;
+  runLabel: string;
   style: FormattingStyle;
   onClose: () => void;
   onRun: () => void;
@@ -89,7 +79,7 @@ function FormattingReviewHeader(props: {
         onClick={props.onRun}
       >
         <SearchCheck aria-hidden="true" size={16} strokeWidth={1.9} />
-        <span>{props.isRunning ? "Check again" : "Check formatting"}</span>
+        <span>{props.runLabel}</span>
       </button>
       <button
         className="icon-button formatting-review-close"
@@ -164,8 +154,12 @@ function FormattingReviewContent(props: {
 function FormattingReviewStatus(props: { state: Exclude<FormattingReviewState, { phase: "ready" }> }) {
   if (props.state.phase === "failed") {
     return (
-      <p className="formatting-review-status formatting-review-status--error" role="alert">
-        {formattingFailureLabel(props.state.error)}
+      <p
+        className="formatting-review-status formatting-review-status--error"
+        role="alert"
+        aria-atomic="true"
+      >
+        {formattingFailureMessage(props.state.error)}
       </p>
     );
   }
@@ -260,17 +254,8 @@ function FormattingFindingRow(props: {
   );
 }
 
-function formattingFailureLabel(error: FormattingReviewFailure) {
-  if (error.type === "command") {
-    return FORMATTING_COMMAND_FAILURE_LABELS[error.code];
-  }
-  if (error.type === "invalid-citation") {
-    return "DRAFT found a citation that cannot be checked.";
-  }
-  if (error.type === "invalid-response") {
-    return "DRAFT received an invalid formatting response.";
-  }
-  return "Formatting review could not reach the DRAFT core.";
+function formattingRunLabel(state: FormattingReviewState) {
+  return state.phase === "idle" ? "Check formatting" : "Check again";
 }
 
 function formattingTargetLabel(finding: FormattingReviewFinding) {
@@ -287,12 +272,4 @@ function isApplyAction(action: FormattingAction): action is Extract<
   { type: "apply_heading_level" }
 > {
   return action.type === "apply_heading_level";
-}
-
-export function formattingCommandFailureLabel(code: FormattingReviewCommandErrorCode) {
-  return FORMATTING_COMMAND_FAILURE_LABELS[code];
-}
-
-export function formattingClientFailureLabel(error: FormattingReviewClientError) {
-  return formattingFailureLabel(error);
 }

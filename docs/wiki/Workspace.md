@@ -29,6 +29,9 @@ The review checks structure and style declarations only. It does not certify
 complete style-manual compliance, save findings, or repair a document
 automatically.
 
+After a failed check, the existing button reads **Check again**. See
+[Troubleshooting](Troubleshooting) for the message-specific next step.
+
 ## Use The Toolbar With A Keyboard
 
 Press Tab to enter the formatting toolbar. Use Left Arrow and Right Arrow to
@@ -62,6 +65,9 @@ review remain available.
 Choose **Go online** to allow external actions again. The setting resets to
 online when DRAFT restarts. It does not indicate whether the operating system
 has a connection and does not retry or queue requests.
+
+If a change fails, the prior confirmed mode remains visible. Use the same
+control to retry; DRAFT does not add a separate recovery workflow.
 
 ## Protect Your Work
 

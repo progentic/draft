@@ -31,7 +31,11 @@ describe("CitationNode", () => {
     const presentation = createCitationPresentation({ citekey: "smith2025" }, resolver);
 
     expect(presentation.dom.dataset.citationState).toBe("invalid");
-    expect(presentation.dom.textContent).toBe("Invalid citation");
+    expect(presentation.dom.textContent).toBe(
+      "Citation version is missing. Keep this citation unchanged.",
+    );
+    expect(presentation.dom.getAttribute("aria-live")).toBe("polite");
+    expect(presentation.dom.getAttribute("aria-atomic")).toBe("true");
     expect(resolver).not.toHaveBeenCalled();
   });
 
@@ -55,8 +59,14 @@ describe("CitationNode", () => {
 
     await waitFor(() => expect(missing.dom.dataset.citationState).toBe("unavailable"));
     await waitFor(() => expect(failed.dom.dataset.citationState).toBe("failed"));
-    expect(missing.dom.textContent).toBe("Citation unavailable");
-    expect(failed.dom.textContent).toBe("Citation unavailable");
+    expect(missing.dom.textContent).toBe(
+      "DRAFT could not resolve this citation. Keep it unchanged.",
+    );
+    expect(failed.dom.textContent).toBe(
+      "DRAFT could not check this citation. Restart DRAFT and try again.",
+    );
+    expect(missing.dom.textContent).not.toBe(failed.dom.textContent);
+    expect(missing.dom.title).toBe(missing.dom.textContent);
   });
 
   it("ignores stale resolution after attrs change", async () => {

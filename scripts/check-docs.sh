@@ -28,6 +28,7 @@ main() {
   check_offline_mode_documentation
   check_secret_storage_documentation
   check_diagnostic_snapshot_documentation
+  check_error_ux_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -82,6 +83,7 @@ check_required_documents() {
     docs/maintainers/DOCUMENT_SAVE_LOAD.md
     docs/maintainers/DOCX_EXPORT.md
     docs/maintainers/ERROR_MESSAGES.md
+    docs/maintainers/ERROR_UX.md
     docs/maintainers/EVENT_BOUNDARY.md
     docs/maintainers/EXTERNAL_BROWSER_HANDOFF.md
     docs/maintainers/FRONTEND_COMMAND_CLIENT.md
@@ -181,7 +183,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 38 are complete'
+  local checkpoint='Phases 0 through 39 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -437,8 +439,7 @@ check_wiki_sources() {
 }
 
 check_visible_error_recovery() {
-  local presentation='src/components/DocumentInspector.tsx'
-  local formatting_presentation='src/features/formatting-review/FormattingReviewPanel.tsx'
+  local presentation='src/features/error-ux/errorPresentation.ts'
   local recovery='docs/wiki/Troubleshooting.md'
   local messages=(
     'DRAFT received an unsupported application version.'
@@ -454,10 +455,13 @@ check_visible_error_recovery() {
     require_document_text "${recovery}" "${message}"
   done
 
-  require_document_text "${formatting_presentation}" 'DRAFT received an invalid formatting response.'
-  require_document_text "${formatting_presentation}" 'Formatting review could not reach the DRAFT core.'
-  require_document_text "${recovery}" 'DRAFT received an invalid formatting response.'
-  require_document_text "${recovery}" 'Formatting review could not reach the DRAFT core.'
+  require_document_text "${presentation}" 'DRAFT received an invalid formatting response. Check again.'
+  require_document_text "${presentation}" 'Formatting review could not reach the DRAFT core. Restart DRAFT, then check again.'
+  require_document_text "${recovery}" 'DRAFT received an invalid formatting response. Check again.'
+  require_document_text "${recovery}" 'Formatting review could not reach the DRAFT core. Restart DRAFT, then check'
+  require_document_text "${presentation}" 'DRAFT received an invalid connectivity response.'
+  require_document_text "${presentation}" 'DRAFT could not resolve this citation. Keep it unchanged.'
+  require_document_text "${recovery}" '## Citation Cannot Be Resolved'
 }
 
 check_formatting_export_alignment() {
@@ -538,6 +542,25 @@ check_diagnostic_snapshot_documentation() {
   require_document_text "${next_draft}" 'typed but unwired backend failure'
   require_document_text docs/wiki/Current-Limitations.md 'no visible diagnostics control'
   require_document_text docs/INVARIANTS.md 'Phase 38 diagnostics omit the secret-storage subsystem'
+}
+
+check_error_ux_documentation() {
+  local guide='docs/maintainers/ERROR_UX.md'
+  local draft='docs/drafts/ERROR_UX.md'
+  local inventory='docs/maintainers/ERROR_MESSAGES.md'
+
+  require_document_text "${guide}" 'four visible surfaces'
+  require_document_text "${guide}" '`retryable`'
+  require_document_text "${guide}" '`actionable`'
+  require_document_text "${guide}" '`terminal`'
+  require_document_text "${guide}" 'Labels are allowed only when an already-visible control can honor them.'
+  require_document_text "${guide}" 'outer fallbacks'
+  require_document_text "${guide}" 'unwired'
+  require_document_text "${inventory}" 'Typed but unwired errors remain'
+  require_document_text "${draft}" 'non-binding requirements draft for Phase 39'
+  require_document_text docs/wiki/Workspace.md 'After a failed check, the existing button reads'
+  require_document_text docs/wiki/Troubleshooting.md '## Citation Cannot Be Resolved'
+  require_document_text docs/INVARIANTS.md 'Phase 39 retains each visible typed failure through the presentation boundary.'
 }
 
 check_readme_scope() {

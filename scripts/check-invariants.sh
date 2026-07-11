@@ -16,6 +16,7 @@ main() {
   check_credential_fields
   check_secret_store_contract
   check_diagnostic_snapshot_contract
+  check_error_presentation_contract
   check_frontend_boundary
   check_python_boundary
   check_command_errors
@@ -151,6 +152,48 @@ check_diagnostic_snapshot_contract() {
     --glob '!src/ipc/diagnosticSnapshot.ts' \
     --glob '!src/ipc/diagnosticSnapshot.test.ts' src
   printf 'PASS INV-01/02/03 Phase 38 local diagnostic snapshot contract\n'
+}
+
+check_error_presentation_contract() {
+  local policy_path='src/features/error-ux/errorPresentation.ts'
+  local test_path='src/features/error-ux/errorPresentation.test.ts'
+
+  require_file "${policy_path}"
+  require_file "${test_path}"
+  require_file docs/maintainers/ERROR_UX.md
+  require_source_pattern 'FailureDisposition = "retryable" | "actionable" | "terminal"' "${policy_path}"
+  require_source_pattern 'satisfies Record<RuntimeCommandFailureCode, FailurePresentation>' "${policy_path}"
+  require_source_pattern 'satisfies Record<ConnectivityCommandFailureCode, { read: string; change: string }>' "${policy_path}"
+  require_source_pattern 'satisfies Record<FormattingReviewCommandErrorCode, FailurePresentation>' "${policy_path}"
+  require_source_pattern 'satisfies Record<CitationNodeError["code"], FailurePresentation>' "${policy_path}"
+  require_source_pattern 'satisfies Record<CitationStoreError["code"], FailurePresentation>' "${policy_path}"
+  require_source_pattern 'return assertNever' "${policy_path}"
+  require_source_pattern 'maps runtime command code' "${test_path}"
+  require_source_pattern 'maps connectivity read failure' "${test_path}"
+  require_source_pattern 'maps connectivity change failure' "${test_path}"
+  require_source_pattern 'maps formatting command code' "${test_path}"
+  require_source_pattern 'maps citation node error' "${test_path}"
+  require_source_pattern 'maps citation client failure' "${test_path}"
+  require_source_pattern 'unknown fallbacks distinct' "${test_path}"
+
+  assert_no_matches "Phase 39 unwired error-domain presentation" \
+    '\b(?:DocumentOpen|DocumentSave|WorkerCancellation|DiagnosticSnapshot|SecretStore|ExternalAccess|MetadataLookup|PdfImport|DocxExport|TextAnalysis|AiAnalysis)\b' \
+    "${policy_path}"
+  assert_no_matches "Phase 39 frontend authority or persistence" \
+    '@tauri-apps|\binvoke\s*\(|\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b|\bindexedDB\b|\bwindow\.open\s*\(' \
+    "${policy_path}"
+  assert_no_matches "Phase 39 raw failure detail access" \
+    '\.(?:path|secret|credential|providerPayload|payload|stack|logs?)\b' \
+    "${policy_path}"
+  assert_no_matches "Phase 39 unwired visible error consumer" \
+    'errorPresentation' \
+    --glob '!src/features/error-ux/errorPresentation.ts' \
+    --glob '!src/features/error-ux/errorPresentation.test.ts' \
+    --glob '!src/components/DocumentInspector.tsx' \
+    --glob '!src/features/connectivity/ConnectivityModeControl.tsx' \
+    --glob '!src/features/formatting-review/FormattingReviewPanel.tsx' \
+    --glob '!src/editor/CitationNode.ts' src
+  printf 'PASS INV-02/03 Phase 39 visible error presentation contract\n'
 }
 
 check_frontend_boundary() {

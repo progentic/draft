@@ -8,6 +8,10 @@ import {
   resolveCitation,
   type CitationResolutionResult,
 } from "../ipc/citationResolution";
+import {
+  citationFailurePresentation,
+  citationNodeFailureMessage,
+} from "../features/error-ux/errorPresentation";
 
 export type CitationResolver = (
   attrs: CitationNodeAttributes,
@@ -93,6 +97,8 @@ function createMutablePresentation(): MutableCitationPresentation {
   dom.dataset.draftCitation = "";
   dom.contentEditable = "false";
   dom.setAttribute("role", "note");
+  dom.setAttribute("aria-live", "polite");
+  dom.setAttribute("aria-atomic", "true");
   return { dom, revision: 0, destroyed: false };
 }
 
@@ -104,7 +110,11 @@ function updatePresentation(
   const revision = ++presentation.revision;
   const validation = validateCitationNodeAttributes(attrs);
   if (!validation.valid) {
-    renderCitationState(presentation.dom, "invalid", "Invalid citation");
+    renderCitationState(
+      presentation.dom,
+      "invalid",
+      citationNodeFailureMessage(validation.error),
+    );
     return;
   }
   renderCitationState(presentation.dom, "resolving", "Resolving citation", validation.attrs);
@@ -133,16 +143,8 @@ function renderResolutionResult(
     renderCitationState(dom, "resolved", result.citation.displayMarker, attrs);
     return;
   }
-  const state = isMissingReference(result) ? "unavailable" : "failed";
-  renderCitationState(dom, state, "Citation unavailable", attrs);
-}
-
-function isMissingReference(result: CitationResolutionResult) {
-  return (
-    result.status === "error" &&
-    result.error.type === "command" &&
-    result.error.error.code === "reference_not_found"
-  );
+  const failure = citationFailurePresentation(result.error);
+  renderCitationState(dom, failure.state, failure.message, attrs);
 }
 
 function renderCitationState(
@@ -154,6 +156,7 @@ function renderCitationState(
   dom.dataset.citationState = state;
   dom.textContent = label;
   dom.setAttribute("aria-label", label);
+  dom.title = label;
   updateCitationData(dom, attrs);
 }
 

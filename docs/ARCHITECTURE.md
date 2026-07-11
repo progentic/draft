@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 38 is
+The implemented application through Phase 39 is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -91,6 +91,10 @@ deliberately smaller than the full system described in this architecture:
   non-probe subsystem states under a fixed byte limit. It does not inspect
   content, paths, logs, credentials, network state, files, databases, helpers,
   or background work, and no visible diagnostic workflow exists.
+- The frontend maps only already-visible runtime, connectivity, formatting,
+  and citation failures to bounded copy plus retryable, actionable, or
+  terminal dispositions. Exhaustive mappings fail closed when typed variants
+  change; unwired backend errors receive no speculative user message.
 - Rust validates publisher and institutional HTTPS URLs, DOI resolver targets,
   and Google Scholar queries before handing one URL to the default system
   browser. The WebView has no direct opener API or capability.
