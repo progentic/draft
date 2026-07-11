@@ -628,7 +628,9 @@ and the existing network/browser guides. `INV-10` and invariant scans enforce
 pre-dispatch denial, shared Rust state, local formatting independence, and the
 absence of persistence, probing, queues, telemetry, proxies, credentials, or
 alternate network paths. The non-binding requirements remain in
-`docs/drafts/OFFLINE_MODE.md`.
+`docs/drafts/OFFLINE_MODE.md`. The merged canonical user pages are published
+to the live GitHub Wiki at commit `5a92643`; source equality and rendered
+navigation were verified after the post-merge `main` run passed.
 
 Recommended checks:
 
