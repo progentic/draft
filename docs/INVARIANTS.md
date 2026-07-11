@@ -77,6 +77,12 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
 | `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
 | `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and no finding changes content without an explicit current-target user action. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot and returns content-free indexed findings. Phase 34 adds a typed command, closed actions, generation invalidation, and exact-node guards. Citation findings remain inspect-only; heading apply requires user input. Tests and scans deny persistence, filesystem, export, PDF, Python, network, worker, and automatic mutation authority. | The `verify` job runs the Rust domain/command tests, frontend IPC/generation/target/interaction tests, and formatting-boundary scans through `scripts/verify.sh`. |
+| `INV-UX-01` | Accepted | Every enabled visible control invokes an implemented user workflow. Controls for unavailable capabilities do not appear active. | `ARCHITECTURE.md` §4.1 and §5.1 | Interaction tests and the v1 usability gate require implemented control outcomes and explicit unavailable states before workflow closure. | The `verify` job runs the same interaction tests and conditional release-evidence checks. |
+| `INV-UX-02` | Accepted | User-facing text does not expose internal command, schema, provider, registry, job, IPC, or persistence terminology. | `ARCHITECTURE.md` §4.1 and §12 | Phase 47 inventories every visible string; prohibited implementation wording remains a release finding until corrected or removed. | The `verify` job requires the accepted contract and blocks gate closure without the visible-language evidence ledger. |
+| `INV-UX-03` | Accepted | Long-running or fallible visible operations expose deterministic pending, success, and failure states. | `ARCHITECTURE.md` §5.2, §5.3, and §12 | Operation interaction tests and perceived-performance evidence must prove visible state transitions without duplicate activation. | The `verify` job runs interaction tests and blocks Phase 47 closure without the required state and timing evidence. |
+| `INV-UX-04` | Accepted | Every visible failure states whether document data remains safe and exposes only recovery actions the current interface can honor. | `ARCHITECTURE.md` §12 | Typed error-presentation tests remain exhaustive; Phase 46 and Phase 48 evidence must cover data-safety wording and safe recovery. | The `verify` job runs error presentation tests and conditional usability/security evidence checks. |
+| `INV-UX-05` | Accepted | A user-facing concept has one canonical name across menus, controls, errors, documentation, and accessibility labels. | `ARCHITECTURE.md` §4.1 | Phase 47's visible-language inventory records each concept and resolves inconsistent terminology before release. | The `verify` job blocks Phase 47 closure without terminology and first-time-user comprehension evidence. |
+| `INV-UX-06` | Accepted | The supported v1 workflow is completable with keyboard input without lost focus or inaccessible controls. | `ARCHITECTURE.md` §4.1, §5, and §12 | Phase 46 interaction tests and Phase 49 packaged validation must cover the complete keyboard-only workflow. | The `verify` job blocks the accessibility and candidate gates without exact keyboard evidence. |
 
 ---
 
@@ -716,6 +722,36 @@ Minimum verification:
 cargo test --manifest-path src-tauri/Cargo.toml --locked --offline formatting::
 npm test -- --run src/ipc/formattingReview.test.ts src/features/formatting-review src/App.test.tsx
 bash scripts/check-invariants.sh
+```
+
+---
+
+### INV-UX-01 Through INV-UX-06: v1 Usability Integrity
+
+The accepted `docs/contracts/V1_USABILITY_ACCEPTANCE.md` contract defines the
+supported workflow, measurable thresholds, and evidence required to enforce
+these invariants. They are release conditions, not a claim that the currently
+absent Phase 46 workflows already exist.
+
+Current enforcement preserves that distinction. `RC-01` through `RC-04` and
+`GATE-46` through `GATE-48` remain open. The release-candidate script rejects a
+closed gate unless the cumulative usability evidence ledger contains the
+phase-specific automated, packaged, and human evidence named by the contract.
+Phase 49 must additionally reject open `UX-0` and `UX-1` findings and require a
+disposition for every `UX-2` finding.
+
+Automated source scans may protect bounded terminology and authority rules, but
+they cannot prove that a first-time user understood a control. Uncoached human
+task evidence remains mandatory for Phase 47 and packaged rerun evidence remains
+mandatory for Phase 49.
+
+Minimum verification:
+
+```bash
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+bash scripts/check-release-candidate.sh
+bash scripts/verify.sh
 ```
 
 ---

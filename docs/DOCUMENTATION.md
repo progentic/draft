@@ -298,6 +298,7 @@ Use contract documents for:
 - Python helper input/output
 - formatting output expectations
 - text-analysis score formats
+- release workflow and usability acceptance criteria
 
 Accepted contracts belong in:
 
@@ -700,6 +701,12 @@ usability and interaction clarity binding v1 conditions across the roadmap,
 phasemap, RC ledger, and executable checks. README, Wiki source, changelog,
 architecture, governance, invariants, coding style, and ADR status remain
 unchanged because their existing statements still match repository truth.
+
+The accepted `docs/contracts/V1_USABILITY_ACCEPTANCE.md` downstream contract
+refines that Phase 45 rule without reopening the phase. It owns the supported
+workflow, first-time-user thresholds, `UX-*` taxonomy, Phase 46 through 50
+evidence requirements, and cumulative maintainer evidence ledger without
+documenting a workflow as available before implementation.
 
 Recommended checks:
 

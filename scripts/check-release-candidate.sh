@@ -18,6 +18,7 @@ main() {
   check_live_blocker_evidence
   check_generated_release_artifacts
   check_phase45_release_rule
+  check_v1_usability_acceptance
 
   printf 'INFO Phase 49 remains blocked by RC-01 through RC-06 and GATE-46 through GATE-48.\n'
   printf 'Release-candidate hardening baseline passed.\n'
@@ -49,6 +50,77 @@ check_phase45_release_rule() {
     docs/adr/002-limit-v1-analysis-to-local-text.md
   require_literal '| RC-03 | Release blocker | Open | Proposed ADR-002 is under review. The local deterministic analysis path' \
     docs/maintainers/RELEASE_CANDIDATE.md
+}
+
+check_v1_usability_acceptance() {
+  local contract='docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+  local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
+
+  require_file "${contract}"
+  require_literal 'status: Accepted' "${contract}"
+  require_literal '## Supported v1 Workflow' "${contract}"
+  require_literal '## First-Time-User Task Validation' "${contract}"
+  require_literal '## Measurable Release Thresholds' "${contract}"
+  require_literal '## Phase 48 - Secure Usability' "${contract}"
+  require_literal '## Phase 49 - Packaged Release-Candidate Gate' "${contract}"
+  require_literal '## Phase 50 - Release Entry Point' "${contract}"
+  require_gate_usability_row GATE-46
+  require_gate_usability_row GATE-47
+  require_gate_usability_row GATE-48
+
+  require_usability_evidence_if_closed GATE-46 '## Phase 46' "${ledger}"
+  require_usability_evidence_if_closed GATE-47 '## Phase 47' "${ledger}"
+  require_usability_evidence_if_closed GATE-48 '## Phase 48' "${ledger}"
+  require_candidate_usability_evidence_if_closed "${ledger}"
+}
+
+require_gate_usability_row() {
+  local gate_id="$1"
+
+  if ! rg --quiet --regexp \
+    "^\\| ${gate_id} \\| Must close before Phase 49 \\| (Open|Closed) \\|" \
+    docs/maintainers/RELEASE_CANDIDATE.md; then
+    printf 'Missing v1 usability gate row: %s\n' "${gate_id}" >&2
+    return 1
+  fi
+}
+
+require_usability_evidence_if_closed() {
+  local gate_id="$1"
+  local heading="$2"
+  local ledger="$3"
+
+  if ! rg --quiet --fixed-strings \
+    "| ${gate_id} | Must close before Phase 49 | Closed |" \
+    docs/maintainers/RELEASE_CANDIDATE.md; then
+    return
+  fi
+
+  require_file "${ledger}"
+  require_literal "${heading}" "${ledger}"
+  require_literal '### Automated Evidence' "${ledger}"
+  require_literal '### Findings And Dispositions' "${ledger}"
+}
+
+require_candidate_usability_evidence_if_closed() {
+  local ledger="$1"
+
+  if ! rg --quiet --fixed-strings '| RC-06 | Release blocker | Closed |' \
+    docs/maintainers/RELEASE_CANDIDATE.md; then
+    return
+  fi
+
+  require_file "${ledger}"
+  require_literal '## Phase 49' "${ledger}"
+  require_literal '### Packaged Workflow Evidence' "${ledger}"
+  if rg --quiet --regexp '^\| UX-[^|]+ \| UX-[01] \| Open \|' "${ledger}"; then
+    echo 'Phase 49 cannot close with an open UX-0 or UX-1 finding' >&2
+    return 1
+  fi
+  if rg --quiet --regexp '^\| UX-[^|]+ \| UX-2 \| Open \|' "${ledger}"; then
+    echo 'Phase 49 cannot close with an undispositioned UX-2 finding' >&2
+    return 1
+  fi
 }
 
 require_inventory_group() {

@@ -213,6 +213,7 @@ document, research/citation, analysis/text-review, and DOCX blockers to Phase
 46 before accessibility review can pass. Phase 47 owns measured and perceived
 responsiveness, Phase 48 owns CSP/security, and Phase 49 owns candidate
 distribution. The v1 usability rule is now binding and mechanically checked.
+Its accepted criteria live in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`.
 Phase 46 is next.
 
 Proposed ADR-002 would limit v1.0.0 analysis to the five existing local,
@@ -298,11 +299,11 @@ Do not weaken an invariant to finish a phase. If an invariant is wrong, change i
 | 43 | Data migration | Migration strategy exists for document and reference data. | Old known schemas fail safely or migrate explicitly. |
 | 44 | Release candidate hardening | Known high-risk bugs are fixed or documented as release blockers. | Release-candidate checklist passes. |
 | 45 | Documentation and drift realignment | Release truth, blocker ownership, public docs, maintainer docs, and changelog are reconciled. | No release-blocking documentation drift remains, and the v1 usability rule is binding. |
-| 46 | Accessibility and interaction clarity | Visible v1 workflows close `RC-01` through `RC-04`, then receive accessibility and usability review. | Users can discover, understand, operate, and recover through critical flows with keyboard, focus, labels, announcements, and clear unavailable states. |
-| 47 | Performance and responsiveness | Realistic startup, editor, operation-feedback, document, and reference behavior is measured. | Limits are documented, ambiguous waiting states are removed, and interaction latency does not make controls appear broken. |
-| 48 | Security review | Trusted boundaries are reviewed against invariants. | Invariant tests and CI checks pass. |
-| 49 | Final release candidate | Final pre-1.0 candidate is cut from the exact verified commit. | Every `RC-*` and `GATE-*` row is closed, no P0 invariant violation remains, and candidate distribution evidence passes. |
-| 50 | v1.0.0 release realignment | Final docs, release notes, tags, and production checklist are aligned. | `v1.0.0` may be tagged only after all release gates pass. |
+| 46 | Accessibility and interaction clarity | Visible v1 workflows close `RC-01` through `RC-04`, then receive accessibility and usability review. | Users can discover, understand, operate, and recover through critical flows with keyboard, focus, labels, announcements, clear states, and plain-language findings. |
+| 47 | Usability and Perceived Performance Validation | Every visible string, menu, control, state, realistic workload, and supported task is reviewed through measurement and uncoached first-time-user evidence. | At least five participants meet the accepted critical-task, 80-percent comprehension/recovery, and median-satisfaction thresholds; measured limits and ambiguous waits are resolved or block release. |
+| 48 | Security review | Trusted boundaries, CSP, and secure usability are reviewed against invariants. | Security restrictions, offline behavior, trust warnings, and safe recovery are understandable without exposing secrets, paths, payloads, or unsafe workarounds. |
+| 49 | Final release candidate | The complete workflow is rerun from the exact packaged candidate. | Every `RC-*` and `GATE-*` row is closed, no P0, `UX-0`, or `UX-1` finding remains, every `UX-2` is dispositioned, and candidate distribution evidence passes. |
+| 50 | v1.0.0 release realignment | Final docs, user release notes, first-run guidance, tags, and production checklist are aligned. | `v1.0.0` may be tagged only after all release gates and the verified download, launch, onboarding, shortcut, recovery, and supported-capability checks pass. |
 
 ---
 
@@ -361,10 +362,17 @@ Before tagging `v1.0.0`, DRAFT must satisfy these checks:
 
 ### Usability and interaction
 
+- The accepted `docs/contracts/V1_USABILITY_ACCEPTANCE.md` workflow and
+  thresholds have exact evidence from the release-candidate package.
 - DRAFT is not ready for v1.0.0 unless a user can identify the primary controls,
   understand their labels, predict their effects, recover from visible
   failures, and complete the supported document workflow without relying on
   maintainer knowledge.
+- At least five uncoached first-time users complete every critical task; at
+  least 80 percent meet each non-critical task, terminology, and recovery
+  threshold; and every satisfaction item has a median of at least 4 out of 5.
+- No `UX-0` or `UX-1` finding remains open, and every `UX-2` finding has an
+  explicit disposition.
 - Similar commands are distinguishable and use consistent menu terminology.
 - Primary actions are visually and semantically clear.
 - Unavailable features are absent or explained without implying a workflow.

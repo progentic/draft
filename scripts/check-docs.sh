@@ -10,11 +10,12 @@ source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
 main() {
   cd "$(repository_root)"
-  require_tools find rg sort
+  require_tools find rg sort tail
 
   check_required_documents
   report_local_agent_instructions
   check_docs_have_headings
+  check_heading_parser_contract
   check_machine_specific_links
   check_changelog_shape
   check_phase_checkpoint
@@ -34,6 +35,7 @@ main() {
   check_data_migration_documentation
   check_release_candidate_documentation
   check_v1_analysis_decision_state
+  check_v1_usability_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -48,6 +50,7 @@ check_required_documents() {
     README.md
     docs/ARCHITECTURE.md
     docs/CODING_STYLE.md
+    docs/contracts/V1_USABILITY_ACCEPTANCE.md
     docs/DOCUMENTATION.md
     docs/drafts/AI_ORCHESTRATION.md
     docs/drafts/AUDIT_DIAGNOSTICS.md
@@ -125,6 +128,27 @@ check_required_documents() {
   done
 }
 
+check_v1_usability_documentation() {
+  local contract='docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+
+  require_document_text "${contract}" 'status: Accepted'
+  require_document_text "${contract}" '## Required Qualities'
+  require_document_text "${contract}" '## Supported v1 Workflow'
+  require_document_text "${contract}" '## First-Time-User Task Validation'
+  require_document_text "${contract}" '## Measurable Release Thresholds'
+  require_document_text "${contract}" '## Phase 48 - Secure Usability'
+  require_document_text "${contract}" '## Phase 49 - Packaged Release-Candidate Gate'
+  require_document_text "${contract}" '## Phase 50 - Release Entry Point'
+  require_document_text "${contract}" 'The analysis step remains blocked while ADR-002 is Proposed.'
+  require_document_text docs/ROADMAP.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+  require_document_text docs/PHASEMAP.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+  require_document_text docs/DOCUMENTATION.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+  require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
+    'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
+  require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
+    'v1 usability acceptance'
+}
+
 check_data_migration_documentation() {
   local migration_doc='docs/maintainers/DATA_MIGRATION.md'
 
@@ -173,19 +197,100 @@ report_local_agent_instructions() {
 
 check_docs_have_headings() {
   local document_path
-  local first_line
 
   while IFS= read -r document_path; do
-    if ! IFS= read -r first_line <"${document_path}"; then
+    if [[ ! -s "${document_path}" ]]; then
       echo "Documentation file is empty: ${document_path}" >&2
       return 1
     fi
 
-    if [[ "${first_line}" != \#* ]]; then
-      echo "Documentation file needs a top-level heading: ${document_path}" >&2
+    check_document_heading "${document_path}"
+  done < <(find docs -type f -name "*.md" -print | sort)
+}
+
+check_document_heading() {
+  local document_path="$1"
+  local first_line
+
+  IFS= read -r first_line <"${document_path}"
+  if [[ "${first_line}" != '---' ]]; then
+    require_top_level_heading "${document_path}" "${first_line}"
+    return
+  fi
+
+  check_frontmatter_heading "${document_path}"
+}
+
+check_frontmatter_heading() {
+  local document_path="$1"
+  local line
+  local has_field=false
+  local is_closed=false
+
+  while IFS= read -r line; do
+    if [[ "${is_closed}" == false ]]; then
+      if [[ "${line}" == '---' ]]; then
+        if [[ "${has_field}" == false ]]; then
+          echo "Documentation has empty frontmatter: ${document_path}" >&2
+          return 1
+        fi
+        is_closed=true
+      elif [[ -n "${line}" ]]; then
+        if [[ ! "${line}" =~ ^[A-Za-z][A-Za-z0-9_-]*:[[:space:]]*[^[:space:]].*$ ]]; then
+          echo "Documentation has malformed frontmatter: ${document_path}" >&2
+          return 1
+        fi
+        has_field=true
+      fi
+      continue
+    fi
+    [[ -z "${line}" ]] && continue
+    require_top_level_heading "${document_path}" "${line}"
+    return
+  done < <(tail -n +2 "${document_path}")
+
+  if [[ "${is_closed}" == false ]]; then
+    echo "Documentation has unterminated frontmatter: ${document_path}" >&2
+  else
+    echo "Documentation needs content after frontmatter: ${document_path}" >&2
+  fi
+  return 1
+}
+
+require_top_level_heading() {
+  local document_path="$1"
+  local content_line="$2"
+
+  if [[ "${content_line}" != \#* ]]; then
+    echo "Documentation file needs a top-level heading: ${document_path}" >&2
+    return 1
+  fi
+}
+
+check_heading_parser_contract() {
+  local fixture_root='scripts/fixtures/docs'
+  local invalid_fixture
+  local invalid_fixtures=(
+    blank-leading.fixture
+    empty-frontmatter.fixture
+    leading-content.fixture
+    malformed-frontmatter.fixture
+    repeated-frontmatter.fixture
+    unterminated-frontmatter.fixture
+  )
+
+  require_file "${fixture_root}/heading-only.fixture"
+  require_file "${fixture_root}/valid-frontmatter.fixture"
+  check_document_heading "${fixture_root}/heading-only.fixture"
+  check_document_heading "${fixture_root}/valid-frontmatter.fixture"
+  for invalid_fixture in "${invalid_fixtures[@]}"; do
+    require_file "${fixture_root}/${invalid_fixture}"
+    if check_document_heading "${fixture_root}/${invalid_fixture}" \
+      >/dev/null 2>&1; then
+      printf 'Heading parser accepted invalid fixture: %s\n' "${invalid_fixture}" >&2
       return 1
     fi
-  done < <(find docs -type f -name "*.md" -print | sort)
+  done
 }
 
 check_machine_specific_links() {
@@ -687,7 +792,7 @@ check_v1_analysis_decision_state() {
     require_document_text "${proposal_file}" 'ADR-002'
   done
   reject_document_pattern \
-    'Status: Accepted|Accepted ADR-002|ADR-002 is accepted|\| RC-03 \| Release blocker \| Closed \|' \
+    'Status: Accepted|^[[:space:]]*(?:Accepted ADR-002|ADR-002 is accepted)|\| RC-03 \| Release blocker \| Closed \|' \
     'ADR-002 and RC-03 must remain proposed and open before the governed merge' \
     "${adr}" "${draft}" "${proposal_files[@]}"
   reject_public_analysis_claims
