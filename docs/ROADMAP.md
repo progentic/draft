@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 40 are complete. Phase 41 is
+**Current execution checkpoint:** Phases 0 through 41 are complete. Phase 42 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -104,7 +104,14 @@ typed-but-unwired backend failures remain unexposed.
 
 Phase 40 reconciles security, offline, diagnostic, error-presentation, and user
 documentation without adding product behavior. Its evidence is recorded in
-`docs/maintainers/REALIGNMENT.md`. Phase 41 is the next implementation boundary.
+`docs/maintainers/REALIGNMENT.md`.
+
+Phase 41 adds one crate-level critical-path test over the existing Rust
+document, reference, citation, and DOCX boundaries. It proves create, save,
+close, reopen, duplicate-open rejection, citation resolution, explicit
+citation-export rejection, supported DOCX export, package reopening, and source
+preservation. It adds no visible workflow or production authority. Phase 42 is
+the next implementation boundary.
 
 ---
 

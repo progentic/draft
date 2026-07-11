@@ -152,6 +152,10 @@ failures, durability uncertainty, citation-node causes, and transport
 classification. Phase 18 adds open/save tests proving malformed citation attrs
 fail before registry insertion or path selection.
 
+Phase 41 adds crate-level evidence that first save, retained-path update,
+close, reopen, duplicate-open rejection, citation resolution, and export use
+these production paths together. It does not add a close command or file UI.
+
 `scripts/check-invariants.sh` requires these tests and sources, checks command
 name parity, rejects frontend path/dialog authority, and rejects direct target
 writes. The same script runs through `scripts/verify.sh` locally and in the

@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 40 are complete. Phase 41 is
+**Current execution checkpoint:** Phases 0 through 41 are complete. Phase 42 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -185,7 +185,12 @@ inventing a hidden workflow.
 
 Phase 40 audit evidence is recorded in `docs/maintainers/REALIGNMENT.md`. The
 checkpoint reconciles security, offline, diagnostic, error-presentation, and
-user guidance without adding product behavior. Phase 41 is next.
+user guidance without adding product behavior.
+
+Phase 41 evidence is recorded in `docs/maintainers/CRITICAL_PATHS.md`. One
+crate-level test composes existing Rust lifecycle, reference, citation, and
+DOCX paths without adding a command or visible workflow. Citation-bearing DOCX
+remains an explicit typed rejection. Phase 42 is next.
 
 ---
 

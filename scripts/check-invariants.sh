@@ -41,6 +41,7 @@ main() {
   check_ai_orchestration_contract
   check_document_registry_contract
   check_document_file_contract
+  check_critical_path_contract
   check_bridge_name_parity
   check_pdf_export_deferral_guard
   check_rust_network_boundary
@@ -1382,6 +1383,26 @@ check_document_file_contract() {
   check_document_write_boundary "${atomic_writer_path}"
   check_frontend_document_file_boundary
   printf 'PASS INV-03/06/09 document file contract\n'
+}
+
+check_critical_path_contract() {
+  local source_path="src-tauri/src/critical_paths_tests.rs"
+
+  require_file "${source_path}"
+  require_source_pattern 'mod critical_paths_tests;' src-tauri/src/lib.rs
+  require_rust_test critical_document_path_is_durable_citable_and_exportable \
+    "${source_path}"
+  require_source_pattern 'save_document(' "${source_path}"
+  require_source_pattern 'open_document(' "${source_path}"
+  require_source_pattern 'DocumentRegistryError::AlreadyOpen' "${source_path}"
+  require_source_pattern 'resolve_citation(' "${source_path}"
+  require_source_pattern 'DocxExportError::UnsupportedCitation' "${source_path}"
+  require_source_pattern 'export_docx(' "${source_path}"
+  require_source_pattern 'ZipArchive::new' "${source_path}"
+  assert_no_matches "Phase 41 test-only product authority" \
+    '#\[tauri::command\]|generate_handler|\btauri::|Command::new|\breqwest\b|\bkeyring\b' \
+    "${source_path}"
+  printf 'PASS Phase 41 critical-path evidence\n'
 }
 
 require_document_file_sources() {

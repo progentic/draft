@@ -102,6 +102,10 @@ guide. It rejects direct filesystem/persistence authority, manual XML
 interpolation, Tauri, frontend, Python, network, worker, application-state, and
 unsafe package expansion. The Phase 33 PDF-export absence gate remains active.
 
+Phase 41 adds crate-level evidence that a reopened citation-bearing document
+fails export explicitly, while a later supported saved snapshot exports to a
+package that reopens with the final text and leaves the DRAFT source unchanged.
+
 ## Current Limits
 
 The strict subset does not support citations, bibliographies, lists, tables,

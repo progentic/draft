@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phases 0 through 40 are complete at the current checkpoint. Phase 41 is the
+Phases 0 through 41 are complete at the current checkpoint. Phase 42 is the
 next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
@@ -63,6 +63,10 @@ Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
 features disabled for deterministic stored package entries. Compilation is
 bounded and completes before the shared atomic writer touches a `.docx` target.
+
+One `cfg(test)` critical-path module composes the existing document lifecycle,
+reference store, citation resolution, and DOCX exporter. It widens no
+production visibility and adds no command or user workflow.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
