@@ -29,6 +29,7 @@ main() {
   check_secret_storage_documentation
   check_diagnostic_snapshot_documentation
   check_error_ux_documentation
+  check_critical_path_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -77,6 +78,7 @@ check_required_documents() {
     docs/maintainers/CITATION_NODE.md
     docs/maintainers/COMMAND_BOUNDARY.md
     docs/maintainers/CONFIGURATION.md
+    docs/maintainers/CRITICAL_PATHS.md
     docs/maintainers/DOCUMENTATION_COVERAGE.md
     docs/maintainers/DOCUMENT_ENVELOPE.md
     docs/maintainers/DOCUMENT_REGISTRY.md
@@ -183,7 +185,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 40 are complete'
+  local checkpoint='Phases 0 through 41 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md || \
@@ -217,6 +219,7 @@ check_matrix_subsystems() {
     'Document envelope'
     'Document registry'
     'Document open, save, and atomic replacement'
+    'Critical-flow evidence'
     'Reference record'
     'Reference store'
     'Citation node and resolution'
@@ -564,6 +567,18 @@ check_error_ux_documentation() {
   require_document_text docs/user/WORKSPACE.md '## Citation messages'
   require_document_text docs/user/WORKSPACE.md 'the prior confirmed mode remains visible'
   require_document_text docs/INVARIANTS.md 'Phase 39 retains each visible typed failure through the presentation boundary.'
+}
+
+check_critical_path_documentation() {
+  local guide='docs/maintainers/CRITICAL_PATHS.md'
+
+  require_document_text "${guide}" "registered only under \`cfg(test)\`"
+  require_document_text "${guide}" 'reopen restores the last committed envelope'
+  require_document_text "${guide}" "\`UnsupportedCitation\`"
+  require_document_text "${guide}" 'package reopens'
+  require_document_text "${guide}" 'adds no application command'
+  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 41'
+  require_document_text docs/user/WORKSPACE.md 'current workspace has no export controls'
 }
 
 check_readme_scope() {

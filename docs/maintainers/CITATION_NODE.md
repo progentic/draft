@@ -156,6 +156,10 @@ resolution response and failure classification, Tiptap JSON preservation,
 static fail-closed HTML, every live display state, and stale response
 suppression.
 
+Phase 41 adds crate-level evidence that a citation survives save, close, and
+reopen before resolving against a persisted reference. The same test preserves
+the current typed DOCX rejection instead of rendering or omitting the citation.
+
 `scripts/check-invariants.sh` requires these sources and named Rust tests,
 checks schema/version and Tiptap fail-closed markers, rejects embedded metadata,
 and replaces the former citation absence gate. Phase 19 replaces the former

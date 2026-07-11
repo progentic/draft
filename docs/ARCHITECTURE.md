@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 39 is
+The implemented application through Phase 41 is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -140,6 +140,9 @@ deliberately smaller than the full system described in this architecture:
   lifecycle operations are serialized, failures before replacement preserve
   prior state, and a post-replacement durability failure advances the registry
   to the complete on-disk snapshot while returning a typed error.
+- One crate-level Phase 41 test composes those existing document, reference,
+  citation, and DOCX boundaries. It adds no runtime orchestration or visible
+  workflow; citation-bearing DOCX remains an explicit typed rejection.
 - React and Tiptap own only the transient writing surface and presentation
   state. The citation node preserves three attrs and shows explicit invalid,
   resolving, resolved, unavailable, or failed states. Reloading still discards
