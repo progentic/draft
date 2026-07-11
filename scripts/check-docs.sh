@@ -530,7 +530,7 @@ check_diagnostic_snapshot_documentation() {
   require_document_text "${guide}" 'get_diagnostic_snapshot'
   require_document_text "${guide}" 'MAX_DIAGNOSTIC_SNAPSHOT_BYTES'
   require_document_text "${guide}" 'Native credential storage is omitted entirely'
-  require_document_text "${guide}" '`SecretStore`'
+  require_document_text "${guide}" "\`SecretStore\`"
   require_document_text "${guide}" 'No React component or hook imports the wrapper'
   require_document_text "${draft}" 'non-binding requirements draft for Phase 38'
   require_document_text "${next_draft}" 'non-binding requirements draft for Phase 39'
