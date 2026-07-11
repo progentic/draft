@@ -27,6 +27,7 @@ main() {
   check_formatting_export_alignment
   check_offline_mode_documentation
   check_secret_storage_documentation
+  check_diagnostic_snapshot_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -48,6 +49,7 @@ check_required_documents() {
     docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md
     docs/drafts/DOCUMENT_ENVELOPE.md
     docs/drafts/DOCX_EXPORT.md
+    docs/drafts/ERROR_UX.md
     docs/drafts/EXTERNAL_BROWSER_HANDOFF.md
     docs/drafts/FORMATTING_CHECKS.md
     docs/drafts/FORMATTING_UX.md
@@ -67,6 +69,7 @@ check_required_documents() {
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/AI_ORCHESTRATION.md
+    docs/maintainers/AUDIT_DIAGNOSTICS.md
     docs/maintainers/CANCELLATION_BOUNDARY.md
     docs/maintainers/BACKGROUND_JOBS.md
     docs/maintainers/BIBLIOGRAPHY_CONSISTENCY.md
@@ -178,7 +181,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 37 are complete'
+  local checkpoint='Phases 0 through 38 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -217,6 +220,7 @@ check_matrix_subsystems() {
     'Central network client'
     'Offline session policy'
     'OS-native secret storage'
+    'Local diagnostic snapshot'
     'Metadata providers'
     'External browser handoff'
     'PDF intake candidate'
@@ -254,6 +258,9 @@ check_coverage_symbols() {
     'src-tauri/src/network/connectivity.rs|ConnectivityPolicy'
     'src-tauri/src/secrets/store.rs|SecretStore'
     'src-tauri/src/secrets/store.rs|SecretValue'
+    'src-tauri/src/diagnostics.rs|DiagnosticSnapshot'
+    'src-tauri/src/commands/diagnostic_snapshot.rs|get_diagnostic_snapshot'
+    'src/ipc/diagnosticSnapshot.ts|getDiagnosticSnapshot'
     'src-tauri/src/commands/connectivity.rs|get_connectivity_mode'
     'src/features/connectivity/useConnectivityMode.ts|useConnectivityMode'
     'src-tauri/src/research/providers/crossref.rs|lookup_crossref'
@@ -295,6 +302,9 @@ check_configuration_index() {
     API_KEY_ACCOUNT_PREFIX
     MAX_INTEGRATION_NAME_BYTES
     MAX_SECRET_BYTES
+    DIAGNOSTIC_SNAPSHOT_SCHEMA_VERSION
+    MAX_DIAGNOSTIC_SNAPSHOT_BYTES
+    MAX_APPLICATION_VERSION_BYTES
     NETWORK_CONNECT_TIMEOUT
     DEFAULT_CONNECTIVITY_MODE
     NETWORK_REQUEST_TIMEOUT
@@ -367,6 +377,7 @@ require_source_symbol() {
 check_configuration_backlinks() {
   local guides=(
     AI_ORCHESTRATION.md
+    AUDIT_DIAGNOSTICS.md
     BACKGROUND_JOBS.md
     CITATION_NODE.md
     DOCUMENT_ENVELOPE.md
@@ -509,6 +520,23 @@ check_secret_storage_documentation() {
   require_document_text docs/wiki/Current-Limitations.md 'credential prompts'
   require_document_text docs/wiki/Current-Limitations.md 'not currently available in the workspace'
   require_document_text docs/INVARIANTS.md "Phase 37 adds one lazy \`SecretStore\`"
+}
+
+check_diagnostic_snapshot_documentation() {
+  local guide='docs/maintainers/AUDIT_DIAGNOSTICS.md'
+  local draft='docs/drafts/AUDIT_DIAGNOSTICS.md'
+  local next_draft='docs/drafts/ERROR_UX.md'
+
+  require_document_text "${guide}" 'get_diagnostic_snapshot'
+  require_document_text "${guide}" 'MAX_DIAGNOSTIC_SNAPSHOT_BYTES'
+  require_document_text "${guide}" 'Native credential storage is omitted entirely'
+  require_document_text "${guide}" "\`SecretStore\`"
+  require_document_text "${guide}" 'No React component or hook imports the wrapper'
+  require_document_text "${draft}" 'non-binding requirements draft for Phase 38'
+  require_document_text "${next_draft}" 'non-binding requirements draft for Phase 39'
+  require_document_text "${next_draft}" 'typed but unwired backend failure'
+  require_document_text docs/wiki/Current-Limitations.md 'no visible diagnostics control'
+  require_document_text docs/INVARIANTS.md 'Phase 38 diagnostics omit the secret-storage subsystem'
 }
 
 check_readme_scope() {

@@ -15,6 +15,7 @@ main() {
 
   check_credential_fields
   check_secret_store_contract
+  check_diagnostic_snapshot_contract
   check_frontend_boundary
   check_python_boundary
   check_command_errors
@@ -108,6 +109,48 @@ check_secret_store_contract() {
   assert_no_matches "Phase 37 text-password keyring API" \
     '\.(?:set|get)_password\s*\(' src-tauri/src/secrets
   printf 'PASS INV-01 Phase 37 OS-native secret store contract\n'
+}
+
+check_diagnostic_snapshot_contract() {
+  local source_path='src-tauri/src/diagnostics.rs'
+  local command_path='src-tauri/src/commands/diagnostic_snapshot.rs'
+  local client_path='src/ipc/diagnosticSnapshot.ts'
+  local client_test_path='src/ipc/diagnosticSnapshot.test.ts'
+  local required_tests=(
+    snapshot_schema_is_strict_versioned_and_deterministic
+    serialized_snapshot_is_bounded
+    snapshot_contains_no_redacted_categories
+    invalid_application_versions_fail_with_closed_error
+  )
+  local test_name
+
+  require_file "${source_path}"
+  require_file "${command_path}"
+  require_file "${client_path}"
+  require_file "${client_test_path}"
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${source_path}"
+  done
+  require_source_pattern 'DIAGNOSTIC_SNAPSHOT_SCHEMA_VERSION: u16 = 1' "${source_path}"
+  require_source_pattern 'MAX_DIAGNOSTIC_SNAPSHOT_BYTES: usize = 2 * 1_024' "${source_path}"
+  require_source_pattern 'commands::diagnostic_snapshot::get_diagnostic_snapshot' \
+    src-tauri/src/lib.rs
+  require_source_pattern 'const COMMAND_NAME = "get_diagnostic_snapshot"' "${client_path}"
+
+  assert_no_matches "Phase 38 diagnostics runtime authority" \
+    '(?:std|tokio)::fs|\brusqlite\b|\breqwest\b|\bkeyring\b|\bSecretStore\b|\bPythonHelperRunner\b|\bAppHandle\b|\bState\s*<|\bstd::process\b|\bCommand::|\b(?:thread|tokio)::spawn\b|\b(?:println|eprintln|dbg|trace|debug|info|warn|error)!\s*\(' \
+    "${source_path}" "${command_path}"
+  assert_no_matches "Phase 38 diagnostics sensitive fields" \
+    '(?m)^\s*(?:pub(?:\([^)]*\))?\s+)?(?:document_(?:title|text)|evidence|prompt|finding|secret|credential|account|path|url|request_body|response_body|environment|username|hostname|process_id|logs?)\s*:' \
+    "${source_path}" "${command_path}"
+  assert_no_matches "Phase 38 secret-store probing" \
+    '\b(?:SecretStore|SecretId|SecretValue|NativeSecretBackend)\b|\.get_secret\s*\(|\.load\s*\(' \
+    "${source_path}" "${command_path}"
+  assert_no_matches "Phase 38 visible diagnostics workflow" \
+    '\b(?:getDiagnosticSnapshot|DiagnosticSnapshot)\b' \
+    --glob '!src/ipc/diagnosticSnapshot.ts' \
+    --glob '!src/ipc/diagnosticSnapshot.test.ts' src
+  printf 'PASS INV-01/02/03 Phase 38 local diagnostic snapshot contract\n'
 }
 
 check_frontend_boundary() {
@@ -1148,8 +1191,13 @@ check_reference_record_contract() {
   assert_no_matches "Phase 16 reference runtime authority" \
     '(?:std|tokio)::fs|\b(?:File|OpenOptions|PathBuf|Mutex|RwLock|HashMap)\b|#\[tauri::command\]|\b(?:rusqlite|sqlx|diesel)\b' \
     "${source_path}"
+  # Phase 38 exposes only the fixed reference_record schema-name token in its
+  # bounded diagnostic contract. These exact IPC files hold no reference data
+  # or reference-store authority.
   assert_no_matches "Phase 16 frontend reference authority" \
-    '\bReferenceRecord\b|\breference_record\b' src
+    '\bReferenceRecord\b|\breference_record\b' \
+    --glob '!src/ipc/diagnosticSnapshot.ts' \
+    --glob '!src/ipc/diagnosticSnapshot.test.ts' src
   printf 'PASS Phase 16 reference record contract\n'
 }
 

@@ -133,6 +133,18 @@ The commands change process-local session policy only. They accept no URL,
 provider, proxy, credential, retry instruction, or persistence option. The
 complete behavior is documented in `docs/maintainers/OFFLINE_MODE.md`.
 
+## Diagnostic snapshot command
+
+Phase 38 adds `get_diagnostic_snapshot`. It accepts an exact empty request and
+returns one strict schema-versioned snapshot containing only fixed support
+metadata. The command performs no probe, I/O, persistence, collection, event,
+or background work.
+
+Three closed errors distinguish an invalid compiled application version,
+serialization failure, and the fixed snapshot byte limit. No raw detail enters
+the response. The complete boundary is documented in
+`docs/maintainers/AUDIT_DIAGNOSTICS.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -147,6 +159,7 @@ complete behavior is documented in `docs/maintainers/OFFLINE_MODE.md`.
 | Mid | `run_formatting_review` | Validates one bounded snapshot and maps pure findings to closed actions. |
 | Mid | `get_connectivity_mode` | Returns the effective Rust-owned session mode. |
 | Mid | `set_connectivity_mode` | Applies one closed process-local mode. |
+| Mid | `get_diagnostic_snapshot` | Maps one explicit request to bounded local support metadata. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -185,6 +198,8 @@ external browser handoff. Phase 34 adds the same signature, request, response,
 error, and rejected-content evidence for formatting review.
 Phase 36 adds two complete command-contract sets for connectivity get/set and
 extends external access with typed offline policy failures.
+Phase 38 adds the same four command-contract tests for the local diagnostic
+snapshot and exercises its closed domain failures separately.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -217,5 +232,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/FORMATTING_UX.md`.
 - Phase 36 establishes the session connectivity commands described in
   `docs/maintainers/OFFLINE_MODE.md`.
+- Phase 38 establishes the local snapshot command described in
+  `docs/maintainers/AUDIT_DIAGNOSTICS.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.
