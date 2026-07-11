@@ -23,6 +23,7 @@ main() {
   run_step "Python tests" run_python_tests
   run_step "Bash syntax" find scripts -type f -name "*.sh" -exec bash -n "{}" +
   run_optional_checks
+  run_step "Packaging contract" bash scripts/check-packaging.sh
   run_step "Invariant boundaries" bash scripts/check-invariants.sh
   run_step "CI/local parity" bash scripts/check-ci-local-parity.sh
   run_step "Documentation sanity" bash scripts/check-docs.sh

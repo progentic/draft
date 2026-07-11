@@ -30,6 +30,7 @@ main() {
   check_diagnostic_snapshot_documentation
   check_error_ux_documentation
   check_critical_path_documentation
+  check_packaging_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -185,7 +186,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 41 are complete'
+  local checkpoint='Phases 0 through 42 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md || \
@@ -577,8 +578,23 @@ check_critical_path_documentation() {
   require_document_text "${guide}" "\`UnsupportedCitation\`"
   require_document_text "${guide}" 'package reopens'
   require_document_text "${guide}" 'adds no application command'
-  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 41'
+  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 42'
   require_document_text docs/user/WORKSPACE.md 'current workspace has no export controls'
+}
+
+check_packaging_documentation() {
+  local guide='docs/maintainers/PACKAGING.md'
+  local configuration='docs/maintainers/CONFIGURATION.md'
+
+  require_document_text "${guide}" 'Phase 42 establishes one supported package-build path'
+  require_document_text "${guide}" 'npm run package:macos'
+  require_document_text "${guide}" 'Darwin arm64'
+  require_document_text "${guide}" 'CFBundleIdentifier = com.progentic.draft'
+  require_document_text "${guide}" 'It does not produce a signed installer'
+  require_document_text "${configuration}" "| Bundle activation | \`true\` |"
+  require_document_text "${configuration}" "| Bundle targets | \`app\` only |"
+  require_document_text docs/wiki/Current-Limitations.md 'No versioned DRAFT release has been published yet.'
+  require_document_text README.md 'Versioned downloads will be published on the'
 }
 
 check_readme_scope() {

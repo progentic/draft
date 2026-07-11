@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 41 are complete. Phase 42 is
+**Current execution checkpoint:** Phases 0 through 42 are complete. Phase 43 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -190,7 +190,13 @@ user guidance without adding product behavior.
 Phase 41 evidence is recorded in `docs/maintainers/CRITICAL_PATHS.md`. One
 crate-level test composes existing Rust lifecycle, reference, citation, and
 DOCX paths without adding a command or visible workflow. Citation-bearing DOCX
-remains an explicit typed rejection. Phase 42 is next.
+remains an explicit typed rejection.
+
+Phase 42 establishes the supported unsigned macOS Apple Silicon `.app` path.
+`npm run package:macos` builds and validates the bundle, while the portable
+packaging contract runs in GitHub Actions. It does not sign, notarize, create a
+DMG, publish a release, or claim another supported package target. Phase 43 is
+next.
 
 ---
 

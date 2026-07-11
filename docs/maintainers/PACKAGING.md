@@ -2,10 +2,10 @@
 
 ## Status
 
-DRAFT has approved application artwork and a verified macOS `.app` icon
-contract. Packaging remains inactive in normal configuration. This is release
-groundwork only and does not complete Phase 42, produce an installer, define
-signing or notarization, or publish a release.
+Phase 42 establishes one supported package-build path for an unsigned macOS
+Apple Silicon `.app`. It uses the approved application artwork and verified
+bundle contract. It does not produce a signed installer, define notarization,
+create a DMG, configure updates, or publish a release.
 
 ## Source And Generated Assets
 
@@ -54,37 +54,42 @@ not establish the contract. The corrected unsigned macOS build declares
 `CFBundleIconFile = icon.icns`, and the packaged resource is byte-for-byte
 identical to `src-tauri/icons/icon.icns`.
 
-`bundle.active` remains `false`. Supplying `--bundles app` during verification
-is an explicit one-command override and is not a release configuration change.
+`bundle.active` is `true`, and `bundle.targets` contains only `app`. Other Tauri
+bundle targets are not part of the Phase 42 package contract.
 
 ## Platform Assumptions
 
-The intended initial release platform is macOS on Apple Silicon. The repository
-also retains standard Windows and Linux desktop assets, but no reproducible
-installer, signing identity, notarization policy, update channel, package test,
-or release automation exists yet.
+The supported Phase 42 package host is macOS on Apple Silicon. The repository
+retains standard Windows and Linux desktop assets, but no Windows, Linux, Intel
+macOS, or mobile package path is verified. A signing identity, notarization
+policy, update channel, installer image, and release automation do not exist
+yet.
 
 Mobile icon derivatives are generator outputs only. DRAFT remains a desktop
 application and has no iOS or Android product target.
 
 ## Verification
 
-Inspect the environment and build an unsigned application bundle:
+Build and validate the unsigned application bundle from the repository root:
 
 ```bash
-npm run tauri -- info
-npm run tauri -- build --bundles app --no-sign
+npm run package:macos
 ```
 
-Then verify:
+The command rejects any host other than `Darwin arm64`, removes only the prior
+ignored `DRAFT.app`, runs the pinned Tauri build, and verifies:
 
-- every generated PNG is square and RGBA;
-- `.icns` and `.ico` expose alpha-capable images;
+- `CFBundleIdentifier = com.progentic.draft`;
+- `CFBundleExecutable = draft`;
 - `Info.plist` contains `CFBundleIconFile = icon.icns`;
-- the embedded and tracked `.icns` SHA-256 values match;
-- the five desktop icon paths remain exact; and
-- no product, UI, roadmap, architecture, invariant, PDF, or phase file entered
-  the packaging diff.
+- the executable is a native Apple Silicon Mach-O binary;
+- the embedded and tracked `.icns` files match byte-for-byte; and
+- the application exists at
+  `src-tauri/target/release/bundle/macos/DRAFT.app`.
+
+`bash scripts/check-packaging.sh` separately parses Tauri and npm configuration,
+requires the exact app target and five desktop icons, and checks the owned build
+script contract on every local and hosted verification run.
 
 The full repository verifier remains required:
 
@@ -102,10 +107,11 @@ If Tauri rejects an image, confirm that the source is square and that generated
 PNG outputs are RGBA. Do not hand-edit one derivative; fix the approved source
 or generation command and regenerate the complete set.
 
-Do not commit files from `src-tauri/target/`. Bundles are verification output,
-not release artifacts.
+Do not commit files from `src-tauri/target/`. The unsigned app is reproducible
+build output, not a published release artifact.
 
 ## Configuration Index
 
-Bundle activation, desktop icon paths, window defaults, and platform assumptions
-are indexed in `docs/maintainers/CONFIGURATION.md`.
+Bundle activation, app target, canonical command, desktop icon paths, window
+defaults, and platform assumptions are indexed in
+`docs/maintainers/CONFIGURATION.md`.

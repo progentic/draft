@@ -34,6 +34,7 @@ implementation choices that can change without altering one of those contracts.
 | CI timeout | 30 minutes | `.github/workflows/verify.yml` | Upper bound for the aggregate Verify job. |
 | Development URL | `http://localhost:1420` | `src-tauri/tauri.conf.json` | Vite endpoint used only by Tauri development. |
 | Frontend output | `../dist` | `src-tauri/tauri.conf.json` | Production WebView assets consumed by Tauri builds, relative to `src-tauri/`. |
+| macOS package command | `npm run package:macos` | `package.json`, `scripts/package-macos.sh` | Builds and validates the unsigned Apple Silicon `.app`; signing and publication are excluded. |
 
 ## Window And Capability Defaults
 
@@ -43,8 +44,9 @@ implementation choices that can change without altering one of those contracts.
 | Minimum window | 760 by 560 pixels | `src-tauri/tauri.conf.json` | Smallest supported shell geometry. |
 | Content security policy | `null` | `src-tauri/tauri.conf.json` | No custom CSP is configured yet; this is not a security-completion claim. |
 | WebView capability | event listen and unlisten only | `src-tauri/capabilities/main.json` | Main window can receive typed Rust events; it has no direct filesystem, opener, or network capability. |
-| Bundle activation | `false` | `src-tauri/tauri.conf.json` | Normal builds do not claim a supported package path yet. |
-| Desktop icon paths | `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico` | `src-tauri/tauri.conf.json` | Explicit assets used when bundling is requested. |
+| Bundle activation | `true` | `src-tauri/tauri.conf.json` | Tauri bundling is active for the supported configured target. |
+| Bundle targets | `app` only | `src-tauri/tauri.conf.json` | Phase 42 produces an unsigned macOS application bundle, not a DMG or another platform installer. |
+| Desktop icon paths | `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico` | `src-tauri/tauri.conf.json` | Exact assets embedded by the app package path. |
 | `DOCUMENT_EXTENSIONS` | `draft`, `json` | `documents/dialog.rs` | Native open-dialog extension filters. |
 | `DEFAULT_DOCUMENT_FILE_NAME` | `Untitled.draft` | `documents/dialog.rs` | Initial native save-dialog name. |
 

@@ -69,7 +69,7 @@ DRAFT is designed to support the full path from early research to polished docum
 
 ## Download
 
-Download DRAFT from the [Releases](https://github.com/progentic/draft/releases) page.
+Versioned downloads will be published on the [Releases](https://github.com/progentic/draft/releases) page.
 
 The initial release platform is macOS on Apple Silicon. Because DRAFT is open source, it can also be compiled for other supported desktop platforms.
 
