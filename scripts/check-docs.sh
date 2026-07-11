@@ -677,7 +677,7 @@ check_v1_analysis_decision_state() {
   require_document_text "${adr}" '**Owner Decision: v1.0.0 Analysis Boundary**'
   require_document_text "${adr}" 'For DRAFT v1.0.0, production analysis is limited to local deterministic text'
   require_document_text "${draft}" '**Decision dependency:** Proposed ADR-002'
-  require_document_text "${draft}" 'Until then, `RC-03` remains open'
+  require_document_text "${draft}" 'remains open and no Phase 46 analysis implementation'
   require_document_text "${release_contract}" '| RC-03 | Release blocker | Open | Proposed ADR-002 is under review.'
   for proposal_file in "${proposal_files[@]}"; do
     require_document_text "${proposal_file}" 'ADR-002'
