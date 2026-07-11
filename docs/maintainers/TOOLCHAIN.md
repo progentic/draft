@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phases 0 through 42 are complete at the current checkpoint. Phase 43 is the
+Phases 0 through 43 are complete at the current checkpoint. Phase 44 is the
 next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first

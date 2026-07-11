@@ -679,6 +679,13 @@ configuration check runs through the local and hosted aggregate verifier. This
 does not claim signing, notarization, installer images, release publication, or
 support for another package target.
 
+Phase 43 documents the fail-closed version 1 data baseline in
+`docs/maintainers/DATA_MIGRATION.md`. Schema changes must update that guide,
+the central configuration index, owning subsystem guides, non-mutation or
+transactional migration tests, and invariant enforcement in the same phase.
+No user migration article is required until a visible migration or recovery
+workflow exists.
+
 Recommended checks:
 
 - Markdown formatting

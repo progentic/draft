@@ -117,6 +117,10 @@ Phase 18 citation scanning is documented in
 `docs/maintainers/CITATION_NODE.md`. It changes validation behavior but does not
 add an envelope field or change `DOCUMENT_ENVELOPE_SCHEMA_VERSION`.
 
+Phase 43 treats version 1 as the first released document schema. Lower and
+future versions fail before registry insertion and leave source bytes unchanged.
+Future transition rules are documented in `docs/maintainers/DATA_MIGRATION.md`.
+
 ## Configuration Index
 
 Schema versions and document-dialog defaults are indexed in

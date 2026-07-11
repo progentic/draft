@@ -326,18 +326,56 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_schema_version_fails_explicitly() {
-        let target = TestDocumentPath::new("unsupported-version");
-        let mut unsupported = envelope_value("Unsupported");
-        unsupported["schema_version"] = json!(2);
-        target.write(&serde_json::to_vec(&unsupported).expect("fixture should serialize"));
+    fn current_document_version_loads_without_mutation() {
+        let target = TestDocumentPath::new("current-version");
+        let value = envelope_value("Current");
+        let expected = validated_envelope(value.clone());
+        let source = serde_json::to_vec_pretty(&value).unwrap();
+        target.write(&source);
+        let source_directory = directory_entries(target.path());
 
         assert_eq!(
             open_document(&DocumentRegistry::new(), Some(target.path().to_owned())),
-            Err(OpenDocumentError::InvalidEnvelope {
-                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
-            }),
+            Ok(OpenDocumentOutcome::Opened { envelope: expected }),
         );
+        assert_eq!(fs::read(target.path()).unwrap(), source);
+        assert_eq!(directory_entries(target.path()), source_directory);
+    }
+
+    #[test]
+    fn unsupported_document_versions_fail_without_mutation() {
+        for version in [0, 2] {
+            let target = TestDocumentPath::new(&format!("unsupported-version-{version}"));
+            let existing_target = TestDocumentPath::new(&format!("existing-version-{version}"));
+            let existing = envelope_value_for(SECOND_DOCUMENT_ID, "Existing");
+            let existing_envelope = validated_envelope(existing.clone());
+            let existing_id = existing_envelope.document_id();
+            existing_target.write(&serialized_envelope_value(existing));
+            let mut unsupported = envelope_value("Unsupported");
+            let document_id = validated_envelope(unsupported.clone()).document_id();
+            unsupported["schema_version"] = json!(version);
+            let source = serde_json::to_vec(&unsupported).expect("fixture should serialize");
+            target.write(&source);
+            let registry = DocumentRegistry::new();
+            open_document(&registry, Some(existing_target.path().to_owned())).unwrap();
+            let existing_source = registry.source_path(existing_id).unwrap();
+            let source_directory = directory_entries(target.path());
+
+            assert_eq!(
+                open_document(&registry, Some(target.path().to_owned())),
+                Err(OpenDocumentError::InvalidEnvelope {
+                    cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: version },
+                }),
+            );
+            assert_eq!(fs::read(target.path()).unwrap(), source);
+            assert_eq!(directory_entries(target.path()), source_directory);
+            assert_eq!(
+                registry.source_path(document_id),
+                Err(DocumentRegistryError::NotOpen),
+            );
+            assert_eq!(registry.source_path(existing_id), Ok(existing_source));
+            assert_eq!(registry.close(existing_id), Ok(existing_envelope));
+        }
     }
 
     #[test]
@@ -667,6 +705,10 @@ mod tests {
             .expect("envelope should serialize")
     }
 
+    fn serialized_envelope_value(value: Value) -> Vec<u8> {
+        serde_json::to_vec(&validated_envelope(value)).expect("envelope should serialize")
+    }
+
     fn validated_envelope(value: Value) -> DocumentEnvelope {
         DocumentEnvelope::from_json_value(value).expect("envelope should validate")
     }
@@ -713,5 +755,14 @@ mod tests {
     fn read_json(path: &Path) -> Value {
         let bytes = fs::read(path).expect("saved document should read");
         serde_json::from_slice(&bytes).expect("saved document should be JSON")
+    }
+
+    fn directory_entries(path: &Path) -> Vec<PathBuf> {
+        let mut entries = fs::read_dir(path.parent().unwrap())
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect::<Vec<_>>();
+        entries.sort();
+        entries
     }
 }

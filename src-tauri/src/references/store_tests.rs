@@ -148,6 +148,20 @@ fn conflicting_zero_version_schema_returns_migration_error() {
         ReferenceStore::open(target.path()).err(),
         Some(ReferenceStoreError::SchemaMigrationFailed)
     );
+    let connection = Connection::open(target.path()).unwrap();
+    let version: i64 = connection
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .unwrap();
+    let definition: String = connection
+        .query_row(
+            "SELECT sql FROM sqlite_master
+             WHERE type = 'table' AND name = 'reference_records'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or_default();
+    assert_eq!(version, 0);
+    assert!(definition.contains("wrong TEXT"));
 }
 
 #[test]
@@ -157,12 +171,14 @@ fn create_read_and_reopen_preserve_record() {
     let reference_id = expected.reference_id();
     let store = ReferenceStore::open(target.path()).unwrap();
     store.create(&expected).unwrap();
+    let stored_before = stored_payload(&store, FIRST_REFERENCE_ID);
     drop(store);
 
     let reopened = ReferenceStore::open(target.path()).unwrap();
     let actual = reopened.get(reference_id).unwrap().unwrap();
 
     assert_eq!(reference_value(&actual), reference_value(&expected));
+    assert_eq!(stored_payload(&reopened, FIRST_REFERENCE_ID), stored_before);
 }
 
 #[test]
@@ -384,6 +400,35 @@ fn mismatched_stored_schema_fails_closed() {
 }
 
 #[test]
+fn unsupported_stored_record_versions_fail_without_mutation() {
+    for version in [0, 2] {
+        let target = TestReferenceStorePath::new(&format!("payload-version-{version}"));
+        let store = ReferenceStore::open(target.path()).unwrap();
+        let mut payload = reference_fixture(FIRST_REFERENCE_ID, "schema2025", "Schema");
+        payload["schema_version"] = json!(version);
+        let source = payload.to_string();
+        insert_raw_record(
+            &store,
+            FIRST_REFERENCE_ID,
+            "schema2025",
+            &source,
+            REFERENCE_RECORD_SCHEMA_VERSION as i64,
+        );
+        let schema_before = read_schema(&store);
+
+        assert_eq!(
+            store.list(),
+            Err(ReferenceStoreError::InvalidStoredRecord {
+                cause: ReferenceRecordError::UnsupportedSchemaVersion { found: version },
+            }),
+        );
+        assert_eq!(stored_payload(&store, FIRST_REFERENCE_ID), source);
+        assert_eq!(raw_record_count(&store), 1);
+        assert_eq!(read_schema(&store), schema_before);
+    }
+}
+
+#[test]
 fn concurrent_create_allows_one_record() {
     let target = TestReferenceStorePath::new("concurrent-create");
     let store = Arc::new(ReferenceStore::open(target.path()).unwrap());
@@ -530,6 +575,17 @@ fn raw_record_count(store: &ReferenceStore) -> u64 {
         })
         .unwrap();
     count as u64
+}
+
+fn stored_payload(store: &ReferenceStore, reference_id: &str) -> String {
+    let connection = store.connection.lock().unwrap();
+    connection
+        .query_row(
+            "SELECT payload_json FROM reference_records WHERE reference_id = ?1",
+            [reference_id],
+            |row| row.get(0),
+        )
+        .unwrap()
 }
 
 fn stored_title(store: &ReferenceStore, reference_id: ReferenceId) -> String {

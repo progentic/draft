@@ -31,6 +31,7 @@ main() {
   check_error_ux_documentation
   check_critical_path_documentation
   check_packaging_documentation
+  check_data_migration_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -80,6 +81,7 @@ check_required_documents() {
     docs/maintainers/COMMAND_BOUNDARY.md
     docs/maintainers/CONFIGURATION.md
     docs/maintainers/CRITICAL_PATHS.md
+    docs/maintainers/DATA_MIGRATION.md
     docs/maintainers/DOCUMENTATION_COVERAGE.md
     docs/maintainers/DOCUMENT_ENVELOPE.md
     docs/maintainers/DOCUMENT_REGISTRY.md
@@ -117,6 +119,21 @@ check_required_documents() {
   for document_path in "${required_documents[@]}"; do
     require_file "${document_path}"
   done
+}
+
+check_data_migration_documentation() {
+  local migration_doc='docs/maintainers/DATA_MIGRATION.md'
+
+  require_document_text "${migration_doc}" 'DRAFT has no released schema'
+  require_document_text "${migration_doc}" 'Future versions are never downgraded.'
+  require_document_text "${migration_doc}" \
+    'preserve document source bytes until an atomic replacement succeeds'
+  require_document_text "${migration_doc}" 'one immediate SQLite transaction'
+  require_document_text docs/maintainers/DOCUMENT_ENVELOPE.md 'DATA_MIGRATION.md'
+  require_document_text docs/maintainers/REFERENCE_STORE.md 'DATA_MIGRATION.md'
+  require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
+    'Data migration baseline'
+  printf 'PASS Phase 43 data migration documentation\n'
 }
 
 report_local_agent_instructions() {
@@ -186,7 +203,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 42 are complete'
+  local checkpoint='Phases 0 through 43 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md || \

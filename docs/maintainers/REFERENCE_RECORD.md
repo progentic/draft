@@ -201,6 +201,10 @@ candidate bibliography for one document. The pure consistency check reads only
 their citekeys. Bibliography rendering, network lookup, PDF import, and
 document-envelope metadata fields remain absent.
 
+Phase 43 treats version 1 as the first released reference payload schema.
+Stored lower and future versions fail without row mutation. Future transition
+rules are documented in `docs/maintainers/DATA_MIGRATION.md`.
+
 ## Configuration Index
 
 Reference-record schema values are indexed in

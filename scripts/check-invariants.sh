@@ -42,6 +42,7 @@ main() {
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
+  check_data_migration_contract
   check_bridge_name_parity
   check_pdf_export_deferral_guard
   check_rust_network_boundary
@@ -1283,6 +1284,7 @@ check_reference_store_contract() {
     invalid_stored_record_returns_typed_cause
     mismatched_stored_indexes_fail_closed
     mismatched_stored_schema_fails_closed
+    unsupported_stored_record_versions_fail_without_mutation
     concurrent_create_allows_one_record
     poisoned_store_returns_unavailable
     store_failure_shape_is_stable
@@ -1309,6 +1311,35 @@ check_reference_store_contract() {
   assert_no_matches "Phase 17 reference store Tauri surface" \
     '#\[tauri::command\]|\btauri::' "${source_path}"
   printf 'PASS Phase 17 local reference store contract\n'
+}
+
+check_data_migration_contract() {
+  local document_path='src-tauri/src/documents/persistence.rs'
+  local citation_test_path='src-tauri/src/citations/node_tests.rs'
+  local reference_path='src-tauri/src/references/store.rs'
+  local reference_test_path='src-tauri/src/references/store_tests.rs'
+
+  require_file docs/maintainers/DATA_MIGRATION.md
+  require_rust_test current_document_version_loads_without_mutation \
+    "${document_path}"
+  require_rust_test unsupported_document_versions_fail_without_mutation \
+    "${document_path}"
+  require_rust_test malformed_and_unsupported_citation_versions_fail \
+    "${citation_test_path}"
+  require_rust_test unsupported_stored_record_versions_fail_without_mutation \
+    "${reference_test_path}"
+  require_rust_test conflicting_zero_version_schema_returns_migration_error \
+    "${reference_test_path}"
+  require_rust_test create_read_and_reopen_preserve_record \
+    "${reference_test_path}"
+  require_source_pattern 'DocumentEnvelope::from_json_value(value)' "${document_path}"
+  require_source_pattern 'ReferenceRecord::from_json_value(value)' "${reference_path}"
+  require_source_pattern '0 => migrate_zero_to_one(connection)' "${reference_path}"
+  require_source_pattern 'found => Err(ReferenceStoreError::UnsupportedStoreSchema { found })' \
+    "${reference_path}"
+  assert_no_matches "Phase 43 job-state mutation authority" \
+    '\bPdfImportJobStore\b|\bjobs::' "${document_path}" "${reference_path}"
+  printf 'PASS Phase 43 fail-closed data migration baseline\n'
 }
 
 require_reference_store_schema_version() {
@@ -1351,7 +1382,7 @@ check_document_file_contract() {
   local required_tests=(
     document_round_trip_preserves_updated_snapshot
     malformed_json_fails_before_registry_entry
-    unsupported_schema_version_fails_explicitly
+    unsupported_document_versions_fail_without_mutation
     duplicate_load_returns_already_open
     save_uses_explicit_snapshot_and_retained_path
     save_new_snapshot_uses_rust_selected_path
