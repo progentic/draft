@@ -662,8 +662,10 @@ connectivity, formatting, and citation guides link the stable messages to
 retryable, actionable, or terminal recovery. Architecture plus `INV-02` and
 `INV-03` record the typed frontend boundary; focused tests and invariant scans
 require exhaustive mappings while keeping unwired backend errors invisible.
-User recovery changes remain canonical under `docs/wiki/` until live
-publication follows the merged phase.
+The merged Phase 39 user guidance is published to the live GitHub Wiki at
+commit `1bddd52`. All four live pages match canonical source byte-for-byte;
+rendered headings, lists, recovery copy, and navigation were verified after
+post-merge `main` passed.
 
 Recommended checks:
 
