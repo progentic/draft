@@ -67,11 +67,13 @@ fn malformed_and_unsupported_citation_versions_fail() {
             CitationNodeError::InvalidSchemaVersion,
         );
     }
-    assert_attr_error(
-        SCHEMA_VERSION_FIELD,
-        json!(2),
-        CitationNodeError::UnsupportedSchemaVersion { found: 2 },
-    );
+    for version in [0, 2] {
+        assert_attr_error(
+            SCHEMA_VERSION_FIELD,
+            json!(version),
+            CitationNodeError::UnsupportedSchemaVersion { found: version },
+        );
+    }
 }
 
 #[test]

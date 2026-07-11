@@ -178,6 +178,11 @@ reference records. It does not turn document nodes into metadata authority,
 embed records, read the complete store, add network lookup, or rewrite source
 documents.
 
+Phase 43 treats citation attrs version 1 as the first released baseline. Lower
+and future versions fail the containing document without mutation. Citation
+transitions must be owned by an explicit document migration as described in
+`docs/maintainers/DATA_MIGRATION.md`.
+
 ## Configuration Index
 
 The mirrored citation schema version is indexed in

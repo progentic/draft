@@ -69,8 +69,11 @@ The reference store has one strict `reference_records` table. The job store has
 one strict `pdf_import_jobs` table with one record per candidate identity,
 closed states, one `intake_validated` checkpoint, attempt count, typed failure,
 durable cancellation intent, and a hashed claim token. Both stores initialize
-schema version 1 from an empty database and reject unknown future versions;
-neither performs a data migration from an older known schema yet.
+schema version 1 from an empty database and reject unknown future versions.
+Document, citation, and reference payload version 1 is the first released
+baseline, so no older known payload migration exists. Phase 43 requires lower
+and future payloads to fail without mutation. The policy and requirements for a
+later explicit transition are documented in `DATA_MIGRATION.md`.
 
 ## Secret Storage
 

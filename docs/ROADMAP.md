@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 42 are complete. Phase 43 is
+**Current execution checkpoint:** Phases 0 through 43 are complete. Phase 44 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -117,7 +117,14 @@ canonical `npm run package:macos` build. The script rejects unsupported hosts,
 performs a clean app build, and validates bundle identity, native architecture,
 executable layout, and the embedded icon. Portable configuration checks run in
 local and hosted verification. Signing, notarization, DMG creation, update
-channels, and release publication remain separate gates. Phase 43 is next.
+channels, and release publication remain separate gates.
+
+Phase 43 establishes the version 1 data-migration baseline for documents,
+nested citation attrs, reference records, and the reference store. DRAFT has no
+released older payload schema, so lower and future versions fail without
+changing source bytes, registry state, or stored rows. Empty reference-store
+initialization remains the only transactional `0 -> 1` transition. Phase 44 is
+next.
 
 ---
 

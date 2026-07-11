@@ -59,6 +59,11 @@ verified version `1`, and rejects every unknown version. Initialization runs in
 an immediate transaction. A claimed current schema without the expected table
 and columns returns `invalid_store_schema`.
 
+Phase 43 clarifies that version 0 means an empty, uninitialized SQLite store,
+not an older record-data schema. A conflicting version 0 database rolls back
+and fails. Stored payload versions outside the current version fail without row
+mutation. The complete policy is in `docs/maintainers/DATA_MIGRATION.md`.
+
 ## Transaction Boundary
 
 `ReferenceStore` owns one `Mutex<Connection>`. Every create, update, and delete

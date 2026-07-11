@@ -67,6 +67,10 @@ deliberately smaller than the full system described in this architecture:
   indexed/payload consistency checks, and typed corruption failures. The store
   initializes as managed Rust state for citation resolution; CRUD IPC and a
   visible library workflow remain absent.
+- The version 1 document, citation, and reference payloads are the first
+  released-schema baseline. Lower and future versions fail before mutation.
+  Empty SQLite reference stores initialize transactionally from version 0;
+  conflicting or unknown schemas fail without best-effort repair.
 - Rust validates exact version 1 citation attrs inside document JSON before
   open/save mutation and resolves citekeys through the local store. The typed
   response contains only a disposable display marker, not reference metadata.
