@@ -6,8 +6,8 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 44 are complete. Phase 45 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 45 are complete. Phase 46 is
+the next implementation and interaction-clarity phase.
 
 The non-binding Phase 11 requirements remain in
 `docs/drafts/DOCUMENT_ENVELOPE.md`. Implemented behavior is recorded in
@@ -207,7 +207,13 @@ Phase 44 records the checked RC-hardening contract in
 mandatory review gates remain explicit blockers for Phase 49. Accepted v1
 limitations, P2 maintenance, and post-v1 work are separate. Phase 44 passing is
 an inventory and enforcement result, not a release-candidate declaration.
-Phase 45 is next.
+
+Phase 45 closes only the documentation/governance gate. It assigns the visible
+document, research/citation, analysis/text-review, and DOCX blockers to Phase
+46 before accessibility review can pass. Phase 47 owns measured and perceived
+responsiveness, Phase 48 owns CSP/security, and Phase 49 owns candidate
+distribution. The v1 usability rule is now binding and mechanically checked.
+Phase 46 is next.
 
 ---
 
@@ -280,11 +286,11 @@ Do not weaken an invariant to finish a phase. If an invariant is wrong, change i
 | 42 | Packaging | Supported platform package path exists. | Package build is reproducible through documented commands. |
 | 43 | Data migration | Migration strategy exists for document and reference data. | Old known schemas fail safely or migrate explicitly. |
 | 44 | Release candidate hardening | Known high-risk bugs are fixed or documented as release blockers. | Release-candidate checklist passes. |
-| 45 | Documentation and drift realignment | Release docs, public docs, maintainer docs, and changelog are reconciled. | No release-blocking documentation drift remains. |
-| 46 | Accessibility pass | Core workspace accessibility is checked. | Keyboard navigation and readable labels exist for critical flows. |
-| 47 | Performance pass | Large-document and reference-library behavior is measured. | Known performance limits are documented. |
+| 45 | Documentation and drift realignment | Release truth, blocker ownership, public docs, maintainer docs, and changelog are reconciled. | No release-blocking documentation drift remains, and the v1 usability rule is binding. |
+| 46 | Accessibility and interaction clarity | Visible v1 workflows close `RC-01` through `RC-04`, then receive accessibility and usability review. | Users can discover, understand, operate, and recover through critical flows with keyboard, focus, labels, announcements, and clear unavailable states. |
+| 47 | Performance and responsiveness | Realistic startup, editor, operation-feedback, document, and reference behavior is measured. | Limits are documented, ambiguous waiting states are removed, and interaction latency does not make controls appear broken. |
 | 48 | Security review | Trusted boundaries are reviewed against invariants. | Invariant tests and CI checks pass. |
-| 49 | Final release candidate | Final pre-1.0 candidate is cut. | No P0 invariant violations remain. |
+| 49 | Final release candidate | Final pre-1.0 candidate is cut from the exact verified commit. | Every `RC-*` and `GATE-*` row is closed, no P0 invariant violation remains, and candidate distribution evidence passes. |
 | 50 | v1.0.0 release realignment | Final docs, release notes, tags, and production checklist are aligned. | `v1.0.0` may be tagged only after all release gates pass. |
 
 ---
@@ -341,6 +347,19 @@ Before tagging `v1.0.0`, DRAFT must satisfy these checks:
 - Source document saves are atomic.
 - Failed exports do not damage source documents.
 - Unsupported document schemas fail safely.
+
+### Usability and interaction
+
+- DRAFT is not ready for v1.0.0 unless a user can identify the primary controls,
+  understand their labels, predict their effects, recover from visible
+  failures, and complete the supported document workflow without relying on
+  maintainer knowledge.
+- Similar commands are distinguishable and use consistent menu terminology.
+- Primary actions are visually and semantically clear.
+- Unavailable features are absent or explained without implying a workflow.
+- Feedback confirms results and provides understandable recovery.
+- Destructive or irreversible actions are unmistakable.
+- Startup and supported operations do not leave ambiguous waiting states.
 
 ### Research and citation safety
 

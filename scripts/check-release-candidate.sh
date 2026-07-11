@@ -17,8 +17,9 @@ main() {
   check_pre_release_state
   check_live_blocker_evidence
   check_generated_release_artifacts
+  check_phase45_release_rule
 
-  printf 'INFO Phase 49 remains blocked by RC-01 through RC-06 and GATE-45 through GATE-48.\n'
+  printf 'INFO Phase 49 remains blocked by RC-01 through RC-06 and GATE-46 through GATE-48.\n'
   printf 'Release-candidate hardening baseline passed.\n'
 }
 
@@ -27,10 +28,23 @@ check_inventory_structure() {
 
   require_file "${contract}"
   require_inventory_group "${contract}" 'RC-' 'Release blocker' 'Open' 6
-  require_inventory_group "${contract}" 'GATE-' 'Must close before Phase 49' 'Open' 4
+  require_inventory_group "${contract}" 'GATE-' 'Must close before Phase 49' 'Open' 3
+  require_inventory_group "${contract}" 'GATE-' 'Must close before Phase 49' 'Closed' 1
   require_inventory_group "${contract}" 'LIMIT-' 'Accepted v1 limitation' 'Accepted' 5
   require_inventory_group "${contract}" 'MAINT-' 'P2 maintenance backlog' 'Backlog' 3
   require_inventory_group "${contract}" 'POST-' 'Post-v1 work' 'Deferred' 4
+}
+
+check_phase45_release_rule() {
+  local release_rule='DRAFT is not ready for v1.0.0 unless a user can identify the primary controls'
+
+  require_literal "${release_rule}" docs/ROADMAP.md
+  require_literal "${release_rule}" docs/PHASEMAP.md
+  require_literal "${release_rule}" docs/maintainers/RELEASE_CANDIDATE.md
+  require_literal '| RC-01 | Release blocker | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_literal '| GATE-45 | Must close before Phase 49 | Closed |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
 }
 
 require_inventory_group() {

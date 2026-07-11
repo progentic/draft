@@ -146,10 +146,18 @@ check_release_candidate_documentation() {
   require_document_text "${candidate_doc}" \
     'An open blocker must name evidence, an owner, a closure phase'
   require_document_text "${candidate_doc}" 'Phase 49 entry is stricter'
+  require_document_text "${candidate_doc}" \
+    '| GATE-45 | Must close before Phase 49 | Closed |'
+  require_document_text docs/ROADMAP.md \
+    'DRAFT is not ready for v1.0.0 unless a user can identify the primary controls'
+  require_document_text docs/PHASEMAP.md \
+    'DRAFT is not ready for v1.0.0 unless a user can identify the primary controls'
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     'Release-candidate hardening'
   require_document_text docs/maintainers/PACKAGING.md 'RELEASE_CANDIDATE.md'
-  printf 'PASS Phase 44 release-candidate documentation\n'
+  require_document_text docs/maintainers/REALIGNMENT.md \
+    '## Phase 45 - 2026-07-11'
+  printf 'PASS Phase 44/45 release-candidate documentation\n'
 }
 
 report_local_agent_instructions() {
@@ -219,7 +227,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 44 are complete'
+  local checkpoint='Phases 0 through 45 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md || \
