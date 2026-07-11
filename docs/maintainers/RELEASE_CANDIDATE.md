@@ -2,12 +2,12 @@
 
 ## Status
 
-This is the implemented Phase 44 release-candidate hardening baseline. It is
-not a release-candidate declaration and does not authorize a tag, signed
-package, or publication.
+This is the implemented Phase 44 release-candidate hardening baseline as
+reconciled by Phase 45. It is not a release-candidate declaration and does not
+authorize a tag, signed package, or publication.
 
-The audit baseline is merged Phase 43 commit `7ef97a1`. Its post-merge hosted
-verification passed. At the audit time, GitHub had no open issues, no open pull
+The realignment baseline is merged Phase 44 commit `37d0228`. Its post-merge
+hosted verification passed. At the audit time, GitHub had no open issues or open pull
 requests, and no published releases. Repository scans found no production
 `TODO`, `FIXME`, or workaround marker affecting data integrity, security, or
 the supported document path.
@@ -31,13 +31,13 @@ closure condition. Removing a row is not closure.
 
 | ID | Classification | Status | Evidence | Owner | Closure Phase | Closure Condition |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| RC-01 | Release blocker | Open | The workspace discards edits and exposes no create, open, save, close, or reopen controls. | Document workflow | Phase 45 assigns bounded implementation before Phase 49 | The visible workflow uses existing Rust-owned lifecycle paths, protects dirty state, passes browser and packaged-app tests, and matches user documentation. |
-| RC-02 | Release blocker | Open | Reference storage, metadata lookup, PDF intake, citation insertion, and bibliography checks are internal-only. | Research workflow | Phase 45 assigns bounded implementation before Phase 49 | A documented visible research/citation path exists or v1 positioning is narrowed through the governed roadmap and public-doc process. |
-| RC-03 | Release blocker | Open | AI orchestration and text-analysis findings have no production provider, start command, packaged helper discovery, or visible review workflow. | Analysis workflow | Phase 45 assigns bounded implementation before Phase 49 | A bounded visible workflow is packaged and verified, or v1 positioning is narrowed through the governed roadmap and public-doc process. |
-| RC-04 | Release blocker | Open | DOCX compilation is internal-only and no export control exists. | Export workflow | Phase 45 assigns bounded implementation before Phase 49 | The supported DOCX path is reachable through a Rust-owned target flow and passes packaged source-preservation tests. |
+| RC-01 | Release blocker | Open | The workspace discards edits and exposes no create, open, save, close, or reopen controls. | Document workflow | Phase 46 | The visible workflow uses existing Rust-owned lifecycle paths, protects dirty state, passes browser and packaged-app tests, and matches user documentation. |
+| RC-02 | Release blocker | Open | Reference storage, metadata lookup, PDF intake, citation insertion, and bibliography checks are internal-only. | Research workflow | Phase 46 | The supported research and citation workflow is visible, understandable, Rust-authorized, recoverable, and covered in the packaged app. |
+| RC-03 | Release blocker | Open | AI orchestration and text-analysis findings have no production provider, start command, packaged helper discovery, or visible review workflow. | Analysis workflow | Phase 46 | The supported analysis and text-review workflow is visible, distinguishes generated output from evidence, supports required cancellation, and passes packaged interaction tests. |
+| RC-04 | Release blocker | Open | DOCX compilation is internal-only and no export control exists. | Export workflow | Phase 46 | The supported DOCX path is reachable through a clear Rust-owned target flow and passes packaged source-preservation and recovery tests. |
 | RC-05 | Release blocker | Open | Tauri CSP is `null`. | Security review | Phase 48 | A restrictive packaged-app CSP is configured, enforced structurally, and verified against every required local asset and IPC flow. |
 | RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 49 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, and built from the exact candidate commit without adding updater or upload authority implicitly. |
-| GATE-45 | Must close before Phase 49 | Open | Release, roadmap, public, and maintainer truth still require realignment. | Documentation and governance | Phase 45 | The realignment closes drift, assigns every remaining blocker, and binds the v1 usability and interaction-clarity rule without claiming implementation. |
+| GATE-45 | Must close before Phase 49 | Closed | Phase 45 reconciles release, roadmap, public, maintainer, Wiki, and enforcement truth without changing product behavior. | Documentation and governance | Phase 45 | The realignment assigns every blocker and binds the v1 usability and interaction-clarity rule without claiming implementation. |
 | GATE-46 | Must close before Phase 49 | Open | The mandatory accessibility and interaction-clarity pass has not run. | Frontend accessibility | Phase 46 | Critical flows pass keyboard, focus, naming, announcement, discoverability, label, terminology, and unavailable-state review. |
 | GATE-47 | Must close before Phase 49 | Open | Realistic startup, editor, operation-feedback, and large-document responsiveness have not been measured. | Performance | Phase 47 | Measured limits and perceived-wait behavior meet the accepted release thresholds or remain explicit blockers. |
 | GATE-48 | Must close before Phase 49 | Open | The final trust-boundary and packaged CSP review has not run. | Security | Phase 48 | Invariant, dependency, capability, CSP, path, archive/XML, secret, network, and frontend-authority review is green with findings closed or blocking. |
@@ -69,6 +69,31 @@ closure condition. Removing a row is not closure.
 | POST-03 | Post-v1 work | Deferred | No automatic updater or update channel exists. | Release engineering | Post-v1 | Add only after signed update metadata, rollback, and trust policy are accepted. |
 | POST-04 | Post-v1 work | Deferred | Full style-manual conformance and automatic formatting repair are not implemented. | Formatting | Post-v1 | Expand through reviewable, tested rules without silent document mutation. |
 
+## Binding Usability Rule
+
+DRAFT is not ready for v1.0.0 unless a user can identify the primary controls,
+understand their labels, predict their effects, recover from visible failures,
+and complete the supported document workflow without relying on maintainer
+knowledge.
+
+This is a release condition, not informal polish. Phase 46 owns control
+discoverability, labels, menu terminology, unavailable states, keyboard and
+focus behavior, announcements, and supported-workflow completion. Phase 47
+owns feedback during operations, ambiguous waiting states, and measured and
+perceived responsiveness.
+
+## Closure Sequence
+
+1. Phase 46 must close `RC-01` through `RC-04` before it can close `GATE-46`.
+2. Phase 47 measures realistic workloads and closes `GATE-47` only when slow or
+   ambiguous interactions are fixed or remain explicit release blockers.
+3. Phase 48 closes `RC-05` and `GATE-48` through the final security review.
+4. Phase 49 may close `RC-06` and cut a candidate only when every prior row is
+   closed with its named evidence.
+
+Phase 45 closes only `GATE-45`. It does not close a product, security,
+performance, accessibility, or distribution blocker.
+
 ## Executable Gates
 
 Phase 44 entry requires a green verified `main`, a reproducible unsigned
@@ -86,11 +111,12 @@ Phase 44 exits when:
 - the full verifier passes.
 
 Phase 49 entry is stricter: every `RC-*` and `GATE-*` row must be closed with
-the named evidence. Phase 44 passing does not satisfy that future gate.
+the named evidence. Phase 44 hardening and Phase 45 realignment do not satisfy
+that future gate.
 
 ## Explicit Exclusions
 
-Phase 44 adds no product workflow, UI control, signing identity, credential,
+Phases 44 and 45 add no product workflow, UI control, signing identity, credential,
 notarization command, upload logic, updater, broad package target, release tag,
-changelog release entry, or Phase 49 candidate execution. Phase 45 owns the
-next roadmap and documentation realignment.
+changelog release entry, or Phase 49 candidate execution. Phase 46 is the next
+implementation and interaction-clarity boundary.

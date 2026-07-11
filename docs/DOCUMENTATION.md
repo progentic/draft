@@ -693,6 +693,14 @@ post-v1 work distinct. Every open blocker needs evidence, an owner, a phase,
 and a closure condition. Passing the Phase 44 check must never be described as
 final release-candidate readiness.
 
+Phase 45 records its documentation-only audit in
+`docs/maintainers/REALIGNMENT.md`. It closes only the documentation/governance
+release gate, assigns the remaining blockers to Phases 46 through 49, and makes
+usability and interaction clarity binding v1 conditions across the roadmap,
+phasemap, RC ledger, and executable checks. README, Wiki source, changelog,
+architecture, governance, invariants, coding style, and ADR status remain
+unchanged because their existing statements still match repository truth.
+
 Recommended checks:
 
 - Markdown formatting

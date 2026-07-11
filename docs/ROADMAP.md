@@ -8,8 +8,8 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 44 are complete. Phase 45 is
-the next documentation and drift realignment phase.
+**Current execution checkpoint:** Phases 0 through 45 are complete. Phase 46 is
+the next implementation and interaction-clarity phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
 supplied watched-file observations but adds no watcher, persistent job, worker,
@@ -129,7 +129,13 @@ Phase 44 establishes a checked release-candidate hardening baseline. It
 classifies current product, CSP, and distribution blockers; mandatory pre-49
 gates; accepted v1 limitations; P2 maintenance; and post-v1 work. Passing this
 checkpoint means every known release-relevant finding has an owner, phase, and
-closure condition. It does not declare DRAFT release-ready. Phase 45 is next.
+closure condition. It does not declare DRAFT release-ready.
+
+Phase 45 reconciles the release sequence without adding product behavior. It
+closes only the documentation/governance gate, assigns the four visible
+workflow blockers to Phase 46, keeps responsiveness in Phase 47, CSP/security
+in Phase 48, and candidate distribution in Phase 49. Usability and interaction
+clarity are now binding v1 release conditions. Phase 46 is next.
 
 ---
 
@@ -308,6 +314,10 @@ Expected product shape:
 - Secrets stored only in OS-native credential storage.
 - E2E tests for critical workflows.
 - Release candidate checklist.
+- Primary controls, labels, effects, recovery, and supported task flow are
+  understandable without maintainer knowledge.
+- Operations provide timely feedback and do not leave the user in an ambiguous
+  waiting state.
 
 Version band: late `v0.x.0`.
 
@@ -376,6 +386,10 @@ The expected output is not more prose for its own sake. The expected output is r
 
 DRAFT may be called `v1.0.0` only when these conditions hold:
 
+- DRAFT is not ready for v1.0.0 unless a user can identify the primary controls,
+  understand their labels, predict their effects, recover from visible
+  failures, and complete the supported document workflow without relying on
+  maintainer knowledge.
 - The app can create, open, edit, save, close, and reopen a document without data loss.
 - Save behavior is atomic and tested against interruption.
 - The reference library is the citation metadata source of truth.
@@ -392,3 +406,5 @@ DRAFT may be called `v1.0.0` only when these conditions hold:
 - User-facing documentation explains core workflows in plain language.
 - Maintainer documentation explains architecture, contracts, tests, and release procedure.
 - Known limitations are written down instead of hidden.
+- Startup, editor interaction, and supported operations provide clear feedback
+  and remain responsive at documented realistic limits.

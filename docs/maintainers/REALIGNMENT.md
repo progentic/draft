@@ -780,3 +780,83 @@ bash scripts/verify.sh
 Phase 40 is a documentation and drift realignment checkpoint only. It adds no
 product source, dependency, command, capability, schema, configuration, UI, or
 workflow.
+
+## Phase 45 - 2026-07-11
+
+The audited implementation baseline is merge commit `37d0228`, the completed
+Phase 44 release-candidate hardening checkpoint. Its pull-request and post-merge
+hosted verification runs passed:
+
+- <https://github.com/progentic/draft/actions/runs/29164426914>
+- <https://github.com/progentic/draft/actions/runs/29164602976>
+
+At the audit point, `main` matched `origin/main`, the worktree was clean, GitHub
+had no open issue or pull request, and no versioned release existed.
+
+### Surfaces reviewed
+
+- `README.md`, `CHANGELOG.md`, `AGENTS.md`, architecture, governance,
+  invariants, coding style, and documentation ownership;
+- roadmap, phasemap, ADR-001, maintainer guides, user guidance, Wiki source,
+  coverage matrix, configuration index, and the Phase 44 RC ledger;
+- document lifecycle, research/citation, analysis/text-review, formatting,
+  export, packaging, migration, CSP, and critical-path evidence; and
+- local verification scripts, repository and invariant scans, GitHub Actions,
+  generated-output hygiene, tags, issues, pull requests, and release state.
+
+### Release sequence reconciled
+
+- `GATE-45` is closed by this documentation-only realignment. No product,
+  security, performance, accessibility, or distribution blocker is closed.
+- `RC-01` through `RC-04` are assigned to Phase 46 and must close before its
+  accessibility and interaction-clarity gate can pass.
+- Phase 47 owns measured and perceived responsiveness, operation feedback, and
+  ambiguous waiting states.
+- Phase 48 owns the restrictive packaged CSP and final trust-boundary review.
+- Phase 49 owns signed, notarized, installation-tested candidate distribution
+  and cannot begin while any earlier `RC-*` or `GATE-*` row remains open.
+
+### Binding usability condition
+
+DRAFT is not ready for v1.0.0 unless a user can identify the primary controls,
+understand their labels, predict their effects, recover from visible failures,
+and complete the supported document workflow without relying on maintainer
+knowledge.
+
+This rule is now present in the roadmap, phasemap, RC ledger, and offline
+release-candidate check. Phase 46 owns discoverability, labels, menu
+terminology, unavailable states, keyboard and focus behavior, announcements,
+and supported-workflow completion. Phase 47 owns feedback and responsiveness.
+
+### Truth confirmed without edits
+
+- README remains marketing-only and contains no architecture, governance,
+  roadmap, repository, or development journal content.
+- CHANGELOG remains release-only because no tag or published release exists.
+- Wiki source accurately states that document persistence, research, analysis,
+  text review, DOCX export, signed distribution, and other listed workflows are
+  currently unavailable. No source changed, so live Wiki commit `1bddd52`
+  remains aligned and no publication action is required.
+- Architecture, governance, invariants, coding style, documentation ownership,
+  and accepted ADR-001 still match implementation. No ADR or contract change is
+  required.
+- The six release blockers, three remaining mandatory pre-49 gates, accepted v1
+  limitations, P2 maintenance, and post-v1 work remain distinct.
+
+### Verification evidence
+
+Phase 45 uses these executable gates:
+
+```bash
+bash -n scripts/check-docs.sh scripts/check-release-candidate.sh
+bash scripts/check-release-candidate.sh
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+git diff --check
+bash scripts/verify.sh
+```
+
+Phase 45 adds no product source, dependency, command, capability, schema,
+configuration, UI, Wiki source, changelog entry, release artifact, or workflow.
+Phase 46 may begin only after this realignment passes local, pull-request, and
+post-merge verification.

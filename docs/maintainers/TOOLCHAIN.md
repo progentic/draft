@@ -2,8 +2,8 @@
 
 ## Current phase
 
-Phases 0 through 44 are complete at the current checkpoint. Phase 45 is the
-next documentation and drift realignment phase. The Phase 1 toolchain remains
+Phases 0 through 45 are complete at the current checkpoint. Phase 46 is the
+next implementation and interaction-clarity phase. The Phase 1 toolchain remains
 locked, and the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
@@ -20,7 +20,7 @@ with hashed opaque claims and restart recovery. A provider-independent Rust AI
 boundary now assembles bounded provenance-tagged context and coordinates typed,
 cancellable generated-analysis streams without a production provider or
 network call. The Phase 5, Phase 10, Phase 15, Phase 20, Phase 25, Phase 30,
-Phase 35, and Phase 40 audits are recorded in
+Phase 35, Phase 40, and Phase 45 audits are recorded in
 `docs/maintainers/REALIGNMENT.md`.
 
 Rust also owns a versioned Python helper runner with a canonical fixed
@@ -77,6 +77,11 @@ Phase 44 adds an offline RC-hardening check that validates the classified
 blocker inventory against current CSP, unsigned package, visible workflow,
 pre-release version, tag, and generated-artifact evidence. Passing it does not
 mean the Phase 49 entry gate is satisfied.
+
+Phase 45 closes only `GATE-45`. The same offline check now requires the binding
+usability rule in the roadmap, phasemap, and RC ledger; verifies that
+`RC-01` through `RC-04` remain open for Phase 46; and keeps CSP, responsiveness,
+and distribution assigned to their later gates.
 
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
