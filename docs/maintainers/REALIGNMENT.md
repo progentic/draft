@@ -706,3 +706,77 @@ verification and only within the non-binding requirements in
 typed denial before metadata or browser work, continued local behavior, and
 explicit exclusions for probing, retry queues, persistence, telemetry, proxies,
 credentials, and secret storage.
+
+## Phase 40 - 2026-07-11
+
+The audited implementation baseline is merge commit `7ecda6d0`, the completed
+Phase 39 publication-alignment checkpoint. Phase 39 implementation and
+post-merge verification passed in PR #24, and the publication record passed in
+PR #25:
+
+- <https://github.com/progentic/draft/actions/runs/29160324742>
+- <https://github.com/progentic/draft/actions/runs/29160500800>
+- <https://github.com/progentic/draft/actions/runs/29161130587>
+
+The canonical Wiki source was published at live Wiki commit `1bddd52`. All four
+pages matched canonical source byte-for-byte, their rendered navigation used no
+`.md` targets, and the Phase 39 recovery guidance described only visible
+controls.
+
+### Surfaces reviewed
+
+- `README.md`, `CHANGELOG.md`, `AGENTS.md`, architecture, governance,
+  invariants, coding style, and documentation ownership;
+- roadmap, phasemap, ADR-001, maintainer guides, user guidance, Wiki source,
+  coverage matrix, and behavioral configuration index;
+- the Rust secret-store and diagnostic boundaries, frontend connectivity and
+  error-presentation boundaries, and their focused tests; and
+- local documentation, invariant, CI-parity, and repository-hygiene scripts
+  plus GitHub Actions.
+
+### Drift corrected
+
+- the toolchain checkpoint now includes the completed diagnostics and visible
+  error-presentation boundaries and no longer describes citation rendering as
+  absent;
+- the diagnostics guide records that its typed errors remain unwired after
+  Phase 39 instead of describing Phase 39 as future work;
+- the offline guide distinguishes the implemented internal secret store from
+  the still-absent credential controls and connectivity integration; and
+- the user workspace guide records existing retry behavior, runtime-status
+  distinctions, connectivity failure behavior, and bounded citation messages.
+
+### Surfaces confirmed
+
+- `README.md` remains a concise product landing page and contains no roadmap,
+  architecture, governance, repository, or implementation journal content.
+- `CHANGELOG.md` remains release-only because no versioned release exists.
+- Architecture, governance, invariants, coding style, documentation ownership,
+  and accepted ADR-001 agree with implemented boundaries.
+- The live Wiki remains aligned at `1bddd52`; Phase 40 requires no Wiki source
+  or publication change.
+- No stable contract completed a separate governance lifecycle, so no
+  `docs/contracts` addition is required.
+
+### Phase 41 readiness
+
+Phase 41 is the next implementation boundary. It must add critical-flow
+evidence through existing document registry, persistence, save, close, reopen,
+citation, and DOCX paths without introducing test-only product orchestration or
+claiming unsupported UI workflows. Phase 40 adds none of that behavior.
+
+### Verification evidence
+
+Phase 40 uses these executable gates:
+
+```bash
+bash -n scripts/check-docs.sh
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+git diff --check
+bash scripts/verify.sh
+```
+
+Phase 40 is a documentation and drift realignment checkpoint only. It adds no
+product source, dependency, command, capability, schema, configuration, UI, or
+workflow.

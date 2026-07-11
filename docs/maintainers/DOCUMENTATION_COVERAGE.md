@@ -3,7 +3,7 @@
 ## Status
 
 This matrix records the code-outward documentation audit for the implemented
-repository state through Phase 39. It does not imply that an
+repository state through Phase 40. It does not imply that an
 internal Rust boundary has a visible product workflow.
 
 ADR-001 is accepted and Phase 33 is complete. Its accepted deferral is an

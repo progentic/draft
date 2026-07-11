@@ -67,8 +67,9 @@ the schema version, package-version shape, exact array length and ordering,
 every closed name/status pair, and positive integer contract versions. Unknown
 responses and transport failures remain separate bounded client errors.
 
-No React component or hook imports the wrapper. Phase 39 may add visible error
-actions only within its separately bounded contract.
+No React component or hook imports the wrapper. Phase 39 maps only failures
+that already reach visible surfaces; diagnostic errors remain typed and
+unwired, with no speculative user action.
 
 ## Enforcement
 

@@ -95,5 +95,6 @@ bash scripts/check-invariants.sh
 
 The mode resets online on restart. DRAFT does not monitor the operating system,
 detect captive portals, persist the preference, retry or queue requests,
-cancel already dispatched work, add proxy settings, store credentials, or
-provide secret storage. Phase 37 remains separate.
+cancel already dispatched work, or add proxy settings or credential controls.
+The implemented Rust secret store remains a separate internal boundary with no
+connectivity or frontend integration.

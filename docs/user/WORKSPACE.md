@@ -38,6 +38,17 @@ These checks cover heading structure and citation-style declarations. They do
 not certify complete compliance with a style manual, reformat citations, save
 findings, or change the document automatically.
 
+After a failed check, the existing button reads **Check again**. Validation
+messages identify input that must change. Invalid responses and transport
+failures tell you to retry the same check or restart DRAFT.
+
+## Citation messages
+
+An existing citation can report that its data is invalid, unavailable, or
+could not be rendered. DRAFT keeps the document unchanged when no recovery is
+available. Citation insertion, management, and repair controls are not yet
+available in the workspace.
+
 ## Outline and document details
 
 The outline lists headings from the current editor content. Selecting an
@@ -51,10 +62,12 @@ The session area also reports the desktop core connection. `Core v<version>`
 means the workspace reached the trusted Rust runtime and validated its status
 event. `Core unavailable` means the desktop transport was not available.
 `DRAFT could not deliver the core status event.` means Rust could not deliver
-the status update. `Core status invalid` means the app rejected an unexpected
-response or event payload. A
-standalone browser preview has no Tauri core and shows the unavailable state;
-the desktop application provides the command and event connection.
+the status update. An unsupported application version means the workspace and
+desktop core do not share the expected contract. `Core status invalid` means
+the app rejected an unexpected response or event payload. Any unknown status
+failure uses a bounded fallback without exposing internal details. A standalone
+browser preview has no Tauri core and shows the unavailable state; the desktop
+application provides the command and event connection.
 
 ## Saving and reopening
 
@@ -80,7 +93,9 @@ before external work begins. Local editing and formatting review remain
 available. Choose **Go online** to allow those external actions again.
 
 The mode resets to online when DRAFT restarts. It does not report whether the
-operating system has a connection and does not retry or queue requests.
+operating system has a connection and does not retry or queue requests. When a
+mode change fails, the prior confirmed mode remains visible and the same
+control can retry the change.
 
 ## Exporting
 
