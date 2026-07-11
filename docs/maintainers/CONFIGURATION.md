@@ -70,6 +70,19 @@ durable cancellation intent, and a hashed claim token. Both stores initialize
 schema version 1 from an empty database and reject unknown future versions;
 neither performs a data migration from an older known schema yet.
 
+## Secret Storage
+
+| Symbol | Current setting | Source | Meaning |
+| :--- | :--- | :--- | :--- |
+| `NATIVE_SERVICE_NAME` | `com.progentic.draft` | `secrets/store.rs` | Fixed OS credential-manager service namespace. |
+| `API_KEY_ACCOUNT_PREFIX` | `service-api-key/` | `secrets/store.rs` | Fixed prefix for internal service API-key slots. |
+| `MAX_INTEGRATION_NAME_BYTES` | 64 bytes | `secrets/store.rs` | Maximum normalized lowercase ASCII integration identifier. |
+| `MAX_SECRET_BYTES` | 4,096 bytes | `secrets/store.rs` | Maximum owned binary secret value. |
+
+The store uses `keyring` 4.1.4 and `zeroize` 1.9.0. Native access is lazy; these
+settings do not create or probe a credential during startup. See
+`docs/maintainers/SECRET_STORAGE.md`.
+
 ## Network And Intake
 
 | Symbol | Current setting | Source | Meaning |

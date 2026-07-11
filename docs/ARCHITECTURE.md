@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 36 is
+The implemented application through Phase 37 is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -82,6 +82,10 @@ deliberately smaller than the full system described in this architecture:
   the system-browser handoff. The workspace can request one closed session
   value, but Rust stores and enforces it before external work. New sessions
   default online; the value is not persisted and no connectivity probe runs.
+- Rust owns one lazy OS-native service API-key store. Secret identifiers and
+  values are bounded, values zeroize on drop, and native failures collapse to
+  closed categories. No secret command, frontend state, provider integration,
+  fallback file/database store, or startup credential probe exists.
 - Rust validates publisher and institutional HTTPS URLs, DOI resolver targets,
   and Google Scholar queries before handing one URL to the default system
   browser. The WebView has no direct opener API or capability.

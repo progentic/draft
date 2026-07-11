@@ -632,6 +632,14 @@ alternate network paths. The non-binding requirements remain in
 to the live GitHub Wiki at commit `5a92643`; source equality and rendered
 navigation were verified after the post-merge `main` run passed.
 
+Phase 37 documents the Rust-owned OS-native service API-key boundary in
+`docs/maintainers/SECRET_STORAGE.md`. `INV-01` and invariant scans require the
+pinned native adapter, bounded zeroizing values, closed errors, injected tests,
+managed-state registration, and absence of IPC, frontend, Python, config,
+SQLite, filesystem, environment, logging, fallback, or provider authority. The
+original requirements remain non-binding in `docs/drafts/SECRET_STORAGE.md`;
+Phase 38 is bounded separately in `docs/drafts/AUDIT_DIAGNOSTICS.md`.
+
 Recommended checks:
 
 - Markdown formatting

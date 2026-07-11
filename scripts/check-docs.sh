@@ -26,6 +26,7 @@ main() {
   check_visible_error_recovery
   check_formatting_export_alignment
   check_offline_mode_documentation
+  check_secret_storage_documentation
   check_readme_scope
   check_pdf_decision_state
 
@@ -42,6 +43,7 @@ check_required_documents() {
     docs/CODING_STYLE.md
     docs/DOCUMENTATION.md
     docs/drafts/AI_ORCHESTRATION.md
+    docs/drafts/AUDIT_DIAGNOSTICS.md
     docs/drafts/BACKGROUND_JOBS.md
     docs/drafts/BIBLIOGRAPHY_CONSISTENCY.md
     docs/drafts/DOCUMENT_ENVELOPE.md
@@ -59,6 +61,7 @@ check_required_documents() {
     docs/drafts/METADATA_LOOKUP.md
     docs/drafts/REFERENCE_RECORD.md
     docs/drafts/REFERENCE_STORE.md
+    docs/drafts/SECRET_STORAGE.md
     docs/GOVERNANCE.md
     docs/INVARIANTS.md
     docs/PHASEMAP.md
@@ -92,6 +95,7 @@ check_required_documents() {
     docs/maintainers/REFERENCE_RECORD.md
     docs/maintainers/REFERENCE_STORE.md
     docs/maintainers/REALIGNMENT.md
+    docs/maintainers/SECRET_STORAGE.md
     docs/maintainers/TOOLCHAIN.md
     docs/maintainers/WORKSPACE_UI.md
     docs/user/WORKSPACE.md
@@ -174,7 +178,7 @@ check_changelog_shape() {
 }
 
 check_phase_checkpoint() {
-  local checkpoint='Phases 0 through 36 are complete'
+  local checkpoint='Phases 0 through 37 are complete'
 
   if ! rg --quiet --fixed-strings "${checkpoint}" docs/ROADMAP.md || \
     ! rg --quiet --fixed-strings "${checkpoint}" docs/PHASEMAP.md; then
@@ -212,6 +216,7 @@ check_matrix_subsystems() {
     'Bibliography consistency'
     'Central network client'
     'Offline session policy'
+    'OS-native secret storage'
     'Metadata providers'
     'External browser handoff'
     'PDF intake candidate'
@@ -247,6 +252,8 @@ check_coverage_symbols() {
     'src-tauri/src/citations/bibliography.rs|check_bibliography_consistency'
     'src-tauri/src/network/client.rs|NetworkClient'
     'src-tauri/src/network/connectivity.rs|ConnectivityPolicy'
+    'src-tauri/src/secrets/store.rs|SecretStore'
+    'src-tauri/src/secrets/store.rs|SecretValue'
     'src-tauri/src/commands/connectivity.rs|get_connectivity_mode'
     'src/features/connectivity/useConnectivityMode.ts|useConnectivityMode'
     'src-tauri/src/research/providers/crossref.rs|lookup_crossref'
@@ -284,6 +291,10 @@ check_configuration_index() {
     JOB_STORE_FILENAME
     JOB_STORE_BUSY_TIMEOUT
     MAX_JOB_FAILURE_MESSAGE_BYTES
+    NATIVE_SERVICE_NAME
+    API_KEY_ACCOUNT_PREFIX
+    MAX_INTEGRATION_NAME_BYTES
+    MAX_SECRET_BYTES
     NETWORK_CONNECT_TIMEOUT
     DEFAULT_CONNECTIVITY_MODE
     NETWORK_REQUEST_TIMEOUT
@@ -372,6 +383,7 @@ check_configuration_backlinks() {
     PYTHON_HELPERS.md
     REFERENCE_RECORD.md
     REFERENCE_STORE.md
+    SECRET_STORAGE.md
     TEXT_ANALYSIS.md
   )
   local guide
@@ -480,6 +492,23 @@ check_offline_mode_documentation() {
   require_document_text "${recovery}" 'Online - change failed'
   require_document_text docs/wiki/Current-Limitations.md 'does not monitor operating-system connectivity'
   require_document_text docs/INVARIANTS.md "Phase 36 adds one shared \`ConnectivityPolicy\`"
+}
+
+check_secret_storage_documentation() {
+  local guide='docs/maintainers/SECRET_STORAGE.md'
+  local draft='docs/drafts/SECRET_STORAGE.md'
+  local next_draft='docs/drafts/AUDIT_DIAGNOSTICS.md'
+
+  require_document_text "${guide}" "\`keyring\` 4.1.4"
+  require_document_text "${guide}" "\`zeroize\` 1.9.0"
+  require_document_text "${guide}" 'no Tauri command'
+  require_document_text "${guide}" 'never access a real'
+  require_document_text "${draft}" 'non-binding requirements draft for Phase 37'
+  require_document_text "${next_draft}" 'non-binding requirements draft for Phase 38'
+  require_document_text "${next_draft}" 'secret presence and secret-store operations are never queried'
+  require_document_text docs/wiki/Current-Limitations.md 'credential prompts'
+  require_document_text docs/wiki/Current-Limitations.md 'not currently available in the workspace'
+  require_document_text docs/INVARIANTS.md "Phase 37 adds one lazy \`SecretStore\`"
 }
 
 check_readme_scope() {
