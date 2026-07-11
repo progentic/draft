@@ -667,6 +667,18 @@ commit `1bddd52`. All four live pages match canonical source byte-for-byte;
 rendered headings, lists, recovery copy, and navigation were verified after
 post-merge `main` passed.
 
+Phase 40 reconciles the security, offline, diagnostics, error-presentation, and
+user guidance surfaces in `docs/maintainers/REALIGNMENT.md`. Phase 41 records
+crate-level critical-flow evidence in `docs/maintainers/CRITICAL_PATHS.md`
+without claiming a visible file, citation, or export workflow.
+
+Phase 42 documents the supported unsigned macOS Apple Silicon `.app` path in
+`docs/maintainers/PACKAGING.md` and the central configuration index. The owned
+package script validates the native bundle locally, while a portable structured
+configuration check runs through the local and hosted aggregate verifier. This
+does not claim signing, notarization, installer images, release publication, or
+support for another package target.
+
 Recommended checks:
 
 - Markdown formatting

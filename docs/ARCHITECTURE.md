@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 41 is
+The implemented application through Phase 42 is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document-open,
@@ -143,6 +143,10 @@ deliberately smaller than the full system described in this architecture:
 - One crate-level Phase 41 test composes those existing document, reference,
   citation, and DOCX boundaries. It adds no runtime orchestration or visible
   workflow; citation-bearing DOCX remains an explicit typed rejection.
+- The release toolchain owns one unsigned macOS Apple Silicon `.app` package
+  path. A Bash entrypoint builds the configured app target and validates its
+  plist identity, native executable, and tracked icon without signing or
+  publishing it.
 - React and Tiptap own only the transient writing surface and presentation
   state. The citation node preserves three attrs and shows explicit invalid,
   resolving, resolved, unavailable, or failed states. Reloading still discards
@@ -729,7 +733,11 @@ DRAFT has two supported build and verification surfaces:
 - **Local development:** developer workstation.
 - **GitHub Actions:** repository CI.
 
-The local and CI paths must run the same underlying checks where practical. The `justfile` is the stable developer interface; underlying commands may call Cargo, the JavaScript package manager, Python tools, Bash scripts, or Tauri commands.
+The local and CI paths run the same `scripts/verify.sh` checks. The `justfile`
+is the stable developer interface; underlying commands may call Cargo, npm,
+Python tools, Bash scripts, or Tauri commands. The Apple Silicon package build
+is intentionally local because the hosted verifier runs on Ubuntu; hosted CI
+still enforces its portable configuration contract.
 
 Required local commands:
 
@@ -738,21 +746,21 @@ just format
 just verify
 just check-invariants
 just build
+npm run package:macos
 ```
 
-Required GitHub Actions workflows:
+Required GitHub Actions workflow:
 
 ```text
 .github/workflows/verify.yml
-.github/workflows/invariants.yml
-.github/workflows/build.yml
 ```
 
 Expected tool coverage:
 
 - Rust: `cargo fmt`, `cargo clippy`, `cargo test`.
 - TypeScript/React/Tiptap: formatter, linter, typecheck, unit tests.
-- Tauri 2: desktop build verification.
+- Tauri 2: portable package-contract verification in CI and an unsigned native
+  `.app` build on macOS Apple Silicon.
 - Python: formatter, linter, dependency check, unit tests for helper workers.
 - Bash: `shellcheck`, `shfmt`, and script smoke tests.
 - Cross-boundary checks: invariant scripts from `INVARIANTS.md`.

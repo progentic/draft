@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phases 0 through 41 are complete at the current checkpoint. Phase 42 is the
+Phases 0 through 42 are complete at the current checkpoint. Phase 43 is the
 next implementation phase. The Phase 1 toolchain remains locked, the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
@@ -68,6 +68,10 @@ One `cfg(test)` critical-path module composes the existing document lifecycle,
 reference store, citation resolution, and DOCX exporter. It widens no
 production visibility and adds no command or user workflow.
 
+The package configuration activates only the macOS `app` target. The owned
+`npm run package:macos` entrypoint builds and validates an unsigned native
+Apple Silicon bundle; portable configuration checks run in GitHub Actions.
+
 This checkpoint does not include reference CRUD IPC, visible citation controls,
 complete citation formatting, rendered bibliographies, workspace file controls,
 a close command, autosave, recovery, product research or analysis workflows,
@@ -78,7 +82,8 @@ credential settings or prompts,
 visible text-analysis controls, formatting finding persistence, citation style
 conversion, complete document formatting, citation insertion or management,
 DOCX export controls, PDF export, packaged Python runtime discovery, release
-automation, packaging completion, or a visible diagnostics workflow.
+automation, signing, notarization, release publication, or a visible diagnostics
+workflow.
 
 Accepted ADR-001 defers choosing a PDF engine. No PDF library, renderer, binary,
 font bundle, conversion process, command, frontend control, or packaged resource

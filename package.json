@@ -15,6 +15,7 @@
     "typecheck": "tsc -b --pretty false",
     "build:frontend": "vite build",
     "build": "npm run typecheck && npm run build:frontend",
+    "package:macos": "bash scripts/package-macos.sh",
     "verify": "bash scripts/verify.sh",
     "tauri": "tauri"
   },

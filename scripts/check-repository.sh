@@ -40,6 +40,8 @@ check_required_sources() {
     .github/workflows/verify.yml
     index.html
     package-lock.json
+    scripts/check-packaging.sh
+    scripts/package-macos.sh
     src/ipc/eventClient.ts
     src/ipc/client.ts
     src/citations/citationNode.test.ts
