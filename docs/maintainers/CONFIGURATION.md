@@ -83,6 +83,19 @@ The store uses `keyring` 4.1.4 and `zeroize` 1.9.0. Native access is lazy; these
 settings do not create or probe a credential during startup. See
 `docs/maintainers/SECRET_STORAGE.md`.
 
+## Local Diagnostics
+
+| Symbol | Current setting | Source | Meaning |
+| :--- | :--- | :--- | :--- |
+| `DIAGNOSTIC_SNAPSHOT_SCHEMA_VERSION` | 1 | `diagnostics.rs` | Strict local diagnostic response schema. |
+| `MAX_DIAGNOSTIC_SNAPSHOT_BYTES` | 2,048 bytes | `diagnostics.rs` | Maximum complete serialized snapshot size. |
+| `MAX_APPLICATION_VERSION_BYTES` | 64 bytes | `diagnostics.rs` | Maximum compiled package-version value admitted to a snapshot. |
+
+The report also names six existing schema/protocol constants already indexed
+above and below. Its fixed subsystem states perform no health, network, file,
+database, Python, or credential-store probe. See
+`docs/maintainers/AUDIT_DIAGNOSTICS.md`.
+
 ## Network And Intake
 
 | Symbol | Current setting | Source | Meaning |

@@ -6,7 +6,7 @@ This phasemap is an execution guide. It is not a changelog. It is not a substitu
 
 Every phase should leave the repository in a reviewable state. Every fifth phase is reserved for documentation and drift realignment.
 
-**Current execution checkpoint:** Phases 0 through 37 are complete. Phase 38 is
+**Current execution checkpoint:** Phases 0 through 38 are complete. Phase 39 is
 the next implementation phase.
 
 The non-binding Phase 11 requirements remain in
@@ -167,6 +167,14 @@ zeroized and never cross IPC or another untrusted boundary. No credential,
 provider, command, event, frontend state, prompt, fallback store, or network
 integration is added. Phase 38 remains separate and is bounded in the
 non-binding `docs/drafts/AUDIT_DIAGNOSTICS.md`.
+
+Phase 38 implemented behavior is recorded in
+`docs/maintainers/AUDIT_DIAGNOSTICS.md`. One typed command returns a strict,
+versioned, deterministic local snapshot through a validating IPC wrapper. The
+snapshot contains fixed support metadata only; it performs no probe, I/O,
+collection, persistence, transmission, or secret-store operation. No component
+or hook consumes the wrapper. Phase 39 remains separate and is bounded in the
+non-binding `docs/drafts/ERROR_UX.md`.
 
 ---
 

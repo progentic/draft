@@ -2,6 +2,7 @@ pub mod analysis;
 mod application;
 pub mod citations;
 mod commands;
+mod diagnostics;
 pub mod documents;
 pub mod events;
 pub mod exports;
@@ -33,6 +34,7 @@ pub fn run() {
             commands::citation_resolution::resolve_citation,
             commands::connectivity::get_connectivity_mode,
             commands::connectivity::set_connectivity_mode,
+            commands::diagnostic_snapshot::get_diagnostic_snapshot,
             commands::document_open::open_document,
             commands::document_save::save_document,
             commands::external_access::open_external_access,

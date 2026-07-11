@@ -176,6 +176,18 @@ The header control uses only those typed results; it cannot configure the
 network client or bypass Rust enforcement. See
 `docs/maintainers/OFFLINE_MODE.md`.
 
+## Diagnostic snapshot wrapper
+
+Phase 38 adds `getDiagnosticSnapshot` under `src/ipc/`. It sends only the exact
+empty request to `get_diagnostic_snapshot` and receives the response as
+`unknown`. The validator requires schema version 1, a bounded package version,
+six ordered contract-version records, and six exact subsystem states.
+
+The wrapper preserves all three closed command errors and keeps invalid
+responses separate from transport failures. No component or hook imports it,
+so Phase 38 adds no visible diagnostics or support workflow. See
+`docs/maintainers/AUDIT_DIAGNOSTICS.md`.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -202,6 +214,8 @@ Frontend tests prove:
   actions, stale generations, remapped targets, and explicit review controls
 - connectivity get/set arguments, exact closed responses, mismatched set
   responses, stale reads, retained failure state, and toggle semantics
+- diagnostic request arguments, exact closed arrays, ordering, statuses, all
+  known errors, and invalid-response rejection
 - workspace rendering of the connected Rust version
 - runtime-status presentation for every known command error code
 

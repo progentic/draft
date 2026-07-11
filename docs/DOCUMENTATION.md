@@ -643,6 +643,15 @@ Phase 37 limitation is published to the live GitHub Wiki at commit `9ab41a3`;
 all four live pages match their canonical sources, and rendered navigation was
 verified after the post-merge `main` run passed.
 
+Phase 38 documents the strict local support snapshot in
+`docs/maintainers/AUDIT_DIAGNOSTICS.md`. The command and IPC guides record the
+typed request boundary, the configuration index owns all three diagnostic
+limits, and the error inventory distinguishes the three unwired command codes.
+Architecture plus `INV-01`, `INV-02`, and `INV-03` record the fixed metadata,
+redaction, closed failures, and absence of new runtime authority. The original
+requirements remain non-binding in `docs/drafts/AUDIT_DIAGNOSTICS.md`; Phase 39
+is bounded separately in `docs/drafts/ERROR_UX.md`.
+
 Recommended checks:
 
 - Markdown formatting

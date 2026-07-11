@@ -8,7 +8,7 @@ recorded in `CHANGELOG.md`; phase evidence is recorded in
 `docs/maintainers/REALIGNMENT.md`. Architecture changes are governed by
 `GOVERNANCE.md`, `INVARIANTS.md`, and accepted ADRs.
 
-**Current execution checkpoint:** Phases 0 through 37 are complete. Phase 38 is
+**Current execution checkpoint:** Phases 0 through 38 are complete. Phase 39 is
 the next implementation phase.
 
 Phase 24 completed a Rust-only PDF intake gate. It validates explicit files and
@@ -86,6 +86,14 @@ drop, and never cross Tauri, frontend, Python, config, SQLite, filesystem,
 environment, or logging boundaries. No key, provider, command, settings
 control, or credential prompt is added. Non-binding Phase 38 audit and
 diagnostics requirements are bounded in `docs/drafts/AUDIT_DIAGNOSTICS.md`.
+
+Phase 38 adds one explicit Rust-owned local diagnostic snapshot. It reports
+only the compiled application version, six existing contract versions, and six
+closed startup/non-probe subsystem states under a 2 KiB serialized limit. It
+does not inspect content, paths, logs, credential presence, external services,
+the filesystem, persistence, Python, or background state. No visible control,
+report export, upload, telemetry, or support workflow is added. Non-binding
+Phase 39 error-UX requirements are bounded in `docs/drafts/ERROR_UX.md`.
 
 ---
 

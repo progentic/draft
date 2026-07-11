@@ -58,5 +58,7 @@ This wording describes the current state, not a permanent product limitation.
   work, or persist the mode.
 - API keys, external-service providers, credential prompts, and credential
   settings are not currently available in the workspace.
+- There is no visible diagnostics control, support-bundle export, log viewer,
+  report upload, or support-submission workflow.
 
 Return to [Home](Home).
