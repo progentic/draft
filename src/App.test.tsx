@@ -6,6 +6,11 @@ const useRuntimeStatusMock = vi.hoisted(() => vi.fn());
 const useConnectivityModeMock = vi.hoisted(() => vi.fn());
 const setConnectivityModeMock = vi.hoisted(() => vi.fn());
 const refreshConnectivityMock = vi.hoisted(() => vi.fn());
+const createUnsavedDocumentMock = vi.hoisted(() => vi.fn());
+
+vi.mock("./ipc/documentCreate", () => ({
+  createUnsavedDocument: createUnsavedDocumentMock,
+}));
 
 vi.mock("./features/runtime-status/useRuntimeStatus", () => ({
   useRuntimeStatus: useRuntimeStatusMock,
@@ -30,6 +35,11 @@ const RUNTIME_COMMAND_FAILURE_LABELS = {
 
 describe("DRAFT workspace shell", () => {
   beforeEach(() => {
+    createUnsavedDocumentMock.mockReset();
+    createUnsavedDocumentMock.mockResolvedValue({
+      status: "created",
+      envelope: initialEnvelope(),
+    });
     useRuntimeStatusMock.mockReset();
     useRuntimeStatusMock.mockReturnValue({ phase: "ready", version: "0.1.0" });
     setConnectivityModeMock.mockReset();
@@ -44,6 +54,7 @@ describe("DRAFT workspace shell", () => {
 
   it("renders the editor, navigation, and session state", async () => {
     render(<App />);
+    await screen.findByText("Not saved");
 
     expect(screen.getByRole("main", { name: "DRAFT workspace" })).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Document editor" })).toBeTruthy();
@@ -55,8 +66,9 @@ describe("DRAFT workspace shell", () => {
     expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
   });
 
-  it("places the workspace title before panel headings", () => {
+  it("places the workspace title before panel headings", async () => {
     render(<App />);
+    await screen.findByText("Not saved");
 
     const workspaceTitles = screen.getAllByRole("heading", { level: 1, name: "DRAFT" });
     const outlineTitle = screen.getByRole("heading", { level: 2, name: "Outline" });
@@ -74,6 +86,7 @@ describe("DRAFT workspace shell", () => {
   it("toggles the document outline without changing document state", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByText("Not saved");
 
     const toggle = screen.getByRole("button", { name: "Close outline" });
     const outline = screen.getByRole("complementary", { name: "Document outline" });
@@ -94,6 +107,7 @@ describe("DRAFT workspace shell", () => {
   it("exposes working Tiptap formatting controls", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByText("Not saved");
 
     const boldButton = screen.getByRole("button", { name: "Bold" });
     expect(boldButton.getAttribute("aria-pressed")).toBe("false");
@@ -106,6 +120,7 @@ describe("DRAFT workspace shell", () => {
   it("exposes a horizontal formatting toolbar with one Tab entry", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByText("Not saved");
 
     const toolbar = screen.getByRole("toolbar", { name: "Text formatting" });
     const outlineEntry = screen.getByRole("button", { name: "H1Untitled document" });
@@ -127,6 +142,7 @@ describe("DRAFT workspace shell", () => {
   it("moves toolbar focus with horizontal navigation keys", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByText("Not saved");
 
     const boldButton = screen.getByRole("button", { name: "Bold" });
     const italicButton = screen.getByRole("button", { name: "Italic" });
@@ -152,6 +168,7 @@ describe("DRAFT workspace shell", () => {
   it("opens and closes the formatting review from its toolbar control", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByText("Not saved");
 
     const toggle = screen.getByRole("button", { name: "Formatting review" });
     const panel = document.getElementById("formatting-review-panel")!;
@@ -170,6 +187,7 @@ describe("DRAFT workspace shell", () => {
   it("exposes the Rust-owned session connectivity toggle", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByText("Not saved");
 
     const toggle = screen.getByRole("button", { name: "Work offline" });
     expect(toggle.getAttribute("aria-pressed")).toBe("false");
@@ -191,12 +209,28 @@ describe("DRAFT workspace shell", () => {
       { type: "command", code: "unknown_command_failure" },
       "DRAFT could not read the core status.",
     ],
-  ] as const)("shows the bounded $reason.type failure state", (reason, expectedLabel) => {
-    useRuntimeStatusMock.mockReturnValueOnce({ phase: "unavailable", reason });
+  ] as const)("shows the bounded $reason.type failure state", async (reason, expectedLabel) => {
+    useRuntimeStatusMock.mockReturnValue({ phase: "unavailable", reason });
 
     render(<App />);
+    await screen.findByText("Not saved");
 
     const message = screen.getByText(expectedLabel);
     expect(message.closest('[role="status"]')?.getAttribute("aria-atomic")).toBe("true");
   });
 });
+
+function initialEnvelope() {
+  return {
+    schema_version: 1,
+    document_id: "00000000-0000-4000-8000-000000000001",
+    title: "Untitled document",
+    document: {
+      type: "doc",
+      content: [
+        { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Untitled document" }] },
+        { type: "paragraph", content: [{ type: "text", text: "Begin writing here." }] },
+      ],
+    },
+  };
+}

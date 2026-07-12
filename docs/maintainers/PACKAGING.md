@@ -86,6 +86,10 @@ ignored `DRAFT.app`, runs the pinned Tauri build, and verifies:
 - `Info.plist` contains `CFBundleIconFile = icon.icns`;
 - the executable is a native Apple Silicon Mach-O binary;
 - the embedded and tracked `.icns` files match byte-for-byte; and
+- the packaged `python/draft_helpers` files are present;
+- `/usr/bin/python3` is available on the supported host; and
+- the embedded `text_analysis` helper returns the expected typed finding under
+  an isolated environment; and
 - the application exists at
   `src-tauri/target/release/bundle/macos/DRAFT.app`.
 
@@ -108,6 +112,11 @@ reference.
 If Tauri rejects an image, confirm that the source is square and that generated
 PNG outputs are RGBA. Do not hand-edit one derivative; fix the approved source
 or generation command and regenerate the complete set.
+
+If the packaged helper probe fails, confirm the bundle contains the complete
+`Resources/python/draft_helpers` package and that `/usr/bin/python3` satisfies
+the documented Python 3.9 minimum. Do not add a downloaded runtime or restore
+the invoking shell environment.
 
 Do not commit files from `src-tauri/target/`. The unsigned app is reproducible
 build output, not a published release artifact.

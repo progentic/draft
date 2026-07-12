@@ -30,7 +30,8 @@ implementation choices that can change without altering one of those contracts.
 | Node engine | `>=22.12.0` | `package.json` | Supported local runtime floor. GitHub Actions currently verifies Node 24. |
 | npm version | `11.16.0` | `package.json` | Locked package-manager contract. |
 | Tauri CLI | `2.11.4` | `package.json`, `package-lock.json` | Pinned desktop build and icon-generation tool. |
-| Python CI version | `3.12` | `.github/workflows/verify.yml` | Hosted helper-test runtime. Production Python packaging is not implemented. |
+| Python CI version | `3.12` | `.github/workflows/verify.yml` | Hosted helper-test runtime. |
+| Production Python minimum | `3.9` | `pyproject.toml` | Matches the Apple system runtime used by the initial macOS package. |
 | CI timeout | 30 minutes | `.github/workflows/verify.yml` | Upper bound for the aggregate Verify job. |
 | Development URL | `http://localhost:1420` | `src-tauri/tauri.conf.json` | Vite endpoint used only by Tauri development. |
 | Frontend output | `../dist` | `src-tauri/tauri.conf.json` | Production WebView assets consumed by Tauri builds, relative to `src-tauri/`. |
@@ -149,6 +150,9 @@ period. It cannot detect an unreported same-size in-place modification.
 | `PYTHON_HELPER_TIMEOUT` | 5 seconds | `workers/python/runner.rs` | Process execution bound. |
 | `MAX_TEXT_ANALYSIS_FINDINGS` | 100 | Rust text-analysis boundary | Validated result bound. |
 | `SUPPORTED_LOCALE` | `en-US` | `python/draft_helpers/worker.py` | Only accepted helper locale. |
+| Production executable | `/usr/bin/python3` | `commands/text_analysis.rs` | Fixed initial-platform runtime; no user-selected executable. |
+| Packaged helper resource | `python/draft_helpers` | `tauri.conf.json` | Trusted helper files embedded in the `.app`. |
+| Isolated helper `TMPDIR` | `/tmp` | `workers/python/runner.rs` | Sole value restored after `env_clear` to keep Apple system Python silent. |
 | `MAX_FINDINGS_PER_CHECK` | 20 | `python/draft_helpers/worker.py` | Maximum findings emitted by one heuristic. |
 | `LONG_SENTENCE_WORDS` | 30 words | `python/draft_helpers/worker.py` | Clarity heuristic threshold. |
 | `MIN_ALL_CAPS_LETTERS` | 5 letters | `python/draft_helpers/worker.py` | Tone heuristic threshold. |

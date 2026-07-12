@@ -38,11 +38,17 @@ pub fn run() {
             commands::connectivity::get_connectivity_mode,
             commands::connectivity::set_connectivity_mode,
             commands::diagnostic_snapshot::get_diagnostic_snapshot,
+            commands::document_create::create_document,
+            commands::document_close::close_document,
             commands::document_open::open_document,
             commands::document_save::save_document,
+            commands::docx_export::export_document,
             commands::external_access::open_external_access,
             commands::formatting_review::run_formatting_review,
+            commands::reference_library::add_reference,
+            commands::reference_library::list_references,
             commands::runtime_status::get_runtime_status,
+            commands::text_analysis::run_text_analysis,
             commands::worker_cancellation::cancel_worker
         ])
         .run(tauri::generate_context!())

@@ -1,6 +1,25 @@
 use super::*;
 
 #[test]
+fn input_accepts_exact_size_limit_and_rejects_one_byte_more() {
+    let exact = "x".repeat(MAX_TEXT_ANALYSIS_TEXT_BYTES);
+    let oversized = "x".repeat(MAX_TEXT_ANALYSIS_TEXT_BYTES + 1);
+
+    assert_eq!(
+        TextAnalysisInput::new(exact).unwrap().text().len(),
+        MAX_TEXT_ANALYSIS_TEXT_BYTES
+    );
+    assert_eq!(
+        TextAnalysisInput::new(oversized),
+        Err(PythonHelperRequestError::TextTooLong)
+    );
+    assert_eq!(
+        TextAnalysisInput::new(" \n\t"),
+        Err(PythonHelperRequestError::EmptyText)
+    );
+}
+
+#[test]
 fn finding_codes_map_to_fixed_explainable_policies() {
     let text = "alpha beta gamma delta epsilon";
     let codes = [

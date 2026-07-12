@@ -44,11 +44,18 @@ status failure.
 
 Restart DRAFT and report the DRAFT version and exact message if it repeats.
 
-## Edits Disappeared
+## Document Could Not Be Saved Or Opened
 
-The current interface does not save documents. Reloading the workspace or
-closing DRAFT discards edits. There is no recovery path for a discarded
-pre-release editor session. Keep important work in another saved document.
+If save is cancelled, the document remains open with unsaved changes. Choose
+**Save** again and select a writable location. If DRAFT cannot save, it keeps
+the current open document and does not promote a partial replacement.
+
+If a document cannot be opened, choose a valid DRAFT document. Unsupported or
+malformed versions fail without changing that file. DRAFT has no autosave or
+crash recovery, so discarded unsaved changes cannot be restored.
+
+If DRAFT cannot close a saved document, keep it open and retry **Close** before
+switching documents.
 
 ## Formatting Check Needs To Run Again
 
@@ -84,10 +91,45 @@ resets to online when DRAFT restarts.
 ## Citation Cannot Be Resolved
 
 A citation can show invalid, unavailable, or failed copy inside the document.
-Keep invalid citation input unchanged. DRAFT does not currently expose a
-citation-repair control.
+Keep invalid citation input unchanged. The current workspace does not repair a
+citation automatically.
 
 For a read or transport failure, restart DRAFT only when the visible message
-directs it. DRAFT does not currently expose a citation-management workflow.
+directs it. Confirm that the citekey exists in **References**.
+
+## Reference Could Not Be Added
+
+`That citekey is already in use.` means a saved reference has the same
+case-sensitive citekey. Choose a different citekey.
+
+`The reference details are not valid.` means at least one field failed the
+bounded manual-reference rules. Enter a nonblank citekey, title, and author plus
+a four-digit year, then try again.
+
+For a library update failure, keep the form values visible and retry. Restart
+DRAFT if the failure repeats.
+
+## Text Checks Did Not Finish
+
+`The document changed. Run text checks again.` means a pending or completed
+result no longer addresses the current text. Choose **Check document** again.
+
+If the document is too large, reduce it below the current 32 KiB text limit and
+retry. If text checks are unavailable in this installation, restart DRAFT. The
+workflow has no provider sign-in or credential recovery because the five checks
+run locally.
+
+An invalid response or unfinished check leaves the document unchanged. Use the
+same **Check document** control to retry.
+
+## DOCX Export Failed
+
+If the file location is invalid, choose **Export DOCX** again and select a
+writable `.docx` destination.
+
+Unsupported document content and resource-limit failures require editing the
+document before retrying. Citation nodes are not currently included in DOCX
+output; remove them before export when that message appears. Export failure
+does not change the DRAFT source document.
 
 Return to [Home](Home).

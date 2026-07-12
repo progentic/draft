@@ -94,6 +94,7 @@ packaged model, automatic edits, or durable finding history.
 
 ## Acceptance Boundary
 
-ADR-002 is accepted, so this contract now governs Phase 46 implementation.
-`RC-03` remains open until Phase 46 supplies the required production behavior,
-tests, documentation, and packaged evidence.
+ADR-002 is accepted, so this contract governs Phase 46 implementation. The
+production boundary, tests, documentation, packaged helper probe, and visible
+workflow now exist. `RC-03` remains open until a stable complete packaged
+interaction run supplies the remaining evidence.

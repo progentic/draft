@@ -105,6 +105,7 @@ check_required_documents() {
     docs/maintainers/PDF_IMPORT.md
     docs/maintainers/PACKAGING.md
     docs/maintainers/PERFORMANCE_MEASUREMENT.md
+    docs/maintainers/PHASE46_WORKFLOWS.md
     docs/maintainers/PYTHON_HELPERS.md
     docs/maintainers/TEXT_ANALYSIS.md
     docs/maintainers/METADATA_LOOKUP.md
@@ -367,7 +368,7 @@ check_matrix_subsystems() {
     'Transient worker cancellation'
     'Document envelope'
     'Document registry'
-    'Document open, save, and atomic replacement'
+    'Document create, open, save, close, and atomic replacement'
     'Critical-flow evidence'
     'Reference record'
     'Reference store'
@@ -429,6 +430,13 @@ check_coverage_symbols() {
     'src-tauri/src/commands/formatting_review.rs|run_formatting_review'
     'src/features/formatting-review/useFormattingReview.ts|useFormattingReview'
     'src-tauri/src/exports/docx.rs|compile_docx'
+    'src-tauri/src/commands/document_close.rs|close_document'
+    'src-tauri/src/commands/document_create.rs|create_document'
+    'src-tauri/src/commands/reference_library.rs|add_reference'
+    'src-tauri/src/commands/text_analysis.rs|run_text_analysis'
+    'src-tauri/src/commands/docx_export.rs|export_document'
+    'src/features/document-session/useDocumentSession.ts|useDocumentSession'
+    'src/features/text-analysis/TextAnalysisPanel.tsx|TextAnalysisPanel'
   )
   local entry
   local source_path
@@ -630,10 +638,10 @@ check_formatting_export_alignment() {
   require_document_text "${command}" 'run_formatting_review'
   require_document_text "${client}" 'runFormattingReview'
   require_document_text "${review}" 'stale result cannot'
-  require_document_text "${docx}" 'No user can start an export'
+  require_document_text "${docx}" 'frontend wrapper, and visible control'
   require_document_text "${pdf}" 'PDF export remains mechanically absent'
-  require_document_text docs/wiki/Workspace.md 'It does not certify'
-  require_document_text docs/wiki/Current-Limitations.md 'citation mismatches are'
+  require_document_text docs/wiki/Workspace.md 'not certify complete style-manual compliance'
+  require_document_text docs/wiki/Current-Limitations.md 'citation-style declarations'
   require_document_text "${offline}" 'Rust-owned session policy'
   require_document_text "${offline}" 'does not add operating-system reachability monitoring'
 
@@ -659,7 +667,7 @@ check_offline_mode_documentation() {
   require_document_text "${workspace}" 'online when DRAFT restarts'
   require_document_text "${recovery}" '## Connectivity Mode Unavailable'
   require_document_text "${recovery}" 'Online - change failed'
-  require_document_text docs/wiki/Current-Limitations.md 'does not monitor operating-system connectivity'
+  require_document_text docs/wiki/Current-Limitations.md 'does not detect operating-system'
   require_document_text docs/INVARIANTS.md "Phase 36 adds one shared \`ConnectivityPolicy\`"
 }
 
@@ -675,8 +683,8 @@ check_secret_storage_documentation() {
   require_document_text "${draft}" 'non-binding requirements draft for Phase 37'
   require_document_text "${next_draft}" 'non-binding requirements draft for Phase 38'
   require_document_text "${next_draft}" 'secret presence and secret-store operations are never queried'
-  require_document_text docs/wiki/Current-Limitations.md 'credential prompts'
-  require_document_text docs/wiki/Current-Limitations.md 'not currently available in the workspace'
+  require_document_text docs/wiki/Current-Limitations.md 'does not expose provider credentials'
+  require_document_text docs/wiki/Current-Limitations.md 'diagnostics export'
   require_document_text docs/INVARIANTS.md "Phase 37 adds one lazy \`SecretStore\`"
 }
 
@@ -693,7 +701,7 @@ check_diagnostic_snapshot_documentation() {
   require_document_text "${draft}" 'non-binding requirements draft for Phase 38'
   require_document_text "${next_draft}" 'non-binding requirements draft for Phase 39'
   require_document_text "${next_draft}" 'typed but unwired backend failure'
-  require_document_text docs/wiki/Current-Limitations.md 'no visible diagnostics control'
+  require_document_text docs/wiki/Current-Limitations.md 'diagnostics export'
   require_document_text docs/INVARIANTS.md 'Phase 38 diagnostics omit the secret-storage subsystem'
 }
 
@@ -711,10 +719,10 @@ check_error_ux_documentation() {
   require_document_text "${guide}" 'unwired'
   require_document_text "${inventory}" 'Typed but unwired errors remain'
   require_document_text "${draft}" 'non-binding requirements draft for Phase 39'
-  require_document_text docs/wiki/Workspace.md 'After a failed check, the existing button reads'
+  require_document_text docs/wiki/Troubleshooting.md 'same **Check document** control to retry'
   require_document_text docs/wiki/Troubleshooting.md '## Citation Cannot Be Resolved'
-  require_document_text docs/user/WORKSPACE.md '## Citation messages'
-  require_document_text docs/user/WORKSPACE.md 'the prior confirmed mode remains visible'
+  require_document_text docs/user/WORKSPACE.md '## Add A Reference And Citation'
+  require_document_text docs/user/WORKSPACE.md 'setting resets to online when DRAFT restarts'
   require_document_text docs/INVARIANTS.md 'Phase 39 retains each visible typed failure through the presentation boundary.'
 }
 
@@ -726,8 +734,8 @@ check_critical_path_documentation() {
   require_document_text "${guide}" "\`UnsupportedCitation\`"
   require_document_text "${guide}" 'package reopens'
   require_document_text "${guide}" 'adds no application command'
-  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 42'
-  require_document_text docs/user/WORKSPACE.md 'current workspace has no export controls'
+  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 46'
+  require_document_text docs/user/WORKSPACE.md '## Export DOCX'
 }
 
 check_packaging_documentation() {
@@ -741,7 +749,7 @@ check_packaging_documentation() {
   require_document_text "${guide}" 'It does not produce a signed installer'
   require_document_text "${configuration}" "| Bundle activation | \`true\` |"
   require_document_text "${configuration}" "| Bundle targets | \`app\` only |"
-  require_document_text docs/wiki/Current-Limitations.md 'No versioned DRAFT release has been published yet.'
+  require_document_text docs/wiki/Current-Limitations.md 'a published download'
   require_document_text README.md 'Versioned downloads will be published on the'
 }
 
@@ -788,8 +796,8 @@ check_v1_analysis_decision_state() {
   require_document_text "${draft}" '**Decision dependency:** Accepted ADR-002'
   require_document_text "${draft}" '## RC-03 Closure Contract'
   require_document_text "${draft}" 'The five permitted user-visible analyses are'
-  require_document_text "${draft}" 'remains open until Phase 46'
-  require_document_text "${release_contract}" '| RC-03 | Release blocker | Open | Accepted ADR-002 limits v1 analysis to five local deterministic heuristics'
+  require_document_text "${draft}" 'remains open until a stable complete packaged'
+  require_document_text "${release_contract}" '| RC-03 | Release blocker | Open |'
   for decision_file in "${decision_files[@]}"; do
     require_document_text "${decision_file}" 'ADR-002'
   done
@@ -838,8 +846,8 @@ check_pdf_decision_state() {
   require_document_text "${decision_record}" "It does not change \`GOVERNANCE.md\`"
   require_document_text "${phase34_draft}" 'bounded Phase 34'
   require_document_text "${phase34_draft}" 'ADR-001 is accepted'
-  require_document_text "${user_workspace}" 'DRAFT has deferred that work'
-  require_document_text "${user_limits}" 'DRAFT has deferred that work'
+  require_document_text "${user_workspace}" 'export remains unavailable pending'
+  require_document_text "${user_limits}" 'PDF export is currently unavailable'
   reject_document_pattern \
     'ADR-001 proposes|Proposed ADR-001|ADR-001 is proposed|Phase 33 is not complete|Phase 33 is under architecture review|Status: Proposed' \
     'Phase 33 and ADR-001 must remain accepted after the governed merge' \

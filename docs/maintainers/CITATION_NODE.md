@@ -13,9 +13,10 @@ Phase 18 implements a versioned inline Tiptap citation node, Rust validation,
 Rust-backed local citekey resolution, a typed `resolve_citation` command and
 frontend wrapper, and explicit live/static display states.
 
-It does not implement reference CRUD IPC, visible citation insertion controls,
-complete APA formatting, bibliographies, citation consistency checks, network
-lookup, import, export, jobs, or Python helpers.
+Phase 46 adds bounded manual-reference summaries and visible citation
+insertion. It does not implement full reference CRUD IPC, complete APA
+formatting, visible bibliographies, network lookup, import, jobs, or Python
+ownership.
 
 ## Source of Truth
 
@@ -128,8 +129,8 @@ A revision counter prevents a late response for old attrs from replacing a
 newer marker, and destroyed node views ignore pending responses. The mapping
 policy is documented in `docs/maintainers/ERROR_UX.md`.
 
-No insertion toolbar or citation editor exists yet, so the visible default
-document contains no citation node.
+The reference panel can insert a valid citation node at the cursor. There is no
+citation editor or automatic repair workflow.
 
 ## Abstraction Hierarchy
 

@@ -12,10 +12,11 @@ record of the decision gate rather than an implementation contract.
 Defer native PDF generation until DRAFT has accepted the rendering policies and
 verification contract needed for reliable output.
 
-The decision adds no product behavior. DOCX remains the only implemented export
-foundation, and no visible DOCX or PDF workflow exists. There is no PDF library,
-renderer, binary, font bundle, conversion process, command, Tauri capability,
-frontend control, Python helper, network service, or packaged resource.
+The decision adds no PDF product behavior. DOCX remains the only implemented
+export format and Phase 46 exposes its existing bounded exporter. No PDF
+library, renderer, binary, font bundle, conversion process, command, Tauri
+capability, frontend control, Python helper, network service, or packaged
+resource exists.
 
 ## Alternatives Reviewed
 

@@ -8,7 +8,7 @@ interface DraftEditorProps {
   editor: Editor | null;
 }
 
-const INITIAL_DOCUMENT: JSONContent = {
+export const INITIAL_DOCUMENT: JSONContent = {
   type: "doc",
   content: [
     {

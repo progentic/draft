@@ -30,6 +30,7 @@ pub const MAX_PYTHON_HELPER_STDERR_BYTES: usize = 16 * 1024;
 
 /// Fixed execution deadline for allowlisted Python helpers.
 pub const PYTHON_HELPER_TIMEOUT: Duration = Duration::from_secs(5);
+const ISOLATED_TEMP_DIRECTORY: &str = "/tmp";
 
 const HELPER_ENTRYPOINT: [&str; 2] = ["draft_helpers", "worker.py"];
 const READ_BUFFER_BYTES: usize = 8 * 1024;
@@ -170,6 +171,7 @@ impl PythonHelperRunner {
             .args(&self.program.arguments)
             .current_dir(&self.program.package_root)
             .env_clear()
+            .env("TMPDIR", ISOLATED_TEMP_DIRECTORY)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

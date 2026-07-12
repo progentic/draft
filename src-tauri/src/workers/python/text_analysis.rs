@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::protocol::{MAX_TEXT_ANALYSIS_TEXT_BYTES, PythonHelperLocale, PythonHelperRequestError};
 
@@ -13,7 +13,7 @@ pub struct TextAnalysisInput {
 }
 
 /// Closed deterministic issue codes returned by the helper.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TextAnalysisFindingCode {
     RepeatedWord,
@@ -24,7 +24,8 @@ pub enum TextAnalysisFindingCode {
 }
 
 /// User-facing review category owned by Rust rather than Python prose.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TextAnalysisCategory {
     Grammar,
     Clarity,
@@ -34,14 +35,16 @@ pub enum TextAnalysisCategory {
 }
 
 /// Review urgency without claiming that a heuristic proves an error.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TextAnalysisSeverity {
     Warning,
     Advice,
 }
 
 /// One explainable non-destructive review finding.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TextAnalysisFinding {
     code: TextAnalysisFindingCode,
     category: TextAnalysisCategory,
@@ -53,7 +56,7 @@ pub struct TextAnalysisFinding {
 }
 
 /// Bounded deterministic findings for one immutable input snapshot.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct TextAnalysisResult {
     findings: Vec<TextAnalysisFinding>,
 }
@@ -135,6 +138,11 @@ impl TextAnalysisFinding {
 impl TextAnalysisResult {
     pub fn findings(&self) -> &[TextAnalysisFinding] {
         &self.findings
+    }
+
+    #[cfg(test)]
+    pub(crate) fn empty_for_test() -> Self {
+        Self { findings: vec![] }
     }
 }
 

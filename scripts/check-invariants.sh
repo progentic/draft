@@ -412,6 +412,8 @@ check_python_helper_contract() {
     test_oversized_serialized_request_fails_closed
   )
   local test_name
+  local command_path
+  local command_scan_paths=()
 
   require_file "${protocol_path}"
   require_file "${protocol_test_path}"
@@ -461,9 +463,18 @@ check_python_helper_contract() {
   assert_no_matches "Phase 28 helper Tauri or detached-task authority" \
     '#\[tauri::command\]|\btauri::|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
     "${protocol_path}" "${runner_path}"
-  assert_no_matches "Phase 28 application or command helper authority" \
+  # Phase 46 owns the sole command-level runner adapter. Every other command
+  # and the application layer remain prohibited from constructing helpers.
+  for command_path in src-tauri/src/commands/*.rs; do
+    if [[ "${command_path}" != 'src-tauri/src/commands/text_analysis.rs' ]]; then
+      command_scan_paths[${#command_scan_paths[@]}]="${command_path}"
+    fi
+  done
+  assert_no_matches "Phase 28 application or unowned command helper authority" \
     '\bPythonHelperRunner\b|\bcontract_probe\b|draft_helpers/worker\.py' \
-    src-tauri/src/application src-tauri/src/commands
+    src-tauri/src/application "${command_scan_paths[@]}"
+  require_source_pattern 'PythonHelperRunner::new(executable, package_root)' \
+    src-tauri/src/commands/text_analysis.rs
   assert_no_matches "Phase 28 frontend helper authority" \
     '\bPythonHelper\b|\bcontract_probe\b|\bContractProbe\b' src
   printf 'PASS INV-11 Phase 28 Python helper contract\n'
@@ -498,6 +509,10 @@ check_text_analysis_contract() {
     test_text_analysis_false_positive_guards
   )
   local test_name
+  local command_path
+  local frontend_path
+  local command_scan_paths=()
+  local frontend_scan_paths=()
 
   require_file "${protocol_path}"
   require_file "${model_path}"
@@ -507,6 +522,10 @@ check_text_analysis_contract() {
   require_file "${python_test_path}"
   require_file docs/drafts/TEXT_ANALYSIS.md
   require_file docs/maintainers/TEXT_ANALYSIS.md
+  require_file src-tauri/src/commands/text_analysis.rs
+  require_file src/ipc/textAnalysis.ts
+  require_file src/features/text-analysis/TextAnalysisPanel.tsx
+  require_file src/features/text-analysis/textAnalysisSnapshot.ts
   for test_name in "${required_rust_tests[@]}"; do
     require_rust_test "${test_name}" src-tauri/src/workers/python
   done
@@ -546,11 +565,29 @@ check_text_analysis_contract() {
   assert_no_matches "Phase 29 Tauri, network, or detached-task authority" \
     '#\[tauri::command\]|\btauri::|\breqwest\b|\bNetworkClient\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
     "${protocol_path}" "${model_path}" "${worker_path}"
-  assert_no_matches "Phase 29 application or command text-analysis authority" \
-    '\bTextAnalysis\b|\btext_analysis\b' src-tauri/src/application src-tauri/src/commands
-  assert_no_matches "Phase 29 frontend text-analysis authority" \
-    '\bTextAnalysis\b|\btext_analysis\b|\bRepeatedWord\b' src
-  printf 'PASS INV-15 Phase 29 review-only text-analysis contract\n'
+  for command_path in src-tauri/src/commands/*.rs; do
+    case "${command_path}" in
+      src-tauri/src/commands/mod.rs|src-tauri/src/commands/text_analysis.rs) ;;
+      *) command_scan_paths[${#command_scan_paths[@]}]="${command_path}" ;;
+    esac
+  done
+  while IFS= read -r frontend_path; do
+    case "${frontend_path}" in
+      src/ipc/textAnalysis.ts|src/ipc/textAnalysis.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/text-analysis/TextAnalysisPanel.tsx|src/features/text-analysis/textAnalysisSnapshot.ts|src/features/text-analysis/textAnalysisSnapshot.test.ts) ;;
+      *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
+    esac
+  done < <(rg --files src)
+  assert_no_matches "Phase 46 unowned command text-analysis authority" \
+    '\bTextAnalysis\b|\btext_analysis\b' src-tauri/src/application "${command_scan_paths[@]}"
+  assert_no_matches "Phase 46 unowned frontend text-analysis authority" \
+    '\bTextAnalysis\b|\btext_analysis\b|\bRepeatedWord\b' "${frontend_scan_paths[@]}"
+  require_source_pattern 'export const FINDING_POLICIES = {' src/ipc/textAnalysis.ts
+  require_source_pattern 'repeated_word:' src/ipc/textAnalysis.ts
+  require_source_pattern 'long_sentence:' src/ipc/textAnalysis.ts
+  require_source_pattern 'all_caps_emphasis:' src/ipc/textAnalysis.ts
+  require_source_pattern 'repeated_sentence_opener:' src/ipc/textAnalysis.ts
+  require_source_pattern 'mixed_first_person:' src/ipc/textAnalysis.ts
+  printf 'PASS INV-15 Phase 46 visible review-only text-analysis contract\n'
 }
 
 check_formatting_contract() {
@@ -721,6 +758,10 @@ require_docx_contract_markers() {
 check_docx_export_authority() {
   local model_path="$1"
   local package_path="$2"
+  local command_path
+  local frontend_path
+  local command_scan_paths=()
+  local frontend_scan_paths=()
 
   assert_no_matches "Phase 32 persistence or direct filesystem authority" \
     '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
@@ -732,11 +773,26 @@ check_docx_export_authority() {
     '\bTargetMode\b|vbaProject|macroEnabled|\.bin["\x27]' "${package_path}"
   assert_no_matches "Phase 32 manual XML interpolation" \
     'format!\s*\(' "${model_path}" "${package_path}"
-  assert_no_matches "Phase 32 application or command export authority" \
+  for command_path in src-tauri/src/commands/*.rs; do
+    case "${command_path}" in
+      src-tauri/src/commands/docx_export.rs|src-tauri/src/commands/mod.rs) ;;
+      *) command_scan_paths[${#command_scan_paths[@]}]="${command_path}" ;;
+    esac
+  done
+  while IFS= read -r frontend_path; do
+    case "${frontend_path}" in
+      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts) ;;
+      *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
+    esac
+  done < <(rg --files src)
+  assert_no_matches "Phase 46 unowned application or command export authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
-    src-tauri/src/application src-tauri/src/commands
-  assert_no_matches "Phase 32 frontend DOCX authority" \
-    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' src
+    src-tauri/src/application "${command_scan_paths[@]}"
+  assert_no_matches "Phase 46 unowned frontend DOCX authority" \
+    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
+    "${frontend_scan_paths[@]}"
+  require_source_pattern 'export_docx(document, &target)' src-tauri/src/commands/docx_export.rs
+  require_source_pattern 'export async function exportDocument' src/ipc/docxExport.ts
   assert_no_matches "Phase 32 Python DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' python
 }
@@ -1214,7 +1270,7 @@ check_v1_analysis_decision_guard() {
   require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
   require_source_pattern '## Analysis Layers' "${adr}"
   require_source_pattern 'permitted v1 findings are exactly' "${adr}"
-  require_source_pattern 'remains open until Phase 46' "${draft}"
+  require_source_pattern 'remains open until a stable complete packaged' "${draft}"
   assert_no_matches "ADR-002 production model dependencies" \
     '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
     src-tauri/Cargo.toml package.json pyproject.toml
@@ -1590,9 +1646,22 @@ check_document_write_boundary() {
 }
 
 check_frontend_document_file_boundary() {
+  local document_identity_paths=(
+    src/features/document-session
+    src/ipc/documentCreate.ts
+  )
+
   assert_no_matches "frontend document path authority" \
     '\b(?:path|filePath|file_path)\s*:' \
-    src/ipc/documentOpen.ts src/ipc/documentSave.ts
+    src/ipc/documentCreate.ts src/ipc/documentOpen.ts src/ipc/documentSave.ts
+  assert_no_matches "frontend document identity authority" \
+    '\bcrypto\.randomUUID\s*\(|\b(?:uuidv[147]|nanoid|createId)\s*\(' \
+    "${document_identity_paths[@]}"
+  assert_no_matches "frontend document identity dependency" \
+    "from\\s+['\"](?:uuid|nanoid|@paralleldrive/cuid2)['\"]" \
+    "${document_identity_paths[@]}"
+  require_source_pattern 'DocumentEnvelope::create_initial()' \
+    src-tauri/src/commands/document_create.rs
 }
 
 require_source_pattern() {

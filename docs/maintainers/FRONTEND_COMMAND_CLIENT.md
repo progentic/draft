@@ -26,6 +26,11 @@ transport failures out of presentation components.
 | Mid | `openExternalAccess` | Requests one Rust-validated default-browser handoff. |
 | Mid | `runFormattingReview` | Validates one closed formatting response and typed failures. |
 | Mid | `getConnectivityMode`, `setConnectivityMode` | Mirror the effective Rust-owned session policy. |
+| Mid | `createUnsavedDocument` | Receives one Rust-identified initial envelope. |
+| Mid | `closeDocument` | Releases one Rust-owned live document handle. |
+| Mid | `addReference`, `listReferences` | Validate bounded manual-reference requests and summaries. |
+| Mid | `runTextAnalysis` | Validates the five-check local analysis response. |
+| Mid | `exportDocument` | Requests one Rust-owned DOCX target and validates the result. |
 | Low | `invokeCommand` | Calls the raw Tauri `invoke` API and returns unknown IPC data to its wrapper. |
 
 Raw Tauri access is isolated in `src/ipc/client.ts`. Command-specific wrappers
@@ -114,8 +119,9 @@ transport failures.
 
 `saveDocument` sends exactly one typed envelope snapshot. It sends no path and
 does not inspect Tiptap live state. The caller must construct the immutable
-snapshot explicitly. No React component invokes these wrappers yet because
-workspace file controls have not been integrated.
+snapshot explicitly. Phase 46 adds `closeDocument` and integrates New, Open,
+Save, and Close through `useDocumentSession`, including dirty-state decisions
+and registry-handle release.
 
 Nested registry failures include source-path ownership conflicts. Atomic-write
 failures identify the failed stage, while `durability_uncertain` means a
@@ -144,9 +150,9 @@ publisher URL, institutional URL, DOI, or Google Scholar query to
 four bounded command errors without retaining a raw browser failure.
 
 The wrapper does not import `@tauri-apps/plugin-opener`, call `window.open`, or
-receive opener permissions. Rust remains the URL and launch authority. No
-React component invokes the wrapper at this checkpoint because a visible
-research workflow has not been integrated.
+receive opener permissions. Rust remains the URL and launch authority. Phase 46
+adds manual references and citation insertion, but does not expose this browser
+handoff, external metadata lookup, or PDF intake.
 
 ## Formatting review wrapper
 
@@ -188,6 +194,22 @@ responses separate from transport failures. No component or hook imports it,
 so Phase 38 adds no visible diagnostics or support workflow. See
 `docs/maintainers/AUDIT_DIAGNOSTICS.md`.
 
+## Phase 46 workflow wrappers
+
+Phase 46 adds strict clients for `create_document`, `close_document`, `add_reference`,
+`list_references`, `run_text_analysis`, and `export_document`. Each client owns
+one command constant, sends one bounded request envelope, validates an unknown
+response, and preserves only its closed command errors.
+
+The create client accepts no identity or content input; Rust returns the
+validated initial envelope. The reference clients return citekey and title
+summaries only. The text client
+accepts no provider, credential, path, model, or runtime option and validates
+the exact five finding codes, stable ordering, limits, and UTF-8 byte ranges.
+The export client receives no selected target path. Feature hooks use these
+results for transient presentation; Rust retains document, store, helper, and
+filesystem authority. See `docs/maintainers/PHASE46_WORKFLOWS.md`.
+
 ## Enforcement
 
 `scripts/check-invariants.sh` rejects `@tauri-apps/api/core` imports, raw
@@ -216,6 +238,11 @@ Frontend tests prove:
   responses, stale reads, retained failure state, and toggle semantics
 - diagnostic request arguments, exact closed arrays, ordering, statuses, all
   known errors, and invalid-response rejection
+- Phase 46 create, close, reference, text-check, and DOCX request arguments, exact
+  responses, every typed error, malformed-response rejection, and transport
+  sanitization
+- lifecycle handle release, dirty-state decisions, citation insertion, stale
+  analysis generations, passage remapping, and export source preservation
 - workspace rendering of the connected Rust version
 - runtime-status presentation for every known command error code
 
@@ -248,3 +275,5 @@ Phase 34 formatting review is documented in
 `docs/maintainers/FORMATTING_UX.md`.
 Phase 36 connectivity mode is documented in
 `docs/maintainers/OFFLINE_MODE.md`.
+Phase 46 visible workflow clients are documented in
+`docs/maintainers/PHASE46_WORKFLOWS.md`.

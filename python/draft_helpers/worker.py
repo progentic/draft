@@ -225,7 +225,7 @@ def _run_text_analysis(request: TextAnalysisRequest) -> TextAnalysisResult:
 def _repeated_word_findings(text: str) -> list[TextAnalysisFinding]:
     findings: list[TextAnalysisFinding] = []
     words = list(_WORD_PATTERN.finditer(text))
-    for previous, current in zip(words, words[1:], strict=False):
+    for previous, current in zip(words, words[1:]):
         separator = text[previous.end() : current.start()]
         same_word = previous.group().casefold() == current.group().casefold()
         if separator and separator.isspace() and same_word:
@@ -265,7 +265,7 @@ def _all_caps_findings(text: str) -> list[TextAnalysisFinding]:
 def _repeated_opener_findings(text: str) -> list[TextAnalysisFinding]:
     findings: list[TextAnalysisFinding] = []
     sentences = list(_SENTENCE_PATTERN.finditer(text))
-    for previous, current in zip(sentences, sentences[1:], strict=False):
+    for previous, current in zip(sentences, sentences[1:]):
         previous_opener = _first_word(text, previous.start(), previous.end())
         current_opener = _first_word(text, current.start(), current.end())
         if _same_substantial_opener(previous_opener, current_opener):

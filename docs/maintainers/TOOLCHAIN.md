@@ -2,9 +2,9 @@
 
 ## Current phase
 
-Phases 0 through 45 are complete at the current checkpoint. Phase 46 is the
-next implementation and interaction-clarity phase. The Phase 1 toolchain remains
-locked, and the Phase 2
+Phases 0 through 45 are complete at the current checkpoint. Phase 46 adds the
+visible v1 workflow and interaction-clarity evidence described below. The
+Phase 1 toolchain remains locked, and the Phase 2
 verification command runs locally and in GitHub Actions,
 the React/Tiptap workspace shell has focused frontend tests, and the first
 typed Tauri command, frontend IPC, finite event, and worker-cancellation
@@ -29,11 +29,12 @@ standard streams, timeout, cancellation, and child reaping. The
 `contract_probe` verifies only that process boundary and is not a product
 analysis feature.
 
-The helper allowlist now also includes deterministic `text_analysis` version 1.
+The helper allowlist also includes deterministic `text_analysis` version 1.
 Python returns only five closed review codes and UTF-8 ranges; Rust validates
-them and supplies fixed grammar, clarity, tone, cohesion, and voice review
-wording. No score, replacement, persistence, command, frontend, or mutation
-path is added.
+them and supplies fixed advisory wording. Phase 46 exposes exactly those five
+checks through one typed command and transient review panel. No score,
+replacement, persistence, provider, model, network, or document mutation path
+is added.
 
 Rust also owns a pure formatting-check module with bounded immutable inputs,
 closed APA 7, MLA 9, and Chicago 17 author-date identifiers, deterministic
@@ -64,6 +65,7 @@ Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
 features disabled for deterministic stored package entries. Compilation is
 bounded and completes before the shared atomic writer touches a `.docx` target.
+Phase 46 exposes that service through one Rust-selected DOCX target flow.
 
 One `cfg(test)` critical-path module composes the existing document lifecycle,
 reference store, citation resolution, and DOCX exporter. It widens no
@@ -78,15 +80,15 @@ blocker inventory against current CSP, unsigned package, visible workflow,
 pre-release version, tag, and generated-artifact evidence. Passing it does not
 mean the Phase 49 entry gate is satisfied.
 
-Phase 45 closes only `GATE-45`. The same offline check now requires the binding
-usability rule in the roadmap, phasemap, and RC ledger; verifies that
-`RC-01` through `RC-04` remain open for Phase 46; and keeps CSP, responsiveness,
-and distribution assigned to their later gates.
+Phase 45 closes only `GATE-45`. Phase 46 supplies the visible document,
+reference/citation, local text-check, and DOCX workflows plus accessibility and
+interaction evidence. CSP, measured responsiveness, and distribution remain
+assigned to their later gates.
 
 Accepted ADR-002 keeps the provider-independent model orchestration boundary
 internal and denies external model, credential, and generative-analysis product
-authority. `RC-03` remains open until Phase 46 implements and verifies the
-accepted local deterministic workflow.
+authority. Phase 46 implements the accepted local deterministic workflow
+without widening that boundary.
 
 The guard also rejects model SDK dependencies and endpoints, provider
 credential environment variables, packaged model artifacts, runtime model
@@ -94,16 +96,14 @@ downloads, direct frontend provider or secret authority, and unsupported public
 capability language. It preserves the exact five-check ceiling and the
 measurement, heuristic, and model-backed interpretation distinction.
 
-This checkpoint does not include reference CRUD IPC, visible citation controls,
-complete citation formatting, rendered bibliographies, workspace file controls,
-a close command, autosave, recovery, product research or analysis workflows,
-provider metadata lookup UI, browser-handoff controls, PDF import controls,
-filesystem watcher, import processing worker or scheduler, production model
-provider, model credentials, analysis start command or frontend listener,
-credential settings or prompts,
-visible text-analysis controls, formatting finding persistence, citation style
-conversion, complete document formatting, citation insertion or management,
-DOCX export controls, PDF export, packaged Python runtime discovery, release
+This checkpoint includes bounded New, Open, Save, Close, manual-reference,
+citation-insertion, five-check local analysis, and DOCX export controls. It does
+not include reference edit/delete/import, complete citation formatting,
+rendered bibliographies, autosave, crash recovery, provider metadata lookup UI,
+browser-handoff controls, PDF intake controls, filesystem watcher execution,
+import processing workers, production model providers, model credentials,
+credential settings, formatting finding persistence, citation style conversion,
+complete document formatting, PDF export, downloaded Python runtime, release
 automation, signing, notarization, release publication, or a visible diagnostics
 workflow.
 

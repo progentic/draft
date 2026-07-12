@@ -41,13 +41,13 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 42 is
+The implemented application through Phase 46 is
 deliberately smaller than the full system described in this architecture:
 
-- Rust exposes typed runtime-status, worker-cancellation, document-open,
-  document-save, citation-resolution, external-access, formatting-review, and
-  connectivity-mode commands with command-specific request, response, and
-  error types.
+- Rust exposes typed runtime-status, worker-cancellation, document lifecycle,
+  manual-reference summary, citation-resolution, external-access,
+  formatting-review, local text-analysis, DOCX-export, diagnostic, and
+  connectivity-mode commands with command-specific contracts.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
 - Rust emits the typed finite `draft://runtime-status` event, and the frontend
   validates it before React displays connection state.
@@ -55,9 +55,10 @@ deliberately smaller than the full system described in this architecture:
   The internal analysis and Python-helper boundaries use registrations while
   their caller awaits completion, but no product worker starts from a Tauri
   command, so no cancellation control is displayed.
-- Rust owns the version 1 document envelope, UUID identity parsing, root-shape
-  validation, typed failures, and Serde round trips. Typed open/save commands
-  now carry that envelope, while Rust remains the validation authority.
+- Rust owns the version 1 document envelope, UUID identity generation and
+  parsing, root-shape validation, typed failures, and Serde round trips. The
+  typed create command accepts no identity input; open/save/close commands carry
+  the validated envelope or Rust-issued identity.
 - Rust owns a separate version 1 reference record with UUID identity,
   citekey, structured contributors, partial date, identifiers, provenance,
   resolution state, typed failures, and Serde round trips. Full records are
@@ -65,8 +66,9 @@ deliberately smaller than the full system described in this architecture:
 - Rust owns a SQLite reference-store module with transactional CRUD,
   case-sensitive citekey uniqueness, schema initialization, migration dispatch,
   indexed/payload consistency checks, and typed corruption failures. The store
-  initializes as managed Rust state for citation resolution; CRUD IPC and a
-  visible library workflow remain absent.
+  initializes as managed Rust state. Phase 46 adds bounded manual create/list
+  commands that return citekey/title summaries only; full CRUD IPC remains
+  absent.
 - The version 1 document, citation, and reference payloads are the first
   released-schema baseline. Lower and future versions fail before mutation.
   Empty SQLite reference stores initialize transactionally from version 0;
@@ -121,7 +123,8 @@ deliberately smaller than the full system described in this architecture:
 - Rust validates five deterministic text-analysis finding codes and UTF-8 byte
   ranges returned by the helper, then supplies fixed categories, severities,
   titles, and explanations. Findings are immutable, non-persistent review
-  prompts with no replacement or apply authority.
+  prompts with no replacement or apply authority. One typed command resolves
+  the packaged helper and one React panel presents those five checks.
 - Rust owns a pure formatting-check domain over one explicit bounded snapshot.
   It compares APA 7, MLA 9, or Chicago 17 author-date declarations and checks
   heading-level structure without parsing or mutating a document. These are
@@ -134,7 +137,8 @@ deliberately smaller than the full system described in this architecture:
 - Rust compiles a strict bounded Tiptap subset into deterministic in-memory DOCX
   packages and atomically replaces only Rust-owned `.docx` targets. Unsupported
   nodes, marks, fields, and citations fail explicitly; no source document or
-  registry state is changed.
+  registry state is changed. Phase 46 adds one Rust-selected export command and
+  visible completion/source-safety state.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
@@ -151,18 +155,16 @@ deliberately smaller than the full system described in this architecture:
   path. A Bash entrypoint builds the configured app target and validates its
   plist identity, native executable, and tracked icon without signing or
   publishing it.
-- React and Tiptap own only the transient writing surface and presentation
-  state. The citation node preserves three attrs and shows explicit invalid,
-  resolving, resolved, unavailable, or failed states. Reloading still discards
-  the current document.
-- The current workspace does not expose open/save controls yet. No close command,
-  autosave, recovery, reference CRUD UI, citation insertion, rendered
-  bibliography workflow, provider lookup or browser-handoff control, production
-  model provider, analysis start command, frontend analysis listener, visible
-  analysis workflow, visible text-analysis issue cards or controls, PDF import
-  control or watcher, job scheduler or processing worker, complete
-  style-manual formatting, citation conversion, finding persistence, citation
-  renderer, visible DOCX export control, or PDF export path is implemented.
+- React and Tiptap own transient editor, selection, panel, finding, and
+  accessibility state. Explicit snapshots cross typed commands for save and
+  export; unsaved edits still do not survive reload or crash.
+- The current workspace exposes create/open/save/close, manual reference and
+  citation insertion, formatting review, five local text checks, and DOCX
+  export. It still has no autosave, crash recovery, full reference CRUD,
+  rendered bibliography, provider lookup or browser-handoff control,
+  production model provider, PDF import control or watcher, job scheduler or
+  processing worker, complete style-manual formatting, citation conversion,
+  finding persistence, DOCX citation rendering, or PDF export path.
 
 Sections below define the accepted target ownership and safety rules. They do
 not imply that their product capabilities already exist.
@@ -202,11 +204,10 @@ update is `GeneratedAnalysis`. Provider integration, credentials, network
 execution, persistence, Tauri start IPC, and UI remain future work.
 
 Accepted ADR-002 keeps that model orchestration seam
-internal for v1.0.0 and make the separately bounded local deterministic
+internal for v1.0.0 and makes the separately bounded local deterministic
 text-analysis helper the only production analysis path for the initial release.
-The accepted decision adds no current command, provider, credential, external
-request, model runtime, or visible workflow. Phase 46 must still implement and
-verify the local path before `RC-03` can close.
+Phase 46 adds the typed command and visible five-check workflow. It adds no
+provider, credential, external request, or model runtime.
 
 The decision separates deterministic measurements, deterministic heuristics,
 and model-backed interpretation. Measurements may support exactly the five
@@ -242,8 +243,9 @@ authority is present.
 Phase 32 adds a separate Rust-only DOCX foundation. It validates a strict
 paragraph, heading, text, hard-break, and inline-mark subset; builds fixed
 escaped XML parts in a deterministic stored ZIP; and reuses the atomic writer
-for `.docx` targets. It adds no citation rendering, application state, Tauri
-command, frontend control, PDF path, or source mutation.
+for `.docx` targets. Phase 46 adds one typed Rust command, native target dialog,
+validated frontend client, and visible export control around that foundation.
+It adds no citation rendering, export history, PDF path, or source mutation.
 
 ADR-001 defers native PDF generation until DRAFT has accepted
 policies for fonts, pagination and layout, accessibility, cross-platform
@@ -471,9 +473,11 @@ transactions, and validates stored payloads on every read. Production path
 policy is `<app_data_dir>/references.sqlite3`; Rust must resolve the app-data
 directory before opening the production store.
 
-Phase 18 initializes that store as managed Tauri state solely for the typed
-`resolve_citation` path documented in `maintainers/CITATION_NODE.md`. The
-frontend receives no full record data, and no reference CRUD command exists.
+Phase 18 initializes that store as managed Tauri state for the typed
+`resolve_citation` path documented in `maintainers/CITATION_NODE.md`. Phase 46
+adds manual `add_reference` and `list_references` commands. The frontend
+receives citekey/title summaries only and still has no update/delete or full
+record access.
 
 Phase 19 adds the pure comparison documented in
 `maintainers/BIBLIOGRAPHY_CONSISTENCY.md`. A caller supplies the validated

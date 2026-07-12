@@ -11,16 +11,16 @@ architecture or invariants.
 
 Phase 13 adds typed Rust `open_document` and `save_document` commands plus
 frontend request/response wrappers. Phase 14 hardens the writer against
-interruption, replacement failure, cleanup failure, and concurrent saves. The
-visible workspace does not invoke these commands yet, so this remains a
-protected backend lifecycle rather than a completed user workflow.
+interruption, replacement failure, cleanup failure, and concurrent saves.
+Phase 46 adds `create_document` and `close_document`, then connects the complete
+bounded lifecycle to the visible workspace.
 
 These phases do not add:
 
 - direct frontend dialog or filesystem access
 - a frontend-provided filesystem path
 - implicit reads from the live Tiptap instance
-- autosave, recovery, or a close command
+- autosave or crash recovery
 - reference records, CSL JSON, or citation metadata in the envelope
 - export, migration, network, analysis, or formatting behavior
 
@@ -42,11 +42,31 @@ After selection, Rust:
 Malformed, invalid, or duplicate files never replace an existing registry
 entry.
 
+## Create And Close Commands
+
+`create_document` accepts an exact empty request. Rust generates the UUID and
+validates the fixed initial envelope before returning it. The command does not
+open a path, persist the document, or register a live handle. React never
+generates a durable document identity.
+
+`close_document` accepts one Rust-issued document ID and releases its live
+registry handle. Closing an unsaved document requires no Rust mutation because
+it has no registered source path. New, Open, and Close protect edited content
+through the visible unsaved-changes dialog before replacement.
+
+The visible lifecycle is explicit:
+
+1. Rust creates a validated envelope with an unsaved identity.
+2. The frontend edits that envelope as transient content.
+3. The first successful Save selects a path and establishes the durable handle.
+4. Later saves update the same registered document.
+5. Close releases the active handle; an unsaved document has no handle to release.
+
 ## Save Command
 
 `save_document` receives one explicit `snapshot` JSON value. Rust never reaches
-into the WebView or Tiptap instance for live state. The normal future caller
-must serialize the current editor state and place it in the envelope before
+into the WebView or Tiptap instance for live state. The visible frontend client
+serializes the current editor state and places it in the envelope before
 invoking the command.
 
 Rust validates the entire snapshot before opening a dialog or writing. A known
@@ -118,9 +138,10 @@ User cancellation is a successful `cancelled` response, not an error.
 
 ## Frontend Boundary
 
-`src/ipc/documentOpen.ts` and `src/ipc/documentSave.ts` are the only frontend
-command wrappers. `src/ipc/documentEnvelope.ts` mirrors the Rust envelope for
-response validation and request typing. Rust remains the validation authority.
+`src/ipc/documentCreate.ts`, `documentOpen.ts`, `documentSave.ts`, and
+`documentClose.ts` are the frontend lifecycle wrappers.
+`src/ipc/documentEnvelope.ts` mirrors the Rust envelope for response validation
+and request typing. Rust remains the identity and validation authority.
 
 No frontend source imports `@tauri-apps/plugin-dialog`,
 `@tauri-apps/plugin-fs`, Node filesystem APIs, or another direct file surface.
@@ -130,7 +151,7 @@ The save wrapper accepts a snapshot, not a path.
 
 | Layer | Function or type | Responsibility |
 | :--- | :--- | :--- |
-| High | `open_document` / `save_document` commands | Coordinate one typed IPC request. |
+| High | create/open/save/close commands | Coordinate one typed IPC request. |
 | Mid | persistence `open_document` / `save_document` | Enforce validation, registry, and lifecycle policy. |
 | Mid | `DocumentRegistry` | Own one handle, source path, and current snapshot. |
 | Low | dialog helpers / JSON / atomic writer | Perform native API, parsing, and filesystem mechanics. |
@@ -154,7 +175,8 @@ fail before registry insertion or path selection.
 
 Phase 41 adds crate-level evidence that first save, retained-path update,
 close, reopen, duplicate-open rejection, citation resolution, and export use
-these production paths together. It does not add a close command or file UI.
+these production paths together. Phase 46 adds the visible lifecycle without
+changing those persistence paths.
 
 `scripts/check-invariants.sh` requires these tests and sources, checks command
 name parity, rejects frontend path/dialog authority, and rejects direct target
@@ -171,8 +193,8 @@ GitHub Actions. The evidence is recorded in
 Phase 18 validates citation nodes nested inside the existing envelope without
 adding top-level fields or changing envelope version 1. The implementation is
 documented in `docs/maintainers/CITATION_NODE.md`. Reference metadata,
-bibliography behavior, network lookup, imports, and workspace file controls
-remain outside the document file contract.
+bibliography behavior, network lookup, and imports remain outside the document
+file contract.
 
 ## Configuration Index
 

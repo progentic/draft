@@ -12,9 +12,10 @@ Phase 32 adds a Rust-only DOCX compiler and atomic export service for one
 validated immutable `DocumentEnvelope`. It creates a derived artifact and never
 makes DOCX the source of truth.
 
-No application state, Tauri command, native export dialog, frontend wrapper,
-visible control, export history, persistence, worker, Python helper, network
-call, citation renderer, PDF path, or broad style-manual claim is added.
+Phase 46 adds one typed Tauri command, Rust-owned native export dialog,
+frontend wrapper, and visible control. It adds no export history, persistence,
+worker, Python helper, network call, citation renderer, PDF path, or broad
+style-manual claim.
 
 ## Strict Document Subset
 
@@ -111,8 +112,8 @@ package that reopens with the final text and leaves the DRAFT source unchanged.
 The strict subset does not support citations, bibliographies, lists, tables,
 links, images, equations, notes, comments, tracked changes, headers, footers,
 page numbers, templates, layout controls, or complete APA/MLA/Chicago rendering.
-Unsupported content fails the whole export. No user can start an export until a
-later phase adds a native Rust dialog and typed frontend workflow.
+Unsupported content fails the whole export. The visible Phase 46 flow is
+documented in `PHASE46_WORKFLOWS.md`.
 
 ## Configuration Index
 

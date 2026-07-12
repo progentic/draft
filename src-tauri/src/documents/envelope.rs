@@ -35,7 +35,7 @@ pub struct DocumentEnvelope {
 }
 
 /// Opaque document identity parsed and serialized by the Rust core.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 #[serde(transparent)]
 pub struct DocumentId(Uuid);
 
@@ -66,6 +66,29 @@ pub enum DocumentEnvelopeError {
 }
 
 impl DocumentEnvelope {
+    /// Creates one Rust-identified initial document from the fixed product template.
+    pub fn create_initial() -> Result<Self, DocumentEnvelopeError> {
+        Self::from_json_value(serde_json::json!({
+            "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
+            "document_id": Uuid::new_v4().to_string(),
+            "title": "Untitled document",
+            "document": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "heading",
+                        "attrs": { "level": 1 },
+                        "content": [{ "type": "text", "text": "Untitled document" }]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [{ "type": "text", "text": "Begin writing here." }]
+                    }
+                ]
+            }
+        }))
+    }
+
     /// Validates an untrusted JSON value without reading or writing application data.
     pub fn from_json_value(value: Value) -> Result<Self, DocumentEnvelopeError> {
         let mut fields = envelope_fields(value)?;
@@ -281,6 +304,33 @@ mod tests {
         assert_eq!(
             envelope.document(),
             &json!({ "type": "doc", "content": [] })
+        );
+    }
+
+    #[test]
+    fn initial_documents_receive_distinct_rust_owned_identities() {
+        let first = DocumentEnvelope::create_initial().unwrap();
+        let second = DocumentEnvelope::create_initial().unwrap();
+
+        assert_ne!(first.document_id(), second.document_id());
+        assert_eq!(first.schema_version(), DOCUMENT_ENVELOPE_SCHEMA_VERSION);
+        assert_eq!(first.title(), "Untitled document");
+        assert_eq!(
+            first.document(),
+            &json!({
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "heading",
+                        "attrs": { "level": 1 },
+                        "content": [{ "type": "text", "text": "Untitled document" }]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [{ "type": "text", "text": "Begin writing here." }]
+                    }
+                ]
+            })
         );
     }
 

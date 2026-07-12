@@ -7,6 +7,8 @@ import type { ConnectivityMode } from "../ipc/connectivityMode";
 interface WorkspaceHeaderProps {
   isOutlineOpen: boolean;
   connectivityState: ConnectivityModeState;
+  documentStatus: string;
+  documentTitle: string;
   onRefreshConnectivity: () => void;
   onSetConnectivityMode: (mode: ConnectivityMode) => void;
   onToggleOutline: () => void;
@@ -16,7 +18,7 @@ export function WorkspaceHeader(props: WorkspaceHeaderProps) {
   return (
     <header className="workspace-header">
       <HeaderBrand {...props} />
-      <DocumentIdentity />
+      <DocumentIdentity title={props.documentTitle} />
       <HeaderSession {...props} />
     </header>
   );
@@ -47,11 +49,11 @@ function HeaderBrand(props: WorkspaceHeaderProps) {
   );
 }
 
-function DocumentIdentity() {
+function DocumentIdentity(props: { title: string }) {
   return (
     <div className="workspace-header__document">
       <FileText aria-hidden="true" size={16} strokeWidth={1.8} />
-      <span>Untitled document</span>
+      <span>{props.title}</span>
     </div>
   );
 }
@@ -61,7 +63,7 @@ function HeaderSession(props: WorkspaceHeaderProps) {
     <div className="workspace-header__session">
       <div className="session-status" role="status">
         <span className="session-status__dot" aria-hidden="true" />
-        <span>Not saved</span>
+        <span>{props.documentStatus}</span>
       </div>
       <ConnectivityModeControl
         state={props.connectivityState}

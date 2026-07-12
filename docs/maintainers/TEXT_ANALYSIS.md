@@ -2,9 +2,9 @@
 
 ## Status
 
-This guide records implemented Phase 29 behavior. The requirements in
-`docs/drafts/TEXT_ANALYSIS.md` remain non-binding until they complete the
-contract lifecycle in `docs/GOVERNANCE.md`.
+This guide records the Phase 29 domain and its Phase 46 production integration.
+Accepted ADR-002 and `docs/drafts/V1_LOCAL_ANALYSIS.md` govern the visible v1
+boundary.
 
 ## Scope
 
@@ -12,10 +12,10 @@ Phase 29 extends the Phase 28 helper protocol with allowlisted
 `text_analysis` version 1 and five deterministic review signals for grammar,
 clarity, tone, cohesion, and voice.
 
-The phase adds immutable Rust findings only. It adds no score, replacement
-text, apply operation, document mutation, persistence, Tauri command, event,
-frontend model, visible issue card, comprehensive language claim, model call,
-or third-party Python dependency.
+The domain adds no score, replacement text, apply operation, document mutation,
+persistence, event, comprehensive language claim, model call, or third-party
+Python dependency. Phase 46 adds one typed command and one visible review panel
+without widening those domain capabilities.
 
 ## Checks
 
@@ -68,18 +68,19 @@ claiming that the writing is wrong. Findings retain no source-text copy.
 
 ## Process And Ownership
 
-`run_text_analysis` reuses the Phase 28 canonical fixed entrypoint, isolated and
+The `run_text_analysis` command reuses the Phase 28 canonical fixed entrypoint, isolated and
 cleared environment, bounded stdin/stdout/stderr, five-second timeout,
 cooperative cancellation, kill/reap behavior, typed failures, and
-`WorkerRegistration` lifetime.
+`WorkerRegistration` lifetime. It resolves the packaged helper resource, uses
+the fixed Apple system Python path, clears the environment, and restores only
+`TMPDIR=/tmp`.
 
 The request carries one immutable bounded text snapshot and closed locale. The
 helper cannot read a document, write a file, inspect application state, persist
 a finding, call a network service, start a subprocess, or apply an edit. Rust
-returns `TextAnalysisResult` to its caller and does nothing else with it.
-
-No application state initializes the runner. No command, event, frontend, or
-document workflow can invoke text analysis at this checkpoint.
+returns `TextAnalysisResult` through the strict command client. The frontend
+presents fixed wording, passage location, and transient state only. No
+application state initializes or retains a runner.
 
 ## Abstraction Hierarchy
 
@@ -92,11 +93,12 @@ document workflow can invoke text analysis at this checkpoint.
 
 ## Verification
 
-Twelve new focused Rust tests cover the text-analysis request allowlist, strict
+Focused Rust tests cover the text-analysis request allowlist, strict
 success shape, unknown codes and fields, all five explanation policies, UTF-8
 boundaries, invalid ranges, duplicates, ordering, count limits, lack of
-replacement/source fields, overlapping-code ordering, and real subprocess round
-trips.
+replacement/source fields, overlapping-code ordering, real subprocess round
+trips, exact 32 KiB input bounds, offline execution, Apple system Python, and
+packaged resource execution.
 
 Five new Python tests cover all finding families, exact thresholds,
 false-positive guards, Unicode byte offsets, deterministic ordering, and
@@ -106,27 +108,28 @@ environment, process, protocol, and authority suite remains active.
 `scripts/check-invariants.sh` requires those tests, helper/version and threshold
 constants, fixed Rust explanations, byte-boundary checks, ordering and count
 validation, and production-authority denials. It rejects scoring, replacement,
-apply, persistence, Tauri, frontend, document/reference mutation, networking,
-credentials, filesystem access, and subprocess authority.
+apply, persistence, unowned command/frontend access, document/reference
+mutation, networking, credentials, filesystem access, and subprocess authority.
 
 ## Current Limits
 
 Sentence segmentation treats `.`, `?`, and `!` as simple boundaries and may
 split abbreviations. All-caps detection uses length instead of an acronym
 dictionary. Perspective changes can be intentional. Findings therefore remain
-advisory review prompts. A later UI must preserve this wording and require an
-explicit edit/save path for any user change.
+advisory review prompts. The visible UI preserves this wording and requires the
+user to edit and save explicitly.
 
 Accepted ADR-002 makes these five deterministic checks the complete v1.0.0
 production analysis scope. It does not imply generative, semantic, model-backed,
 comprehensive grammar, provider, credential, network, or packaged-model
-capabilities. `RC-03` remains open because no visible workflow exists yet.
+capabilities. Phase 46 closes `RC-03` with the typed local workflow and its
+browser/package evidence.
 
 Counts, lengths, and exact patterns are supporting measurements only. The five
 findings are deterministic heuristics: repeatable signals that may still be
-wrong and must not be presented as conclusions. Model-backed interpretation is
-a separate excluded class. Phase 46 cannot turn another measurement into a
-sixth visible analysis capability without a governed contract update.
+wrong and are not conclusions. Model-backed interpretation is a separate
+excluded class. Another measurement cannot become a sixth visible analysis
+capability without a governed contract update.
 
 ## Configuration Index
 

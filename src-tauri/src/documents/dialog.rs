@@ -6,6 +6,7 @@ use tauri_plugin_dialog::DialogExt;
 const DOCUMENT_FILTER_NAME: &str = "DRAFT document";
 const DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json"];
 const DEFAULT_DOCUMENT_FILE_NAME: &str = "Untitled.draft";
+const DEFAULT_DOCX_FILE_NAME: &str = "Untitled.docx";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct UnsupportedFileLocation;
@@ -31,6 +32,19 @@ pub(crate) fn select_save_document(
         .set_title("Save DRAFT document")
         .set_file_name(DEFAULT_DOCUMENT_FILE_NAME)
         .add_filter(DOCUMENT_FILTER_NAME, &["draft"])
+        .blocking_save_file();
+    selected_path(selected)
+}
+
+pub(crate) fn select_export_docx(
+    app_handle: &AppHandle,
+) -> Result<Option<PathBuf>, UnsupportedFileLocation> {
+    let selected = app_handle
+        .dialog()
+        .file()
+        .set_title("Export DOCX document")
+        .set_file_name(DEFAULT_DOCX_FILE_NAME)
+        .add_filter("Word document", &["docx"])
         .blocking_save_file();
     selected_path(selected)
 }

@@ -145,6 +145,26 @@ serialization failure, and the fixed snapshot byte limit. No raw detail enters
 the response. The complete boundary is documented in
 `docs/maintainers/AUDIT_DIAGNOSTICS.md`.
 
+## Phase 46 visible-workflow commands
+
+Phase 46 adds six typed commands for existing Rust-owned capabilities:
+
+- `create_document` generates and validates one Rust-identified initial
+  envelope without persistence or a registry entry;
+- `close_document` releases one live registry handle;
+- `add_reference` validates and stores one manual reference, then returns a
+  bounded summary;
+- `list_references` returns bounded reference summaries without stored payloads;
+- `run_text_analysis` validates one immutable text snapshot and returns the
+  five accepted local heuristic finding types; and
+- `export_document` validates the current envelope, asks Rust for a DOCX target,
+  and delegates to the existing atomic exporter.
+
+The commands expose no filesystem path, database row, full reference payload,
+Python process configuration, helper stderr, or export implementation detail.
+The complete visible lifecycle and recovery contract is documented in
+`docs/maintainers/PHASE46_WORKFLOWS.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -160,6 +180,12 @@ the response. The complete boundary is documented in
 | Mid | `get_connectivity_mode` | Returns the effective Rust-owned session mode. |
 | Mid | `set_connectivity_mode` | Applies one closed process-local mode. |
 | Mid | `get_diagnostic_snapshot` | Maps one explicit request to bounded local support metadata. |
+| Mid | `create_document` | Generates one validated Rust-owned initial envelope. |
+| Mid | `close_document` | Releases the current Rust-owned document handle. |
+| Mid | `add_reference` | Validates and persists one manual reference through the managed store. |
+| Mid | `list_references` | Returns bounded summaries from the managed reference store. |
+| Mid | `run_text_analysis` | Validates one snapshot and delegates to the fixed packaged local helper. |
+| Mid | `export_document` | Selects a DOCX target in Rust and delegates atomic export. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |
@@ -200,6 +226,8 @@ Phase 36 adds two complete command-contract sets for connectivity get/set and
 extends external access with typed offline policy failures.
 Phase 38 adds the same four command-contract tests for the local diagnostic
 snapshot and exercises its closed domain failures separately.
+Phase 46 adds six complete command-contract sets plus domain, lifecycle,
+packaged-helper, and source-preservation evidence for the visible workflows.
 
 `scripts/check-invariants.sh` rejects generic Rust error patterns and compares
 the number of Tauri commands with registered handlers, typed signature tests,
@@ -234,5 +262,7 @@ bash scripts/check-invariants.sh
   `docs/maintainers/OFFLINE_MODE.md`.
 - Phase 38 establishes the local snapshot command described in
   `docs/maintainers/AUDIT_DIAGNOSTICS.md`.
+- Phase 46 establishes the visible document, reference, local text-check, and
+  DOCX command paths described in `docs/maintainers/PHASE46_WORKFLOWS.md`.
 - Product commands are introduced only in their owning phases with their
   domain models and negative-path tests.
