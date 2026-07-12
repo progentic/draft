@@ -11,6 +11,20 @@
 Artifact provenance does not prove workflow usability. Every release-candidate
 row remains governed by its own closure evidence.
 
+## Corrected Retest Candidate
+
+- Implementation commit: `3308a3acfda02b2e247abdb3f23299585067b076`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `a8333b023dbc48b3e111cfa685118f1e4aa63340ab6183d956955faeb38de542`
+- Mechanical result: package construction, arm64 validation, embedded icon
+  validation, and the embedded deterministic text-analysis helper probe passed.
+- Human result: pending.
+
+This package was built from the source tree that became the implementation
+commit above. The evidence-record commit changes documentation only. It does
+not change the tested executable. The three findings below remain open until a
+complete direct human workflow validates this corrected package.
+
 ## Phase 46
 
 ### Automated Evidence
