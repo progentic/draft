@@ -151,6 +151,8 @@ check_v1_usability_documentation() {
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     'v1 usability acceptance'
   require_document_text "${ledger}" '154c34c96183ff67d4ecd6acd790b0410403dd58'
+  require_document_text "${ledger}" '68aa08d8a0577ec32a128cd3368ea830be7f91f5'
+  require_document_text "${ledger}" 'ae66d3dae64fbe738fcd371b776b27d022bea3182eb9920c89773498dcf289f9'
   require_document_text "${ledger}" '## Phase 46'
   require_document_text "${ledger}" '### Automated Evidence'
   require_document_text "${ledger}" '### Findings And Dispositions'

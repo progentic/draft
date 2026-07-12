@@ -73,6 +73,21 @@ text checks, complete recovery states, and keyboard completion were not proven.
 This partial session is historical defect evidence for the `3308a3a` package.
 It cannot validate the replacement artifact produced by the current fixes.
 
+## Replacement Human-Retest Artifact
+
+- Implementation commit: `68aa08d8a0577ec32a128cd3368ea830be7f91f5`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `ae66d3dae64fbe738fcd371b776b27d022bea3182eb9920c89773498dcf289f9`
+- Mechanical result: package construction, arm64 validation, embedded icon
+  validation, and embedded deterministic text-analysis helper execution passed.
+- Human result: pending.
+
+This artifact contains the blank New document, explicit lifecycle origins,
+bounded literal `.txt` and `.md` import, source-preserving `.draft` first Save,
+eleven-family formatting allowlist, and exact DOCX mappings. Those statements
+describe mechanically verified implementation scope, not packaged usability
+evidence. All findings and release rows remain open until direct human retest.
+
 ### Human Task Results
 
 The repository owner directly tested the exact packaged artifact. The session
