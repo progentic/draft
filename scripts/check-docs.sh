@@ -36,7 +36,7 @@ main() {
   check_release_candidate_documentation
   check_v1_analysis_decision_state
   check_v1_usability_documentation
-  check_adr_003_proposal_state
+  check_adr_003_accepted_state
   check_readme_scope
   check_pdf_decision_state
 
@@ -70,7 +70,7 @@ check_required_documents() {
     docs/drafts/PDF_EXPORT_DECISION.md
     docs/drafts/PYTHON_HELPERS.md
     docs/drafts/TEXT_ANALYSIS.md
-    docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md
+    docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md
     docs/drafts/V1_LOCAL_ANALYSIS.md
     docs/drafts/METADATA_LOOKUP.md
     docs/drafts/REFERENCE_RECORD.md
@@ -139,9 +139,10 @@ check_v1_usability_documentation() {
   require_document_text "${contract}" '## Supported v1 Workflow'
   require_document_text "${contract}" '## First-Time-User Task Validation'
   require_document_text "${contract}" '## Measurable Release Thresholds'
-  require_document_text "${contract}" '## Phase 48 - Secure Usability'
-  require_document_text "${contract}" '## Phase 49 - Packaged Release-Candidate Gate'
-  require_document_text "${contract}" '## Phase 50 - Release Entry Point'
+  require_document_text "${contract}" '## Phase 49 - Usability And Performance Validation'
+  require_document_text "${contract}" '## Phase 51 - Secure Usability'
+  require_document_text "${contract}" '## Phase 52 - Packaged Release-Candidate Gate'
+  require_document_text "${contract}" '## Phase 53 - Release Entry Point'
   require_document_text "${contract}" 'Accepted ADR-002 authorizes Phase 46 to implement local deterministic text'
   require_document_text docs/ROADMAP.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
   require_document_text docs/PHASEMAP.md 'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
@@ -152,64 +153,66 @@ check_v1_usability_documentation() {
     'v1 usability acceptance'
 }
 
-check_adr_003_proposal_state() {
+check_adr_003_accepted_state() {
   local adr='docs/adr/003-expand-v1-document-interoperability.md'
-  local draft='docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
+  local contract='docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
   local release='docs/maintainers/RELEASE_CANDIDATE.md'
 
-  require_document_text "${adr}" 'Status: Proposed'
+  require_document_text "${adr}" 'Status: Accepted'
+  require_document_text "${adr}" 'Accepted through: PR #37'
   require_document_text "${adr}" '| 47 | Document interoperability |'
   require_document_text "${adr}" '| 50 | Documentation and drift realignment |'
   require_document_text "${adr}" '| 53 | v1.0.0 release |'
-  require_document_text "${adr}" 'no interoperability, round-trip, native-menu, or'
+  require_document_text "${adr}" 'Phase 47 implementation may begin only after Phase'
   require_document_text "${adr}" '### Documentation comprehension'
-  require_document_text "${draft}" '**Status:** Proposed and non-binding'
-  require_document_text "${draft}" '## Successor Gate Chain'
-  require_document_text "${draft}" "| \`RC-07\`, \`GATE-47\` | Phase 47 |"
-  require_document_text "${draft}" "| \`RC-08\`, \`GATE-48\` | Phase 48 |"
-  require_document_text "${draft}" "| \`RC-05\`, \`GATE-51\` | Phase 51 |"
-  require_document_text "${release}" '## Proposed ADR-003 Successor Gate Chain'
-  require_document_text "${release}" "No current \`RC-*\` or \`GATE-*\` row closes"
+  require_document_text "${contract}" 'status: Accepted'
+  require_document_text "${contract}" 'adr: ADR-003'
+  require_document_text "${contract}" '## Successor Gate Chain'
+  require_document_text "${contract}" "| \`RC-07\`, \`GATE-47\` | Phase 47 |"
+  require_document_text "${contract}" "| \`RC-08\`, \`GATE-48\` | Phase 48 |"
+  require_document_text "${contract}" "| \`RC-05\`, \`GATE-51\` | Phase 51 |"
+  require_document_text "${release}" '## Accepted ADR-003 Gate Chain'
+  require_document_text "${release}" 'Every new or remapped'
   require_document_text docs/ROADMAP.md \
-    'The current Phase 47 through 50 sequence remains authoritative'
-  reject_document_pattern \
-    'ADR-003|Document [Ii]nteroperability' \
-    'the accepted PhaseMap must remain unchanged while ADR-003 is proposed' \
-    docs/PHASEMAP.md
+    'The authoritative successor sequence is:'
+  require_document_text docs/PHASEMAP.md \
+    '| 47 | Document interoperability |'
+  require_document_text docs/PHASEMAP.md \
+    '| 53 | v1.0.0 release |'
   require_document_text docs/ARCHITECTURE.md \
-    'No parser, writer, external-source state, menu dispatcher, or visual'
+    'Accepted ADR-003 adds a Rust-owned external-document lifecycle'
   require_document_text docs/INVARIANTS.md \
-    "Proposed ADR-003 is under review and does not yet change \`INV-09\`."
+    "| \`INV-UX-07\` | Proposed |"
   require_document_text docs/DOCUMENTATION.md \
-    'successor release discussion. While the ADR is open'
+    'docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
   require_document_text docs/DOCUMENTATION.md \
     'Optimize documentation for human comprehension first and precision second.'
   require_document_text docs/DOCUMENTATION.md '### 2.1 Plain Language Requirement'
   require_major_maintainer_section_policy
-  require_document_text docs/INVARIANTS.md \
-    "| \`INV-UX-07\` | Proposed |"
-  require_document_text "${draft}" \
+  require_document_text "${contract}" \
     'Phase 49 also reviews maintainer documentation as a teaching surface.'
-  require_document_text "${draft}" \
+  require_document_text "${contract}" \
     'Only then may a separate governed change mark'
   require_document_text "${release}" \
     'maintainer-documentation comprehension'
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
-    '| Document interoperability and desktop workflow proposal |'
+    '| Document interoperability and desktop workflows |'
   require_adr_003_coverage_areas
 
+  if [[ -e docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md ]]; then
+    echo 'Accepted ADR-003 contract must not retain a live draft copy' >&2
+    return 1
+  fi
   reject_document_pattern \
-    'Accepted ADR-003|ADR-003 (is|has been) accepted' \
-    'ADR-003 must remain proposal-only in accepted and user-facing documents' \
-    docs/contracts docs/user docs/wiki
+    'Proposed ADR-003|ADR-003 remains Proposed|Proposed and non-binding' \
+    'accepted ADR-003 surfaces cannot retain proposal-state language' \
+    "${adr}" "${contract}" docs/ARCHITECTURE.md docs/DOCUMENTATION.md \
+    docs/ROADMAP.md docs/PHASEMAP.md docs/maintainers/DOCUMENTATION_COVERAGE.md \
+    docs/maintainers/RELEASE_CANDIDATE.md
   reject_document_pattern \
-    'Phase 47 (is|owns) [Dd]ocument [Ii]nteroperability|Phase 48 (is|owns) [Dd]esktop UI' \
-    'accepted product documentation cannot adopt the proposed successor sequence early' \
-    docs/contracts docs/user docs/wiki
-  reject_document_pattern \
-    'INV-UX-07|Documentation [Rr]eadability' \
-    'proposed documentation readability cannot enter accepted phase or contract truth' \
-    docs/PHASEMAP.md docs/contracts/V1_USABILITY_ACCEPTANCE.md
+    '\| \x60INV-UX-07\x60 \| Accepted \|' \
+    'INV-UX-07 must remain proposed until Phase 50 evidence exists' \
+    docs/INVARIANTS.md
 }
 
 require_major_maintainer_section_policy() {
@@ -295,9 +298,9 @@ check_release_candidate_documentation() {
     'not a release-candidate declaration'
   require_document_text "${candidate_doc}" \
     'An open blocker must name evidence, an owner, a closure phase'
-  require_document_text "${candidate_doc}" 'Phase 49 entry is stricter'
+  require_document_text "${candidate_doc}" 'Phase 52 entry is stricter'
   require_document_text "${candidate_doc}" \
-    '| GATE-45 | Must close before Phase 49 | Closed |'
+    '| GATE-45 | Roadmap gate | Closed |'
   require_document_text docs/ROADMAP.md \
     'DRAFT is not ready for v1.0.0 unless a user can identify the primary controls'
   require_document_text docs/PHASEMAP.md \
@@ -514,7 +517,7 @@ check_matrix_subsystems() {
     'Verification and repository tooling'
     'Packaging and application icons'
     'PDF export decision'
-    'Document interoperability and desktop workflow proposal'
+    'Document interoperability and desktop workflows'
   )
   local subsystem
 

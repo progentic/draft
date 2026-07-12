@@ -40,7 +40,7 @@ main() {
   check_background_job_contract
   check_ai_orchestration_contract
   check_v1_analysis_decision_guard
-  check_adr_003_proposal_guard
+  check_adr_003_accepted_guard
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
@@ -77,8 +77,8 @@ check_v1_usability_contract() {
   require_source_pattern 'at least five people who have not worked on the' \
     "${contract}"
   require_source_pattern 'At least 80 percent of participants' "${contract}"
-  require_source_pattern 'median below 4 creates a Phase 47 finding' "${contract}"
-  require_source_pattern "Any open \`UX-0\` or \`UX-1\` blocks Phase 49." "${contract}"
+  require_source_pattern 'median below 4 creates a Phase 49 finding' "${contract}"
+  require_source_pattern "Any open \`UX-0\` or \`UX-1\` blocks Phase 52." "${contract}"
   require_source_pattern 'Accepted ADR-002 authorizes Phase 46 to implement local deterministic text' \
     "${contract}"
 
@@ -1263,31 +1263,32 @@ check_v1_analysis_decision_guard() {
   printf 'PASS ADR-002 accepted v1 local-analysis guard\n'
 }
 
-check_adr_003_proposal_guard() {
+check_adr_003_accepted_guard() {
   local adr='docs/adr/003-expand-v1-document-interoperability.md'
-  local draft='docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
+  local contract='docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
 
   require_file "${adr}"
-  require_file "${draft}"
-  require_source_pattern 'Status: Proposed' "${adr}"
-  require_source_pattern '**Status:** Proposed and non-binding' "${draft}"
-  require_source_pattern 'authorize implementation while' "${draft}"
+  require_file "${contract}"
+  require_source_pattern 'Status: Accepted' "${adr}"
+  require_source_pattern 'Accepted through: PR #37' "${adr}"
+  require_source_pattern 'status: Accepted' "${contract}"
+  require_source_pattern 'adr: ADR-003' "${contract}"
   require_source_pattern "| \`INV-UX-07\` | Proposed |" docs/INVARIANTS.md
   require_source_pattern 'Optimize documentation for human comprehension first and precision second.' \
     docs/DOCUMENTATION.md
   assert_no_matches 'ADR-003 premature documentation-readability acceptance' \
     '\| \x60INV-UX-07\x60 \| Accepted \|' \
     docs/INVARIANTS.md
-  assert_no_matches 'ADR-003 external document lifecycle authority while proposed' \
+  assert_no_matches 'ADR-003 external document lifecycle before Phase 47' \
     '\b(?:opened_external|imported_external|round_trip_status|lossiness_state|NativeFormat|SaveCapability)\b' \
     src-tauri/src src
-  assert_no_matches 'ADR-003 format parser or save-back implementation while proposed' \
+  assert_no_matches 'ADR-003 format parser or save-back implementation before Phase 47' \
     '\b(?:parse_markdown|import_docx|import_rtf|import_odt|save_external_document)\b' \
     src-tauri/src src
-  assert_no_matches 'ADR-003 native menu implementation while proposed' \
+  assert_no_matches 'ADR-003 native menu implementation before Phase 48' \
     '\b(?:tauri::menu|MenuBuilder|SubmenuBuilder|on_menu_event|NativeMenuDispatcher)\b' \
     src-tauri/src src
-  printf 'PASS ADR-003 proposed interoperability and desktop-workflow guard\n'
+  printf 'PASS ADR-003 accepted interoperability and desktop-workflow guard\n'
 }
 
 require_citation_sources() {

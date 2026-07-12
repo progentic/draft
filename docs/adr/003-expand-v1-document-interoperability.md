@@ -1,8 +1,9 @@
 # ADR-003: Expand v1 Document Interoperability
 
 Date: 2026-07-12
-Status: Proposed
+Status: Accepted
 Deciders: @progentic
+Accepted through: PR #37
 
 ## Context
 
@@ -51,10 +52,10 @@ The following alternatives were considered:
 
 ## Decision
 
-Propose two release-blocking phases after Phase 46 and move the existing
-release sequence accordingly:
+Add two release-blocking phases after Phase 46 and move the existing release
+sequence accordingly:
 
-| Phase | Proposed purpose |
+| Phase | Purpose |
 | :--- | :--- |
 | 47 | Document interoperability |
 | 48 | Desktop UI and native workflow integration |
@@ -65,7 +66,7 @@ release sequence accordingly:
 | 53 | v1.0.0 release |
 
 Phase 50 remains the mandatory fifth-phase documentation and drift
-realignment checkpoint. The proposal does not renumber or reopen completed
+realignment checkpoint. The decision does not renumber or reopen completed
 Phases 0 through 46.
 
 ### Format boundary
@@ -144,12 +145,12 @@ Adopt this standing engineering principle:
 
 Documentation optimizes human comprehension first and precision second by
 separating plain-language explanation, technical explanation, and normative
-specification. Proposed `INV-UX-07` records the intended protection but remains
+specification. `INV-UX-07` records the intended protection but remains
 Proposed until existing major maintainer guides are realigned and structural
 heading enforcement exists.
 
-Phase 49 would include documentation terminology and comprehension review in
-addition to product usability and performance. Phase 50 would review plain
+Phase 49 includes documentation terminology and comprehension review in
+addition to product usability and performance. Phase 50 reviews plain
 language, terminology consistency, maintainer onboarding, unnecessary
 implementation jargon, and documentation cross-links before accepting
 `INV-UX-07` through a separate governed status change.
@@ -159,8 +160,8 @@ implementation jargon, and documentation cross-links before accepting
 `RC-01` through `RC-04` and `GATE-46` remain open and continue to belong to
 Phase 46. Acceptance of this ADR does not close them.
 
-The successor release contract must replace the old future numbering without
-recording false closure:
+The accepted successor release contract replaces the old future numbering
+without recording false closure:
 
 - `RC-07` and `GATE-47` cover document interoperability.
 - `RC-08` and `GATE-48` cover desktop UI and native workflow integration.
@@ -173,8 +174,8 @@ recording false closure:
   named evidence.
 
 The existing open `GATE-47` and `GATE-48` rows are not considered closed by
-renumbering. If this ADR is accepted, their old meanings are replaced through
-the governed release-contract update before Phase 47 implementation begins.
+renumbering. Their old meanings are replaced through the governed release
+contract before Phase 47 implementation begins.
 
 ## Consequences
 
@@ -211,19 +212,15 @@ release-candidate enforcement.
 
 ## Enforcement
 
-While this ADR is proposed, it is non-binding. Phase 46 remains active, draft
-PR #36 remains unmerged, and no interoperability, round-trip, native-menu, or
-visual-redesign implementation may rely on this proposal.
+Under this accepted ADR, Phase 46 remains active and draft PR #36 remains
+independent and unmerged. Phase 47 implementation may begin only after Phase
+46 closes through its own evidence and merge path.
 
-The proposal guard requires ADR and draft-contract proposal language, the
-exact Phase 47 through 53 sequence, preservation of Phase 50 as realignment,
-open current release rows, and Proposed `INV-UX-07` language. It rejects production source surfaces for
-external-document lifecycle authority, round-trip/lossiness state, format
-parsers, save-back commands, and native menu dispatch while the ADR remains
-Proposed.
-
-After acceptance, Phase 47 and Phase 48 must replace absence checks with
-behavioral tests. Required evidence includes parser and serializer limits,
+The accepted decision guard requires the exact Phase 47 through 53 sequence,
+preservation of Phase 50 as realignment, open release rows, and Proposed
+`INV-UX-07` language. Phase 47 and Phase 48 must replace acceptance-era absence
+checks with behavioral tests as implementation lands. Required evidence
+includes parser and serializer limits,
 format fixtures, no-edit source hashes, lossless and rejected-lossy saves,
 atomic replacement, frontend path denial, shared menu/toolbar dispatch,
 state-sensitive enablement, conventional shortcuts, keyboard/focus behavior,
@@ -235,7 +232,7 @@ mapping. Local verification and GitHub Actions must run the same enforcement.
 - `ARCHITECTURE.md` §4.1, §4.2, §6, and §11
 - `INVARIANTS.md` `INV-03`, `INV-06`, `INV-09`, and `INV-UX-01` through
   `INV-UX-06`
-- `docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md`
+- `docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md`
 - `docs/contracts/V1_USABILITY_ACCEPTANCE.md`
 - `docs/maintainers/RELEASE_CANDIDATE.md`
 - Draft PR #36 manual evidence, `UX-46-008` through `UX-46-015`
