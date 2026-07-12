@@ -158,15 +158,15 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-002 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-003 | UX-2 | Open |'
   require_document_text docs/maintainers/CONFIGURATION.md \
-    '`arial`, `georgia`, `times_new_roman`, `courier_new`'
+    "\`arial\`, \`georgia\`, \`times_new_roman\`, \`courier_new\`"
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \
     'whole point sizes from 8 through 72 in one-point'
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \
-    '`data-draft-font-family` and `data-draft-font-size`'
+    "\`data-draft-font-family\` and \`data-draft-font-size\`"
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \
-    '`invalid_envelope` before a dialog or filesystem operation begins'
-  require_document_text docs/maintainers/DOCX_EXPORT.md '`w:rFonts`'
-  require_document_text docs/maintainers/DOCX_EXPORT.md '`w:sz` and `w:szCs`'
+    "\`invalid_envelope\` before a dialog or filesystem operation begins"
+  require_document_text docs/maintainers/DOCX_EXPORT.md "\`w:rFonts\`"
+  require_document_text docs/maintainers/DOCX_EXPORT.md "\`w:sz\` and \`w:szCs\`"
   require_document_text docs/wiki/Workspace.md \
     'Arial, Georgia, Times New Roman, or Courier New'
   require_document_text docs/wiki/Current-Limitations.md \
