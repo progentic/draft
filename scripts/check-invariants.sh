@@ -1702,6 +1702,17 @@ check_async_native_dialog_boundary() {
     src-tauri/src/commands/document_open.rs
   require_source_pattern 'pub(crate) async fn save_document(' \
     src-tauri/src/commands/document_save.rs
+  require_source_pattern 'select_save_document(&app_handle)' \
+    src-tauri/src/commands/document_save.rs
+  assert_no_matches 'Save command avoids open dialog selector' \
+    'select_open_document' \
+    src-tauri/src/commands/document_save.rs
+  require_source_pattern 'display_name: String' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'was_save_as: bool' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'displayName: string; wasSaveAs: boolean' \
+    src/ipc/documentSave.ts
   require_source_pattern 'pub(crate) async fn export_document(' \
     src-tauri/src/commands/docx_export.rs
   printf 'PASS async Rust-owned native dialog contract\n'

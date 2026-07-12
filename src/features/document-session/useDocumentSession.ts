@@ -13,6 +13,7 @@ export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "
 type DocumentOrigin = "imported_text" | "new" | "opened_draft";
 
 interface DocumentIdentity {
+  displayName: string;
   documentId: string;
   origin: DocumentOrigin;
   persisted: boolean;
@@ -84,6 +85,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       return false;
     }
     const savedIdentity = {
+      displayName: result.displayName,
       documentId: current.document_id,
       origin: "opened_draft" as const,
       persisted: true,
@@ -92,7 +94,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     identityRef.current = savedIdentity;
     setIdentity(savedIdentity);
     setDirty(false);
-    setFeedback("Document saved.");
+    setFeedback(`Saved as ${result.displayName}.`);
     return true;
   }, [snapshot]);
 
@@ -168,7 +170,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       save,
       snapshot,
       statusLabel: documentStatus(identity, dirty, operation),
-      title: identity?.title ?? "No document open",
+      title: identity?.displayName ?? "No document open",
     }),
     [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, snapshot],
   );
@@ -237,6 +239,7 @@ async function openIntoSession(
   }
   loadEnvelope(editor, result.envelope);
   setIdentity({
+    displayName: result.envelope.title,
     documentId: result.envelope.document_id,
     origin: result.status,
     persisted,
@@ -353,6 +356,7 @@ function loadCreatedDocument(
   loadEnvelope(editor, envelope);
   focusEditorStart(editor);
   setIdentity({
+    displayName: envelope.title,
     documentId: envelope.document_id,
     origin: "new",
     persisted: false,

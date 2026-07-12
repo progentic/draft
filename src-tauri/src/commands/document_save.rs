@@ -93,14 +93,23 @@ mod tests {
     fn response_serialization_is_stable() {
         let document_id = envelope().document_id();
         let responses = [
-            SaveDocumentOutcome::Saved { document_id },
+            SaveDocumentOutcome::Saved {
+                document_id,
+                display_name: "Research notes.draft".to_owned(),
+                was_save_as: true,
+            },
             SaveDocumentOutcome::Cancelled,
         ];
 
         assert_eq!(
             serde_json::to_value(responses).expect("responses should serialize"),
             json!([
-                { "status": "saved", "documentId": DOCUMENT_ID },
+                {
+                    "status": "saved",
+                    "documentId": DOCUMENT_ID,
+                    "displayName": "Research notes.draft",
+                    "wasSaveAs": true
+                },
                 { "status": "cancelled" }
             ]),
         );

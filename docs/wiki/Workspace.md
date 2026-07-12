@@ -14,8 +14,9 @@ recover unsaved work after a crash, so save important changes explicitly.
 document or imports a UTF-8 `.txt` or `.md` file as editable text. Imported
 content shows its source filename and `Imported, unsaved`; the filename does
 not become a save location. The first Save asks for a new `.draft` destination,
-and the original text or Markdown file remains unchanged. Markdown syntax is
-kept as literal text.
+and the original text or Markdown file remains unchanged. After Save succeeds,
+the header shows the selected `.draft` filename. Later saves reuse that target
+without reopening the dialog. Markdown syntax is kept as literal text.
 
 ## Write And Format
 

@@ -39,7 +39,8 @@ describe("Phase 46 visible workflows", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Save" }));
-    expect(await screen.findByText("Document saved.")).toBeTruthy();
+    expect(await screen.findByText("Saved as Research notes.draft.")).toBeTruthy();
+    expect(screen.getByText("Research notes.draft")).toBeTruthy();
     expect(screen.getByText("Saved")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Close" }));
@@ -135,7 +136,12 @@ describe("Phase 46 visible workflows", () => {
     installDefaultCommands({
       saveDocument: async (args) => {
         savedEnvelope = (args.request as { snapshot: ReturnType<typeof createdEnvelope> }).snapshot;
-        return { status: "saved", documentId: savedEnvelope.document_id };
+        return {
+          status: "saved",
+          documentId: savedEnvelope.document_id,
+          displayName: "Styled notes.draft",
+          wasSaveAs: true,
+        };
       },
       openDocument: async () => ({ status: "opened_draft", envelope: savedEnvelope }),
     });
@@ -181,7 +187,12 @@ describe("Phase 46 visible workflows", () => {
       openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
       saveDocument: async (args) => {
         saveRequests.push(args);
-        return { status: "saved", documentId: IMPORTED_ID };
+        return {
+          status: "saved",
+          documentId: IMPORTED_ID,
+          displayName: "Imported notes.draft",
+          wasSaveAs: saveRequests.length === 1,
+        };
       },
     });
     render(<App />);
@@ -196,6 +207,7 @@ describe("Phase 46 visible workflows", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.getByText("Saved")).toBeTruthy();
+    expect(screen.getByText("Imported notes.draft")).toBeTruthy();
     expect(saveRequests).toHaveLength(2);
     expect(Object.keys(saveRequests[0] ?? {})).toEqual(["request"]);
     expect(JSON.stringify(saveRequests)).not.toContain("sourcePath");
@@ -215,6 +227,35 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
     expect(screen.getByText("Imported, unsaved")).toBeTruthy();
     expect(screen.getByText("notes.md")).toBeTruthy();
+  });
+
+  it("keeps the saved filename and dirty state when a later Save fails", async () => {
+    const user = userEvent.setup();
+    let saves = 0;
+    installDefaultCommands({
+      saveDocument: async () => {
+        if (saves++ === 0) {
+          return {
+            status: "saved",
+            documentId: CREATED_ID,
+            displayName: "Research notes.draft",
+            wasSaveAs: true,
+          };
+        }
+        throw { code: "write_failed", cause: { code: "replace_target" } };
+      },
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Saved as Research notes.draft.")).toBeTruthy();
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.type(editor, "Unsaved revision");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("DRAFT could not save the document. Your open document has not been replaced.")).toBeTruthy();
+    expect(screen.getByText("Research notes.draft")).toBeTruthy();
+    expect(screen.getByText("Unsaved changes")).toBeTruthy();
   });
 
   it("rejects a non-DRAFT first-save target without changing import state", async () => {
@@ -440,7 +481,12 @@ function installDefaultCommands(overrides?: {
         return overrides.saveDocument(args);
       }
       const request = args.request as { snapshot: { document_id: string } };
-      return { status: "saved", documentId: request.snapshot.document_id };
+      return {
+        status: "saved",
+        documentId: request.snapshot.document_id,
+        displayName: "Research notes.draft",
+        wasSaveAs: true,
+      };
     }
     if (command === "close_document") {
       const request = args.request as { documentId: string };

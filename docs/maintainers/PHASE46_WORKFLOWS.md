@@ -57,6 +57,12 @@ without running a blocking dialog call on the application thread. While one of
 these operations is pending, the workspace prevents conflicting lifecycle and
 panel actions. React never receives the selected filesystem path.
 
+A successful Save returns the Rust-owned document ID, the target basename for
+display, and whether Rust selected a new target. The selected path remains in
+the registry. The workspace immediately shows the returned filename, while a
+later Save reuses the registered path without reopening a dialog. Cancellation
+or failure preserves the prior display name and unsaved state.
+
 Open returns one typed origin outcome. `opened_draft` carries a validated
 native envelope whose path remains registered in Rust. `imported_text` carries
 a new unsaved Rust-owned envelope created from a bounded UTF-8 `.txt` or `.md`

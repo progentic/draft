@@ -110,6 +110,22 @@ These observations do not authorize implementation in Phase 46. They require a
 separate governed interoperability and desktop-product boundary. PR #36
 remains draft, and no finding or release row closes from this review.
 
+A later manual review of the same replacement executable confirmed that Open
+and Close complete without changing the source file. It also found that the
+native save panel presented an Open action during Save, the workspace did not
+replace the provisional title with the saved filename, the native File menu did
+not follow expected desktop document ordering, and the visible menu icon and
+toolbar grouping remained stale. The menu and grouping findings remain assigned
+to accepted Phase 48. The save-panel and post-save identity finding remains a
+Phase 46 correction and requires a rebuilt, rehashed manual retest.
+
+Source tracing confirms that the Save command calls `select_save_document`,
+which calls `tauri_plugin_dialog::save_file`; the desktop plugin delegates to
+`rfd::AsyncFileDialog::save_file`, whose macOS backend constructs an
+`NSSavePanel`. The Save command contains no open-dialog selector. This trace
+does not invalidate the observed Open label or count as packaged correction
+evidence.
+
 ### Human Task Results
 
 The repository owner directly tested the recorded packages. The first session
@@ -136,5 +152,8 @@ No untested task is counted as passed.
 | UX-46-013 | UX-2 | Open | OpenDocument import and save are unavailable. | The interoperability decision must either implement bounded ODT support or accept an explicit v1 deferral with user guidance. |
 | UX-46-014 | UX-1 | Open | Imported external formats become unsaved DRAFT documents and cannot be safely saved back to their original format. | Define Rust-owned external source identity, writable-format capability, lossiness state, no-edit byte preservation, overwrite safety, Save As behavior, and compatibility tests before enabling round-trip save. |
 | UX-46-015 | UX-2 | Open | Command spacing, grouping, editor canvas composition, and outline layout do not meet the intended desktop-product quality threshold. | Address visual hierarchy and layout in the governed desktop UI phase, then validate normal, narrow, scaled, keyboard, and reduced-motion states from the packaged app. |
+| UX-46-016 | UX-1 | Open | Manual review confirmed that the native File menu does not expose New Document, Open, Close, Save, Save As, and Export in expected desktop-document order with state-aware shortcuts. | Phase 48 must implement one shared dispatcher for native and visible commands, standard macOS shortcuts, and document-state enablement before packaged retest. |
+| UX-46-017 | UX-1 | Open | Manual review confirmed that the visible menu icon remains stale and toolbar grouping does not consistently separate document lifecycle commands from research and analysis commands. | Phase 48 must replace the stale icon, align labels and icons, remove conflicting command locations, and validate the resulting hierarchy in the packaged app. |
+| UX-46-018 | UX-1 | Open | During Save, the native panel presented Open instead of Save, and successful save feedback did not replace the provisional title with the selected filename. Open and Close completed without mutating the source file. | Keep the native-panel label independently open; return basename-only save identity from Rust, update visible state only after success, preserve state on cancel or failure, rebuild, rehash, and manually retest first and later Save. |
 
 `RC-01` through `RC-04` and `GATE-46` remain open.

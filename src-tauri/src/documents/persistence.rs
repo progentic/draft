@@ -53,14 +53,18 @@ enum OpenSourceKind {
     Text,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(
     tag = "status",
     rename_all = "snake_case",
     rename_all_fields = "camelCase"
 )]
 pub(crate) enum SaveDocumentOutcome {
-    Saved { document_id: DocumentId },
+    Saved {
+        document_id: DocumentId,
+        display_name: String,
+        was_save_as: bool,
+    },
     Cancelled,
 }
 
@@ -272,11 +276,30 @@ where
     let Some(target_path) = save_target_path(&plan) else {
         return Ok(SaveDocumentOutcome::Cancelled);
     };
+    let display_name = save_display_name(target_path)?;
+    let was_save_as = save_plan_selects_target(&plan);
     if let Err(cause) = write_document(target_path, &contents) {
         return handle_write_failure(registry, envelope, plan, cause);
     }
     commit_registry_update(registry, envelope, plan)?;
-    Ok(SaveDocumentOutcome::Saved { document_id })
+    Ok(SaveDocumentOutcome::Saved {
+        document_id,
+        display_name,
+        was_save_as,
+    })
+}
+
+fn save_display_name(target_path: &Path) -> Result<String, SaveDocumentError> {
+    target_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty())
+        .map(str::to_owned)
+        .ok_or(SaveDocumentError::InvalidTarget)
+}
+
+fn save_plan_selects_target(plan: &SavePlan) -> bool {
+    matches!(plan, SavePlan::Attach(_) | SavePlan::Register(_))
 }
 
 fn handle_write_failure(
@@ -364,6 +387,14 @@ mod tests {
             outcome,
             SaveDocumentOutcome::Saved {
                 document_id: document_id(&updated),
+                display_name: target
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_owned(),
+                was_save_as: false,
             },
         );
         assert_eq!(
@@ -647,6 +678,14 @@ mod tests {
             outcome,
             SaveDocumentOutcome::Saved {
                 document_id: document_id(&snapshot),
+                display_name: target
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_owned(),
+                was_save_as: true,
             },
         );
         assert_eq!(read_json(target.path()), snapshot);
@@ -855,10 +894,25 @@ mod tests {
         let registry = DocumentRegistry::new();
         open_document(&registry, Some(target.path().to_owned())).expect("document should open");
 
-        save_document(&registry, envelope_value("Saved"), || {
+        let outcome = save_document(&registry, envelope_value("Saved"), || {
             panic!("loaded document must retain its Rust-owned path")
         })
         .expect("document should save");
+
+        assert_eq!(
+            outcome,
+            SaveDocumentOutcome::Saved {
+                document_id: document_id(&envelope_value("Saved")),
+                display_name: target
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_owned(),
+                was_save_as: false,
+            }
+        );
     }
 
     #[test]

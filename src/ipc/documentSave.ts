@@ -16,7 +16,7 @@ export type SaveDocumentClientError =
   | { type: "transport" };
 
 export type SaveDocumentResult =
-  | { status: "saved"; documentId: string }
+  | { status: "saved"; documentId: string; displayName: string; wasSaveAs: boolean }
   | { status: "cancelled" }
   | { status: "error"; error: SaveDocumentClientError };
 
@@ -44,7 +44,12 @@ function resultFromResponse(response: unknown): SaveDocumentResult {
   }
 
   if (isSavedResponse(response)) {
-    return { status: "saved", documentId: response.documentId };
+    return {
+      status: "saved",
+      documentId: response.documentId,
+      displayName: response.displayName,
+      wasSaveAs: response.wasSaveAs,
+    };
   }
 
   return { status: "error", error: { type: "invalid-response" } };
@@ -62,11 +67,27 @@ function isCancelledResponse(value: unknown): value is { status: "cancelled" } {
   return isRecord(value) && Object.keys(value).length === 1 && value.status === "cancelled";
 }
 
-function isSavedResponse(value: unknown): value is { status: "saved"; documentId: string } {
+function isSavedResponse(value: unknown): value is {
+  status: "saved";
+  documentId: string;
+  displayName: string;
+  wasSaveAs: boolean;
+} {
   return (
     isRecord(value) &&
-    Object.keys(value).length === 2 &&
+    Object.keys(value).length === 4 &&
     value.status === "saved" &&
-    isDocumentId(value.documentId)
+    isDocumentId(value.documentId) &&
+    isDisplayName(value.displayName) &&
+    typeof value.wasSaveAs === "boolean"
+  );
+}
+
+function isDisplayName(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    !value.includes("/") &&
+    !value.includes("\\")
   );
 }

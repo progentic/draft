@@ -121,7 +121,9 @@ transport failures.
 does not inspect Tiptap live state. The caller must construct the immutable
 snapshot explicitly. Phase 46 adds `closeDocument` and integrates New, Open,
 Save, and Close through `useDocumentSession`, including dirty-state decisions
-and registry-handle release.
+and registry-handle release. A successful save response carries the document
+ID, a basename-only display name, and a `wasSaveAs` flag. The client rejects
+missing or path-like display names and never receives the registered path.
 
 Nested registry failures include source-path ownership conflicts. Atomic-write
 failures identify the failed stage, while `durability_uncertain` means a
