@@ -181,6 +181,20 @@ require an ADR.
 `just` is the preferred task runner but is optional during local setup because
 every target delegates to a documented Bash script.
 
+## Available Local Review Tools
+
+`stylelint` is available at `/opt/homebrew/bin/stylelint`. Use it only for
+stylesheets changed by the active work and only against an explicit CSS
+contract; its presence does not authorize repository-wide formatting churn.
+The current Phase 46 save correction changes no CSS, so it has no stylelint
+evidence.
+
+`ksnip` is available at `/Applications/ksnip.app` for manual screenshots and
+annotations. Captures must identify the tested package and remain inside the
+repository's ignored `.tmp/manual-evidence/` workspace. Tool availability is not
+evidence by itself; only an actual capture tied to the executable hash may
+support a finding or gate disposition.
+
 ## Bootstrap
 
 Run from the repository root:
@@ -232,10 +246,12 @@ The verifier runs:
 The local `AGENTS.md` is checked when present but is not required by clean
 checkout verification because repository policy intentionally ignores it.
 
-`shellcheck`, `shfmt`, and Ruff add checks when installed. Their absence is
-reported and does not hide any required check. Frontend formatting and ESLint
-are not configured yet; frontend tests, TypeScript, and production-build checks
-remain required.
+`shellcheck` and Ruff add blocking checks when installed. `shfmt -i 2` reports
+historical formatting drift informationally until its version and baseline are
+pinned through the dedicated tooling work tracked by `MAINT-03`. Missing
+optional tools are reported and do not hide any required check. Frontend
+formatting and ESLint are not configured yet; frontend tests, TypeScript, and
+production-build checks remain required.
 
 Run the focused frontend suite directly with:
 
