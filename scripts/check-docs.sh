@@ -180,9 +180,9 @@ check_v1_usability_documentation() {
   require_document_text docs/wiki/Workspace.md \
     'Imported, unsaved'
   require_document_text docs/maintainers/DOCUMENT_SAVE_LOAD.md \
-    '`opened_draft` means Rust retained a native'
+    "\`opened_draft\` means Rust retained a native"
   require_document_text docs/maintainers/DOCUMENT_SAVE_LOAD.md \
-    '`invalid_target` when a new target does not end in `.draft`'
+    "\`invalid_target\` when a new target does not end in \`.draft\`"
   require_document_text docs/wiki/Current-Limitations.md \
     'whole point sizes from 8 through 72'
 }
