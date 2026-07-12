@@ -680,6 +680,20 @@ surface. PDF export remains unimplemented. Accepted ADR-001 keeps it deferred
 until the prerequisite rendering policies and verification contract are
 accepted through governance.
 
+Proposed ADR-003 is under architecture review and is non-binding. It would add
+a Rust-owned external-document lifecycle with explicit native-format,
+save-capability, round-trip, and lossiness state; parsed Markdown and DOCX
+interoperability; separately resolved ODT and RTF boundaries; and explicit
+legacy `.doc` exclusion. Opening and closing an external file without edits
+would not rewrite it, and a lossy same-format save would be denied rather than
+silently flattening content.
+
+The same proposal would require native macOS menus, visible controls, and
+keyboard shortcuts to share one state-aware frontend action dispatcher. File,
+identity, persistence, import, export, and source-path authority would remain
+in Rust. No parser, writer, external-source state, menu dispatcher, or visual
+redesign is accepted architecture until ADR-003 merges.
+
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 
 ---

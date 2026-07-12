@@ -164,6 +164,33 @@ heuristics as non-authoritative review signals, and semantic, generative, or
 inferential model-backed interpretation as outside v1.0.0. Supporting counts or
 patterns cannot silently become additional product capabilities.
 
+Proposed ADR-003 is under architecture review after packaged Phase 46
+validation exposed release-blocking document interoperability and native
+desktop workflow requirements. These findings are not accepted as an expansion
+of Phase 46. The current Phase 47 through 50 sequence remains authoritative
+until the proposal merges.
+
+If accepted, ADR-003 would insert this successor sequence:
+
+- Phase 47: Document interoperability.
+- Phase 48: Desktop UI and native workflow integration.
+- Phase 49: Usability and performance validation.
+- Phase 50: Documentation and drift realignment.
+- Phase 51: Security review.
+- Phase 52: Final release candidate.
+- Phase 53: v1.0.0 release.
+
+Phase 50 remains the required fifth-phase realignment checkpoint. The proposal
+adds no parser, round-trip save path, native menu, visual redesign, release
+evidence, or phase completion while it is under review.
+
+The same proposal adds human-first maintainer documentation as a release
+quality. Phase 49 would review documentation terminology and comprehension
+alongside product usability and performance. Phase 50 would perform the
+plain-language, maintainer-onboarding, unnecessary-jargon, terminology, and
+cross-link realignment required before proposed `INV-UX-07` can become
+Accepted.
+
 ---
 
 ## 1. Product Direction

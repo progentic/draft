@@ -10,7 +10,7 @@ source "${SCRIPT_DIRECTORY}/lib/common.sh"
 
 main() {
   cd "$(repository_root)"
-  require_tools find rg sort tail
+  require_tools find rg sort tail wc
 
   check_required_documents
   report_local_agent_instructions
@@ -36,6 +36,7 @@ main() {
   check_release_candidate_documentation
   check_v1_analysis_decision_state
   check_v1_usability_documentation
+  check_adr_003_proposal_state
   check_readme_scope
   check_pdf_decision_state
 
@@ -69,6 +70,7 @@ check_required_documents() {
     docs/drafts/PDF_EXPORT_DECISION.md
     docs/drafts/PYTHON_HELPERS.md
     docs/drafts/TEXT_ANALYSIS.md
+    docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md
     docs/drafts/V1_LOCAL_ANALYSIS.md
     docs/drafts/METADATA_LOOKUP.md
     docs/drafts/REFERENCE_RECORD.md
@@ -76,6 +78,7 @@ check_required_documents() {
     docs/drafts/SECRET_STORAGE.md
     docs/GOVERNANCE.md
     docs/INVARIANTS.md
+    docs/adr/003-expand-v1-document-interoperability.md
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/AI_ORCHESTRATION.md
@@ -147,6 +150,127 @@ check_v1_usability_documentation() {
     'docs/contracts/V1_USABILITY_ACCEPTANCE.md'
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     'v1 usability acceptance'
+}
+
+check_adr_003_proposal_state() {
+  local adr='docs/adr/003-expand-v1-document-interoperability.md'
+  local draft='docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_document_text "${adr}" 'Status: Proposed'
+  require_document_text "${adr}" '| 47 | Document interoperability |'
+  require_document_text "${adr}" '| 50 | Documentation and drift realignment |'
+  require_document_text "${adr}" '| 53 | v1.0.0 release |'
+  require_document_text "${adr}" 'no interoperability, round-trip, native-menu, or'
+  require_document_text "${adr}" '### Documentation comprehension'
+  require_document_text "${draft}" '**Status:** Proposed and non-binding'
+  require_document_text "${draft}" '## Successor Gate Chain'
+  require_document_text "${draft}" "| \`RC-07\`, \`GATE-47\` | Phase 47 |"
+  require_document_text "${draft}" "| \`RC-08\`, \`GATE-48\` | Phase 48 |"
+  require_document_text "${draft}" "| \`RC-05\`, \`GATE-51\` | Phase 51 |"
+  require_document_text "${release}" '## Proposed ADR-003 Successor Gate Chain'
+  require_document_text "${release}" "No current \`RC-*\` or \`GATE-*\` row closes"
+  require_document_text docs/ROADMAP.md \
+    'The current Phase 47 through 50 sequence remains authoritative'
+  reject_document_pattern \
+    'ADR-003|Document [Ii]nteroperability' \
+    'the accepted PhaseMap must remain unchanged while ADR-003 is proposed' \
+    docs/PHASEMAP.md
+  require_document_text docs/ARCHITECTURE.md \
+    'No parser, writer, external-source state, menu dispatcher, or visual'
+  require_document_text docs/INVARIANTS.md \
+    "Proposed ADR-003 is under review and does not yet change \`INV-09\`."
+  require_document_text docs/DOCUMENTATION.md \
+    'successor release discussion. While the ADR is open'
+  require_document_text docs/DOCUMENTATION.md \
+    'Optimize documentation for human comprehension first and precision second.'
+  require_document_text docs/DOCUMENTATION.md '### 2.1 Plain Language Requirement'
+  require_major_maintainer_section_policy
+  require_document_text docs/INVARIANTS.md \
+    "| \`INV-UX-07\` | Proposed |"
+  require_document_text "${draft}" \
+    'Phase 49 also reviews maintainer documentation as a teaching surface.'
+  require_document_text "${draft}" \
+    'Only then may a separate governed change mark'
+  require_document_text "${release}" \
+    'maintainer-documentation comprehension'
+  require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
+    '| Document interoperability and desktop workflow proposal |'
+  require_adr_003_coverage_areas
+
+  reject_document_pattern \
+    'Accepted ADR-003|ADR-003 (is|has been) accepted' \
+    'ADR-003 must remain proposal-only in accepted and user-facing documents' \
+    docs/contracts docs/user docs/wiki
+  reject_document_pattern \
+    'Phase 47 (is|owns) [Dd]ocument [Ii]nteroperability|Phase 48 (is|owns) [Dd]esktop UI' \
+    'accepted product documentation cannot adopt the proposed successor sequence early' \
+    docs/contracts docs/user docs/wiki
+  reject_document_pattern \
+    'INV-UX-07|Documentation [Rr]eadability' \
+    'proposed documentation readability cannot enter accepted phase or contract truth' \
+    docs/PHASEMAP.md docs/contracts/V1_USABILITY_ACCEPTANCE.md
+}
+
+require_major_maintainer_section_policy() {
+  local policy='docs/DOCUMENTATION.md'
+  local sections=(
+    Purpose
+    Problem
+    Solution
+    Trade-offs
+    'Technical Contract'
+    'Implementation Notes'
+    'Failure Modes'
+    Tests
+    'Related Documents'
+  )
+  local section
+
+  for section in "${sections[@]}"; do
+    require_document_text "${policy}" "${section}"
+  done
+}
+
+require_adr_003_coverage_areas() {
+  local matrix='docs/maintainers/DOCUMENTATION_COVERAGE.md'
+  local suffixes=(
+    INTEROP
+    ROUNDTRIP
+    FIDELITY
+    NATIVE-MENU
+    DESKTOP-UI
+    USABILITY-PERF
+    REALIGNMENT
+    GATE-REMAP
+  )
+  local suffix
+  local identifier
+  local match_count
+
+  for suffix in "${suffixes[@]}"; do
+    identifier="ADR003-COV-${suffix}"
+    require_document_text "${matrix}" "| \`${identifier}\` |"
+    match_count="$(rg --only-matching --fixed-strings \
+      "${identifier}" "${matrix}" | wc -l)"
+    if [[ "${match_count}" -ne 1 ]]; then
+      printf 'ADR-003 proposal coverage identifier %s expected once, found %s\n' \
+        "${identifier}" "${match_count}" >&2
+      return 1
+    fi
+    if rg --quiet --fixed-strings \
+      --glob '!**/DOCUMENTATION_COVERAGE.md' \
+      "${identifier}" docs; then
+      printf 'ADR-003 proposal coverage identifier escaped its owning surface: %s\n' \
+        "${identifier}" >&2
+      return 1
+    fi
+    if rg --quiet --fixed-strings "${identifier}" src src-tauri/src; then
+      printf 'ADR-003 proposal coverage identifier entered product source: %s\n' \
+        "${identifier}" >&2
+      return 1
+    fi
+  done
 }
 
 check_data_migration_documentation() {
@@ -390,6 +514,7 @@ check_matrix_subsystems() {
     'Verification and repository tooling'
     'Packaging and application icons'
     'PDF export decision'
+    'Document interoperability and desktop workflow proposal'
   )
   local subsystem
 
