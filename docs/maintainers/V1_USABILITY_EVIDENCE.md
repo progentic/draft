@@ -106,6 +106,22 @@ as expected, closing the specific historical findings `UX-46-001`,
 `UX-46-004`, and `UX-46-018`. The complete packaged workflow and every RC row
 remain open.
 
+## Font-State Retest Artifact
+
+- Correction commit: `228bce73e9ea210e9f6f842d8bb2683b70031de4`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `8870dcc412dfb04ada5ae0ba28ea630eb37925bc94b55b4f182e423b5afd9eb4`
+- Mechanical result: package construction, arm64 validation, embedded icon
+  validation, and embedded deterministic text-analysis helper execution passed.
+- Human result: pending.
+
+This artifact derives the font controls from exact document defaults, explicit
+caret marks, or mixed selections. Automated tests cover immediate updates,
+reset behavior, JSON restoration, save/reopen restoration, and existing DOCX
+font fidelity. `UX-46-019`, all RC rows, and `GATE-46` remain open until direct
+packaged validation confirms those behaviors. Phase 48 findings `UX-46-020`
+and `UX-46-021` also remain open.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid
