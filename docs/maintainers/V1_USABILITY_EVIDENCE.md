@@ -80,7 +80,8 @@ It cannot validate the replacement artifact produced by the current fixes.
 - Executable SHA-256: `ae66d3dae64fbe738fcd371b776b27d022bea3182eb9920c89773498dcf289f9`
 - Mechanical result: package construction, arm64 validation, embedded icon
   validation, and embedded deterministic text-analysis helper execution passed.
-- Human result: pending.
+- Human result: partial; desktop-shell, interoperability, and round-trip
+  ownership findings remain open.
 
 This artifact contains the blank New document, explicit lifecycle origins,
 bounded literal `.txt` and `.md` import, source-preserving `.draft` first Save,
@@ -88,11 +89,33 @@ eleven-family formatting allowlist, and exact DOCX mappings. Those statements
 describe mechanically verified implementation scope, not packaged usability
 evidence. All findings and release rows remain open until direct human retest.
 
+### Replacement Artifact Product-Boundary Review
+
+Owner review of the replacement artifact found that the mechanically valid
+bundled `.icns` does not establish correct visible window branding. The
+in-window icon presentation was incorrect, the command bar and editor layout
+lacked expected desktop-editor hierarchy, and the current import/save model did
+not meet the intended academic interoperability boundary.
+
+Literal `.txt` import behaved within its documented contract. Markdown also
+behaved as implemented, but literal source display is now insufficient for the
+v1 product requirement because headings, emphasis, lists, quotations, links,
+code, and separators are not parsed into document structure. DOCX, RTF, and
+OpenDocument import are absent. Imported external formats cannot be saved back
+to their source format, and DRAFT has no lossiness or round-trip capability
+model. Legacy binary `.doc` remains a distinct unsupported format and is not
+treated as equivalent to DOCX.
+
+These observations do not authorize implementation in Phase 46. They require a
+separate governed interoperability and desktop-product boundary. PR #36
+remains draft, and no finding or release row closes from this review.
+
 ### Human Task Results
 
-The repository owner directly tested the exact packaged artifact. The session
-stopped after Save caused an unrecoverable beach ball and force-quit. No
-untested task is counted as passed.
+The repository owner directly tested the recorded packages. The first session
+stopped after Save caused an unrecoverable beach ball and force-quit. Later
+sessions produced the additional partial and product-boundary findings above.
+No untested task is counted as passed.
 
 ### Findings And Dispositions
 
@@ -105,5 +128,13 @@ untested task is counted as passed.
 | UX-46-005 | UX-2 | Open | Open did not offer plain-text files. | Import bounded UTF-8 `.txt` as a new unsaved Rust-owned envelope, preserve the source, and validate first Save to a new `.draft` target. |
 | UX-46-006 | UX-2 | Open | Open did not offer Markdown files. | Import bounded UTF-8 `.md` as literal editable text without parsing or preview claims, then validate the packaged workflow. |
 | UX-46-007 | UX-1 | Open | Text and Markdown import source-preservation behavior could not be exercised because those inputs were unavailable. | Prove the source path never becomes save authority, first Save selects a new `.draft` target, and the source remains byte-for-byte unchanged in automated and packaged tests. |
+| UX-46-008 | UX-2 | Open | The replacement artifact contained the tracked bundle icon, but the application icon did not render correctly in the visible packaged window chrome. | Keep bundle-icon validation separate from visible branding; inspect the title-bar/header asset path and validate the corrected packaged window in light and dark appearance. |
+| UX-46-009 | UX-1 | Open | File, research, review, and export controls share one sparse command row without sufficient grouping or predictable desktop-editor hierarchy, and native macOS menu integration does not exist. | Move this release-blocking workflow problem to a governed desktop UI phase with grouped controls, native menus, state-sensitive enablement, responsive overflow, and shared action dispatch. |
+| UX-46-010 | UX-1 | Open | Markdown opens as literal source, so headings, emphasis, lists, quotations, links, code, and separators are not represented as editable document structure. | Define and implement a bounded Markdown parser/serializer contract in the governed interoperability phase; unsupported constructs must fail or disclose loss rather than disappear. |
+| UX-46-011 | UX-1 | Open | DOCX import is unavailable even though DOCX export exists. | Add a separately governed DOCX import and safe round-trip contract with fidelity classes, fixtures, source preservation, and explicit unsupported-content behavior. |
+| UX-46-012 | UX-2 | Open | RTF import and save are unavailable. | The interoperability decision must either implement a bounded RTF subset or accept an explicit v1 deferral with user guidance. |
+| UX-46-013 | UX-2 | Open | OpenDocument import and save are unavailable. | The interoperability decision must either implement bounded ODT support or accept an explicit v1 deferral with user guidance. |
+| UX-46-014 | UX-1 | Open | Imported external formats become unsaved DRAFT documents and cannot be safely saved back to their original format. | Define Rust-owned external source identity, writable-format capability, lossiness state, no-edit byte preservation, overwrite safety, Save As behavior, and compatibility tests before enabling round-trip save. |
+| UX-46-015 | UX-2 | Open | Command spacing, grouping, editor canvas composition, and outline layout do not meet the intended desktop-product quality threshold. | Address visual hierarchy and layout in the governed desktop UI phase, then validate normal, narrow, scaled, keyboard, and reduced-motion states from the packaged app. |
 
 `RC-01` through `RC-04` and `GATE-46` remain open.

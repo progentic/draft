@@ -12,7 +12,22 @@ Apple Silicon target.
   `.txt` and `.md` files as literal editable text, but it does not parse or
   preview Markdown. Unsupported or malformed input fails without changing the
   source file.
+- Imported text and Markdown become unsaved DRAFT documents. They cannot be
+  saved back to the source format; first Save requires a new `.draft` target
+  and leaves the original source unchanged.
+- DOCX, RTF, OpenDocument (`.odt`), and legacy Word (`.doc`) import are
+  unavailable. DOCX is currently an export format only.
 - The visible workspace manages one current document at a time.
+
+## Desktop Interface
+
+- Primary workflows are available through in-window controls. A complete
+  native macOS menu structure with state-sensitive commands and conventional
+  shortcuts is not implemented.
+- Command grouping, responsive overflow, editor spacing, and outline layout
+  remain under release-blocking desktop workflow review.
+- The tracked bundle icon passes package validation, but visible packaged-window
+  branding has an open rendering defect.
 
 ## Research And Citations
 
