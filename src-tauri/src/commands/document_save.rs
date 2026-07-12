@@ -110,6 +110,7 @@ mod tests {
     fn error_serialization_is_stable() {
         let errors = [
             SaveDocumentError::UnsupportedFileLocation,
+            SaveDocumentError::InvalidTarget,
             SaveDocumentError::InvalidEnvelope {
                 cause: DocumentEnvelopeError::InvalidDocumentRoot,
             },
@@ -127,6 +128,7 @@ mod tests {
             serde_json::to_value(errors).expect("errors should serialize"),
             json!([
                 { "code": "unsupported_file_location" },
+                { "code": "invalid_target" },
                 {
                     "code": "invalid_envelope",
                     "cause": { "code": "invalid_document_root" }

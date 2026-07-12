@@ -14,7 +14,8 @@ export type OpenDocumentClientError =
   | { type: "transport" };
 
 export type OpenDocumentResult =
-  | { status: "opened"; envelope: DocumentEnvelopeSnapshot }
+  | { status: "opened_draft"; envelope: DocumentEnvelopeSnapshot }
+  | { status: "imported_text"; envelope: DocumentEnvelopeSnapshot }
   | { status: "cancelled" }
   | { status: "error"; error: OpenDocumentClientError };
 
@@ -40,8 +41,12 @@ function resultFromResponse(response: unknown): OpenDocumentResult {
     return { status: "cancelled" };
   }
 
-  if (isOpenedResponse(response)) {
-    return { status: "opened", envelope: response.envelope };
+  if (isDocumentResponse(response, "opened_draft")) {
+    return { status: "opened_draft", envelope: response.envelope };
+  }
+
+  if (isDocumentResponse(response, "imported_text")) {
+    return { status: "imported_text", envelope: response.envelope };
   }
 
   return { status: "error", error: { type: "invalid-response" } };
@@ -59,13 +64,17 @@ function isCancelledResponse(value: unknown): value is { status: "cancelled" } {
   return isRecord(value) && Object.keys(value).length === 1 && value.status === "cancelled";
 }
 
-function isOpenedResponse(
+function isDocumentResponse(
   value: unknown,
-): value is { status: "opened"; envelope: DocumentEnvelopeSnapshot } {
+  status: "imported_text" | "opened_draft",
+): value is {
+  status: "imported_text" | "opened_draft";
+  envelope: DocumentEnvelopeSnapshot;
+} {
   return (
     isRecord(value) &&
     Object.keys(value).length === 2 &&
-    value.status === "opened" &&
+    value.status === status &&
     isDocumentEnvelopeSnapshot(value.envelope)
   );
 }

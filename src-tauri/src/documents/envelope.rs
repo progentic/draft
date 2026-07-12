@@ -71,7 +71,7 @@ pub enum DocumentEnvelopeError {
 }
 
 impl DocumentEnvelope {
-    /// Creates one Rust-identified initial document from the fixed product template.
+    /// Creates one Rust-identified unsaved document with an empty paragraph.
     pub fn create_initial() -> Result<Self, DocumentEnvelopeError> {
         Self::from_json_value(serde_json::json!({
             "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
@@ -79,17 +79,7 @@ impl DocumentEnvelope {
             "title": "Untitled document",
             "document": {
                 "type": "doc",
-                "content": [
-                    {
-                        "type": "heading",
-                        "attrs": { "level": 1 },
-                        "content": [{ "type": "text", "text": "Untitled document" }]
-                    },
-                    {
-                        "type": "paragraph",
-                        "content": [{ "type": "text", "text": "Begin writing here." }]
-                    }
-                ]
+                "content": [{ "type": "paragraph" }]
             }
         }))
     }
@@ -331,17 +321,7 @@ mod tests {
             first.document(),
             &json!({
                 "type": "doc",
-                "content": [
-                    {
-                        "type": "heading",
-                        "attrs": { "level": 1 },
-                        "content": [{ "type": "text", "text": "Untitled document" }]
-                    },
-                    {
-                        "type": "paragraph",
-                        "content": [{ "type": "text", "text": "Begin writing here." }]
-                    }
-                ]
+                "content": [{ "type": "paragraph" }]
             })
         );
     }

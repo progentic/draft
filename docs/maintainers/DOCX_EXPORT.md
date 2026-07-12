@@ -24,9 +24,10 @@ blocks. Headings accept levels 1 through 6. Inline content accepts `text` and
 `hardBreak`; text accepts `bold`, `italic`, `underline`, `fontFamily`, and
 `fontSize` marks.
 
-Font family accepts only `arial`, `georgia`, `times_new_roman`, and
-`courier_new`, mapped exactly to Arial, Georgia, Times New Roman, and Courier
-New in `w:rFonts`. Font size accepts whole points from 8 through 72 and converts
+Font family accepts only `arial`, `avenir_next`, `baskerville`, `courier_new`,
+`georgia`, `helvetica`, `menlo`, `palatino`, `times_new_roman`, `trebuchet_ms`,
+and `verdana`. They map exactly to their named families in `w:rFonts`. Font
+size accepts whole points from 8 through 72 and converts
 deterministically to DOCX half-points in `w:sz` and `w:szCs`. Unsupported or
 malformed values fail; the compiler never substitutes a family or size.
 
@@ -98,7 +99,8 @@ unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 
 Focused Rust tests cover stable safe entries, archive reopening,
 deterministic bytes, XML parsing, Unicode, headings, hard breaks, supported
-marks, mixed family and size run properties, empty blocks, unknown and malformed content, citation rejection, source
+marks, every family mapping, mixed family and size run properties, empty
+blocks, unknown and malformed content, citation rejection, source
 and output limits, target validation, real create/replace behavior, source
 preservation, every atomic failure stage, durability uncertainty, bounded errors,
 and the absence of external or active package content.

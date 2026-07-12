@@ -642,6 +642,7 @@ check_text_format_contract() {
   local mark_path='src/editor/TextFormattingMarks.ts'
   local rust_tests=(
     supported_family_and_size_marks_validate
+    canonical_font_allowlist_maps_every_identifier_to_docx
     unsupported_font_values_fail_with_bounded_paths
     fractional_zero_negative_and_malformed_sizes_fail
     malformed_mark_shapes_fail_before_persistence
@@ -659,19 +660,39 @@ check_text_format_contract() {
   done
   require_source_pattern 'MIN_FONT_SIZE_POINTS: u64 = 8' "${rust_path}"
   require_source_pattern 'MAX_FONT_SIZE_POINTS: u64 = 72' "${rust_path}"
-  require_source_pattern '"times_new_roman" => Some(Self::TimesNewRoman)' "${rust_path}"
-  require_source_pattern '"courier_new" => Some(Self::CourierNew)' "${rust_path}"
+  check_font_identifier_parity "${rust_path}" "${frontend_path}"
   require_source_pattern 'export const MIN_FONT_SIZE_POINTS = 8' "${frontend_path}"
   require_source_pattern 'export const MAX_FONT_SIZE_POINTS = 72' "${frontend_path}"
   require_source_pattern 'typeof value.type !== "string"' "${frontend_path}"
   require_source_pattern 'span[data-draft-font-family]' "${mark_path}"
   require_source_pattern 'span[data-draft-font-size]' "${mark_path}"
+  require_source_pattern 'FONT_FAMILIES.map((family)' src/editor/EditorToolbar.tsx
+  require_rust_test every_supported_font_family_emits_explicit_docx_run_properties \
+    src-tauri/src/exports/docx_tests.rs
   require_source_pattern 'ignores pasted font CSS and accepts only canonical DRAFT attributes' \
     src/editor/TextFormattingMarks.test.ts
   assert_no_matches "arbitrary pasted font style import" \
     "parseHTML:.*(?:font-family|font-size)|getAttribute\\([\"']style" \
     "${mark_path}"
   printf 'PASS bounded persistent text-format contract\n'
+}
+
+check_font_identifier_parity() {
+  local rust_path="$1"
+  local frontend_path="$2"
+  local expected actual_rust actual_frontend
+
+  expected="$(printf '%s\n' arial avenir_next baskerville courier_new georgia \
+    helvetica menlo palatino times_new_roman trebuchet_ms verdana | sort)"
+  actual_rust="$(rg --multiline --only-matching --replace '$1' \
+    'font\(\s*"([a-z_]+)"' "${rust_path}" | sort)"
+  actual_frontend="$(rg --only-matching --replace '$1' \
+    '\{ id: "([a-z_]+)"' "${frontend_path}" | sort)"
+
+  if [[ "${actual_rust}" != "${expected}" || "${actual_frontend}" != "${expected}" ]]; then
+    printf 'FAILED Rust and TypeScript font identifiers must match the exact 11-family contract\n' >&2
+    return 1
+  fi
 }
 
 require_formatting_contract_markers() {
@@ -1588,6 +1609,7 @@ check_document_file_contract() {
     save_target_preflight_matches_registry_state
     save_target_preflight_rejects_invalid_snapshot
     cancelled_first_save_does_not_register_document
+    first_save_rejects_non_draft_target_before_write
     invalid_snapshot_fails_before_path_selection
     save_does_not_reopen_dialog_for_loaded_document
     failed_first_save_does_not_register_document
@@ -1599,6 +1621,11 @@ check_document_file_contract() {
     invalid_citation_open_fails_before_registry_entry
     invalid_citation_save_fails_before_path_selection
     invalid_font_format_fails_before_path_selection
+    text_import_is_unsaved_and_first_save_preserves_source
+    later_import_save_reuses_only_the_chosen_draft_target
+    markdown_import_uses_basename_and_remains_literal_editable_source
+    malformed_and_oversized_text_imports_fail_without_mutation
+    unsupported_open_extension_fails_before_read_or_registration
   )
   local test_name
 
@@ -1606,6 +1633,18 @@ check_document_file_contract() {
   for test_name in "${required_tests[@]}"; do
     require_rust_test "${test_name}" "${persistence_path}"
   done
+  require_source_pattern 'keeps the complete canonical font allowlist stable' \
+    src/documents/textFormatting.test.ts
+  require_source_pattern 'keeps an imported filename display-only through first and later saves' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'keeps an imported session unsaved when its first Save is cancelled' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'rejects a non-DRAFT first-save target without changing import state' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'preserves native content, selection, title, and state when Open is cancelled' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'preserves unsaved content when a later New command fails' \
+    src/ipc/Phase46Workflows.test.tsx
   require_rust_test source_path_cannot_back_two_live_handles \
     src-tauri/src/documents/registry.rs
   require_rust_test source_path_conflict_preserves_unattached_handle \
@@ -1665,6 +1704,7 @@ require_document_file_sources() {
   require_file src-tauri/src/documents/atomic_write.rs
   require_file src-tauri/src/documents/dialog.rs
   require_file src-tauri/src/documents/persistence.rs
+  require_file src-tauri/src/documents/text_import.rs
   require_file src/ipc/documentEnvelope.test.ts
   require_file src/ipc/documentEnvelope.ts
   require_file src/ipc/documentErrors.ts
@@ -1672,6 +1712,14 @@ require_document_file_sources() {
   require_file src/ipc/documentOpen.test.ts
   require_file src/ipc/documentSave.ts
   require_file src/ipc/documentSave.test.ts
+  require_source_pattern 'MAX_TEXT_IMPORT_BYTES: usize = 8 * 1024 * 1024' \
+    src-tauri/src/documents/text_import.rs
+  require_source_pattern 'OpenedDraft { envelope: DocumentEnvelope }' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'ImportedText { envelope: DocumentEnvelope }' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md"]' \
+    src-tauri/src/documents/dialog.rs
 }
 
 require_atomic_writer_tests() {
@@ -1722,6 +1770,7 @@ check_frontend_document_file_boundary() {
 
   assert_no_matches "frontend document path authority" \
     '\b(?:path|filePath|file_path)\s*:' \
+    src/features/document-session/useDocumentSession.ts \
     src/ipc/documentCreate.ts src/ipc/documentOpen.ts src/ipc/documentSave.ts
   assert_no_matches "frontend document identity authority" \
     '\bcrypto\.randomUUID\s*\(|\b(?:uuidv[147]|nanoid|createId)\s*\(' \
@@ -1731,6 +1780,14 @@ check_frontend_document_file_boundary() {
     "${document_identity_paths[@]}"
   require_source_pattern 'DocumentEnvelope::create_initial()' \
     src-tauri/src/commands/document_create.rs
+  require_source_pattern 'type DocumentOrigin = "imported_text" | "new" | "opened_draft"' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'origin: result.status' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'origin: "opened_draft" as const' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'return "Imported, unsaved"' \
+    src/features/document-session/useDocumentSession.ts
 }
 
 require_source_pattern() {

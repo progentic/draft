@@ -22,7 +22,9 @@ The version 1 JSON shape is:
   "title": "Untitled document",
   "document": {
     "type": "doc",
-    "content": []
+    "content": [
+      { "type": "paragraph" }
+    ]
   }
 }
 ```
@@ -31,6 +33,11 @@ The envelope has no path, timestamps, reference records, top-level citation
 metadata, analysis output, formatting findings, or export state. Versioned
 citation-node attrs may exist only inside Tiptap document content. Unknown
 top-level fields fail validation instead of becoming implicit schema extensions.
+
+The JSON example is the fixed Phase 46 New-document result. The broader version
+1 validator still accepts other valid Tiptap document content. Text imports use
+the same envelope shape with a Rust-generated ID, source filename as display
+title, and literal paragraph content; they add no path field.
 
 ## Rust Authority
 

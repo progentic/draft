@@ -1,8 +1,15 @@
 export const FONT_FAMILIES = [
-  { id: "arial", label: "Arial", css: "Arial, sans-serif" },
-  { id: "georgia", label: "Georgia", css: "Georgia, serif" },
-  { id: "times_new_roman", label: "Times New Roman", css: '"Times New Roman", serif' },
-  { id: "courier_new", label: "Courier New", css: '"Courier New", monospace' },
+  { id: "arial", label: "Arial", css: '"Arial"' },
+  { id: "avenir_next", label: "Avenir Next", css: '"Avenir Next"' },
+  { id: "baskerville", label: "Baskerville", css: '"Baskerville"' },
+  { id: "courier_new", label: "Courier New", css: '"Courier New"' },
+  { id: "georgia", label: "Georgia", css: '"Georgia"' },
+  { id: "helvetica", label: "Helvetica", css: '"Helvetica"' },
+  { id: "menlo", label: "Menlo", css: '"Menlo"' },
+  { id: "palatino", label: "Palatino", css: '"Palatino"' },
+  { id: "times_new_roman", label: "Times New Roman", css: '"Times New Roman"' },
+  { id: "trebuchet_ms", label: "Trebuchet MS", css: '"Trebuchet MS"' },
+  { id: "verdana", label: "Verdana", css: '"Verdana"' },
 ] as const;
 
 export const MIN_FONT_SIZE_POINTS = 8;

@@ -157,8 +157,14 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-001 | UX-0 | Open |'
   require_document_text "${ledger}" '| UX-46-002 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-003 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-004 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-005 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-006 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-007 | UX-1 | Open |'
   require_document_text docs/maintainers/CONFIGURATION.md \
-    "\`arial\`, \`georgia\`, \`times_new_roman\`, \`courier_new\`"
+    "\`arial\`, \`avenir_next\`, \`baskerville\`, \`courier_new\`, \`georgia\`, \`helvetica\`, \`menlo\`, \`palatino\`, \`times_new_roman\`, \`trebuchet_ms\`, \`verdana\`"
+  require_document_text docs/maintainers/CONFIGURATION.md \
+    "\`MAX_TEXT_IMPORT_BYTES\` | 8 MiB"
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \
     'whole point sizes from 8 through 72 in one-point'
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \
@@ -168,7 +174,13 @@ check_v1_usability_documentation() {
   require_document_text docs/maintainers/DOCX_EXPORT.md "\`w:rFonts\`"
   require_document_text docs/maintainers/DOCX_EXPORT.md "\`w:sz\` and \`w:szCs\`"
   require_document_text docs/wiki/Workspace.md \
-    'Arial, Georgia, Times New Roman, or Courier New'
+    'Arial, Avenir Next, Baskerville, Courier New'
+  require_document_text docs/wiki/Workspace.md \
+    'Imported, unsaved'
+  require_document_text docs/maintainers/DOCUMENT_SAVE_LOAD.md \
+    '`opened_draft` means Rust retained a native'
+  require_document_text docs/maintainers/DOCUMENT_SAVE_LOAD.md \
+    '`invalid_target` when a new target does not end in `.draft`'
   require_document_text docs/wiki/Current-Limitations.md \
     'whole point sizes from 8 through 72'
 }
@@ -391,7 +403,7 @@ check_matrix_subsystems() {
     'Transient worker cancellation'
     'Document envelope'
     'Document registry'
-    'Document create, open, save, close, and atomic replacement'
+    'Document create, open, import, save, close, and atomic replacement'
     'Critical-flow evidence'
     'Reference record'
     'Reference store'

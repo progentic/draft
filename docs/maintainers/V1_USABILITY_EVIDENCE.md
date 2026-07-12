@@ -18,11 +18,12 @@ row remains governed by its own closure evidence.
 - Executable SHA-256: `a8333b023dbc48b3e111cfa685118f1e4aa63340ab6183d956955faeb38de542`
 - Mechanical result: package construction, arm64 validation, embedded icon
   validation, and the embedded deterministic text-analysis helper probe passed.
-- Human result: pending.
+- Human result: partial; Save completed in the observed attempt, while New,
+  font breadth, and text/Markdown import exposed additional open findings.
 
 This package was built from the source tree that became the implementation
 commit above. The evidence-record commit changes documentation only. It does
-not change the tested executable. The three findings below remain open until a
+not change the tested executable. The findings below remain open until a
 complete direct human workflow validates this corrected package.
 
 ## Phase 46
@@ -52,11 +53,25 @@ complete direct human workflow validates this corrected package.
 
 No permissions or application-trust cause was established.
 
-The implementation uses blocking native dialog APIs from synchronous Tauri
-commands for Open, Save, and Export. The installed dialog API documentation
+The `154c34c` implementation used blocking native dialog APIs from synchronous
+Tauri commands for Open, Save, and Export. The installed dialog API documentation
 states that blocking dialog APIs must not run on the main thread. This invalid
-execution pattern is recorded separately from the manual observation and is
-the defect mechanism to correct.
+execution pattern is recorded separately from the manual observation as the
+original defect mechanism. The corrected candidate replaced that path, but the
+finding remains open until the complete packaged lifecycle is repeated.
+
+### Corrected Candidate Partial Retest
+
+The repository owner directly exercised the corrected candidate identified
+above. Save completed in that attempt without the prior beach ball, but the
+complete repeated lifecycle was not finished, so `UX-46-001` remains open. New
+opened seeded text instead of a blank caret-ready page. The font controls were
+present, but the family list was too narrow. Open did not offer `.txt` or `.md`
+files. Font persistence, DOCX fidelity, import source preservation, references,
+text checks, complete recovery states, and keyboard completion were not proven.
+
+This partial session is historical defect evidence for the `3308a3a` package.
+It cannot validate the replacement artifact produced by the current fixes.
 
 ### Human Task Results
 
@@ -69,7 +84,11 @@ untested task is counted as passed.
 | ID | Severity | Status | Evidence | Disposition |
 | :--- | :--- | :--- | :--- | :--- |
 | UX-46-001 | UX-0 | Open | During manual validation of packaged artifact `154c34c`, invoking Save caused DRAFT to become unresponsive and display the macOS beach ball. Save did not complete, no recovery action was available, and the application required force-quit. | Replace the synchronous blocking dialog path with async Tauri commands and non-blocking Rust-owned dialog callbacks, then rebuild, rehash, and rerun the complete packaged workflow. |
-| UX-46-002 | UX-2 | Open | The packaged editor exposed no font-family control. | Add a bounded family control only if the DRAFT envelope persists it, reopen restores it, and DOCX preserves it accurately. Rebuild, rehash, and validate the corrected package before disposition. |
+| UX-46-002 | UX-2 | Open | The first artifact exposed no font-family control. The corrected candidate exposed a bounded control, but its family list was too narrow for the intended workflow. | Expand one canonical allowlist across validation, toolbar, editor marks, persistence, and DOCX mapping; then rebuild, rehash, and validate persistence and export in the corrected package. |
 | UX-46-003 | UX-2 | Open | The packaged editor exposed no font-size control. | Add a bounded point-size control only if the DRAFT envelope persists it, reopen restores it, and DOCX preserves it accurately. Rebuild, rehash, and validate the corrected package before disposition. |
+| UX-46-004 | UX-2 | Open | New opened seeded content instead of a blank page ready for immediate typing. | Return one empty paragraph from Rust, focus its caret only after success, then validate the replacement package. |
+| UX-46-005 | UX-2 | Open | Open did not offer plain-text files. | Import bounded UTF-8 `.txt` as a new unsaved Rust-owned envelope, preserve the source, and validate first Save to a new `.draft` target. |
+| UX-46-006 | UX-2 | Open | Open did not offer Markdown files. | Import bounded UTF-8 `.md` as literal editable text without parsing or preview claims, then validate the packaged workflow. |
+| UX-46-007 | UX-1 | Open | Text and Markdown import source-preservation behavior could not be exercised because those inputs were unavailable. | Prove the source path never becomes save authority, first Save selects a new `.draft` target, and the source remains byte-for-byte unchanged in automated and packaged tests. |
 
 `RC-01` through `RC-04` and `GATE-46` remain open.

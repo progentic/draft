@@ -69,7 +69,8 @@ tooltips.
 
 Font family and font size are adjacent labeled select controls rather than
 members of the roving button toolbar. Family choices are Default, Arial,
-Georgia, Times New Roman, and Courier New. Size choices are Default or a whole
+Avenir Next, Baskerville, Courier New, Georgia, Helvetica, Menlo, Palatino,
+Times New Roman, Trebuchet MS, and Verdana. Size choices are Default or a whole
 point from 8 through 72. Default removes only the corresponding mark. A change
 preserves other marks and returns focus to the editor without scrolling it.
 The selected values come from Tiptap state; React does not keep a separate
@@ -77,6 +78,12 @@ authoritative formatting value.
 Pasted HTML styling is not a font-authority path. The marks parse only
 `data-draft-font-family` and `data-draft-font-size`, then revalidate the
 canonical value before rendering.
+
+The document session stores one explicit origin: `new`, `imported_text`, or
+`opened_draft`. New and imported sessions both lack a path, but the latter
+shows the source filename with `Imported, unsaved`. The filename is display
+metadata only. No path enters React, and only successful Save changes either
+origin to native persisted DRAFT state.
 
 ## Connectivity Control
 
@@ -179,7 +186,7 @@ bash scripts/verify.sh
 - Manual references cannot be edited, deleted, imported, or synchronized from
   the visible workspace.
 - Text and formatting findings are advisory, transient, and never automatic.
-- Font formatting is limited to four named families and whole point sizes from
+- Font formatting is limited to eleven named families and whole point sizes from
   8 through 72.
 - DOCX export rejects citation nodes and other unsupported content.
 - PDF intake, metadata lookup, diagnostics, credentials, provider-backed

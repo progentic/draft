@@ -10,15 +10,19 @@ use crate::documents::{
     atomic_write::{AtomicDocumentWriteError, write_document_atomically},
     envelope::{DocumentEnvelope, DocumentEnvelopeError, DocumentId},
     registry::{DocumentRegistry, DocumentRegistryError},
+    text_import::{TextImportError, import_text_document},
 };
 
 #[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "code", rename_all = "snake_case")]
 pub(crate) enum OpenDocumentError {
     UnsupportedFileLocation,
+    UnsupportedFileType,
     FileNotFound,
     ReadFailed,
     MalformedJson,
+    InvalidTextEncoding,
+    TextTooLarge,
     InvalidEnvelope { cause: DocumentEnvelopeError },
     Registry { cause: DocumentRegistryError },
 }
@@ -27,6 +31,7 @@ pub(crate) enum OpenDocumentError {
 #[serde(tag = "code", rename_all = "snake_case")]
 pub(crate) enum SaveDocumentError {
     UnsupportedFileLocation,
+    InvalidTarget,
     InvalidEnvelope { cause: DocumentEnvelopeError },
     SerializationFailed,
     Registry { cause: DocumentRegistryError },
@@ -37,8 +42,15 @@ pub(crate) enum SaveDocumentError {
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub(crate) enum OpenDocumentOutcome {
-    Opened { envelope: DocumentEnvelope },
+    OpenedDraft { envelope: DocumentEnvelope },
+    ImportedText { envelope: DocumentEnvelope },
     Cancelled,
+}
+
+#[derive(Clone, Copy)]
+enum OpenSourceKind {
+    Draft,
+    Text,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -66,12 +78,57 @@ pub(crate) fn open_document(
     let Some(source_path) = selected_path else {
         return Ok(OpenDocumentOutcome::Cancelled);
     };
+    let source_kind = classify_open_source(&source_path)?;
     let _file_operation = lock_file_operation(registry).map_err(map_open_registry_error)?;
+    open_source(registry, source_path, source_kind)
+}
+
+fn open_source(
+    registry: &DocumentRegistry,
+    source_path: PathBuf,
+    source_kind: OpenSourceKind,
+) -> Result<OpenDocumentOutcome, OpenDocumentError> {
+    match source_kind {
+        OpenSourceKind::Draft => open_draft_document(registry, source_path),
+        OpenSourceKind::Text => import_text_source(&source_path),
+    }
+}
+
+fn open_draft_document(
+    registry: &DocumentRegistry,
+    source_path: PathBuf,
+) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     let envelope = load_envelope(&source_path)?;
     registry
         .open_from_path(envelope.clone(), source_path)
         .map_err(|cause| OpenDocumentError::Registry { cause })?;
-    Ok(OpenDocumentOutcome::Opened { envelope })
+    Ok(OpenDocumentOutcome::OpenedDraft { envelope })
+}
+
+fn import_text_source(source_path: &Path) -> Result<OpenDocumentOutcome, OpenDocumentError> {
+    import_text_document(source_path)
+        .map(|envelope| OpenDocumentOutcome::ImportedText { envelope })
+        .map_err(map_text_import_error)
+}
+
+fn classify_open_source(path: &Path) -> Result<OpenSourceKind, OpenDocumentError> {
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some(extension) if extension.eq_ignore_ascii_case("draft") => Ok(OpenSourceKind::Draft),
+        Some(extension) if extension.eq_ignore_ascii_case("json") => Ok(OpenSourceKind::Draft),
+        Some(extension) if extension.eq_ignore_ascii_case("txt") => Ok(OpenSourceKind::Text),
+        Some(extension) if extension.eq_ignore_ascii_case("md") => Ok(OpenSourceKind::Text),
+        _ => Err(OpenDocumentError::UnsupportedFileType),
+    }
+}
+
+fn map_text_import_error(error: TextImportError) -> OpenDocumentError {
+    match error {
+        TextImportError::FileNotFound => OpenDocumentError::FileNotFound,
+        TextImportError::ReadFailed => OpenDocumentError::ReadFailed,
+        TextImportError::TooLarge => OpenDocumentError::TextTooLarge,
+        TextImportError::InvalidUtf8 => OpenDocumentError::InvalidTextEncoding,
+        TextImportError::InvalidEnvelope(cause) => OpenDocumentError::InvalidEnvelope { cause },
+    }
 }
 
 pub(crate) fn save_document<SelectPath>(
@@ -186,9 +243,19 @@ where
     BuildPlan: FnOnce(PathBuf) -> SavePlan,
 {
     Ok(match select_path()? {
-        Some(path) => build_plan(path),
+        Some(path) => {
+            validate_new_save_target(&path)?;
+            build_plan(path)
+        }
         None => SavePlan::Cancelled,
     })
+}
+
+fn validate_new_save_target(path: &Path) -> Result<(), SaveDocumentError> {
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some(extension) if extension.eq_ignore_ascii_case("draft") => Ok(()),
+        _ => Err(SaveDocumentError::InvalidTarget),
+    }
 }
 
 fn apply_save_plan<WriteDocument>(
@@ -301,7 +368,7 @@ mod tests {
         );
         assert_eq!(
             reopened,
-            OpenDocumentOutcome::Opened {
+            OpenDocumentOutcome::OpenedDraft {
                 envelope: validated_envelope(updated.clone()),
             },
         );
@@ -333,7 +400,7 @@ mod tests {
         assert_eq!(registry.close(document_id), Ok(expected.clone()));
         assert_eq!(
             open_document(&registry, Some(target.path().to_owned())),
-            Ok(OpenDocumentOutcome::Opened { envelope: expected })
+            Ok(OpenDocumentOutcome::OpenedDraft { envelope: expected })
         );
     }
 
@@ -364,10 +431,122 @@ mod tests {
 
         assert_eq!(
             open_document(&DocumentRegistry::new(), Some(target.path().to_owned())),
-            Ok(OpenDocumentOutcome::Opened { envelope: expected }),
+            Ok(OpenDocumentOutcome::OpenedDraft { envelope: expected }),
         );
         assert_eq!(fs::read(target.path()).unwrap(), source);
         assert_eq!(directory_entries(target.path()), source_directory);
+    }
+
+    #[test]
+    fn text_import_is_unsaved_and_first_save_preserves_source() {
+        let source = TestDocumentPath::with_extension("notes", "txt");
+        let target = TestDocumentPath::new("imported-notes");
+        let source_bytes = b"First line\nSecond line\n";
+        source.write(source_bytes);
+        let registry = DocumentRegistry::new();
+        let envelope =
+            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let document_id = envelope.document_id();
+        let snapshot = serde_json::to_value(&envelope).unwrap();
+
+        assert_eq!(
+            registry.source_path(document_id),
+            Err(DocumentRegistryError::NotOpen)
+        );
+        assert_eq!(save_requires_target(&registry, &snapshot), Ok(true));
+        save_document(&registry, snapshot, || Ok(Some(target.path().to_owned()))).unwrap();
+
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(
+            registry.source_path(document_id),
+            Ok(Some(target.path().to_owned()))
+        );
+    }
+
+    #[test]
+    fn later_import_save_reuses_only_the_chosen_draft_target() {
+        let source = TestDocumentPath::with_extension("source", "txt");
+        let target = TestDocumentPath::new("chosen-target");
+        let source_bytes = b"Imported source";
+        source.write(source_bytes);
+        let registry = DocumentRegistry::new();
+        let envelope =
+            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let snapshot = serde_json::to_value(&envelope).unwrap();
+        save_document(&registry, snapshot.clone(), || {
+            Ok(Some(target.path().to_owned()))
+        })
+        .unwrap();
+        let mut updated = snapshot;
+        updated["title"] = json!("Updated import");
+
+        save_document(&registry, updated.clone(), || {
+            panic!("later save must reuse the DRAFT target")
+        })
+        .unwrap();
+
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(read_json(target.path()), updated);
+    }
+
+    #[test]
+    fn markdown_import_uses_basename_and_remains_literal_editable_source() {
+        let source = TestDocumentPath::with_extension("research-notes", "md");
+        let source_bytes = b"# Heading\n\n**literal emphasis**\n- source item";
+        source.write(source_bytes);
+        let registry = DocumentRegistry::new();
+        let envelope =
+            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+
+        assert_eq!(envelope.title(), "research-notes.md");
+        assert_eq!(
+            plain_text(envelope.document()),
+            String::from_utf8(source_bytes.to_vec()).unwrap()
+        );
+        assert!(
+            document_nodes(envelope.document())
+                .iter()
+                .all(|node| node["type"] == "paragraph")
+        );
+        assert_eq!(
+            registry.source_path(envelope.document_id()),
+            Err(DocumentRegistryError::NotOpen)
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+    }
+
+    #[test]
+    fn malformed_and_oversized_text_imports_fail_without_mutation() {
+        let malformed = TestDocumentPath::with_extension("malformed", "txt");
+        let oversized = TestDocumentPath::with_extension("oversized", "md");
+        let malformed_bytes = [0xff, 0xfe, 0xfd];
+        let oversized_bytes = vec![b'a'; crate::documents::text_import::MAX_TEXT_IMPORT_BYTES + 1];
+        malformed.write(&malformed_bytes);
+        oversized.write(&oversized_bytes);
+        let registry = DocumentRegistry::new();
+
+        assert_eq!(
+            open_document(&registry, Some(malformed.path().to_owned())),
+            Err(OpenDocumentError::InvalidTextEncoding),
+        );
+        assert_eq!(
+            open_document(&registry, Some(oversized.path().to_owned())),
+            Err(OpenDocumentError::TextTooLarge),
+        );
+        assert_eq!(fs::read(malformed.path()).unwrap(), malformed_bytes);
+        assert_eq!(fs::read(oversized.path()).unwrap(), oversized_bytes);
+    }
+
+    #[test]
+    fn unsupported_open_extension_fails_before_read_or_registration() {
+        let source = TestDocumentPath::with_extension("unsupported", "rtf");
+        source.write(b"{\\rtf1 unsupported}");
+        let registry = DocumentRegistry::new();
+
+        assert_eq!(
+            open_document(&registry, Some(source.path().to_owned())),
+            Err(OpenDocumentError::UnsupportedFileType),
+        );
     }
 
     #[test]
@@ -513,6 +692,24 @@ mod tests {
             registry.source_path(document_id),
             Err(DocumentRegistryError::NotOpen),
         );
+    }
+
+    #[test]
+    fn first_save_rejects_non_draft_target_before_write() {
+        let target = TestDocumentPath::with_extension("invalid-target", "txt");
+        let snapshot = envelope_value("Unsaved");
+        let document_id = validated_envelope(snapshot.clone()).document_id();
+        let registry = DocumentRegistry::new();
+
+        assert_eq!(
+            save_document(&registry, snapshot, || Ok(Some(target.path().to_owned()))),
+            Err(SaveDocumentError::InvalidTarget),
+        );
+        assert_eq!(
+            registry.source_path(document_id),
+            Err(DocumentRegistryError::NotOpen)
+        );
+        assert!(!target.path().exists());
     }
 
     #[test]
@@ -836,6 +1033,33 @@ mod tests {
             }]
         }]);
         envelope
+    }
+
+    fn imported_envelope(outcome: OpenDocumentOutcome) -> DocumentEnvelope {
+        match outcome {
+            OpenDocumentOutcome::ImportedText { envelope } => envelope,
+            OpenDocumentOutcome::OpenedDraft { .. } => panic!("text source must import"),
+            OpenDocumentOutcome::Cancelled => panic!("explicit text source must not cancel"),
+        }
+    }
+
+    fn document_nodes(document: &Value) -> &[Value] {
+        document["content"].as_array().expect("document content")
+    }
+
+    fn plain_text(document: &Value) -> String {
+        document_nodes(document)
+            .iter()
+            .map(|node| {
+                node.get("content")
+                    .and_then(Value::as_array)
+                    .and_then(|content| content.first())
+                    .and_then(|text| text.get("text"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     fn invalid_citation_error() -> DocumentEnvelopeError {

@@ -17,9 +17,53 @@ pub(crate) const MAX_FONT_SIZE_POINTS: u64 = 72;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum FontFamily {
     Arial,
-    Georgia,
-    TimesNewRoman,
+    AvenirNext,
+    Baskerville,
     CourierNew,
+    Georgia,
+    Helvetica,
+    Menlo,
+    Palatino,
+    TimesNewRoman,
+    TrebuchetMs,
+    Verdana,
+}
+
+#[derive(Clone, Copy)]
+struct FontDefinition {
+    identifier: &'static str,
+    family: FontFamily,
+    docx_name: &'static str,
+}
+
+const FONT_DEFINITIONS: [FontDefinition; 11] = [
+    font("arial", FontFamily::Arial, "Arial"),
+    font("avenir_next", FontFamily::AvenirNext, "Avenir Next"),
+    font("baskerville", FontFamily::Baskerville, "Baskerville"),
+    font("courier_new", FontFamily::CourierNew, "Courier New"),
+    font("georgia", FontFamily::Georgia, "Georgia"),
+    font("helvetica", FontFamily::Helvetica, "Helvetica"),
+    font("menlo", FontFamily::Menlo, "Menlo"),
+    font("palatino", FontFamily::Palatino, "Palatino"),
+    font(
+        "times_new_roman",
+        FontFamily::TimesNewRoman,
+        "Times New Roman",
+    ),
+    font("trebuchet_ms", FontFamily::TrebuchetMs, "Trebuchet MS"),
+    font("verdana", FontFamily::Verdana, "Verdana"),
+];
+
+const fn font(
+    identifier: &'static str,
+    family: FontFamily,
+    docx_name: &'static str,
+) -> FontDefinition {
+    FontDefinition {
+        identifier,
+        family,
+        docx_name,
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -49,22 +93,18 @@ pub(crate) struct LocatedTextFormatError {
 
 impl FontFamily {
     pub(crate) fn from_identifier(identifier: &str) -> Option<Self> {
-        match identifier {
-            "arial" => Some(Self::Arial),
-            "georgia" => Some(Self::Georgia),
-            "times_new_roman" => Some(Self::TimesNewRoman),
-            "courier_new" => Some(Self::CourierNew),
-            _ => None,
-        }
+        FONT_DEFINITIONS
+            .iter()
+            .find(|definition| definition.identifier == identifier)
+            .map(|definition| definition.family)
     }
 
     pub(crate) fn docx_name(self) -> &'static str {
-        match self {
-            Self::Arial => "Arial",
-            Self::Georgia => "Georgia",
-            Self::TimesNewRoman => "Times New Roman",
-            Self::CourierNew => "Courier New",
-        }
+        FONT_DEFINITIONS
+            .iter()
+            .find(|definition| definition.family == self)
+            .map(|definition| definition.docx_name)
+            .expect("every font family must have one definition")
     }
 }
 
@@ -225,6 +265,19 @@ mod tests {
     }
 
     #[test]
+    fn canonical_font_allowlist_maps_every_identifier_to_docx() {
+        let actual = FONT_DEFINITIONS
+            .iter()
+            .map(|definition| {
+                let family = FontFamily::from_identifier(definition.identifier).unwrap();
+                (definition.identifier, family.docx_name())
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(actual, expected_font_definitions());
+    }
+
+    #[test]
     fn unsupported_font_values_fail_with_bounded_paths() {
         let family = formatted_document(json!([
             { "type": "fontFamily", "attrs": { "family": "url(evil)" } }
@@ -330,5 +383,21 @@ mod tests {
                 "content": [{ "type": "text", "text": "Text", "marks": marks }]
             }]
         })
+    }
+
+    fn expected_font_definitions() -> Vec<(&'static str, &'static str)> {
+        vec![
+            ("arial", "Arial"),
+            ("avenir_next", "Avenir Next"),
+            ("baskerville", "Baskerville"),
+            ("courier_new", "Courier New"),
+            ("georgia", "Georgia"),
+            ("helvetica", "Helvetica"),
+            ("menlo", "Menlo"),
+            ("palatino", "Palatino"),
+            ("times_new_roman", "Times New Roman"),
+            ("trebuchet_ms", "Trebuchet MS"),
+            ("verdana", "Verdana"),
+        ]
     }
 }

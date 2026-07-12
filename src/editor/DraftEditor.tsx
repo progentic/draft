@@ -11,17 +11,7 @@ interface DraftEditorProps {
 
 export const INITIAL_DOCUMENT: JSONContent = {
   type: "doc",
-  content: [
-    {
-      type: "heading",
-      attrs: { level: 1 },
-      content: [{ type: "text", text: "Untitled document" }],
-    },
-    {
-      type: "paragraph",
-      content: [{ type: "text", text: "Begin writing here." }],
-    },
-  ],
+  content: [{ type: "paragraph" }],
 };
 
 export function DraftEditor(props: DraftEditorProps) {

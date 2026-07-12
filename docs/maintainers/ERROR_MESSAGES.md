@@ -16,8 +16,8 @@ then offer a specific, useful message without exposing implementation details.
 | :--- | :--- | :--- |
 | Runtime status | `invalid_application_version`, `event_delivery_failed` | Visible in the document inspector through the Phase 39 presentation policy. |
 | Worker cancellation | `invalid_worker_id`, `worker_not_found`, `registry_unavailable` | No visible workflow currently consumes this wrapper. |
-| Document open | `unsupported_file_location`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_envelope`, `registry` | No visible workflow currently consumes this wrapper. |
-| Document save | `unsupported_file_location`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | No visible workflow currently consumes this wrapper. |
+| Document open | `unsupported_file_location`, `unsupported_file_type`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_text_encoding`, `text_too_large`, `invalid_envelope`, `registry` | The visible Open workflow preserves the current session on failure and gives bounded guidance for DRAFT, UTF-8 text, and Markdown input. |
+| Document save | `unsupported_file_location`, `invalid_target`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | The visible Save workflow asks for a `.draft` name when needed, preserves unsaved state or the last complete document, and offers only the existing Save action. |
 | Citation resolution | `invalid_citation`, `reference_not_found`, `reference_store` | The citation node renders bounded invalid, unavailable, or failed copy. No citation-management workflow exists. |
 | External access | `invalid_url`, `invalid_doi`, `invalid_search_query`, `offline`, `connectivity_unavailable`, `browser_unavailable` | No visible research workflow currently consumes this wrapper. |
 | Connectivity mode | `connectivity_unavailable` | Command, invalid-response, and transport failures remain distinct. The header retains the last confirmed mode or reuses its retry control. |

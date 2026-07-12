@@ -157,7 +157,8 @@ fn close_document(registry: &DocumentRegistry, document_id: DocumentId) {
 
 fn opened_envelope(registry: &DocumentRegistry, path: &Path) -> DocumentEnvelope {
     match open_document(registry, Some(path.to_owned())).expect("document should reopen") {
-        OpenDocumentOutcome::Opened { envelope } => envelope,
+        OpenDocumentOutcome::OpenedDraft { envelope } => envelope,
+        OpenDocumentOutcome::ImportedText { .. } => panic!("DRAFT source must reopen natively"),
         OpenDocumentOutcome::Cancelled => panic!("explicit path must not cancel"),
     }
 }

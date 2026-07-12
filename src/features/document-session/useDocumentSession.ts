@@ -10,8 +10,11 @@ import { saveDocument } from "../../ipc/documentSave";
 export type PendingDocumentAction = "close" | "new" | "open";
 export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "saving";
 
+type DocumentOrigin = "imported_text" | "new" | "opened_draft";
+
 interface DocumentIdentity {
   documentId: string;
+  origin: DocumentOrigin;
   persisted: boolean;
   title: string;
 }
@@ -82,6 +85,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     }
     const savedIdentity = {
       documentId: current.document_id,
+      origin: "opened_draft" as const,
       persisted: true,
       title: current.title,
     };
@@ -193,7 +197,9 @@ function subscribeToDocumentUpdates(
   const handleUpdate = () => {
     setDirty(true);
     setIdentity((identity) =>
-      identity ? { ...identity, title: documentTitle(editor.getJSON()) } : identity,
+      identity
+        ? { ...identity, title: documentTitle(editor.getJSON(), identity.title) }
+        : identity,
     );
   };
   editor.on("update", handleUpdate);
@@ -215,12 +221,16 @@ async function openIntoSession(
   }
   setOperation("opening");
   const result = await openDocument();
-  if (result.status !== "opened") {
+  if (!isSuccessfulOpen(result)) {
     setOperation("ready");
     setFeedback(openFailureMessage(result));
     return;
   }
-  if (current?.persisted && !(await releaseReplacedDocument(current, result.envelope))) {
+  const persisted = result.status === "opened_draft";
+  if (
+    current?.persisted &&
+    !(await releaseReplacedDocument(current, result.envelope, persisted))
+  ) {
     setOperation("ready");
     setFeedback("DRAFT could not replace the open document. Your current document remains open.");
     return;
@@ -228,12 +238,26 @@ async function openIntoSession(
   loadEnvelope(editor, result.envelope);
   setIdentity({
     documentId: result.envelope.document_id,
-    persisted: true,
+    origin: result.status,
+    persisted,
     title: result.envelope.title,
   });
-  setDirty(false);
+  setDirty(!persisted);
   setOperation("ready");
-  setFeedback("Document opened.");
+  setFeedback(
+    persisted
+      ? "DRAFT document opened."
+      : "Text imported. Save as a DRAFT document to keep your work.",
+  );
+}
+
+function isSuccessfulOpen(
+  result: Awaited<ReturnType<typeof openDocument>>,
+): result is Extract<
+  Awaited<ReturnType<typeof openDocument>>,
+  { status: "imported_text" | "opened_draft" }
+> {
+  return result.status === "opened_draft" || result.status === "imported_text";
 }
 
 async function initializeDocumentSession(
@@ -290,12 +314,15 @@ async function releaseCurrentDocument(current: DocumentIdentity) {
 async function releaseReplacedDocument(
   current: DocumentIdentity,
   replacement: DocumentEnvelopeSnapshot,
+  replacementPersisted: boolean,
 ) {
   const closed = await closeDocument(current.documentId);
   if (closed.status === "closed") {
     return true;
   }
-  await closeDocument(replacement.document_id);
+  if (replacementPersisted) {
+    await closeDocument(replacement.document_id);
+  }
   return false;
 }
 
@@ -324,8 +351,10 @@ function loadCreatedDocument(
   setDirty: (dirty: boolean) => void,
 ) {
   loadEnvelope(editor, envelope);
+  focusEditorStart(editor);
   setIdentity({
     documentId: envelope.document_id,
+    origin: "new",
     persisted: false,
     title: envelope.title,
   });
@@ -372,15 +401,19 @@ function currentSnapshot(
   return {
     schema_version: 1,
     document_id: identity.documentId,
-    title: documentTitle(document),
+    title: documentTitle(document, identity.title),
     document: document as DocumentEnvelopeSnapshot["document"],
   };
 }
 
-function documentTitle(document: JSONContent) {
+function documentTitle(document: JSONContent, fallback: string) {
   const heading = document.content?.find((node) => node.type === "heading" && node.attrs?.level === 1);
   const text = heading?.content?.map((node) => node.text ?? "").join("").trim();
-  return text || "Untitled document";
+  return text || fallback;
+}
+
+function focusEditorStart(editor: Editor) {
+  queueMicrotask(() => editor.commands.focus("start", { scrollIntoView: false }));
 }
 
 function documentStatus(
@@ -400,6 +433,9 @@ function documentStatus(
   if (!identity) {
     return "No document open";
   }
+  if (identity.origin === "imported_text" && !identity.persisted) {
+    return "Imported, unsaved";
+  }
   if (dirty) {
     return "Unsaved changes";
   }
@@ -411,16 +447,45 @@ function openFailureMessage(result: Awaited<ReturnType<typeof openDocument>>) {
     return "Open cancelled.";
   }
   if (result.status === "error" && result.error.type === "command") {
-    return result.error.error.code === "file_not_found"
-      ? "That document is no longer available. Choose another DRAFT document."
-      : "DRAFT could not open that document. Choose a valid DRAFT document and try again.";
+    return openCommandFailureMessage(result.error.error.code);
   }
   return "DRAFT could not open the document. Try again.";
+}
+
+function openCommandFailureMessage(
+  code: import("../../ipc/documentErrors").OpenDocumentCommandError["code"],
+) {
+  switch (code) {
+    case "file_not_found":
+      return "That file is no longer available. Choose another document.";
+    case "unsupported_file_type":
+      return "Choose a DRAFT, plain-text, or Markdown file.";
+    case "invalid_text_encoding":
+      return "Text and Markdown files must use UTF-8 encoding.";
+    case "text_too_large":
+      return "That text file is too large to import. Choose a file no larger than 8 MiB.";
+    case "malformed_json":
+    case "invalid_envelope":
+      return "That DRAFT document is invalid or uses an unsupported format.";
+    case "read_failed":
+      return "DRAFT could not read that file. Check access and try again.";
+    case "registry":
+      return "That DRAFT document is already open or unavailable.";
+    case "unsupported_file_location":
+      return "DRAFT could not use that file location. Choose another file.";
+  }
 }
 
 function saveFailureMessage(result: Awaited<ReturnType<typeof saveDocument>>) {
   if (result.status === "cancelled") {
     return "Save cancelled. Your document remains unsaved.";
+  }
+  if (
+    result.status === "error" &&
+    result.error.type === "command" &&
+    result.error.error.code === "invalid_target"
+  ) {
+    return "Choose a .draft file name. Your document remains unsaved.";
   }
   return "DRAFT could not save the document. Your open document has not been replaced.";
 }

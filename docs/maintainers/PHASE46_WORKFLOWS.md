@@ -32,7 +32,9 @@ The visible workflow uses these typed commands:
 - `export_document` for a Rust-selected `.docx` target.
 
 `create_document` accepts no fields and returns the fixed initial envelope with
-a Rust-generated document identity. React never generates a document ID.
+a Rust-generated document identity and one empty paragraph. React never
+generates a document ID. New content receives focus at the empty paragraph only
+after creation succeeds.
 `close_document` releases the Rust registry handle. Opening a replacement first
 validates and registers it, then releases the prior clean handle. If release
 fails, DRAFT closes the replacement and keeps the current document visible.
@@ -55,10 +57,20 @@ without running a blocking dialog call on the application thread. While one of
 these operations is pending, the workspace prevents conflicting lifecycle and
 panel actions. React never receives the selected filesystem path.
 
+Open returns one typed origin outcome. `opened_draft` carries a validated
+native envelope whose path remains registered in Rust. `imported_text` carries
+a new unsaved Rust-owned envelope created from a bounded UTF-8 `.txt` or `.md`
+source. Its title is the source filename only, the source path is absent, and
+the first Save selects a new `.draft` target. `cancelled` leaves content,
+selection, title, dirty state, and origin unchanged. Markdown syntax remains
+literal text; CRLF and LF line endings become deterministic editor paragraphs,
+while the source file bytes remain untouched.
+
 ## Font Formatting
 
-The editor exposes four canonical families: Arial, Georgia, Times New Roman,
-and Courier New. It accepts whole point sizes from 8 through 72 in one-point
+The editor exposes eleven canonical families: Arial, Avenir Next, Baskerville,
+Courier New, Georgia, Helvetica, Menlo, Palatino, Times New Roman, Trebuchet MS,
+and Verdana. It accepts whole point sizes from 8 through 72 in one-point
 increments. Default removes the selected family or size mark without changing
 other marks.
 
@@ -119,7 +131,7 @@ target, and calls the existing atomic exporter. Cancellation changes no file.
 A successful export reports bounded byte count data to the client but the UI
 announces only completion and source preservation.
 
-The strict subset includes the four canonical families and bounded whole-point
+The strict subset includes the eleven canonical families and bounded whole-point
 sizes. Citation nodes and other unsupported content fail explicitly; they are
 never omitted or silently substituted. The DRAFT source document is not
 modified by export.
@@ -148,7 +160,9 @@ input bounds, all finding codes, deterministic order, UTF-8 ranges, timeout,
 cancellation, unavailable runtime, offline execution, and Apple system Python.
 
 Frontend tests cover strict IPC validation, lifecycle ownership, unsaved focus
-containment, reference insertion, pending/success/failure states, stale runs,
+containment, explicit origins, literal text import, source-path absence,
+cancelled replacement non-mutation, reference insertion,
+pending/success/failure states, stale runs,
 passage mapping, accessible labels, announcements, and export source-safety
 copy. Font tests cover allowlist validation, malformed values, Tiptap JSON,
 collapsed and selected text, mark preservation, keyboard focus, lifecycle

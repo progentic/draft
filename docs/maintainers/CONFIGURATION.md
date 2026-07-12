@@ -111,6 +111,7 @@ database, Python, or credential-store probe. See
 | `NETWORK_REQUEST_TIMEOUT` | 30 seconds | `network/client.rs` | Complete request bound. |
 | `PROVIDER_REQUEST_INTERVAL` | 1 second | `network/client.rs` | Minimum interval per metadata provider. |
 | `MAX_METADATA_RESPONSE_BYTES` | 1 MiB | `network/client.rs` | Maximum retained metadata response. |
+| `MAX_TEXT_IMPORT_BYTES` | 8 MiB | `documents/text_import.rs` | Maximum `.txt` or `.md` source read before a typed rejection. |
 | `MAX_RATE_LIMIT_BACKOFF` | 60 seconds | `network/client.rs` | Maximum bounded HTTP 429 delay. |
 | `STABLE_WRITE_DEBOUNCE` | 1 second | `imports/pdf.rs` | Required quiet period before watched PDF confirmation. |
 | `MAX_EXTERNAL_URL_LENGTH` | 2,048 characters | `research/external_access.rs` | Maximum accepted browser-handoff URL. |
@@ -168,7 +169,7 @@ period. It cannot detect an unreported same-size in-place modification.
 | Heading levels | 1 through 6 | `formatting/checks.rs` | Accepted outline range. |
 | Formatting styles | `apa7`, `mla9`, `chicago17_author_date` | `formatting/checks.rs` | Closed consistency identifiers, not complete style conformance. |
 | `DEFAULT_FORMATTING_STYLE` | `apa7` | `src/ipc/formattingReview.ts` | Initial review selection; either other closed identifier may be selected before a run. |
-| Font-family identifiers | `arial`, `georgia`, `times_new_roman`, `courier_new` | Rust and TypeScript text-format modules | Complete accepted family allowlist. These map exactly to Arial, Georgia, Times New Roman, and Courier New in DOCX output. |
+| Font-family identifiers | `arial`, `avenir_next`, `baskerville`, `courier_new`, `georgia`, `helvetica`, `menlo`, `palatino`, `times_new_roman`, `trebuchet_ms`, `verdana` | Rust and TypeScript text-format modules | Complete accepted family allowlist. Each identifier maps to the same named DOCX family without substitution. |
 | `MIN_FONT_SIZE_POINTS` | 8 points | Rust and TypeScript text-format modules | Smallest accepted text size. |
 | `MAX_FONT_SIZE_POINTS` | 72 points | Rust and TypeScript text-format modules | Largest accepted text size. Sizes are whole points in one-point increments and export as DOCX half-points. |
 | `MAX_DOCX_SOURCE_BYTES` | 8 MiB | `exports/docx.rs` | Serialized source-document bound. |

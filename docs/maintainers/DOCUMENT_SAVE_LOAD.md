@@ -27,14 +27,14 @@ These phases do not add:
 ## Open Command
 
 `open_document` receives an empty request. Rust opens the native file picker
-through `tauri-plugin-dialog` with `.draft` and `.json` filters. The frontend
-cannot choose or inspect a path through IPC.
+through `tauri-plugin-dialog` with `.draft`, compatible legacy `.json`, `.txt`,
+and `.md` filters. The frontend cannot choose or inspect a path through IPC.
 
 The command and dialog adapter are asynchronous. The adapter parents the
 picker to the main window, uses the plugin callback API, and awaits a one-shot
 typed result. It never uses a blocking dialog call on the application thread.
 
-After selection, Rust:
+For `.draft` and `.json`, Rust:
 
 1. Reads the selected bytes.
 2. Parses JSON.
@@ -45,6 +45,14 @@ After selection, Rust:
 
 Malformed, invalid, or duplicate files never replace an existing registry
 entry.
+
+For `.txt` and `.md`, Rust reads at most 8 MiB of UTF-8, creates a new validated
+unsaved envelope, and returns `imported_text`. Every LF-delimited line becomes
+one paragraph; a terminal CR is removed so CRLF input behaves consistently.
+Markdown punctuation remains literal text. The response title contains only
+the source filename. Rust does not register or return the source path, and the
+source bytes are never changed. Invalid UTF-8, oversized input, unreadable
+files, and unsupported extensions fail before registration or persistence.
 
 ## Create And Close Commands
 
@@ -60,11 +68,17 @@ through the visible unsaved-changes dialog before replacement.
 
 The visible lifecycle is explicit:
 
-1. Rust creates a validated envelope with an unsaved identity.
+1. Rust creates a validated envelope with an unsaved identity and one empty paragraph.
 2. The frontend edits that envelope as transient content.
 3. The first successful Save selects a path and establishes the durable handle.
 4. Later saves update the same registered document.
 5. Close releases the active handle; an unsaved document has no handle to release.
+
+The frontend records one explicit origin: `new`, `imported_text`, or
+`opened_draft`. A Rust-owned ID is in-memory identity, not proof of persistence.
+Only `opened_draft` has a durable Rust-registered path. Successful first Save
+transitions either unsaved origin to `opened_draft`; cancellation preserves the
+prior origin and visible state.
 
 ## Save Command
 
@@ -79,6 +93,11 @@ document invokes the Rust native save dialog and attaches the selected path to
 its live handle. Rust rejects a path already owned by another live document.
 Cancellation and failed writes do not register, replace, or attach the
 document snapshot.
+
+A newly selected target must use the `.draft` extension. Rust enforces this
+before writer invocation; the native dialog filter is not treated as the
+authority. Existing compatible `.json` documents may continue saving only to
+their already registered path.
 
 A read-only preflight decides whether a target dialog is required. The actual
 save path validates again while holding the existing lifecycle lock, so the
@@ -126,15 +145,19 @@ release gate.
 Open errors are typed as:
 
 - `unsupported_file_location`
+- `unsupported_file_type`
 - `file_not_found`
 - `read_failed`
 - `malformed_json`
+- `invalid_text_encoding`
+- `text_too_large`
 - `invalid_envelope` with a typed envelope `cause`
 - `registry` with a typed registry `cause`
 
 Save errors are typed as:
 
 - `unsupported_file_location`
+- `invalid_target` when a new target does not end in `.draft`
 - `invalid_envelope` with a typed envelope `cause`
 - `serialization_failed`
 - `registry` with a typed registry `cause`
@@ -146,6 +169,10 @@ target replacement, temporary cleanup, and parent-directory sync stages. Raw
 paths and operating-system errors never cross IPC.
 
 User cancellation is a successful `cancelled` response, not an error.
+
+Open success is also explicit: `opened_draft` means Rust retained a native
+save target; `imported_text` means the returned envelope has no target and must
+use Save As; `cancelled` means no session state changed.
 
 ## Frontend Boundary
 

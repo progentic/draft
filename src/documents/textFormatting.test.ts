@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  FONT_FAMILIES,
+  fontFamilyCss,
   hasValidTextFormatting,
   isFontFamilyId,
   isFontSizePoints,
@@ -8,6 +10,25 @@ import {
 } from "./textFormatting";
 
 describe("text formatting contract", () => {
+  it("keeps the complete canonical font allowlist stable", () => {
+    expect(FONT_FAMILIES.map(({ id, label }) => [id, label])).toEqual([
+      ["arial", "Arial"],
+      ["avenir_next", "Avenir Next"],
+      ["baskerville", "Baskerville"],
+      ["courier_new", "Courier New"],
+      ["georgia", "Georgia"],
+      ["helvetica", "Helvetica"],
+      ["menlo", "Menlo"],
+      ["palatino", "Palatino"],
+      ["times_new_roman", "Times New Roman"],
+      ["trebuchet_ms", "Trebuchet MS"],
+      ["verdana", "Verdana"],
+    ]);
+    expect(FONT_FAMILIES.map(({ id }) => fontFamilyCss(id))).toEqual(
+      FONT_FAMILIES.map(({ label }) => `"${label}"`),
+    );
+  });
+
   it("accepts only canonical families and bounded integer point sizes", () => {
     expect(isFontFamilyId("georgia")).toBe(true);
     expect(isFontFamilyId("url(evil)")).toBe(false);

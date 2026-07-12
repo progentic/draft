@@ -62,6 +62,15 @@ describe("saveDocument", () => {
     });
   });
 
+  it("preserves a typed invalid first-save target", async () => {
+    invokeMock.mockRejectedValue({ code: "invalid_target" });
+
+    await expect(saveDocument(envelope())).resolves.toEqual({
+      status: "error",
+      error: { type: "command", error: { code: "invalid_target" } },
+    });
+  });
+
   it("preserves typed atomic-write failures", async () => {
     const error = { code: "write_failed", cause: { code: "replace_target" } };
     invokeMock.mockRejectedValue(error);

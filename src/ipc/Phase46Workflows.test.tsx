@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -19,6 +19,7 @@ import { FINDING_POLICIES } from "./textAnalysis";
 
 const OPENED_ID = "00000000-0000-4000-8000-000000000002";
 const CREATED_ID = "00000000-0000-4000-8000-000000000001";
+const IMPORTED_ID = "00000000-0000-4000-8000-000000000003";
 
 describe("Phase 46 visible workflows", () => {
   beforeEach(() => {
@@ -136,11 +137,11 @@ describe("Phase 46 visible workflows", () => {
         savedEnvelope = (args.request as { snapshot: ReturnType<typeof createdEnvelope> }).snapshot;
         return { status: "saved", documentId: savedEnvelope.document_id };
       },
-      openDocument: async () => ({ status: "opened", envelope: savedEnvelope }),
+      openDocument: async () => ({ status: "opened_draft", envelope: savedEnvelope }),
     });
     render(<App />);
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Font family" }), "georgia");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Font family" }), "avenir_next");
     await user.selectOptions(screen.getByRole("combobox", { name: "Font size in points" }), "19");
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Document editor" }));
@@ -148,19 +149,168 @@ describe("Phase 46 visible workflows", () => {
     await user.keyboard("Styled ");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(JSON.stringify(savedEnvelope)).toContain('"family":"georgia"');
+    expect(JSON.stringify(savedEnvelope)).toContain('"family":"avenir_next"');
     expect(JSON.stringify(savedEnvelope)).toContain('"points":19');
     await user.click(screen.getByRole("button", { name: "Close" }));
     await user.click(screen.getByRole("button", { name: "Open" }));
 
     const editor = screen.getByRole("textbox", { name: "Document editor" });
-    expect(editor.querySelector('[data-draft-font-family="georgia"]')).toBeTruthy();
+    expect(editor.querySelector('[data-draft-font-family="avenir_next"]')).toBeTruthy();
     expect(editor.querySelector('[data-draft-font-size="19"]')).toBeTruthy();
+  });
+
+  it("creates a focused blank document with a caret ready for typing", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    await user.type(editor, "Temporary text");
+    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.click(screen.getByRole("button", { name: "Discard changes" }));
+
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    expect(editor.textContent).toBe("");
+    expect(window.getSelection()?.anchorOffset).toBe(0);
+    expect(commandNames()).toEqual(["create_document", "create_document"]);
+  });
+
+  it("keeps an imported filename display-only through first and later saves", async () => {
+    const user = userEvent.setup();
+    const saveRequests: Record<string, unknown>[] = [];
+    installDefaultCommands({
+      openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
+      saveDocument: async (args) => {
+        saveRequests.push(args);
+        return { status: "saved", documentId: IMPORTED_ID };
+      },
+    });
+    render(<App />);
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    expect(await screen.findByText("Text imported. Save as a DRAFT document to keep your work.")).toBeTruthy();
+    expect(screen.getByText("Imported, unsaved")).toBeTruthy();
+    expect(screen.getByText("notes.md")).toBeTruthy();
+    expect(editor.textContent).toContain("# Literal Markdown");
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByText("Saved")).toBeTruthy();
+    expect(saveRequests).toHaveLength(2);
+    expect(Object.keys(saveRequests[0] ?? {})).toEqual(["request"]);
+    expect(JSON.stringify(saveRequests)).not.toContain("sourcePath");
+    expect(JSON.stringify(saveRequests)).not.toContain("source_path");
+  });
+
+  it("keeps an imported session unsaved when its first Save is cancelled", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
+      saveDocument: async () => ({ status: "cancelled" }),
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
+    expect(screen.getByText("Imported, unsaved")).toBeTruthy();
+    expect(screen.getByText("notes.md")).toBeTruthy();
+  });
+
+  it("rejects a non-DRAFT first-save target without changing import state", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
+      saveDocument: async () => {
+        throw { code: "invalid_target" };
+      },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Choose a .draft file name. Your document remains unsaved.")).toBeTruthy();
+    expect(screen.getByText("Imported, unsaved")).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
+      "# Literal Markdown",
+    );
+  });
+
+  it("preserves native content, selection, title, and state when Open is cancelled", async () => {
+    const user = userEvent.setup();
+    let opens = 0;
+    installDefaultCommands({
+      openDocument: async () =>
+        opens++ === 0
+          ? { status: "opened_draft", envelope: openedEnvelope() }
+          : { status: "cancelled" },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    editor.focus();
+    selectText(editor.querySelector("p")?.firstChild, 2, 8);
+    document.dispatchEvent(new Event("selectionchange"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    expect(await screen.findByText("Open cancelled.")).toBeTruthy();
+    expect(editor.textContent).toContain("Persisted evidence");
+    expect(screen.getAllByText("Reopened research notes")).toHaveLength(3);
+    expect(screen.getByText("Saved")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Bold" }));
+    expect(editor.querySelector("strong")?.textContent).toBe("rsiste");
+  });
+
+  it("preserves the open document when a typed Open failure is presented", async () => {
+    const user = userEvent.setup();
+    let opens = 0;
+    installDefaultCommands({
+      openDocument: async () => {
+        if (opens++ === 0) {
+          return { status: "opened_draft", envelope: openedEnvelope() };
+        }
+        throw { code: "file_not_found" };
+      },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open" }));
+
+    expect(await screen.findByText("That file is no longer available. Choose another document.")).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
+      "Persisted evidence",
+    );
+    expect(screen.getByText("Saved")).toBeTruthy();
+  });
+
+  it("preserves unsaved content when a later New command fails", async () => {
+    const user = userEvent.setup();
+    let creates = 0;
+    installDefaultCommands({
+      createDocument: async () => {
+        if (creates++ === 0) {
+          return { status: "created", envelope: createdEnvelope() };
+        }
+        throw { code: "template_invalid" };
+      },
+    });
+    render(<App />);
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.type(editor, "Keep this text");
+    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.click(screen.getByRole("button", { name: "Discard changes" }));
+
+    expect(await screen.findByText("DRAFT could not create a document. Try again.")).toBeTruthy();
+    expect(editor.textContent).toContain("Keep this text");
+    expect(screen.getByText("Unsaved changes")).toBeTruthy();
   });
 
   it("adds a reference and inserts a resolvable citation", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Document editor" }));
+    });
     await user.click(screen.getByRole("button", { name: "References" }));
     expect(await screen.findAllByText("No references saved yet.")).toHaveLength(2);
 
@@ -181,6 +331,7 @@ describe("Phase 46 visible workflows", () => {
     const pending = deferred<unknown>();
     installDefaultCommands({ analysis: () => pending.promise });
     render(<App />);
+    await user.type(screen.getByRole("textbox", { name: "Document editor" }), "Word word.");
     await user.click(screen.getByRole("button", { name: "Text checks" }));
     await user.click(screen.getByRole("button", { name: "Check document" }));
     expect(screen.getByText("Checking the current document.")).toBeTruthy();
@@ -216,6 +367,7 @@ describe("Phase 46 visible workflows", () => {
       analysis: () => Promise.reject({ code: "runtime_unavailable" }),
     });
     render(<App />);
+    await user.type(screen.getByRole("textbox", { name: "Document editor" }), "Text to check.");
     await user.click(screen.getByRole("button", { name: "Text checks" }));
     await user.click(screen.getByRole("button", { name: "Check document" }));
 
@@ -297,7 +449,7 @@ function installDefaultCommands(overrides?: {
     if (command === "open_document") {
       return overrides?.openDocument
         ? overrides.openDocument()
-        : { status: "opened", envelope: openedEnvelope() };
+        : { status: "opened_draft", envelope: openedEnvelope() };
     }
     if (command === "list_references") {
       return [];
@@ -327,12 +479,36 @@ function createdEnvelope() {
     title: "Untitled document",
     document: {
       type: "doc",
+      content: [{ type: "paragraph" }],
+    },
+  };
+}
+
+function importedEnvelope() {
+  return {
+    schema_version: 1,
+    document_id: IMPORTED_ID,
+    title: "notes.md",
+    document: {
+      type: "doc",
       content: [
-        { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Untitled document" }] },
-        { type: "paragraph", content: [{ type: "text", text: "Begin writing here." }] },
+        { type: "paragraph", content: [{ type: "text", text: "# Literal Markdown" }] },
+        { type: "paragraph", content: [{ type: "text", text: "**not parsed**" }] },
       ],
     },
   };
+}
+
+function selectText(node: ChildNode | null | undefined, start: number, end: number) {
+  if (!node) {
+    throw new Error("Expected selectable editor text");
+  }
+  const range = document.createRange();
+  range.setStart(node, start);
+  range.setEnd(node, end);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
 }
 
 function openedEnvelope() {

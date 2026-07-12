@@ -19,12 +19,27 @@ export type AtomicDocumentWriteError = {
 };
 
 export type OpenDocumentCommandError =
-  | { code: "unsupported_file_location" | "file_not_found" | "read_failed" | "malformed_json" }
+  | {
+      code:
+        | "unsupported_file_location"
+        | "unsupported_file_type"
+        | "file_not_found"
+        | "read_failed"
+        | "malformed_json"
+        | "invalid_text_encoding"
+        | "text_too_large";
+    }
   | { code: "invalid_envelope"; cause: DocumentEnvelopeError }
   | { code: "registry"; cause: DocumentRegistryError };
 
 export type SaveDocumentCommandError =
-  | { code: "unsupported_file_location" | "serialization_failed" | "durability_uncertain" }
+  | {
+      code:
+        | "unsupported_file_location"
+        | "invalid_target"
+        | "serialization_failed"
+        | "durability_uncertain";
+    }
   | { code: "write_failed"; cause: AtomicDocumentWriteError }
   | { code: "invalid_envelope"; cause: DocumentEnvelopeError }
   | { code: "registry"; cause: DocumentRegistryError };
@@ -58,9 +73,12 @@ function isFieldlessOpenError(value: Record<string, unknown>): boolean {
   return (
     hasOnlyCode(value) &&
     (value.code === "unsupported_file_location" ||
+      value.code === "unsupported_file_type" ||
       value.code === "file_not_found" ||
       value.code === "read_failed" ||
-      value.code === "malformed_json")
+      value.code === "malformed_json" ||
+      value.code === "invalid_text_encoding" ||
+      value.code === "text_too_large")
   );
 }
 
@@ -68,6 +86,7 @@ function isFieldlessSaveError(value: Record<string, unknown>): boolean {
   return (
     hasOnlyCode(value) &&
     (value.code === "unsupported_file_location" ||
+      value.code === "invalid_target" ||
       value.code === "serialization_failed" ||
       value.code === "durability_uncertain")
   );

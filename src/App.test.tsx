@@ -61,7 +61,8 @@ describe("DRAFT workspace shell", () => {
     expect(screen.getByRole("toolbar", { name: "Text formatting" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document outline" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document details" })).toBeTruthy();
-    expect(screen.getAllByText("Untitled document").length).toBeGreaterThan(1);
+    expect(screen.getByText("Untitled document")).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toBe("");
     expect(screen.getByText("Not saved")).toBeTruthy();
     expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
   });
@@ -78,9 +79,7 @@ describe("DRAFT workspace shell", () => {
     expect(workspaceTitles[0]?.compareDocumentPosition(outlineTitle)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(
-      within(editor).getByRole("heading", { level: 1, name: "Untitled document" }),
-    ).toBeTruthy();
+    expect(within(editor).queryByRole("heading", { level: 1 })).toBeNull();
   });
 
   it("toggles the document outline without changing document state", async () => {
@@ -99,9 +98,7 @@ describe("DRAFT workspace shell", () => {
     expect(screen.getByTestId("workspace-body").className).toContain(
       "workspace-body--outline-closed",
     );
-    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
-      "Begin writing here.",
-    );
+    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toBe("");
   });
 
   it("exposes working Tiptap formatting controls", async () => {
@@ -134,12 +131,10 @@ describe("DRAFT workspace shell", () => {
   });
 
   it("exposes a horizontal formatting toolbar with one Tab entry", async () => {
-    const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Not saved");
 
     const toolbar = screen.getByRole("toolbar", { name: "Text formatting" });
-    const outlineEntry = screen.getByRole("button", { name: "H1Untitled document" });
     const undoButton = screen.getByRole("button", { name: "Undo" });
     const boldButton = screen.getByRole("button", { name: "Bold" });
     const enabledButtons = Array.from(
@@ -149,10 +144,6 @@ describe("DRAFT workspace shell", () => {
     expect(toolbar.getAttribute("aria-orientation")).toBe("horizontal");
     expect(enabledButtons.filter((button) => button.tabIndex === 0)).toEqual([boldButton]);
     expect(undoButton.hasAttribute("aria-pressed")).toBe(false);
-
-    outlineEntry.focus();
-    await user.tab();
-    expect(document.activeElement).toBe(boldButton);
   });
 
   it("moves toolbar focus with horizontal navigation keys", async () => {
@@ -163,7 +154,9 @@ describe("DRAFT workspace shell", () => {
     const boldButton = screen.getByRole("button", { name: "Bold" });
     const italicButton = screen.getByRole("button", { name: "Italic" });
     const formattingReviewButton = screen.getByRole("button", { name: "Formatting review" });
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
 
+    await waitFor(() => expect(document.activeElement).toBe(editor));
     boldButton.focus();
     await user.keyboard("{ArrowRight}");
     expect(document.activeElement).toBe(italicButton);
@@ -243,10 +236,7 @@ function initialEnvelope() {
     title: "Untitled document",
     document: {
       type: "doc",
-      content: [
-        { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Untitled document" }] },
-        { type: "paragraph", content: [{ type: "text", text: "Begin writing here." }] },
-      ],
+      content: [{ type: "paragraph" }],
     },
   };
 }

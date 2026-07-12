@@ -69,7 +69,10 @@ mod tests {
     #[test]
     fn response_serialization_is_stable() {
         let responses = [
-            OpenDocumentOutcome::Opened {
+            OpenDocumentOutcome::OpenedDraft {
+                envelope: envelope(),
+            },
+            OpenDocumentOutcome::ImportedText {
                 envelope: envelope(),
             },
             OpenDocumentOutcome::Cancelled,
@@ -78,7 +81,8 @@ mod tests {
         assert_eq!(
             serde_json::to_value(responses).expect("responses should serialize"),
             json!([
-                { "status": "opened", "envelope": envelope_value() },
+                { "status": "opened_draft", "envelope": envelope_value() },
+                { "status": "imported_text", "envelope": envelope_value() },
                 { "status": "cancelled" }
             ]),
         );
@@ -88,9 +92,12 @@ mod tests {
     fn error_serialization_is_stable() {
         let errors = [
             OpenDocumentError::UnsupportedFileLocation,
+            OpenDocumentError::UnsupportedFileType,
             OpenDocumentError::FileNotFound,
             OpenDocumentError::ReadFailed,
             OpenDocumentError::MalformedJson,
+            OpenDocumentError::InvalidTextEncoding,
+            OpenDocumentError::TextTooLarge,
             OpenDocumentError::InvalidEnvelope {
                 cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
             },
@@ -106,9 +113,12 @@ mod tests {
             serde_json::to_value(errors).expect("errors should serialize"),
             json!([
                 { "code": "unsupported_file_location" },
+                { "code": "unsupported_file_type" },
                 { "code": "file_not_found" },
                 { "code": "read_failed" },
                 { "code": "malformed_json" },
+                { "code": "invalid_text_encoding" },
+                { "code": "text_too_large" },
                 {
                     "code": "invalid_envelope",
                     "cause": { "code": "unsupported_schema_version", "found": 2 }

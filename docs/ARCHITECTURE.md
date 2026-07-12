@@ -136,7 +136,7 @@ deliberately smaller than the full system described in this architecture:
   generation and target node still match.
 - Rust compiles a strict bounded Tiptap subset into deterministic in-memory DOCX
   packages and atomically replaces only Rust-owned `.docx` targets. The subset
-  includes four canonical font families and whole point sizes from 8 through
+  includes eleven canonical font families and whole point sizes from 8 through
   72, emitted as explicit run properties. Unsupported nodes, marks, fields,
   values, and citations fail explicitly; no source document or registry state
   is changed. Phase 46 adds one Rust-selected export command and visible
@@ -151,6 +151,12 @@ deliberately smaller than the full system described in this architecture:
   lifecycle operations are serialized, failures before replacement preserve
   prior state, and a post-replacement durability failure advances the registry
   to the complete on-disk snapshot while returning a typed error.
+- Rust distinguishes native DRAFT opens from bounded UTF-8 text imports. A
+  `.draft` or compatible legacy `.json` selection is validated and registered
+  with its durable path. A `.txt` or `.md` selection creates a new Rust-owned
+  unsaved envelope whose display title is the source filename only; no source
+  path crosses IPC or becomes save authority. First Save always chooses a new
+  `.draft` target, while Markdown remains literal editable source text.
 - One crate-level Phase 41 test composes those existing document, reference,
   citation, and DOCX boundaries. It adds no runtime orchestration or visible
   workflow; citation-bearing DOCX remains an explicit typed rejection.

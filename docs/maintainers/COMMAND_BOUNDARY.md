@@ -165,6 +165,12 @@ Python process configuration, helper stderr, or export implementation detail.
 The complete visible lifecycle and recovery contract is documented in
 `docs/maintainers/PHASE46_WORKFLOWS.md`.
 
+Phase 46 also extends the existing `open_document` outcome without adding a
+path-bearing request or response. `opened_draft` identifies a registered native
+document, `imported_text` identifies a new unsaved envelope derived from
+bounded UTF-8 text, and `cancelled` preserves the active session. Imported
+titles contain a filename only and never become save authority.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |

@@ -197,12 +197,17 @@ so Phase 38 adds no visible diagnostics or support workflow. See
 ## Phase 46 workflow wrappers
 
 Phase 46 adds strict clients for `create_document`, `close_document`, `add_reference`,
-`list_references`, `run_text_analysis`, and `export_document`. Each client owns
+`list_references`, `run_text_analysis`, and `export_document`, and extends the
+existing Open client with exact `opened_draft`, `imported_text`, and `cancelled`
+outcomes. Each client owns
 one command constant, sends one bounded request envelope, validates an unknown
 response, and preserves only its closed command errors.
 
 The create client accepts no identity or content input; Rust returns the
-validated initial envelope. The reference clients return citekey and title
+validated blank initial envelope. The Open client receives no path and never
+returns one. Its imported-text title is display-only, while the session stores
+the typed origin instead of inferring persistence from an ID or filename. The
+reference clients return citekey and title
 summaries only. The text client
 accepts no provider, credential, path, model, or runtime option and validates
 the exact five finding codes, stable ordering, limits, and UTF-8 byte ranges.

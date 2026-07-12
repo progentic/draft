@@ -8,8 +8,10 @@ Apple Silicon target.
 ## Documents
 
 - There is no autosave, crash recovery, version history, or cloud sync.
-- DRAFT opens and saves its version 1 document format only. Unsupported or
-  malformed versions fail without changing the source file.
+- DRAFT opens and saves its version 1 document format. It can import UTF-8
+  `.txt` and `.md` files as literal editable text, but it does not parse or
+  preview Markdown. Unsupported or malformed input fails without changing the
+  source file.
 - The visible workspace manages one current document at a time.
 
 ## Research And Citations
@@ -38,8 +40,9 @@ Apple Silicon target.
   for the supported style choices. It does not certify full compliance with a
   style manual.
 - Formatting and text findings are not saved and do not apply automatic edits.
-- Font formatting is limited to Arial, Georgia, Times New Roman, and Courier
-  New at whole point sizes from 8 through 72.
+- Font formatting is limited to Arial, Avenir Next, Baskerville, Courier New,
+  Georgia, Helvetica, Menlo, Palatino, Times New Roman, Trebuchet MS, and
+  Verdana at whole point sizes from 8 through 72.
 
 ## Export
 

@@ -49,10 +49,15 @@ Restart DRAFT and report the DRAFT version and exact message if it repeats.
 If save is cancelled, the document remains open with unsaved changes. Choose
 **Save** again and select a writable location. If DRAFT cannot save, it keeps
 the current open document and does not promote a partial replacement.
+`Choose a .draft file name.` means the selected first-save name used another
+extension; choose **Save** again and use `.draft`.
 
-If a document cannot be opened, choose a valid DRAFT document. Unsupported or
-malformed versions fail without changing that file. DRAFT has no autosave or
-crash recovery, so discarded unsaved changes cannot be restored.
+If a document cannot be opened, choose a valid DRAFT document or a UTF-8
+`.txt` or `.md` file no larger than 8 MiB. Other extensions, invalid UTF-8, and
+malformed DRAFT versions fail without changing that file. Imported text is
+unsaved; choose **Save** to select a new `.draft` destination. DRAFT never
+overwrites the imported source. DRAFT has no autosave or crash recovery, so
+discarded unsaved changes cannot be restored.
 
 If DRAFT cannot close a saved document, keep it open and retry **Close** before
 switching documents.

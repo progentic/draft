@@ -114,6 +114,22 @@ fn mixed_font_runs_keep_distinct_docx_properties() {
 }
 
 #[test]
+fn every_supported_font_family_emits_explicit_docx_run_properties() {
+    let definitions = supported_font_definitions();
+    let runs = definitions
+        .iter()
+        .map(|(identifier, name)| formatted_font_run(identifier, name))
+        .collect();
+    let artifact = compile_docx(&envelope(document(vec![paragraph(runs)]))).unwrap();
+    let mut archive = open_archive(&artifact);
+    let xml = read_part(&mut archive, "word/document.xml");
+
+    for (_, name) in definitions {
+        assert!(xml.contains(&format!("<w:rFonts w:ascii=\"{name}\" w:hAnsi=\"{name}\"")));
+    }
+}
+
+#[test]
 fn empty_paragraphs_and_headings_are_preserved() {
     let document = envelope(document(vec![
         json!({ "type": "paragraph" }),
@@ -341,6 +357,30 @@ fn relationships_contain_no_external_targets_or_active_content() {
     assert!(!document_relationships.contains("TargetMode"));
     assert!(!PACKAGE_PATHS.iter().any(|path| path.ends_with(".bin")));
     assert!(!PACKAGE_PATHS.iter().any(|path| path.contains("vbaProject")));
+}
+
+fn supported_font_definitions() -> [(&'static str, &'static str); 11] {
+    [
+        ("arial", "Arial"),
+        ("avenir_next", "Avenir Next"),
+        ("baskerville", "Baskerville"),
+        ("courier_new", "Courier New"),
+        ("georgia", "Georgia"),
+        ("helvetica", "Helvetica"),
+        ("menlo", "Menlo"),
+        ("palatino", "Palatino"),
+        ("times_new_roman", "Times New Roman"),
+        ("trebuchet_ms", "Trebuchet MS"),
+        ("verdana", "Verdana"),
+    ]
+}
+
+fn formatted_font_run(identifier: &str, text: &str) -> Value {
+    json!({
+        "type": "text",
+        "text": text,
+        "marks": [{ "type": "fontFamily", "attrs": { "family": identifier } }]
+    })
 }
 
 fn failed_write(cause: AtomicDocumentWriteError) -> DocxExportError {
