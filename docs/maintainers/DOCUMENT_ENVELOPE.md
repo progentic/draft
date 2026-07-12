@@ -60,10 +60,13 @@ Validation is deterministic:
 6. Require `document` to be an object with `type: "doc"`.
 7. Require `document.content` to be an array.
 8. Validate every nested `citation` node through the Phase 18 Rust contract.
+9. Require every nested mark to be an object with a string `type`, then validate
+   every `fontFamily` and `fontSize` mark through the bounded text-format
+   contract.
 
-All non-citation nested document JSON remains opaque data. Phase 18 validates
-only the citation node fields and attrs required by `INV-04`; it does not turn
-the envelope into a general Tiptap schema validator.
+Other nested document JSON remains opaque data. Basic mark shape, citation
+validation, and the two font attrs are narrow exceptions; they do not turn the
+envelope into a general Tiptap schema validator.
 
 ## Failure Shape
 
@@ -82,8 +85,11 @@ Field-specific context is included where the caller needs it.
 | `missing_document` / `invalid_document_root` | Document is absent or not a `doc` object. |
 | `invalid_document_content` | Root content is absent or not an array. |
 | `invalid_citation_node` | Nested citation data is invalid; includes structural `path` and typed `cause`. |
+| `invalid_text_format` | A font-family or font-size mark is malformed or unsupported; includes structural `path` and typed `cause`. |
 
 Invalid inputs are never normalized, migrated, or replaced with defaults.
+Open, Save, and Export wrap these failures in their typed `invalid_envelope`
+command error before native dialog or filesystem work.
 
 ## Serialization
 
@@ -106,6 +112,8 @@ round trips, every missing field, unknown fields, malformed and unsupported
 versions, malformed identity and title metadata, invalid root/content shapes,
 stable typed errors, nested Unicode JSON preservation, and valid/invalid nested
 citation behavior.
+Phase 46 coverage also rejects malformed font marks, unsupported canonical
+families, and non-integer point sizes outside 8 through 72.
 
 ## Registry Integration
 
@@ -116,6 +124,11 @@ lifecycle and atomic writes are implemented by Phases 13 and 14.
 Phase 18 citation scanning is documented in
 `docs/maintainers/CITATION_NODE.md`. It changes validation behavior but does not
 add an envelope field or change `DOCUMENT_ENVELOPE_SCHEMA_VERSION`.
+
+Phase 46 adds only canonical `fontFamily` and `fontSize` marks inside Tiptap
+content. The identifiers and point bounds are documented in
+`docs/maintainers/CONFIGURATION.md`; they do not add an envelope field or
+change the schema version.
 
 Phase 43 treats version 1 as the first released document schema. Lower and
 future versions fail before registry insertion and leave source bytes unchanged.

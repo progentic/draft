@@ -7,3 +7,4 @@ pub(crate) mod persistence;
 pub mod registry;
 #[cfg(test)]
 pub(crate) mod test_support;
+pub mod text_format;

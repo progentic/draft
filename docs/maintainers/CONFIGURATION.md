@@ -168,13 +168,17 @@ period. It cannot detect an unreported same-size in-place modification.
 | Heading levels | 1 through 6 | `formatting/checks.rs` | Accepted outline range. |
 | Formatting styles | `apa7`, `mla9`, `chicago17_author_date` | `formatting/checks.rs` | Closed consistency identifiers, not complete style conformance. |
 | `DEFAULT_FORMATTING_STYLE` | `apa7` | `src/ipc/formattingReview.ts` | Initial review selection; either other closed identifier may be selected before a run. |
+| Font-family identifiers | `arial`, `georgia`, `times_new_roman`, `courier_new` | Rust and TypeScript text-format modules | Complete accepted family allowlist. These map exactly to Arial, Georgia, Times New Roman, and Courier New in DOCX output. |
+| `MIN_FONT_SIZE_POINTS` | 8 points | Rust and TypeScript text-format modules | Smallest accepted text size. |
+| `MAX_FONT_SIZE_POINTS` | 72 points | Rust and TypeScript text-format modules | Largest accepted text size. Sizes are whole points in one-point increments and export as DOCX half-points. |
 | `MAX_DOCX_SOURCE_BYTES` | 8 MiB | `exports/docx.rs` | Serialized source-document bound. |
 | `MAX_DOCX_NODES` | 100,000 | `exports/docx.rs` | Structural object count bound. |
 | `MAX_DOCX_NESTING_DEPTH` | 16 | `exports/docx.rs` | Recursive parser depth bound. |
 | `MAX_DOCX_ARTIFACT_BYTES` | 16 MiB | `exports/docx.rs` | Complete package bound before filesystem replacement. |
 
-DOCX compilation supports paragraphs, headings, text, hard breaks, and the
-closed bold, italic, strike, and code marks. Unknown fields, unsupported nodes
+DOCX compilation supports paragraphs, headings, text, hard breaks, the closed
+bold, italic, and underline marks, and the canonical font-family and font-size
+marks above. Unknown fields, unsupported nodes
 or marks, citations, active content, external relationships, malformed XML
 characters, and resource-limit violations fail explicitly.
 

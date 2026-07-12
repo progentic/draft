@@ -135,14 +135,17 @@ deliberately smaller than the full system described in this architecture:
   level changes only after explicit user input and only while the captured run
   generation and target node still match.
 - Rust compiles a strict bounded Tiptap subset into deterministic in-memory DOCX
-  packages and atomically replaces only Rust-owned `.docx` targets. Unsupported
-  nodes, marks, fields, and citations fail explicitly; no source document or
-  registry state is changed. Phase 46 adds one Rust-selected export command and
-  visible completion/source-safety state.
+  packages and atomically replaces only Rust-owned `.docx` targets. The subset
+  includes four canonical font families and whole point sizes from 8 through
+  72, emitted as explicit run properties. Unsupported nodes, marks, fields,
+  values, and citations fail explicitly; no source document or registry state
+  is changed. Phase 46 adds one Rust-selected export command and visible
+  completion/source-safety state.
 - Rust owns a process-local document registry. It stores each validated
   envelope behind one private live handle and returns `AlreadyOpen` for a
   duplicate or concurrent open request.
-- Rust opens native file dialogs, validates selected files before registration,
+- Rust opens native file dialogs through asynchronous callback APIs, validates
+  selected files before registration,
   retains one exclusive source path per live document, and atomically writes
   only the explicit immutable snapshot submitted by the frontend. File
   lifecycle operations are serialized, failures before replacement preserve
@@ -245,7 +248,9 @@ paragraph, heading, text, hard-break, and inline-mark subset; builds fixed
 escaped XML parts in a deterministic stored ZIP; and reuses the atomic writer
 for `.docx` targets. Phase 46 adds one typed Rust command, native target dialog,
 validated frontend client, and visible export control around that foundation.
-It adds no citation rendering, export history, PDF path, or source mutation.
+It also adds a bounded four-family and whole-point-size mark contract shared by
+the envelope, editor, and DOCX compiler. It adds no citation rendering, export
+history, PDF path, or source mutation.
 
 ADR-001 defers native PDF generation until DRAFT has accepted
 policies for fonts, pagination and layout, accessibility, cross-platform
@@ -654,6 +659,8 @@ The saved source document contains:
 
 - Tiptap document JSON.
 - Citation node references into the reference library.
+- Canonical font-family and whole-point font-size marks used by the editor and
+  DOCX compiler.
 - Application metadata needed to reopen and validate the document.
 
 The saved source document does not embed full citation metadata as the citation source of truth.
@@ -661,6 +668,7 @@ The saved source document does not embed full citation metadata as the citation 
 Save rules:
 
 - On save, the frontend serializes current Tiptap state and passes it to Rust through `save_document` as an immutable payload.
+- Open, first Save, and DOCX Export await Rust-owned native dialog callbacks; blocking dialog calls are not permitted on the application thread.
 - Rust does not read live state out of the frontend. It receives a snapshot.
 - Rust writes using atomic write-then-rename: write temporary file, fsync, then rename over the target path.
 - The on-disk file is always either the prior complete version or the new complete version, never a partial write.

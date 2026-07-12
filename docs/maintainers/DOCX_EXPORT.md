@@ -21,7 +21,14 @@ style-manual claim.
 
 The compiler accepts a `doc` root containing ordered `paragraph` and `heading`
 blocks. Headings accept levels 1 through 6. Inline content accepts `text` and
-`hardBreak`; text accepts only `bold`, `italic`, and `underline` marks.
+`hardBreak`; text accepts `bold`, `italic`, `underline`, `fontFamily`, and
+`fontSize` marks.
+
+Font family accepts only `arial`, `georgia`, `times_new_roman`, and
+`courier_new`, mapped exactly to Arial, Georgia, Times New Roman, and Courier
+New in `w:rFonts`. Font size accepts whole points from 8 through 72 and converts
+deterministically to DOCX half-points in `w:sz` and `w:szCs`. Unsupported or
+malformed values fail; the compiler never substitutes a family or size.
 
 Empty paragraphs and headings, Unicode text, source order, paragraph boundaries,
 heading levels, hard breaks, and supported marks are preserved. XML-invalid
@@ -89,9 +96,9 @@ unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 
 ## Verification
 
-Eighteen focused Rust tests cover stable safe entries, archive reopening,
+Focused Rust tests cover stable safe entries, archive reopening,
 deterministic bytes, XML parsing, Unicode, headings, hard breaks, supported
-marks, empty blocks, unknown and malformed content, citation rejection, source
+marks, mixed family and size run properties, empty blocks, unknown and malformed content, citation rejection, source
 and output limits, target validation, real create/replace behavior, source
 preservation, every atomic failure stage, durability uncertainty, bounded errors,
 and the absence of external or active package content.
@@ -109,7 +116,7 @@ package that reopens with the final text and leaves the DRAFT source unchanged.
 
 ## Current Limits
 
-The strict subset does not support citations, bibliographies, lists, tables,
+The strict subset does not support arbitrary fonts or sizes, citations, bibliographies, lists, tables,
 links, images, equations, notes, comments, tracked changes, headers, footers,
 page numbers, templates, layout controls, or complete APA/MLA/Chicago rendering.
 Unsupported content fails the whole export. The visible Phase 46 flow is

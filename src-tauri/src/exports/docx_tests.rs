@@ -75,8 +75,42 @@ fn unicode_headings_breaks_and_marks_render_without_raw_markup() {
     assert!(xml.contains("<w:b/>"));
     assert!(xml.contains("<w:i/>"));
     assert!(xml.contains("<w:u w:val=\"single\"/>"));
+    assert!(xml.contains("<w:rFonts w:ascii=\"Georgia\" w:hAnsi=\"Georgia\""));
+    assert!(xml.contains("<w:sz w:val=\"34\"/>"));
+    assert!(xml.contains("<w:szCs w:val=\"34\"/>"));
     assert!(xml.contains("<w:br/>"));
     assert_source_order(&xml, &["Heading text", "Café", "After break"]);
+}
+
+#[test]
+fn mixed_font_runs_keep_distinct_docx_properties() {
+    let document = envelope(document(vec![paragraph(vec![
+        json!({
+            "type": "text",
+            "text": "Arial ten",
+            "marks": [
+                { "type": "fontFamily", "attrs": { "family": "arial" } },
+                { "type": "fontSize", "attrs": { "points": 10 } }
+            ]
+        }),
+        json!({
+            "type": "text",
+            "text": "Times twenty-four",
+            "marks": [
+                { "type": "fontFamily", "attrs": { "family": "times_new_roman" } },
+                { "type": "fontSize", "attrs": { "points": 24 } }
+            ]
+        }),
+    ])]));
+    let artifact = compile_docx(&document).unwrap();
+    let mut archive = open_archive(&artifact);
+    let xml = read_part(&mut archive, "word/document.xml");
+
+    assert!(xml.contains("<w:rFonts w:ascii=\"Arial\""));
+    assert!(xml.contains("<w:sz w:val=\"20\"/>"));
+    assert!(xml.contains("<w:rFonts w:ascii=\"Times New Roman\""));
+    assert!(xml.contains("<w:sz w:val=\"48\"/>"));
+    assert_source_order(&xml, &["Arial ten", "Times twenty-four"]);
 }
 
 #[test]
@@ -337,7 +371,9 @@ fn rich_envelope() -> DocumentEnvelope {
                 "marks": [
                     { "type": "bold" },
                     { "type": "italic" },
-                    { "type": "underline" }
+                    { "type": "underline" },
+                    { "type": "fontFamily", "attrs": { "family": "georgia" } },
+                    { "type": "fontSize", "attrs": { "points": 17 } }
                 ]
             }),
             json!({ "type": "hardBreak" }),

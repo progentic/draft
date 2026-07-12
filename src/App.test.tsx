@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -115,6 +115,22 @@ describe("DRAFT workspace shell", () => {
     await user.click(boldButton);
 
     expect(boldButton.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("applies bounded font controls and preserves control focus", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Not saved");
+
+    const family = screen.getByRole("combobox", { name: "Font family" });
+    const size = screen.getByRole("combobox", { name: "Font size in points" });
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.selectOptions(family, "georgia");
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    expect((family as HTMLSelectElement).value).toBe("georgia");
+    await user.selectOptions(size, "18");
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    expect((size as HTMLSelectElement).value).toBe("18");
   });
 
   it("exposes a horizontal formatting toolbar with one Tab entry", async () => {

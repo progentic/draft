@@ -17,6 +17,14 @@ import {
   Undo2,
 } from "lucide-react";
 
+import {
+  FONT_FAMILIES,
+  MAX_FONT_SIZE_POINTS,
+  MIN_FONT_SIZE_POINTS,
+  isFontFamilyId,
+  isFontSizePoints,
+} from "../documents/textFormatting";
+
 interface EditorToolbarProps {
   editor: Editor | null;
   formattingReviewOpen: boolean;
@@ -42,6 +50,8 @@ const EMPTY_TOOLBAR_STATE = {
   bulletList: false,
   canRedo: false,
   canUndo: false,
+  fontFamily: "",
+  fontSize: "",
   headingOne: false,
   headingTwo: false,
   italic: false,
@@ -59,25 +69,95 @@ export function EditorToolbar(props: EditorToolbarProps) {
   ]);
 
   return (
-    <div
-      ref={toolbarRef}
-      className="editor-toolbar"
-      role="toolbar"
-      aria-label="Text formatting"
-      aria-orientation="horizontal"
-      onKeyDown={navigateToolbar}
-    >
-      <HistoryTools editor={props.editor} state={state} />
-      <span className="toolbar-separator" aria-hidden="true" />
-      <InlineTools editor={props.editor} state={state} />
-      <span className="toolbar-separator" aria-hidden="true" />
-      <StructureTools editor={props.editor} state={state} />
-      <span className="toolbar-separator" aria-hidden="true" />
-      <ReviewTools
-        isOpen={props.formattingReviewOpen}
-        onToggle={props.onToggleFormattingReview}
-      />
+    <div className="editor-formatting-row">
+      <div
+        ref={toolbarRef}
+        className="editor-toolbar"
+        role="toolbar"
+        aria-label="Text formatting"
+        aria-orientation="horizontal"
+        onKeyDown={navigateToolbar}
+      >
+        <HistoryTools editor={props.editor} state={state} />
+        <span className="toolbar-separator" aria-hidden="true" />
+        <InlineTools editor={props.editor} state={state} />
+        <span className="toolbar-separator" aria-hidden="true" />
+        <StructureTools editor={props.editor} state={state} />
+        <span className="toolbar-separator" aria-hidden="true" />
+        <ReviewTools
+          isOpen={props.formattingReviewOpen}
+          onToggle={props.onToggleFormattingReview}
+        />
+      </div>
+      <FontTools editor={props.editor} state={state} />
     </div>
+  );
+}
+
+function FontTools(props: { editor: Editor | null; state: ToolbarState }) {
+  return (
+    <div className="font-tools" role="group" aria-label="Font formatting">
+      <select
+        className="font-tools__family"
+        aria-label="Font family"
+        value={props.state.fontFamily}
+        onChange={(event) => setFontFamily(props.editor, event.currentTarget.value)}
+      >
+        <option value="">Default font</option>
+        {FONT_FAMILIES.map((family) => (
+          <option key={family.id} value={family.id}>{family.label}</option>
+        ))}
+      </select>
+      <select
+        className="font-tools__size"
+        aria-label="Font size in points"
+        value={props.state.fontSize}
+        onChange={(event) => setFontSize(props.editor, event.currentTarget.value)}
+      >
+        <option value="">Default size</option>
+        {fontSizeOptions().map((points) => (
+          <option key={points} value={points}>{points} pt</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function setFontFamily(editor: Editor | null, value: string) {
+  if (!editor) {
+    return;
+  }
+  const chain = editor.chain().focus(undefined, { scrollIntoView: false });
+  if (isFontFamilyId(value)) {
+    chain.setMark("fontFamily", { family: value }).run();
+  } else {
+    chain.unsetMark("fontFamily").run();
+  }
+  restoreEditorFocus(editor);
+}
+
+function setFontSize(editor: Editor | null, value: string) {
+  if (!editor) {
+    return;
+  }
+  const points = Number(value);
+  const chain = editor.chain().focus(undefined, { scrollIntoView: false });
+  if (value !== "" && isFontSizePoints(points)) {
+    chain.setMark("fontSize", { points }).run();
+  } else {
+    chain.unsetMark("fontSize").run();
+  }
+  restoreEditorFocus(editor);
+}
+
+function restoreEditorFocus(editor: Editor) {
+  queueMicrotask(() => editor.commands.focus(undefined, { scrollIntoView: false }));
+}
+
+function fontSizeOptions() {
+  return Array.from(
+    { length: MAX_FONT_SIZE_POINTS - MIN_FONT_SIZE_POINTS + 1 },
+    (_, index) => MIN_FONT_SIZE_POINTS + index,
   );
 }
 
@@ -292,10 +372,22 @@ function getToolbarState(editor: Editor | null) {
     bulletList: editor.isActive("bulletList"),
     canRedo: editor.can().chain().focus().redo().run(),
     canUndo: editor.can().chain().focus().undo().run(),
+    fontFamily: selectedFontFamily(editor),
+    fontSize: selectedFontSize(editor),
     headingOne: editor.isActive("heading", { level: 1 }),
     headingTwo: editor.isActive("heading", { level: 2 }),
     italic: editor.isActive("italic"),
     orderedList: editor.isActive("orderedList"),
     strike: editor.isActive("strike"),
   };
+}
+
+function selectedFontFamily(editor: Editor) {
+  const family = editor.getAttributes("fontFamily").family;
+  return isFontFamilyId(family) ? family : "";
+}
+
+function selectedFontSize(editor: Editor) {
+  const points = editor.getAttributes("fontSize").points;
+  return isFontSizePoints(points) ? String(points) : "";
 }

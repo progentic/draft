@@ -448,7 +448,7 @@ check_python_helper_contract() {
   require_source_pattern 'CONTRACT_PROBE_HELPER = "contract_probe"' "${worker_path}"
   require_source_pattern 'MAX_REQUEST_BYTES = 64 * 1024' "${worker_path}"
   require_source_pattern 'dependencies = []' pyproject.toml
-  require_source_pattern 'tokio = { version = "1.52.3", features = ["io-util", "macros", "process", "time"] }' src-tauri/Cargo.toml
+  require_source_pattern 'tokio = { version = "1.52.3", features = ["io-util", "macros", "process", "sync", "time"] }' src-tauri/Cargo.toml
   # The hostile worker fixture deliberately sleeps, reads PATH, writes stderr,
   # and overproduces output. Production authority scans cover only the package.
   assert_no_matches "INV-11 production Python authority" \
@@ -632,7 +632,46 @@ check_formatting_contract() {
   require_formatting_contract_markers "${source_path}"
   check_formatting_authority "${source_path}"
   check_formatting_review_contract "${review_path}" "${command_path}"
+  check_text_format_contract
   printf 'PASS INV-16 Phase 34 review-only formatting contract\n'
+}
+
+check_text_format_contract() {
+  local rust_path='src-tauri/src/documents/text_format.rs'
+  local frontend_path='src/documents/textFormatting.ts'
+  local mark_path='src/editor/TextFormattingMarks.ts'
+  local rust_tests=(
+    supported_family_and_size_marks_validate
+    unsupported_font_values_fail_with_bounded_paths
+    fractional_zero_negative_and_malformed_sizes_fail
+    malformed_mark_shapes_fail_before_persistence
+    strict_font_mark_fields_and_attrs_fail_closed
+  )
+  local test_name
+
+  require_file "${rust_path}"
+  require_file "${frontend_path}"
+  require_file src/documents/textFormatting.test.ts
+  require_file "${mark_path}"
+  require_file src/editor/TextFormattingMarks.test.ts
+  for test_name in "${rust_tests[@]}"; do
+    require_rust_test "${test_name}" "${rust_path}"
+  done
+  require_source_pattern 'MIN_FONT_SIZE_POINTS: u64 = 8' "${rust_path}"
+  require_source_pattern 'MAX_FONT_SIZE_POINTS: u64 = 72' "${rust_path}"
+  require_source_pattern '"times_new_roman" => Some(Self::TimesNewRoman)' "${rust_path}"
+  require_source_pattern '"courier_new" => Some(Self::CourierNew)' "${rust_path}"
+  require_source_pattern 'export const MIN_FONT_SIZE_POINTS = 8' "${frontend_path}"
+  require_source_pattern 'export const MAX_FONT_SIZE_POINTS = 72' "${frontend_path}"
+  require_source_pattern 'typeof value.type !== "string"' "${frontend_path}"
+  require_source_pattern 'span[data-draft-font-family]' "${mark_path}"
+  require_source_pattern 'span[data-draft-font-size]' "${mark_path}"
+  require_source_pattern 'ignores pasted font CSS and accepts only canonical DRAFT attributes' \
+    src/editor/TextFormattingMarks.test.ts
+  assert_no_matches "arbitrary pasted font style import" \
+    "parseHTML:.*(?:font-family|font-size)|getAttribute\\([\"']style" \
+    "${mark_path}"
+  printf 'PASS bounded persistent text-format contract\n'
 }
 
 require_formatting_contract_markers() {
@@ -704,6 +743,7 @@ check_docx_export_contract() {
     equal_documents_compile_to_equal_bytes
     every_package_xml_part_is_well_formed
     unicode_headings_breaks_and_marks_render_without_raw_markup
+    mixed_font_runs_keep_distinct_docx_properties
     empty_paragraphs_and_headings_are_preserved
     unknown_fields_nodes_and_marks_fail_without_silent_omission
     malformed_nested_shapes_and_xml_controls_fail_typed
@@ -751,6 +791,9 @@ require_docx_contract_markers() {
   require_source_pattern 'SimpleFileOptions::DEFAULT' "${package_path}"
   require_source_pattern 'CompressionMethod::Stored' "${package_path}"
   require_source_pattern 'BytesText::new(value)' "${package_path}"
+  require_source_pattern 'w:rFonts' "${package_path}"
+  require_source_pattern 'w:sz' "${package_path}"
+  require_source_pattern 'half_points()' "${package_path}"
   require_source_pattern 'quick-xml = "0.41.0"' src-tauri/Cargo.toml
   require_source_pattern 'zip = { version = "8.6.0", default-features = false }' src-tauri/Cargo.toml
 }
@@ -816,6 +859,7 @@ check_document_envelope_contract() {
     envelope_failure_shape_is_stable
     valid_nested_citation_round_trips
     invalid_nested_citation_fails_with_path
+    invalid_nested_font_format_fails_with_path
   )
   local test_name
 
@@ -1535,11 +1579,14 @@ check_document_file_contract() {
   local atomic_writer_path="src-tauri/src/documents/atomic_write.rs"
   local required_tests=(
     document_round_trip_preserves_updated_snapshot
+    font_formatting_persists_through_save_close_and_reopen
     malformed_json_fails_before_registry_entry
     unsupported_document_versions_fail_without_mutation
     duplicate_load_returns_already_open
     save_uses_explicit_snapshot_and_retained_path
     save_new_snapshot_uses_rust_selected_path
+    save_target_preflight_matches_registry_state
+    save_target_preflight_rejects_invalid_snapshot
     cancelled_first_save_does_not_register_document
     invalid_snapshot_fails_before_path_selection
     save_does_not_reopen_dialog_for_loaded_document
@@ -1551,6 +1598,7 @@ check_document_file_contract() {
     concurrent_saves_keep_disk_and_registry_consistent
     invalid_citation_open_fails_before_registry_entry
     invalid_citation_save_fails_before_path_selection
+    invalid_font_format_fails_before_path_selection
   )
   local test_name
 
@@ -1566,8 +1614,29 @@ check_document_file_contract() {
     src-tauri/src/documents/registry.rs
   require_atomic_writer_tests "${atomic_writer_path}"
   check_document_write_boundary "${atomic_writer_path}"
+  check_async_native_dialog_boundary
   check_frontend_document_file_boundary
   printf 'PASS INV-03/06/09 document file contract\n'
+}
+
+check_async_native_dialog_boundary() {
+  local dialog_path='src-tauri/src/documents/dialog.rs'
+
+  assert_no_matches "blocking native dialog API" \
+    '\bblocking_(?:pick|save)_file\s*\(' \
+    src-tauri/src
+  require_source_pattern 'pub(crate) async fn select_open_document(' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn select_save_document(' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn select_export_docx(' "${dialog_path}"
+  require_source_pattern '.pick_file(move |selected|' "${dialog_path}"
+  require_source_pattern '.save_file(move |selected|' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn open_document(' \
+    src-tauri/src/commands/document_open.rs
+  require_source_pattern 'pub(crate) async fn save_document(' \
+    src-tauri/src/commands/document_save.rs
+  require_source_pattern 'pub(crate) async fn export_document(' \
+    src-tauri/src/commands/docx_export.rs
+  printf 'PASS async Rust-owned native dialog contract\n'
 }
 
 check_critical_path_contract() {

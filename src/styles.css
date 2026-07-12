@@ -383,17 +383,25 @@ button:focus-visible,
   background: var(--workspace);
 }
 
-.editor-toolbar {
+.editor-formatting-row {
   display: flex;
   min-width: 0;
   height: 46px;
+  align-items: center;
+  background: #fbfbf9;
+  border-bottom: 1px solid var(--line);
+}
+
+.editor-toolbar {
+  display: flex;
+  min-width: 0;
+  height: 45px;
+  flex: 1 1 auto;
   align-items: center;
   gap: 7px;
   padding: 0 12px;
   overflow-x: auto;
   overflow-y: hidden;
-  background: #fbfbf9;
-  border-bottom: 1px solid var(--line);
   scrollbar-width: none;
 }
 
@@ -414,6 +422,34 @@ button:focus-visible,
   height: 20px;
   flex: 0 0 auto;
   background: #d9ddda;
+}
+
+.font-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-left: 1px solid var(--line);
+}
+
+.font-tools select {
+  height: 30px;
+  min-width: 0;
+  color: #303633;
+  background: #ffffff;
+  border: 1px solid #cfd4d1;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.font-tools__family {
+  width: 122px;
+}
+
+.font-tools__size {
+  width: 88px;
 }
 
 .icon-button {

@@ -5,6 +5,7 @@ use serde_json::{Map, Value};
 use uuid::Uuid;
 
 use crate::citations::node::{CitationNodeError, validate_document_citations};
+use crate::documents::text_format::{TextFormatError, validate_document_text_formats};
 
 const SCHEMA_VERSION_FIELD: &str = "schema_version";
 const DOCUMENT_ID_FIELD: &str = "document_id";
@@ -62,6 +63,10 @@ pub enum DocumentEnvelopeError {
     InvalidCitationNode {
         path: String,
         cause: CitationNodeError,
+    },
+    InvalidTextFormat {
+        path: String,
+        cause: TextFormatError,
     },
 }
 
@@ -163,6 +168,7 @@ impl DocumentEnvelopeError {
             Self::InvalidDocumentRoot => "document must be a Tiptap doc object",
             Self::InvalidDocumentContent => "document content must be an array",
             Self::InvalidCitationNode { .. } => "document contains an invalid citation node",
+            Self::InvalidTextFormat { .. } => "document contains invalid text formatting",
         }
     }
 }
@@ -264,6 +270,12 @@ fn parse_document(value: Value) -> Result<Value, DocumentEnvelopeError> {
     validate_document_content(document)?;
     validate_document_citations(&value).map_err(|error| {
         DocumentEnvelopeError::InvalidCitationNode {
+            path: error.path,
+            cause: error.cause,
+        }
+    })?;
+    validate_document_text_formats(&value).map_err(|error| {
+        DocumentEnvelopeError::InvalidTextFormat {
             path: error.path,
             cause: error.cause,
         }
@@ -498,6 +510,33 @@ mod tests {
     }
 
     #[test]
+    fn invalid_nested_font_format_fails_with_path() {
+        let mut value = minimal_envelope();
+        value[DOCUMENT_FIELD] = json!({
+            "type": "doc",
+            "content": [{
+                "type": "paragraph",
+                "content": [{
+                    "type": "text",
+                    "text": "Invalid",
+                    "marks": [{
+                        "type": "fontFamily",
+                        "attrs": { "family": "arbitrary_css" }
+                    }]
+                }]
+            }]
+        });
+
+        assert_eq!(
+            DocumentEnvelope::from_json_value(value),
+            Err(DocumentEnvelopeError::InvalidTextFormat {
+                path: "document.content[0].content[0].marks[0]".to_owned(),
+                cause: TextFormatError::UnsupportedFontFamily,
+            })
+        );
+    }
+
+    #[test]
     fn envelope_failure_shape_is_stable() {
         let errors = [
             DocumentEnvelopeError::MissingSchemaVersion,
@@ -509,6 +548,10 @@ mod tests {
             DocumentEnvelopeError::InvalidCitationNode {
                 path: "document.content[0]".to_owned(),
                 cause: CitationNodeError::UnsupportedRenderStyle,
+            },
+            DocumentEnvelopeError::InvalidTextFormat {
+                path: "document.content[0].marks[0]".to_owned(),
+                cause: TextFormatError::InvalidFontSize,
             },
         ];
 
@@ -523,6 +566,11 @@ mod tests {
                     "code": "invalid_citation_node",
                     "path": "document.content[0]",
                     "cause": { "code": "unsupported_render_style" }
+                },
+                {
+                    "code": "invalid_text_format",
+                    "path": "document.content[0].marks[0]",
+                    "cause": { "code": "invalid_font_size" }
                 }
             ]),
         );

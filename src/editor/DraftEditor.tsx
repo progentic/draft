@@ -3,6 +3,7 @@ import type { Editor, JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
 import { CitationNode } from "./CitationNode";
+import { FontFamilyMark, FontSizeMark } from "./TextFormattingMarks";
 
 interface DraftEditorProps {
   editor: Editor | null;
@@ -50,6 +51,8 @@ export function useDraftEditor() {
           levels: [1, 2, 3],
         },
       }),
+      FontFamilyMark,
+      FontSizeMark,
       CitationNode,
     ],
   });

@@ -18,7 +18,7 @@ storage, helper execution, and export.
 | Document session | `useDocumentSession`, `UnsavedChangesDialog` | Coordinates explicit snapshots, Rust-owned commands, dirty state, and recovery choices. |
 | Outline | `DocumentOutline` | Derives headings from the current Tiptap state and moves the selection. |
 | Editor | `DraftEditor`, `useDraftEditor` | Owns the transient Tiptap instance and initial document. |
-| Formatting | `EditorToolbar` | Invokes existing Tiptap commands and reports selected state. |
+| Formatting | `EditorToolbar`, `TextFormattingMarks` | Invokes Tiptap commands, reports selected state, and constrains font family and size to the document contract. |
 | Formatting review | `FormattingReviewPanel`, `useFormattingReview` | Runs bounded checks and owns transient review state and explicit actions. |
 | References | `ReferenceLibraryPanel` | Adds bounded manual records and inserts existing citation nodes. |
 | Text checks | `TextAnalysisPanel`, `textAnalysisSnapshot` | Runs five fixed checks, invalidates stale generations, and locates passages. |
@@ -66,6 +66,17 @@ Formatting buttons use toggle semantics only when they represent persistent
 selection state. Undo and Redo are commands and do not expose `aria-pressed`.
 All icon-only controls have visible focus treatment, accessible names, and
 tooltips.
+
+Font family and font size are adjacent labeled select controls rather than
+members of the roving button toolbar. Family choices are Default, Arial,
+Georgia, Times New Roman, and Courier New. Size choices are Default or a whole
+point from 8 through 72. Default removes only the corresponding mark. A change
+preserves other marks and returns focus to the editor without scrolling it.
+The selected values come from Tiptap state; React does not keep a separate
+authoritative formatting value.
+Pasted HTML styling is not a font-authority path. The marks parse only
+`data-draft-font-family` and `data-draft-font-size`, then revalidate the
+canonical value before rendering.
 
 ## Connectivity Control
 
@@ -145,7 +156,9 @@ existing-control label, and outer fallback.
 Phase 46 suites cover command validation, save/close/reopen, first-save handle
 release, unsaved dialog focus, manual reference insertion, text-check
 pending/success/stale states, UTF-8 passage mapping, DOCX source safety, and
-rendered narrow-window behavior.
+rendered narrow-window behavior. They also cover font controls, keyboard entry,
+selection isolation, JSON round trips, save/close/reopen restoration, invalid
+font rejection, and mixed DOCX run properties.
 
 The reduced-motion contract is checked against the production stylesheet.
 Browser-level inspection is still required when a change affects real focus
@@ -166,6 +179,8 @@ bash scripts/verify.sh
 - Manual references cannot be edited, deleted, imported, or synchronized from
   the visible workspace.
 - Text and formatting findings are advisory, transient, and never automatic.
-- DOCX export rejects citation nodes and unsupported content.
+- Font formatting is limited to four named families and whole point sizes from
+  8 through 72.
+- DOCX export rejects citation nodes and other unsupported content.
 - PDF intake, metadata lookup, diagnostics, credentials, provider-backed
   orchestration, and background jobs remain without visible workflows.

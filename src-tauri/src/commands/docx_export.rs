@@ -36,12 +36,13 @@ pub(crate) enum ExportDocumentError {
 }
 
 #[tauri::command]
-pub(crate) fn export_document(
+pub(crate) async fn export_document(
     app_handle: AppHandle,
     request: ExportDocumentRequest,
 ) -> Result<ExportDocumentResponse, ExportDocumentError> {
     let document = validated_document(request.snapshot)?;
     let selected = select_export_docx(&app_handle)
+        .await
         .map_err(|_| ExportDocumentError::UnsupportedFileLocation)?;
     export_selected(&document, selected)
 }
@@ -67,18 +68,23 @@ fn export_selected(
 
 #[cfg(test)]
 mod tests {
+    use std::future::Future;
+
     use serde_json::json;
 
     use super::*;
+    use crate::documents::text_format::TextFormatError;
 
-    const TYPED_COMMAND: fn(
-        AppHandle,
-        ExportDocumentRequest,
-    ) -> Result<ExportDocumentResponse, ExportDocumentError> = export_document;
+    fn typed_command(
+        app_handle: AppHandle,
+        request: ExportDocumentRequest,
+    ) -> impl Future<Output = Result<ExportDocumentResponse, ExportDocumentError>> {
+        export_document(app_handle, request)
+    }
 
     #[test]
     fn command_signature_is_typed() {
-        let _ = TYPED_COMMAND;
+        let _ = typed_command;
     }
 
     #[test]
@@ -116,6 +122,35 @@ mod tests {
         assert_eq!(
             serde_json::to_value(ExportDocumentError::UnsupportedFileLocation).unwrap(),
             json!({ "code": "unsupported_file_location" })
+        );
+    }
+
+    #[test]
+    fn invalid_font_format_fails_before_dialog_or_export() {
+        let mut snapshot = envelope_value();
+        snapshot["document"] = json!({
+            "type": "doc",
+            "content": [{
+                "type": "paragraph",
+                "content": [{
+                    "type": "text",
+                    "text": "Invalid",
+                    "marks": [{
+                        "type": "fontSize",
+                        "attrs": { "points": 7 }
+                    }]
+                }]
+            }]
+        });
+
+        assert_eq!(
+            validated_document(snapshot),
+            Err(ExportDocumentError::InvalidEnvelope {
+                cause: DocumentEnvelopeError::InvalidTextFormat {
+                    path: "document.content[0].content[0].marks[0]".to_owned(),
+                    cause: TextFormatError::InvalidFontSize,
+                }
+            })
         );
     }
 

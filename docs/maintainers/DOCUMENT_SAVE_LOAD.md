@@ -30,6 +30,10 @@ These phases do not add:
 through `tauri-plugin-dialog` with `.draft` and `.json` filters. The frontend
 cannot choose or inspect a path through IPC.
 
+The command and dialog adapter are asynchronous. The adapter parents the
+picker to the main window, uses the plugin callback API, and awaits a one-shot
+typed result. It never uses a blocking dialog call on the application thread.
+
 After selection, Rust:
 
 1. Reads the selected bytes.
@@ -76,8 +80,15 @@ its live handle. Rust rejects a path already owned by another live document.
 Cancellation and failed writes do not register, replace, or attach the
 document snapshot.
 
+A read-only preflight decides whether a target dialog is required. The actual
+save path validates again while holding the existing lifecycle lock, so the
+preflight does not grant registry or filesystem authority. First-save target
+selection uses the same asynchronous callback contract as Open and Export.
+
 Unknown top-level envelope fields remain invalid, so save cannot add reference
 records, embedded citation metadata, analysis output, or export state.
+Canonical font-family and whole-point font-size marks are validated nested
+document content, not new top-level envelope fields.
 
 ## Atomic Replacement
 
@@ -166,6 +177,11 @@ versions, duplicate load, explicit snapshot save, first-save path selection,
 cancellation, retained paths, path ownership conflicts, failed-write registry
 rollback, and save-close-reopen round trips. Registry tests pin every serialized
 nested error code used by document commands.
+
+Phase 46 adds async-dialog and font-format coverage: no blocking native dialog
+API remains; preflight behavior matches registry state; malformed font marks
+fail before target selection; and valid family and size marks persist through
+first save, close, and reopen.
 
 Frontend tests cover envelope mirroring, exact command arguments, opened/saved/
 cancelled responses, malformed responses, registry failures, typed write-stage

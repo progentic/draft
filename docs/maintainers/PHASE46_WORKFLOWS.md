@@ -49,6 +49,30 @@ Escape keeps editing, and focus returns to the invoking control.
 There is no autosave, crash recovery, or hidden persistence. A successful save
 is the only transition from unsaved to saved.
 
+Open, first Save, and DOCX Export use asynchronous Rust-owned native dialog
+callbacks. The Tauri commands await a typed cancel, success, or failure result
+without running a blocking dialog call on the application thread. While one of
+these operations is pending, the workspace prevents conflicting lifecycle and
+panel actions. React never receives the selected filesystem path.
+
+## Font Formatting
+
+The editor exposes four canonical families: Arial, Georgia, Times New Roman,
+and Courier New. It accepts whole point sizes from 8 through 72 in one-point
+increments. Default removes the selected family or size mark without changing
+other marks.
+
+The controls write bounded Tiptap `fontFamily` and `fontSize` marks. The marks
+remain inside the existing document envelope, survive save, close, and reopen,
+render in the editor, and export as explicit DOCX `w:rFonts`, `w:sz`, and
+`w:szCs` run properties. Rust validation rejects arbitrary family identifiers,
+CSS, fractional sizes, and sizes outside the range. There is no frontend-only
+font state or silent family substitution. Pasted HTML does not import arbitrary
+`font-family` or `font-size` CSS; only DRAFT's canonical
+`data-draft-font-family` and `data-draft-font-size` attributes are recognized
+when editor HTML is parsed. A malformed value fails as a typed
+`invalid_envelope` before a dialog or filesystem operation begins.
+
 ## Manual References And Citations
 
 The frontend submits citekey, title, author, and four-digit year. Rust creates a
@@ -95,9 +119,10 @@ target, and calls the existing atomic exporter. Cancellation changes no file.
 A successful export reports bounded byte count data to the client but the UI
 announces only completion and source preservation.
 
-The existing strict subset and limits remain unchanged. Citation nodes and
-unsupported content fail explicitly; they are never omitted. The DRAFT source
-document is not modified by export.
+The strict subset includes the four canonical families and bounded whole-point
+sizes. Citation nodes and other unsupported content fail explicitly; they are
+never omitted or silently substituted. The DRAFT source document is not
+modified by export.
 
 ## Visible Failures
 
@@ -125,5 +150,7 @@ cancellation, unavailable runtime, offline execution, and Apple system Python.
 Frontend tests cover strict IPC validation, lifecycle ownership, unsaved focus
 containment, reference insertion, pending/success/failure states, stale runs,
 passage mapping, accessible labels, announcements, and export source-safety
-copy. `scripts/package-macos.sh` also executes the embedded worker from the
-finished unsigned Apple Silicon `.app`.
+copy. Font tests cover allowlist validation, malformed values, Tiptap JSON,
+collapsed and selected text, mark preservation, keyboard focus, lifecycle
+restoration, and mixed DOCX runs. `scripts/package-macos.sh` also executes the
+embedded worker from the finished unsigned Apple Silicon `.app`.

@@ -16,6 +16,11 @@ The formatting toolbar supports undo and redo, bold, italic, strikethrough,
 first- and second-level headings, bulleted and numbered lists, and block quotes.
 Formatting applies to the current selection.
 
+Use **Font family** to choose Arial, Georgia, Times New Roman, or Courier New.
+Use **Font size in points** to choose a whole size from 8 through 72. The
+Default choices remove that font setting from the selected text. Family and
+size are saved with the DRAFT document and included in DOCX export.
+
 Press Tab to enter the formatting toolbar. Use Left Arrow and Right Arrow to
 move between enabled controls. Home moves to the first and End to the last.
 
@@ -63,9 +68,10 @@ transmission. If the document changes during a run, check it again.
 Choose **Export DOCX** and select a destination. Wait for the completion
 message. Export does not change the DRAFT source.
 
-Unsupported content fails rather than disappearing. Citation nodes are not
-currently included in DOCX output. PDF export remains unavailable pending its
-separate review and implementation path.
+The supported subset includes the four named font families and whole point
+sizes from 8 through 72. Other unsupported content fails rather than
+disappearing. Citation nodes are not currently included in DOCX output. PDF
+export remains unavailable pending its separate review and implementation path.
 
 ## Work Offline
 

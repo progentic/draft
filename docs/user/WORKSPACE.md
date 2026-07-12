@@ -16,6 +16,11 @@ The editor supports undo and redo, bold, italic, strikethrough, first- and
 second-level headings, bulleted and numbered lists, and block quotes. Formatting
 applies to the current selection.
 
+Choose a font family from Arial, Georgia, Times New Roman, or Courier New, or
+choose **Default font** to remove the family from the selected text. Choose a
+whole point size from 8 through 72, or **Default size** to remove the size.
+These choices are saved with the document and included in DOCX export.
+
 The outline lists document headings and moves the cursor to the selected
 heading. The Document panel shows live word, character, and heading counts.
 
@@ -67,7 +72,8 @@ intent.
 Choose **Export DOCX**, select a destination in the system dialog, and wait for
 the completion message. Export does not change the DRAFT source document.
 
-DOCX export supports the documented basic writing subset. Unsupported content
+DOCX export supports the documented basic writing subset, including the four
+font families and whole point sizes from 8 through 72. Unsupported content
 fails instead of disappearing. Citation nodes are not currently included in
 DOCX output; remove them before exporting when that limitation applies. PDF
 export remains unavailable pending its separate rendering policy and

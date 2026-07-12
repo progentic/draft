@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -96,6 +96,66 @@ describe("Phase 46 visible workflows", () => {
 
     expect(await screen.findAllByText("Reopened research notes")).toHaveLength(3);
     expect(commandNames()).toEqual(["create_document", "save_document", "open_document", "close_document"]);
+  });
+
+  it("prevents overlapping actions while Save is pending", async () => {
+    const user = userEvent.setup();
+    const pending = deferred<unknown>();
+    installDefaultCommands({ saveDocument: () => pending.promise });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByText("Saving")).toBeTruthy();
+    await assertDocumentActionsDisabled(user, "Export DOCX");
+    expect(commandNames()).toEqual(["create_document", "save_document"]);
+
+    await act(async () => pending.resolve({ status: "cancelled" }));
+    expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
+  });
+
+  it("prevents overlapping actions while Open is pending", async () => {
+    const user = userEvent.setup();
+    const pending = deferred<unknown>();
+    installDefaultCommands({ openDocument: () => pending.promise });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    expect(screen.getByText("Opening")).toBeTruthy();
+    await assertDocumentActionsDisabled(user, "Export DOCX");
+    expect(commandNames()).toEqual(["create_document", "open_document"]);
+
+    await act(async () => pending.resolve({ status: "cancelled" }));
+    expect(await screen.findByText("Open cancelled.")).toBeTruthy();
+  });
+
+  it("persists and restores bounded font formatting through lifecycle commands", async () => {
+    const user = userEvent.setup();
+    let savedEnvelope: ReturnType<typeof createdEnvelope> | undefined;
+    installDefaultCommands({
+      saveDocument: async (args) => {
+        savedEnvelope = (args.request as { snapshot: ReturnType<typeof createdEnvelope> }).snapshot;
+        return { status: "saved", documentId: savedEnvelope.document_id };
+      },
+      openDocument: async () => ({ status: "opened", envelope: savedEnvelope }),
+    });
+    render(<App />);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Font family" }), "georgia");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Font size in points" }), "19");
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Document editor" }));
+    });
+    await user.keyboard("Styled ");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(JSON.stringify(savedEnvelope)).toContain('"family":"georgia"');
+    expect(JSON.stringify(savedEnvelope)).toContain('"points":19');
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Open" }));
+
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    expect(editor.querySelector('[data-draft-font-family="georgia"]')).toBeTruthy();
+    expect(editor.querySelector('[data-draft-font-size="19"]')).toBeTruthy();
   });
 
   it("adds a reference and inserts a resolvable citation", async () => {
@@ -214,6 +274,8 @@ function installDefaultCommands(overrides?: {
   analysis?: () => Promise<unknown>;
   createDocument?: () => Promise<unknown>;
   exportDocument?: () => Promise<unknown>;
+  openDocument?: () => Promise<unknown>;
+  saveDocument?: (args: Record<string, unknown>) => Promise<unknown>;
 }) {
   invokeMock.mockImplementation(async (command: string, args: Record<string, unknown>) => {
     if (command === "create_document") {
@@ -222,6 +284,9 @@ function installDefaultCommands(overrides?: {
         : { status: "created", envelope: createdEnvelope() };
     }
     if (command === "save_document") {
+      if (overrides?.saveDocument) {
+        return overrides.saveDocument(args);
+      }
       const request = args.request as { snapshot: { document_id: string } };
       return { status: "saved", documentId: request.snapshot.document_id };
     }
@@ -230,7 +295,9 @@ function installDefaultCommands(overrides?: {
       return { status: "closed", documentId: request.documentId };
     }
     if (command === "open_document") {
-      return { status: "opened", envelope: openedEnvelope() };
+      return overrides?.openDocument
+        ? overrides.openDocument()
+        : { status: "opened", envelope: openedEnvelope() };
     }
     if (command === "list_references") {
       return [];
@@ -294,6 +361,17 @@ function finding() {
 
 function commandNames() {
   return invokeMock.mock.calls.map(([command]) => command);
+}
+
+async function assertDocumentActionsDisabled(
+  user: ReturnType<typeof userEvent.setup>,
+  exportLabel: string,
+) {
+  for (const label of ["New", "Open", "Save", "References", "Text checks", exportLabel, "Close"]) {
+    const button = screen.getByRole("button", { name: label }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    await user.click(button);
+  }
 }
 
 function deferred<T>() {

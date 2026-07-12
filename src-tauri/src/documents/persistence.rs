@@ -85,6 +85,18 @@ where
     save_document_with_writer(registry, snapshot, select_path, write_document_atomically)
 }
 
+pub(crate) fn save_requires_target(
+    registry: &DocumentRegistry,
+    snapshot: &Value,
+) -> Result<bool, SaveDocumentError> {
+    let envelope = validate_snapshot(snapshot.clone())?;
+    match registry.source_path(envelope.document_id()) {
+        Ok(Some(_)) => Ok(false),
+        Ok(None) | Err(DocumentRegistryError::NotOpen) => Ok(true),
+        Err(cause) => Err(SaveDocumentError::Registry { cause }),
+    }
+}
+
 fn save_document_with_writer<SelectPath, WriteDocument>(
     registry: &DocumentRegistry,
     snapshot: Value,
@@ -310,6 +322,22 @@ mod tests {
     }
 
     #[test]
+    fn font_formatting_persists_through_save_close_and_reopen() {
+        let target = TestDocumentPath::new("font-format-round-trip");
+        let registry = DocumentRegistry::new();
+        let snapshot = envelope_with_font_formatting();
+        let expected = validated_envelope(snapshot.clone());
+        let document_id = expected.document_id();
+
+        save_document(&registry, snapshot, || Ok(Some(target.path().to_owned()))).unwrap();
+        assert_eq!(registry.close(document_id), Ok(expected.clone()));
+        assert_eq!(
+            open_document(&registry, Some(target.path().to_owned())),
+            Ok(OpenDocumentOutcome::Opened { envelope: expected })
+        );
+    }
+
+    #[test]
     fn malformed_json_fails_before_registry_entry() {
         let target = TestDocumentPath::new("malformed");
         target.write(br#"{ "schema_version": 1,"#);
@@ -446,6 +474,32 @@ mod tests {
     }
 
     #[test]
+    fn save_target_preflight_matches_registry_state() {
+        let target = TestDocumentPath::new("preflight");
+        target.write(&serialized_envelope("Existing"));
+        let registry = DocumentRegistry::new();
+        let snapshot = envelope_value("Existing");
+
+        assert_eq!(save_requires_target(&registry, &snapshot), Ok(true));
+        open_document(&registry, Some(target.path().to_owned())).unwrap();
+        assert_eq!(save_requires_target(&registry, &snapshot), Ok(false));
+    }
+
+    #[test]
+    fn save_target_preflight_rejects_invalid_snapshot() {
+        let registry = DocumentRegistry::new();
+        let mut snapshot = envelope_value("Invalid");
+        snapshot["schema_version"] = json!(2);
+
+        assert_eq!(
+            save_requires_target(&registry, &snapshot),
+            Err(SaveDocumentError::InvalidEnvelope {
+                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
+            }),
+        );
+    }
+
+    #[test]
     fn cancelled_first_save_does_not_register_document() {
         let registry = DocumentRegistry::new();
         let snapshot = envelope_value("Cancelled");
@@ -575,6 +629,26 @@ mod tests {
                 cause: invalid_citation_error(),
             }),
         );
+    }
+
+    #[test]
+    fn invalid_font_format_fails_before_path_selection() {
+        let registry = DocumentRegistry::new();
+        let mut snapshot = envelope_with_font_formatting();
+        snapshot["document"]["content"][0]["content"][0]["marks"][1]["attrs"] =
+            json!({ "points": 8.5 });
+
+        assert!(matches!(
+            save_document(&registry, snapshot, || panic!(
+                "path selection must not run"
+            )),
+            Err(SaveDocumentError::InvalidEnvelope {
+                cause: DocumentEnvelopeError::InvalidTextFormat {
+                    cause: crate::documents::text_format::TextFormatError::InvalidFontSize,
+                    ..
+                },
+            })
+        ));
     }
 
     #[test]
@@ -731,6 +805,25 @@ mod tests {
                 "content": [{ "type": "paragraph", "content": [] }]
             }
         })
+    }
+
+    fn envelope_with_font_formatting() -> Value {
+        let mut value = envelope_value("Formatted");
+        value["document"] = json!({
+            "type": "doc",
+            "content": [{
+                "type": "paragraph",
+                "content": [{
+                    "type": "text",
+                    "text": "Mixed formatting",
+                    "marks": [
+                        { "type": "fontFamily", "attrs": { "family": "courier_new" } },
+                        { "type": "fontSize", "attrs": { "points": 21 } }
+                    ]
+                }]
+            }]
+        });
+        value
     }
 
     fn envelope_with_invalid_citation(title: &str) -> Value {

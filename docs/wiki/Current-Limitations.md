@@ -38,11 +38,14 @@ Apple Silicon target.
   for the supported style choices. It does not certify full compliance with a
   style manual.
 - Formatting and text findings are not saved and do not apply automatic edits.
+- Font formatting is limited to Arial, Georgia, Times New Roman, and Courier
+  New at whole point sizes from 8 through 72.
 
 ## Export
 
-- DOCX export supports paragraphs, headings, text, hard breaks, and bold,
-  italic, or underline marks within documented resource limits.
+- DOCX export supports paragraphs, headings, text, hard breaks, bold, italic,
+  underline, and the bounded font-family and font-size marks within documented
+  resource limits.
 - Unsupported content fails instead of being silently omitted.
 - Citation nodes are not currently included in DOCX output.
 - PDF export is currently unavailable. Its rendering policy and implementation
