@@ -708,6 +708,15 @@ workflow, first-time-user thresholds, `UX-*` taxonomy, Phase 46 through 50
 evidence requirements, and cumulative maintainer evidence ledger without
 documenting a workflow as available before implementation.
 
+Proposed ADR-003 and
+`docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md` own the non-binding
+successor release discussion. While the ADR is open, the accepted usability
+contract and current Phase 47 through 50 sequence remain authoritative.
+Proposal-labeled architecture, roadmap, invariant, release-ledger,
+and coverage notes may describe downstream effects, but user docs and
+maintainer implementation guides must not claim that interoperability, native
+menus, round-trip saving, or revised gates exist.
+
 Recommended checks:
 
 - Markdown formatting

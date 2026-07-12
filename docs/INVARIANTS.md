@@ -435,6 +435,14 @@ not imply that PDF behavior exists; it preserves the current absence until a
 governed implementation adds parser-based output, resource-bound,
 deterministic-failure, and source-preservation tests.
 
+Proposed ADR-003 is under review and does not yet change `INV-09`. Its proposed
+external-format extension would keep source identity and all writes in Rust,
+require no-edit external files to remain byte-for-byte unchanged, and deny a
+same-format save when current content cannot be represented safely. Until the
+ADR is accepted, a proposal guard rejects external-document ownership,
+round-trip/lossiness state, format parser/save-back commands, and native-menu
+dispatch in production source.
+
 ---
 
 ### INV-10: Centralized Network Client
@@ -743,6 +751,12 @@ Automated source scans may protect bounded terminology and authority rules, but
 they cannot prove that a first-time user understood a control. Uncoached human
 task evidence remains mandatory for Phase 47 and packaged rerun evidence remains
 mandatory for Phase 49.
+
+Proposed ADR-003 would move that human validation to Phase 49 after separate
+interoperability and desktop-workflow phases, preserve Phase 50 as realignment,
+and move security and candidate work to Phases 51 and 52. The proposal is not
+binding, does not close or reinterpret a current release row, and does not
+change the accepted Phase 46 through 50 contract while its PR remains open.
 
 Minimum verification:
 

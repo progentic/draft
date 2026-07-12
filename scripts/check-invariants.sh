@@ -40,6 +40,7 @@ main() {
   check_background_job_contract
   check_ai_orchestration_contract
   check_v1_analysis_decision_guard
+  check_adr_003_proposal_guard
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
@@ -1260,6 +1261,27 @@ check_v1_analysis_decision_guard() {
   fi
   printf 'PASS ADR-002 packaged model artifacts\n'
   printf 'PASS ADR-002 accepted v1 local-analysis guard\n'
+}
+
+check_adr_003_proposal_guard() {
+  local adr='docs/adr/003-expand-v1-document-interoperability.md'
+  local draft='docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
+
+  require_file "${adr}"
+  require_file "${draft}"
+  require_source_pattern 'Status: Proposed' "${adr}"
+  require_source_pattern '**Status:** Proposed and non-binding' "${draft}"
+  require_source_pattern 'authorize implementation while' "${draft}"
+  assert_no_matches 'ADR-003 external document lifecycle authority while proposed' \
+    '\b(?:opened_external|imported_external|round_trip_status|lossiness_state|NativeFormat|SaveCapability)\b' \
+    src-tauri/src src
+  assert_no_matches 'ADR-003 format parser or save-back implementation while proposed' \
+    '\b(?:parse_markdown|import_docx|import_rtf|import_odt|save_external_document)\b' \
+    src-tauri/src src
+  assert_no_matches 'ADR-003 native menu implementation while proposed' \
+    '\b(?:tauri::menu|MenuBuilder|SubmenuBuilder|on_menu_event|NativeMenuDispatcher)\b' \
+    src-tauri/src src
+  printf 'PASS ADR-003 proposed interoperability and desktop-workflow guard\n'
 }
 
 require_citation_sources() {

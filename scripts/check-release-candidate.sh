@@ -19,6 +19,7 @@ main() {
   check_generated_release_artifacts
   check_phase45_release_rule
   check_v1_usability_acceptance
+  check_adr_003_proposal_gate
 
   printf 'INFO Phase 49 remains blocked by RC-01 through RC-06 and GATE-46 through GATE-48.\n'
   printf 'Release-candidate hardening baseline passed.\n'
@@ -72,6 +73,31 @@ check_v1_usability_acceptance() {
   require_usability_evidence_if_closed GATE-47 '## Phase 47' "${ledger}"
   require_usability_evidence_if_closed GATE-48 '## Phase 48' "${ledger}"
   require_candidate_usability_evidence_if_closed "${ledger}"
+}
+
+check_adr_003_proposal_gate() {
+  local adr='docs/adr/003-expand-v1-document-interoperability.md'
+  local draft='docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_literal 'Status: Proposed' "${adr}"
+  require_literal '**Status:** Proposed and non-binding' "${draft}"
+  require_literal '## Proposed ADR-003 Successor Gate Chain' "${release}"
+  require_literal '| RC-01 | Release blocker | Open |' "${release}"
+  require_literal '| RC-02 | Release blocker | Open |' "${release}"
+  require_literal '| RC-03 | Release blocker | Open |' "${release}"
+  require_literal '| RC-04 | Release blocker | Open |' "${release}"
+  require_literal '| GATE-46 | Must close before Phase 49 | Open |' "${release}"
+  require_literal '| GATE-47 | Must close before Phase 49 | Open |' "${release}"
+  require_literal '| GATE-48 | Must close before Phase 49 | Open |' "${release}"
+  require_literal "| \`GATE-50\` | Phase 50 | Mandatory documentation and drift realignment evidence. |" \
+    "${release}"
+  if rg --quiet --regexp \
+    '^\| (RC-0[78]|GATE-(47|48|49|50|51)) \| [^|]+ \| Closed \|' \
+    "${release}"; then
+    echo 'ADR-003 proposal cannot close a successor release row' >&2
+    return 1
+  fi
 }
 
 require_gate_usability_row() {

@@ -121,6 +121,31 @@ empty or fabricated results.
 Phase 45 closes only `GATE-45`. It does not close a product, security,
 performance, accessibility, or distribution blocker.
 
+## Proposed ADR-003 Successor Gate Chain
+
+ADR-003 is Proposed and non-binding. The current blocker rows, Phase 47 through
+50 meanings, and accepted usability contract remain authoritative while its PR
+is open. No current `RC-*` or `GATE-*` row closes because this proposal exists.
+
+If ADR-003 and its successor contract are accepted, the future gate chain would
+be replaced without treating renumbering as closure:
+
+| Proposed row | Proposed owner | Proposed closure basis |
+| :--- | :--- | :--- |
+| `RC-01` through `RC-04`, `GATE-46` | Phase 46 | Existing supported-workflow and accessibility evidence. |
+| `RC-07`, `GATE-47` | Phase 47 | Document interoperability, format ownership, lossiness, fidelity, and source-preservation evidence. |
+| `RC-08`, `GATE-48` | Phase 48 | Native-menu and visible-control parity, shared dispatch, state, keyboard, icon, and desktop-layout evidence. |
+| `GATE-49` | Phase 49 | First-time-user usability plus measured and perceived performance evidence. |
+| `GATE-50` | Phase 50 | Mandatory documentation and drift realignment evidence. |
+| `RC-05`, `GATE-51` | Phase 51 | Security, parser, CSP, dependency, source-safety, and secure-usability evidence. |
+| `RC-06` | Phase 52 | Exact final-candidate distribution and complete packaged workflow evidence. |
+| Release | Phase 53 | Every prior row is closed and v1.0.0 publication checks pass. |
+
+The current open `GATE-47` usability row and `GATE-48` security row are not
+closed, renamed, or removed by this proposed table. The accepted ledger may be
+rewritten only through the governed acceptance path, after which structural
+checks must reject closure against the obsolete numbering.
+
 ## Executable Gates
 
 Phase 44 entry requires a green verified `main`, a reproducible unsigned
