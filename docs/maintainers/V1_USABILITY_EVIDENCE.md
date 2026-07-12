@@ -89,6 +89,21 @@ eleven-family formatting allowlist, and exact DOCX mappings. Those statements
 describe mechanically verified implementation scope, not packaged usability
 evidence. All findings and release rows remain open until direct human retest.
 
+## Save-Identity Retest Artifact
+
+- Correction commit: `a0f1ab8d5cc0def97fe98d501324633e341bef74`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `3b4e996091d9a6618d62570070fcc3d412b394690b855b502114d4f2cc1e7dd0`
+- Mechanical result: package construction, arm64 validation, embedded icon
+  validation, and embedded deterministic text-analysis helper execution passed.
+- Human result: pending.
+
+The artifact returns basename-only save identity and updates the displayed
+filename only after success. It has not yet proven that the native panel shows
+Save rather than Open, that the filename transition renders correctly, or that
+cancel and failure recovery remain understandable in the packaged app.
+`UX-46-018`, `RC-01` through `RC-04`, and `GATE-46` remain open.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid

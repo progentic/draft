@@ -157,6 +157,8 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '154c34c96183ff67d4ecd6acd790b0410403dd58'
   require_document_text "${ledger}" '68aa08d8a0577ec32a128cd3368ea830be7f91f5'
   require_document_text "${ledger}" 'ae66d3dae64fbe738fcd371b776b27d022bea3182eb9920c89773498dcf289f9'
+  require_document_text "${ledger}" 'a0f1ab8d5cc0def97fe98d501324633e341bef74'
+  require_document_text "${ledger}" '3b4e996091d9a6618d62570070fcc3d412b394690b855b502114d4f2cc1e7dd0'
   require_document_text "${ledger}" '## Phase 46'
   require_document_text "${ledger}" '### Automated Evidence'
   require_document_text "${ledger}" '### Findings And Dispositions'
