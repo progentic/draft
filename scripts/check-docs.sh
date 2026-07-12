@@ -172,7 +172,7 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-014 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-015 | UX-2 | Open |'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
-    'UX-46-001` through `UX-46-015'
+    "UX-46-001\` through \`UX-46-015"
   require_document_text docs/maintainers/CONFIGURATION.md \
     "\`arial\`, \`avenir_next\`, \`baskerville\`, \`courier_new\`, \`georgia\`, \`helvetica\`, \`menlo\`, \`palatino\`, \`times_new_roman\`, \`trebuchet_ms\`, \`verdana\`"
   require_document_text docs/maintainers/CONFIGURATION.md \
@@ -196,7 +196,7 @@ check_v1_usability_documentation() {
   require_document_text docs/wiki/Current-Limitations.md \
     'whole point sizes from 8 through 72'
   require_document_text docs/wiki/Current-Limitations.md \
-    'DOCX, RTF, OpenDocument (`.odt`), and legacy Word (`.doc`) import are'
+    "DOCX, RTF, OpenDocument (\`.odt\`), and legacy Word (\`.doc\`) import are"
 }
 
 check_data_migration_documentation() {
