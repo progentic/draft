@@ -132,27 +132,22 @@ checkpoint means every known release-relevant finding has an owner, phase, and
 closure condition. It does not declare DRAFT release-ready.
 
 Phase 45 reconciles the release sequence without adding product behavior. It
-closes only the documentation/governance gate, assigns the four visible
-workflow blockers to Phase 46, keeps responsiveness in Phase 47, CSP/security
-in Phase 48, and candidate distribution in Phase 49. Usability and interaction
-clarity are now binding v1 release conditions. The accepted downstream criteria
-live in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`. Phase 46 is next.
+closes only the documentation/governance gate and assigns the four visible
+workflow blockers to Phase 46. Usability and interaction clarity are binding
+v1 release conditions. The accepted downstream criteria live in
+`docs/contracts/V1_USABILITY_ACCEPTANCE.md`. Phase 46 remains active.
 
 Phase 46 must make each supported workflow discoverable, understandable,
 predictable, recoverable, keyboard-operable, and explicit about current state.
 The local text-analysis workflow must use ADR-002's exact governed five-check
 scope without model-backed claims.
 
-Phase 47 is Usability and Perceived Performance Validation. It audits every
-visible label, menu, control, state, and realistic workload, then combines
-measured responsiveness with uncoached task evidence from at least five
-first-time users. Benchmarks alone cannot close its gate.
-
-Phase 48 includes secure usability in the final trust-boundary review. Phase 49
-reruns the supported workflow from the exact candidate package and blocks on
-open `UX-0` or `UX-1` findings. Phase 50 requires a concise first-run entry
-point, user release notes, supported-capability guidance, shortcuts, recovery
-help, and a verified download and launch path.
+Accepted ADR-003 assigns document interoperability to Phase 47 and desktop UI
+and native workflow integration to Phase 48. Phase 49 validates usability,
+documentation comprehension, and measured and perceived performance. Phase 50
+is the mandatory documentation and drift realignment checkpoint. Phase 51 owns
+security review, Phase 52 owns the exact final candidate, and Phase 53 owns the
+v1.0.0 release record and publication.
 
 Accepted ADR-002 selects local deterministic text analysis as the v1.0.0
 analysis boundary. `RC-03` remains open until Phase 46 implements and verifies
@@ -164,13 +159,10 @@ heuristics as non-authoritative review signals, and semantic, generative, or
 inferential model-backed interpretation as outside v1.0.0. Supporting counts or
 patterns cannot silently become additional product capabilities.
 
-Proposed ADR-003 is under architecture review after packaged Phase 46
-validation exposed release-blocking document interoperability and native
-desktop workflow requirements. These findings are not accepted as an expansion
-of Phase 46. The current Phase 47 through 50 sequence remains authoritative
-until the proposal merges.
-
-If accepted, ADR-003 would insert this successor sequence:
+Accepted ADR-003 records that packaged Phase 46 validation exposed
+release-blocking document interoperability and native desktop workflow
+requirements. These findings are not absorbed into Phase 46.
+The authoritative successor sequence is:
 
 - Phase 47: Document interoperability.
 - Phase 48: Desktop UI and native workflow integration.
@@ -180,15 +172,15 @@ If accepted, ADR-003 would insert this successor sequence:
 - Phase 52: Final release candidate.
 - Phase 53: v1.0.0 release.
 
-Phase 50 remains the required fifth-phase realignment checkpoint. The proposal
+Phase 50 remains the required fifth-phase realignment checkpoint. Acceptance
 adds no parser, round-trip save path, native menu, visual redesign, release
-evidence, or phase completion while it is under review.
+evidence, or phase completion.
 
-The same proposal adds human-first maintainer documentation as a release
-quality. Phase 49 would review documentation terminology and comprehension
-alongside product usability and performance. Phase 50 would perform the
+The same decision adds human-first maintainer documentation as a release
+quality. Phase 49 reviews documentation terminology and comprehension
+alongside product usability and performance. Phase 50 performs the
 plain-language, maintainer-onboarding, unnecessary-jargon, terminology, and
-cross-link realignment required before proposed `INV-UX-07` can become
+cross-link realignment required before `INV-UX-07` can become
 Accepted.
 
 ---

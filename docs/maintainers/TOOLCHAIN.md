@@ -76,12 +76,14 @@ Apple Silicon bundle; portable configuration checks run in GitHub Actions.
 Phase 44 adds an offline RC-hardening check that validates the classified
 blocker inventory against current CSP, unsigned package, visible workflow,
 pre-release version, tag, and generated-artifact evidence. Passing it does not
-mean the Phase 49 entry gate is satisfied.
+mean the Phase 52 entry gate is satisfied.
 
 Phase 45 closes only `GATE-45`. The same offline check now requires the binding
 usability rule in the roadmap, phasemap, and RC ledger; verifies that
-`RC-01` through `RC-04` remain open for Phase 46; and keeps CSP, responsiveness,
-and distribution assigned to their later gates.
+`RC-01` through `RC-04` remain open for Phase 46. Accepted ADR-003 assigns
+interoperability to Phase 47, desktop workflow integration to Phase 48,
+usability and performance to Phase 49, realignment to Phase 50, security to
+Phase 51, and candidate distribution to Phase 52.
 
 Accepted ADR-002 keeps the provider-independent model orchestration boundary
 internal and denies external model, credential, and generative-analysis product

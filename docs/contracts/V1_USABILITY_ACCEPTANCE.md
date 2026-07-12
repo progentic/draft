@@ -10,7 +10,7 @@ owners: [frontend, core, release]
 ## Purpose
 
 This accepted contract turns the binding Phase 45 usability rule into
-executable release criteria for Phases 46 through 50. It defines the supported
+executable release criteria for Phases 46 through 53. It defines the supported
 workflow, required human evidence, measurable thresholds, and release-blocking
 finding classes.
 
@@ -64,7 +64,7 @@ and verified.
 
 Phase 46 must close `RC-01` through `RC-04` before `GATE-46` may close. Every
 new visible workflow must satisfy the supported-workflow and accessibility
-requirements together; interaction clarity cannot be postponed to Phase 47.
+requirements together; interaction clarity cannot be postponed to Phase 49.
 
 For local text analysis, each of the five allowed checks must:
 
@@ -84,11 +84,12 @@ scoring, originality detection, or model-backed interpretation. Analysis
 interaction tests must cover labels, empty states, findings, relevant-passage
 navigation, focus behavior, announcements, and recovery.
 
-## Phase 47 - Usability And Perceived Performance Validation
+## Phase 49 - Usability And Performance Validation
 
-Phase 47 audits the complete visible application and records evidence in
-`docs/maintainers/V1_USABILITY_EVIDENCE.md`. It must not close `GATE-47` from
-benchmarks alone.
+Phase 49 audits the complete visible application and records evidence in
+`docs/maintainers/V1_USABILITY_EVIDENCE.md`. It must not close `GATE-49` from
+benchmarks alone. Accepted ADR-003 assigns this evidence to `GATE-49`; the
+former `GATE-47` meaning is superseded by the interoperability gate.
 
 ### Visible-language inventory
 
@@ -140,7 +141,7 @@ both measured limits and observed ambiguity.
 
 ## First-Time-User Task Validation
 
-Before Phase 47 closes, at least five people who have not worked on the
+Before Phase 49 closes, at least five people who have not worked on the
 repository must attempt the workflow without coaching. Participants do not
 need to be professional usability researchers. Do not explain a confusing
 control and then count the task as successful.
@@ -198,13 +199,13 @@ agreement scale:
 - The names of controls matched what they did.
 - I would use DRAFT for this kind of work.
 
-Any statement with a median below 4 creates a Phase 47 finding that requires
-disposition before Phase 49. These thresholds are practical v1 gates, not a
+Any statement with a median below 4 creates a Phase 49 finding that requires
+disposition before Phase 52. These thresholds are practical v1 gates, not a
 claim of statistical research.
 
-## Phase 48 - Secure Usability
+## Phase 51 - Secure Usability
 
-The Phase 48 security review must include a secure-usability section proving
+The Phase 51 security review must include a secure-usability section proving
 that:
 
 - security restrictions explain why an action is unavailable;
@@ -216,9 +217,9 @@ that:
 - packaging and trust warnings are accurate; and
 - users are never instructed to weaken system security to run DRAFT.
 
-## Phase 49 - Packaged Release-Candidate Gate
+## Phase 52 - Packaged Release-Candidate Gate
 
-Phase 49 must rerun the complete workflow using the exact release-candidate
+Phase 52 must rerun the complete workflow using the exact release-candidate
 package rather than a development server. Evidence must cover packaged launch,
 first run, primary workflow completion, labels and menus, keyboard-only use,
 realistic documents, analysis comprehension, export, controlled-error
@@ -236,12 +237,12 @@ Use this blocker taxonomy:
 - **UX-2:** meaningful friction that should be fixed before release.
 - **UX-3:** enhancement suitable for later maintenance.
 
-Any open `UX-0` or `UX-1` blocks Phase 49. Every `UX-2` requires an explicit
+Any open `UX-0` or `UX-1` blocks Phase 52. Every `UX-2` requires an explicit
 fix, accepted limitation, or owner-approved deferral recorded with rationale.
 
-## Phase 50 - Release Entry Point
+## Phase 53 - Release Entry Point
 
-Before tagging v1.0.0, Phase 50 must provide:
+Before tagging v1.0.0, Phase 53 must provide:
 
 - a concise first-run guide;
 - a Start Here workflow;
@@ -258,15 +259,15 @@ must not require architecture or maintainer documentation.
 ## Evidence And Enforcement
 
 `docs/maintainers/V1_USABILITY_EVIDENCE.md` is the cumulative evidence ledger
-for Phases 46 through 49. It must separate automated evidence, packaged-browser
+for Phases 46 through 52. It must separate automated evidence, packaged-browser
 or application evidence, human task results, findings, dispositions, and exact
 tested commit/package identifiers.
 
-Create the ledger only when real Phase 46 evidence exists. It must use headings
-from `## Phase 46` through `## Phase 49` as those phases run. Each phase section
-must contain `### Automated Evidence` and `### Findings And Dispositions`;
-Phase 47 must also contain anonymized task and threshold results, Phase 48 must
-contain secure-usability evidence, and Phase 49 must contain
+Create the ledger only when real Phase 46 evidence exists. It adds headings
+for Phases 46 through 52 as those phases produce relevant evidence. Each phase
+section must contain `### Automated Evidence` and `### Findings And Dispositions`;
+Phase 49 must also contain anonymized task and threshold results, Phase 51 must
+contain secure-usability evidence, and Phase 52 must contain
 `### Packaged Workflow Evidence`.
 
 Finding rows use this shape:

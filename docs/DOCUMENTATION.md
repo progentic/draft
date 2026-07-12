@@ -89,9 +89,9 @@ clarity, useful examples, accurate trade-offs, and whether a new maintainer can
 explain why the boundary exists without first reading source code.
 
 Existing major guides remain truthful but do not all use this structure yet.
-Proposed ADR-003 assigns their plain-language, terminology, onboarding, and
-cross-link realignment to proposed Phase 50. Proposed `INV-UX-07` cannot become
-Accepted until that review and structural enforcement exist.
+Accepted ADR-003 assigns their plain-language, terminology, onboarding, and
+cross-link realignment to Phase 50. `INV-UX-07` remains Proposed and cannot
+become Accepted until that review and structural enforcement exist.
 
 ## 3. Documentation Surfaces
 
@@ -771,14 +771,12 @@ workflow, first-time-user thresholds, `UX-*` taxonomy, Phase 46 through 50
 evidence requirements, and cumulative maintainer evidence ledger without
 documenting a workflow as available before implementation.
 
-Proposed ADR-003 and
-`docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md` own the non-binding
-successor release discussion. While the ADR is open, the accepted usability
-contract and current Phase 47 through 50 sequence remain authoritative.
-Proposal-labeled architecture, roadmap, invariant, release-ledger,
-and coverage notes may describe downstream effects, but user docs and
-maintainer implementation guides must not claim that interoperability, native
-menus, round-trip saving, or revised gates exist.
+Accepted ADR-003 and
+`docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md` own the binding
+Phase 47 through 53 release sequence. The contract defines required future
+behavior without claiming that interoperability, native menus, round-trip
+saving, or later-phase evidence already exist. `INV-UX-07` remains Proposed
+until Phase 50 supplies structural enforcement and human onboarding evidence.
 
 Recommended checks:
 

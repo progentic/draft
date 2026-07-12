@@ -204,15 +204,18 @@ cannot change document bytes, registry state, or stored reference rows.
 
 Phase 44 records the checked RC-hardening contract in
 `docs/maintainers/RELEASE_CANDIDATE.md`. Open product, CSP, distribution, and
-mandatory review gates remain explicit blockers for Phase 49. Accepted v1
-limitations, P2 maintenance, and post-v1 work are separate. Phase 44 passing is
-an inventory and enforcement result, not a release-candidate declaration.
+mandatory review gates remain explicit blockers for the final candidate.
+Accepted v1 limitations, P2 maintenance, and post-v1 work are separate. Phase
+44 passing is an inventory and enforcement result, not a release-candidate
+declaration.
 
 Phase 45 closes only the documentation/governance gate. It assigns the visible
 document, research/citation, analysis/text-review, and DOCX blockers to Phase
-46 before accessibility review can pass. Phase 47 owns measured and perceived
-responsiveness, Phase 48 owns CSP/security, and Phase 49 owns candidate
-distribution. The v1 usability rule is now binding and mechanically checked.
+46 before accessibility review can pass. Accepted ADR-003 assigns document
+interoperability to Phase 47, desktop UI and native workflow integration to
+Phase 48, usability and performance validation to Phase 49, realignment to
+Phase 50, security to Phase 51, the final candidate to Phase 52, and release to
+Phase 53. The v1 usability rule remains binding and mechanically checked.
 Its accepted criteria live in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`.
 Phase 46 is next.
 
@@ -299,10 +302,13 @@ Do not weaken an invariant to finish a phase. If an invariant is wrong, change i
 | 44 | Release candidate hardening | Known high-risk bugs are fixed or documented as release blockers. | Release-candidate checklist passes. |
 | 45 | Documentation and drift realignment | Release truth, blocker ownership, public docs, maintainer docs, and changelog are reconciled. | No release-blocking documentation drift remains, and the v1 usability rule is binding. |
 | 46 | Accessibility and interaction clarity | Visible v1 workflows close `RC-01` through `RC-04`, then receive accessibility and usability review. | Users can discover, understand, operate, and recover through critical flows with keyboard, focus, labels, announcements, clear states, and plain-language findings. |
-| 47 | Usability and Perceived Performance Validation | Every visible string, menu, control, state, realistic workload, and supported task is reviewed through measurement and uncoached first-time-user evidence. | At least five participants meet the accepted critical-task, 80-percent comprehension/recovery, and median-satisfaction thresholds; measured limits and ambiguous waits are resolved or block release. |
-| 48 | Security review | Trusted boundaries, CSP, and secure usability are reviewed against invariants. | Security restrictions, offline behavior, trust warnings, and safe recovery are understandable without exposing secrets, paths, payloads, or unsafe workarounds. |
-| 49 | Final release candidate | The complete workflow is rerun from the exact packaged candidate. | Every `RC-*` and `GATE-*` row is closed, no P0, `UX-0`, or `UX-1` finding remains, every `UX-2` is dispositioned, and candidate distribution evidence passes. |
-| 50 | v1.0.0 release realignment | Final docs, user release notes, first-run guidance, tags, and production checklist are aligned. | `v1.0.0` may be tagged only after all release gates and the verified download, launch, onboarding, shortcut, recovery, and supported-capability checks pass. |
+| 47 | Document interoperability | Bounded text, Markdown, DOCX, ODT, and RTF decisions use Rust-owned format, fidelity, lossiness, and source-preservation state. | `RC-07` and `GATE-47` close only with supported-format fixtures, safe round-trip behavior, and explicit deferrals or rejection for unsupported formats. |
+| 48 | Desktop UI and native workflow integration | Native macOS menus, visible controls, shortcuts, window branding, and desktop layout share one state-aware action path. | `RC-08` and `GATE-48` close only with packaged menu/control parity, focus, state, icon, layout, and keyboard evidence. |
+| 49 | Usability and performance validation | Product workflows, terminology, documentation comprehension, realistic workloads, and responsiveness receive measured and uncoached human review. | `GATE-49` closes only when accepted task, comprehension, satisfaction, documentation, and performance thresholds pass without open release-blocking findings. |
+| 50 | Documentation and drift realignment | Repository, user, maintainer, architecture, contract, release, implementation, terminology, and onboarding truth are reconciled. | `GATE-50` closes only after drift checks pass; `INV-UX-07` remains Proposed until structural enforcement and human onboarding evidence exist. |
+| 51 | Security review | Trusted boundaries, parsers, dependencies, CSP, source safety, native-menu authority, and secure usability are reviewed against invariants. | `RC-05` and `GATE-51` close only after security restrictions and recovery are verified without exposing secrets, paths, payloads, or unsafe workarounds. |
+| 52 | Final release candidate | The complete workflow is rerun from the exact signed and supported candidate distribution. | `RC-06` closes only when every prior row is closed, no P0, `UX-0`, or `UX-1` remains, every `UX-2` is dispositioned, and exact candidate evidence passes. |
+| 53 | v1.0.0 release | Final user docs, release notes, tags, download, launch, onboarding, shortcuts, recovery, and production checks are published. | `v1.0.0` may be tagged only after every prior release gate and publication check passes. |
 
 ---
 

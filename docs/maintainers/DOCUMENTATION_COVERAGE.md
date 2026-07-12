@@ -79,26 +79,26 @@ The Gap column uses these coverage states:
 | Packaging and application icons | `package:macos`; `package-macos.sh`; `check-packaging.sh`; active `app` target; five explicit icon paths | `PACKAGING.md`, `CONFIGURATION.md`, `TOOLCHAIN.md` | `docs/wiki/Current-Limitations.md` | None | `INV-13` for verification parity | Structured config checks plus clean unsigned Apple Silicon build, plist, architecture, executable, and embedded-icon validation | Implemented and documented for an unsigned macOS Apple Silicon `.app`; signing, notarization, installer images, publication, and other platforms remain release work. |
 | Release-candidate hardening | `check-release-candidate.sh`; blocker and gate inventory | `RELEASE_CANDIDATE.md`, `PACKAGING.md`, `CONFIGURATION.md`, `TOOLCHAIN.md`, `REALIGNMENT.md` | Existing canonical limitations; no user behavior changed | ADR-001 for accepted PDF deferral | Existing invariants remain authoritative | Structured inventory counts, binding usability rule, live CSP/package/workflow evidence, pre-release version/tag state, generated-artifact scan, and full verifier | Phase 45 closes only `GATE-45`; six release blockers and three mandatory pre-49 gates remain open, so this is not final-candidate readiness. |
 | v1 usability acceptance | No new product surface; release enforcement in `check-docs.sh`, `check-invariants.sh`, and `check-release-candidate.sh` | `V1_USABILITY_ACCEPTANCE.md`, `RELEASE_CANDIDATE.md`; future cumulative evidence in `V1_USABILITY_EVIDENCE.md` | Future first-run, Start Here, shortcut, and recovery guidance must follow implemented workflows | None; refines the accepted Phase 45 release rule | `INV-UX-01` through `INV-UX-06` | Structural contract checks now; Phase 46-49 automated, packaged, and uncoached human evidence remains required | Accepted release contract with implementation evidence still absent. Open `RC-*` and `GATE-*` rows continue to block release; no workflow is claimed. |
-| Document interoperability and desktop workflow proposal | No product code surface while ADR-003 remains Proposed | ADR-003, `V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md`, `RELEASE_CANDIDATE.md` | Existing limitations remain authoritative; no new workflow is published | ADR-003 Proposed | Existing `INV-03`, `INV-06`, `INV-09`, and `INV-UX-01` through `INV-UX-06`; no new binding invariant | Proposal-state documentation, invariant, source-absence, and release-gate checks only | Proposed and blocked by governance. Current Phase 47 through 50 numbering remains accepted until merge and successor-contract acceptance. |
+| Document interoperability and desktop workflows | Phase 47 and Phase 48 contract only; implementation remains absent | ADR-003, accepted `V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md`, `RELEASE_CANDIDATE.md` | Existing limitations remain authoritative; no new workflow is published | ADR-003 Accepted | Existing `INV-03`, `INV-06`, `INV-09`, and `INV-UX-01` through `INV-UX-06`; `INV-UX-07` remains Proposed | Accepted-state documentation, invariant, source-absence, and release-gate checks | Implemented behavior absent: accepted policy and phase ownership do not constitute Phase 47 or Phase 48 evidence. |
 | PDF export decision | No dependency, command, runtime path, control, or generated PDF | ADR-001 and `PDF_EXPORT_DECISION.md` | `docs/wiki/Current-Limitations.md` | ADR-001 accepted | Accepted PDF deferral guard | Absence scan and full verifier | Implemented and documented as an accepted deferral; PDF remains intentionally unavailable. |
 | Public Rust API comments | Externally reachable modules, types, functions, methods, variants, and fields | Owning subsystem guides and this matrix | No user surface | None | None | `cargo rustdoc -- -D missing_docs` audit probe | Documented but enforcement missing: 457 granular lint findings remain, mostly variants, fields, accessors, and module exports. A focused source-documentation change is required before enabling the lint. |
 | Live GitHub Wiki | Canonical pages under `docs/wiki/`; <https://github.com/progentic/draft/wiki> | `DOCUMENTATION.md`, this matrix | Home, Workspace, Troubleshooting, Current Limitations | None | None | Offline source checks, remote-tree/hash comparison, and rendered navigation review | Live commit `1bddd52` matches all merged sources through Phase 39. |
 
-## ADR-003 Proposal Coverage
+## ADR-003 Accepted Coverage
 
-These identifiers cover proposal surfaces only. They do not claim accepted
-architecture, implementation, user documentation, or release evidence.
+These identifiers cover the accepted ADR-003 contract surfaces. They do not
+claim implementation, user documentation, or release evidence.
 
-| Identifier | Proposed area | Owning proposal surface |
+| Identifier | Accepted area | Owning contract surface |
 | :--- | :--- | :--- |
 | `ADR003-COV-INTEROP` | Document interoperability | ADR-003 format boundary and successor contract Phase 47. |
 | `ADR003-COV-ROUNDTRIP` | Round-trip save policy and no-edit source preservation | ADR-003 round-trip ownership and successor save rules. |
 | `ADR003-COV-FIDELITY` | Format fidelity and lossiness | Successor format-fidelity classes and required evidence. |
 | `ADR003-COV-NATIVE-MENU` | Native macOS menu integration | ADR-003 native desktop workflow and successor Phase 48. |
 | `ADR003-COV-DESKTOP-UI` | Desktop command grouping and window branding | Successor Phase 48 visual and interaction scope. |
-| `ADR003-COV-USABILITY-PERF` | Product usability, documentation comprehension, and performance validation | Proposed Phase 49. |
+| `ADR003-COV-USABILITY-PERF` | Product usability, documentation comprehension, and performance validation | Phase 49. |
 | `ADR003-COV-REALIGNMENT` | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and fifth-phase drift realignment | Preserved Phase 50. |
-| `ADR003-COV-GATE-REMAP` | Remapped security, final candidate, and release phases | Proposed Phases 51, 52, and 53 plus successor gate chain. |
+| `ADR003-COV-GATE-REMAP` | Remapped security, final candidate, and release phases | Phases 51, 52, and 53 plus the accepted gate chain. |
 
 ## Detected Drift And Resolution
 

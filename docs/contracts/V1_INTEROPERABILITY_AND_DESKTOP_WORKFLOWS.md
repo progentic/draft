@@ -1,24 +1,23 @@
-# DRAFT v1 Interoperability And Desktop Workflows
+---
+status: Accepted
+adr: ADR-003
+upholds: [INV-03, INV-06, INV-09, INV-UX-01, INV-UX-02, INV-UX-03, INV-UX-04, INV-UX-05, INV-UX-06]
+owners: [core, frontend, release]
+---
 
-**Status:** Proposed and non-binding  
-**Decision:** Proposed ADR-003  
-**Scope:** Successor release requirements after Phase 46
+# DRAFT v1 Interoperability And Desktop Workflows
 
 ## Purpose
 
-This proposed contract defines the downstream acceptance contract that would follow
-ADR-003. It does not change the accepted Phase 45 usability contract, close a
-release row, renumber the current roadmap, or authorize implementation while
-ADR-003 remains Proposed.
-
-If ADR-003 is accepted, this proposal must complete the `contract-doc` lifecycle
-before Phase 47 implementation begins. The accepted successor must preserve
-the existing usability qualities and evidence thresholds while assigning them
-to the revised Phase 47 through 53 sequence.
+This accepted contract defines the downstream requirements established by
+ADR-003. It preserves the Phase 45 usability qualities and evidence thresholds
+while assigning them to the revised Phase 47 through 53 sequence. It does not
+close any release row, claim implementation, or authorize Phase 47 to begin
+before Phase 46 closes through its own evidence and merge path.
 
 ## Required Product Boundary
 
-The proposed v1 document boundary is:
+The accepted v1 document boundary is:
 
 | Format | Open/import requirement | Save requirement | v1 disposition |
 | :--- | :--- | :--- | :--- |
@@ -238,7 +237,7 @@ limitations occur only after the candidate and every prior row are closed.
 
 ## Successor Gate Chain
 
-The accepted successor contract must use this dependency order:
+The release process uses this dependency order:
 
 | Row | Owner | Closure basis |
 | :--- | :--- | :--- |
@@ -251,9 +250,9 @@ The accepted successor contract must use this dependency order:
 | `RC-06` | Phase 52 | Exact candidate distribution and complete packaged workflow pass. |
 | Release | Phase 53 | Every prior row is closed with evidence and v1 publication checks pass. |
 
-The current open `GATE-47` and `GATE-48` meanings are superseded only after
-ADR-003 and this successor contract are accepted. Renumbering is not closure,
-and no existing row may be removed to manufacture a passing release ledger.
+The former `GATE-47` usability and `GATE-48` security meanings are superseded
+by this accepted contract. Renumbering is not closure, and no existing row may
+be removed to manufacture a passing release ledger.
 
 ## Required Evidence
 
@@ -296,7 +295,7 @@ visible branding proof.
 
 ## Non-Goals
 
-This draft does not implement a parser, serializer, lifecycle state, menu,
+This contract does not implement a parser, serializer, lifecycle state, menu,
 dispatcher, control, visual redesign, security fix, release package, or phase
 completion. It does not authorize PDF, legacy `.doc`, an external office-suite
 runtime, arbitrary format plugins, frontend filesystem access, or silent
