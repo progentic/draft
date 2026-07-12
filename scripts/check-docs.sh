@@ -162,6 +162,7 @@ check_adr_003_proposal_state() {
   require_document_text "${adr}" '| 50 | Documentation and drift realignment |'
   require_document_text "${adr}" '| 53 | v1.0.0 release |'
   require_document_text "${adr}" 'no interoperability, round-trip, native-menu, or'
+  require_document_text "${adr}" '### Documentation comprehension'
   require_document_text "${draft}" '**Status:** Proposed and non-binding'
   require_document_text "${draft}" '## Successor Gate Chain'
   require_document_text "${draft}" "| \`RC-07\`, \`GATE-47\` | Phase 47 |"
@@ -181,6 +182,18 @@ check_adr_003_proposal_state() {
     "Proposed ADR-003 is under review and does not yet change \`INV-09\`."
   require_document_text docs/DOCUMENTATION.md \
     'successor release discussion. While the ADR is open'
+  require_document_text docs/DOCUMENTATION.md \
+    'Optimize documentation for human comprehension first and precision second.'
+  require_document_text docs/DOCUMENTATION.md '### 2.1 Plain Language Requirement'
+  require_major_maintainer_section_policy
+  require_document_text docs/INVARIANTS.md \
+    "| \`INV-UX-07\` | Proposed |"
+  require_document_text "${draft}" \
+    'Phase 49 also reviews maintainer documentation as a teaching surface.'
+  require_document_text "${draft}" \
+    'Only then may a separate governed change mark'
+  require_document_text "${release}" \
+    'maintainer-documentation comprehension'
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     '| Document interoperability and desktop workflow proposal |'
   require_adr_003_coverage_areas
@@ -193,6 +206,30 @@ check_adr_003_proposal_state() {
     'Phase 47 (is|owns) [Dd]ocument [Ii]nteroperability|Phase 48 (is|owns) [Dd]esktop UI' \
     'accepted product documentation cannot adopt the proposed successor sequence early' \
     docs/contracts docs/user docs/wiki
+  reject_document_pattern \
+    'INV-UX-07|Documentation [Rr]eadability' \
+    'proposed documentation readability cannot enter accepted phase or contract truth' \
+    docs/PHASEMAP.md docs/contracts/V1_USABILITY_ACCEPTANCE.md
+}
+
+require_major_maintainer_section_policy() {
+  local policy='docs/DOCUMENTATION.md'
+  local sections=(
+    Purpose
+    Problem
+    Solution
+    Trade-offs
+    'Technical Contract'
+    'Implementation Notes'
+    'Failure Modes'
+    Tests
+    'Related Documents'
+  )
+  local section
+
+  for section in "${sections[@]}"; do
+    require_document_text "${policy}" "${section}"
+  done
 }
 
 require_adr_003_coverage_areas() {

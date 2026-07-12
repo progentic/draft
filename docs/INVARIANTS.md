@@ -83,6 +83,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-UX-04` | Accepted | Every visible failure states whether document data remains safe and exposes only recovery actions the current interface can honor. | `ARCHITECTURE.md` §12 | Typed error-presentation tests remain exhaustive; Phase 46 and Phase 48 evidence must cover data-safety wording and safe recovery. | The `verify` job runs error presentation tests and conditional usability/security evidence checks. |
 | `INV-UX-05` | Accepted | A user-facing concept has one canonical name across menus, controls, errors, documentation, and accessibility labels. | `ARCHITECTURE.md` §4.1 | Phase 47's visible-language inventory records each concept and resolves inconsistent terminology before release. | The `verify` job blocks Phase 47 closure without terminology and first-time-user comprehension evidence. |
 | `INV-UX-06` | Accepted | The supported v1 workflow is completable with keyboard input without lost focus or inaccessible controls. | `ARCHITECTURE.md` §4.1, §5, and §12 | Phase 46 interaction tests and Phase 49 packaged validation must cover the complete keyboard-only workflow. | The `verify` job blocks the accessibility and candidate gates without exact keyboard evidence. |
+| `INV-UX-07` | Proposed | Every major maintainer subsystem guide begins with a plain-language explanation of the problem and solution before normative requirements or implementation details. | `DOCUMENTATION.md` §2.1 and proposed ADR-003 Phases 49-50 | Proposal checks pin the human-first rule and required future section order. Phase 50 must realign existing major guides, add structural heading checks, and record maintainer-onboarding review before this invariant can become Accepted. | The `verify` job runs proposal-state checks only. Accepted enforcement remains pending and no current release gate may rely on this invariant. |
 
 ---
 
@@ -765,6 +766,35 @@ bash scripts/check-docs.sh
 bash scripts/check-invariants.sh
 bash scripts/check-release-candidate.sh
 bash scripts/verify.sh
+```
+
+---
+
+### INV-UX-07: Documentation Readability (Proposed)
+
+Maintainer documentation is a teaching surface as well as a specification.
+A competent engineer who has not seen DRAFT must be able to understand the
+subsystem's purpose, problem, solution, trade-offs, change boundary, protected
+rules, code location, failure modes, and test evidence before parsing
+implementation detail.
+
+The required layered structure is defined in `DOCUMENTATION.md` §2.1. New or
+substantively revised major guides follow it immediately. Proposed Phase 49
+reviews documentation terminology and comprehension with engineers unfamiliar
+with the repository. Proposed Phase 50 realigns existing major guides and adds
+structural checks for the required sections.
+
+This invariant remains Proposed. Presence checks cannot prove that an
+explanation is clear, and the existing guide set has not completed the Phase 50
+realignment. Human review plus mechanical section enforcement are both required
+before a governed change may mark `INV-UX-07` Accepted.
+
+Minimum proposal verification:
+
+```bash
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+bash scripts/check-release-candidate.sh
 ```
 
 ---

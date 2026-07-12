@@ -184,6 +184,13 @@ Phase 50 remains the required fifth-phase realignment checkpoint. The proposal
 adds no parser, round-trip save path, native menu, visual redesign, release
 evidence, or phase completion while it is under review.
 
+The same proposal adds human-first maintainer documentation as a release
+quality. Phase 49 would review documentation terminology and comprehension
+alongside product usability and performance. Phase 50 would perform the
+plain-language, maintainer-onboarding, unnecessary-jargon, terminology, and
+cross-link realignment required before proposed `INV-UX-07` can become
+Accepted.
+
 ---
 
 ## 1. Product Direction

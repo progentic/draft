@@ -134,6 +134,26 @@ spacing, alignment, editor/outline composition, and responsive overflow needed
 for a coherent desktop editor. It is not permission to copy a full office
 suite ribbon or add unsupported controls.
 
+### Documentation comprehension
+
+Adopt this standing engineering principle:
+
+> Write documentation so that a competent engineer who has never seen DRAFT
+> can understand what the subsystem does, why it exists, and how to change it
+> safely before reading the implementation.
+
+Documentation optimizes human comprehension first and precision second by
+separating plain-language explanation, technical explanation, and normative
+specification. Proposed `INV-UX-07` records the intended protection but remains
+Proposed until existing major maintainer guides are realigned and structural
+heading enforcement exists.
+
+Phase 49 would include documentation terminology and comprehension review in
+addition to product usability and performance. Phase 50 would review plain
+language, terminology consistency, maintainer onboarding, unnecessary
+implementation jargon, and documentation cross-links before accepting
+`INV-UX-07` through a separate governed status change.
+
 ### Release-gate sequence
 
 `RC-01` through `RC-04` and `GATE-46` remain open and continue to belong to
@@ -177,6 +197,8 @@ This decision makes several things harder:
 - no-edit preservation and edited-document fidelity require different tests;
 - native and WebView actions must remain synchronized as focus and state
   change;
+- existing maintainer guides need layered plain-language review before
+  documentation readability can become an accepted invariant;
 - first-time-user and performance evidence moves to a later phase; and
 - security, candidate, and release work move from Phases 48 through 50 to
   Phases 51 through 53.
@@ -195,7 +217,7 @@ visual-redesign implementation may rely on this proposal.
 
 The proposal guard requires ADR and draft-contract proposal language, the
 exact Phase 47 through 53 sequence, preservation of Phase 50 as realignment,
-and open current release rows. It rejects production source surfaces for
+open current release rows, and Proposed `INV-UX-07` language. It rejects production source surfaces for
 external-document lifecycle authority, round-trip/lossiness state, format
 parsers, save-back commands, and native menu dispatch while the ADR remains
 Proposed.

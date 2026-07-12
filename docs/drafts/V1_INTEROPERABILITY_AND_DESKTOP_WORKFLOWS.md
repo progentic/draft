@@ -193,12 +193,28 @@ agreement, state-sensitive enablement, import-format choice, lossiness
 understanding, Save versus Save As prediction, source-safety confidence, and
 recovery from one controlled compatibility failure.
 
+Phase 49 also reviews maintainer documentation as a teaching surface. A
+competent engineer unfamiliar with DRAFT must be able to identify a major
+subsystem's purpose, explain why its boundary exists, distinguish what may
+change from what must not change, find the owning code and tests, and describe
+failure behavior without reading source first. Review records unclear
+terminology, unexplained repository jargon, implementation-first organization,
+and missing trade-offs as open findings rather than coaching the reader.
+
 ## Phase 50 - Documentation And Drift Realignment
 
 Phase 50 remains the mandatory fifth-phase checkpoint. It reconciles the
 implemented format matrix, native-menu action inventory, lifecycle authority,
 lossiness wording, tests, Wiki source, configuration limits, release ledger,
 and packaged evidence without adding product behavior.
+
+The same checkpoint performs a plain-language and maintainer-onboarding review
+of every major subsystem guide. It aligns terminology, removes unnecessary
+agent-driven or implementation-first wording, checks cross-links, and applies
+the `DOCUMENTATION.md` layered section order. Structural checks must verify the
+required headings, while human review records whether the explanation is
+actually understandable. Only then may a separate governed change mark
+`INV-UX-07` Accepted.
 
 ## Phase 51 - Security Review
 
@@ -229,8 +245,8 @@ The accepted successor contract must use this dependency order:
 | `RC-01` through `RC-04`, `GATE-46` | Phase 46 | Existing workflow and accessibility evidence closes independently. |
 | `RC-07`, `GATE-47` | Phase 47 | Format matrix, lifecycle authority, round-trip, lossiness, source-preservation, and fixture evidence pass. |
 | `RC-08`, `GATE-48` | Phase 48 | Shared native/visible action dispatch, menus, shortcuts, state, icon, layout, keyboard, and packaged desktop evidence pass. |
-| `GATE-49` | Phase 49 | First-time-user thresholds plus measured and perceived performance pass. |
-| `GATE-50` | Phase 50 | Repository, user, architecture, contract, release, and implementation truth agree. |
+| `GATE-49` | Phase 49 | First-time-user thresholds, documentation comprehension, and measured and perceived performance pass. |
+| `GATE-50` | Phase 50 | Repository, user, maintainer onboarding, architecture, contract, release, and implementation truth agree. |
 | `RC-05`, `GATE-51` | Phase 51 | CSP, trust-boundary, parser, dependency, path, native-menu, and secure-usability review passes. |
 | `RC-06` | Phase 52 | Exact candidate distribution and complete packaged workflow pass. |
 | Release | Phase 53 | Every prior row is closed with evidence and v1 publication checks pass. |
@@ -263,6 +279,16 @@ Phase 48 evidence must cover:
 - exact visible icon/branding in the packaged app;
 - normal, narrow, scaled, light, dark, and reduced-motion layouts; and
 - no unsupported active control.
+
+Phase 49 and Phase 50 documentation evidence must cover:
+
+- plain-language purpose, problem, and solution before implementation detail;
+- clear trade-offs and explicit change/protection boundaries;
+- code, failure-mode, test, and related-document navigation;
+- terminology consistency across maintainers, users, and the application;
+- comprehension review by engineers unfamiliar with DRAFT; and
+- structural enforcement for the required major-guide sections before
+  `INV-UX-07` acceptance.
 
 Human evidence cannot be replaced by source scans. Parser presence cannot be
 treated as format fidelity, and package-icon byte equality cannot be treated as

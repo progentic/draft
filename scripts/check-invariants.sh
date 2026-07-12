@@ -1272,6 +1272,12 @@ check_adr_003_proposal_guard() {
   require_source_pattern 'Status: Proposed' "${adr}"
   require_source_pattern '**Status:** Proposed and non-binding' "${draft}"
   require_source_pattern 'authorize implementation while' "${draft}"
+  require_source_pattern "| \`INV-UX-07\` | Proposed |" docs/INVARIANTS.md
+  require_source_pattern 'Optimize documentation for human comprehension first and precision second.' \
+    docs/DOCUMENTATION.md
+  assert_no_matches 'ADR-003 premature documentation-readability acceptance' \
+    '\| \x60INV-UX-07\x60 \| Accepted \|' \
+    docs/INVARIANTS.md
   assert_no_matches 'ADR-003 external document lifecycle authority while proposed' \
     '\b(?:opened_external|imported_external|round_trip_status|lossiness_state|NativeFormat|SaveCapability)\b' \
     src-tauri/src src

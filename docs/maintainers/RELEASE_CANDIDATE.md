@@ -135,8 +135,8 @@ be replaced without treating renumbering as closure:
 | `RC-01` through `RC-04`, `GATE-46` | Phase 46 | Existing supported-workflow and accessibility evidence. |
 | `RC-07`, `GATE-47` | Phase 47 | Document interoperability, format ownership, lossiness, fidelity, and source-preservation evidence. |
 | `RC-08`, `GATE-48` | Phase 48 | Native-menu and visible-control parity, shared dispatch, state, keyboard, icon, and desktop-layout evidence. |
-| `GATE-49` | Phase 49 | First-time-user usability plus measured and perceived performance evidence. |
-| `GATE-50` | Phase 50 | Mandatory documentation and drift realignment evidence. |
+| `GATE-49` | Phase 49 | First-time-user usability, maintainer-documentation comprehension, and measured and perceived performance evidence. |
+| `GATE-50` | Phase 50 | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and drift realignment evidence. |
 | `RC-05`, `GATE-51` | Phase 51 | Security, parser, CSP, dependency, source-safety, and secure-usability evidence. |
 | `RC-06` | Phase 52 | Exact final-candidate distribution and complete packaged workflow evidence. |
 | Release | Phase 53 | Every prior row is closed and v1.0.0 publication checks pass. |

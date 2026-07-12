@@ -96,8 +96,8 @@ architecture, implementation, user documentation, or release evidence.
 | `ADR003-COV-FIDELITY` | Format fidelity and lossiness | Successor format-fidelity classes and required evidence. |
 | `ADR003-COV-NATIVE-MENU` | Native macOS menu integration | ADR-003 native desktop workflow and successor Phase 48. |
 | `ADR003-COV-DESKTOP-UI` | Desktop command grouping and window branding | Successor Phase 48 visual and interaction scope. |
-| `ADR003-COV-USABILITY-PERF` | Usability and performance validation | Proposed Phase 49. |
-| `ADR003-COV-REALIGNMENT` | Mandatory fifth-phase drift realignment | Preserved Phase 50. |
+| `ADR003-COV-USABILITY-PERF` | Product usability, documentation comprehension, and performance validation | Proposed Phase 49. |
+| `ADR003-COV-REALIGNMENT` | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and fifth-phase drift realignment | Preserved Phase 50. |
 | `ADR003-COV-GATE-REMAP` | Remapped security, final candidate, and release phases | Proposed Phases 51, 52, and 53 plus successor gate chain. |
 
 ## Detected Drift And Resolution

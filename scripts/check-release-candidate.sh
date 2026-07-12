@@ -90,7 +90,9 @@ check_adr_003_proposal_gate() {
   require_literal '| GATE-46 | Must close before Phase 49 | Open |' "${release}"
   require_literal '| GATE-47 | Must close before Phase 49 | Open |' "${release}"
   require_literal '| GATE-48 | Must close before Phase 49 | Open |' "${release}"
-  require_literal "| \`GATE-50\` | Phase 50 | Mandatory documentation and drift realignment evidence. |" \
+  require_literal "| \`INV-UX-07\` | Proposed |" docs/INVARIANTS.md
+  require_literal 'maintainer-documentation comprehension' "${release}"
+  require_literal "| \`GATE-50\` | Phase 50 | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and drift realignment evidence. |" \
     "${release}"
   if rg --quiet --regexp \
     '^\| (RC-0[78]|GATE-(47|48|49|50|51)) \| [^|]+ \| Closed \|' \
