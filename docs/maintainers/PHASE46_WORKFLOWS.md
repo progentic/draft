@@ -77,8 +77,15 @@ while the source file bytes remain untouched.
 The editor exposes eleven canonical families: Arial, Avenir Next, Baskerville,
 Courier New, Georgia, Helvetica, Menlo, Palatino, Times New Roman, Trebuchet MS,
 and Verdana. It accepts whole point sizes from 8 through 72 in one-point
-increments. Default removes the selected family or size mark without changing
-other marks.
+increments. The document-default commands remove the selected family or size
+mark without changing other marks.
+
+The controls report effective formatting rather than mark presence. Unmarked
+body text shows Georgia and 13 pt; headings show their 24, 18, or 14 pt
+document size. A caret inside explicitly formatted text shows that family and
+size, while a heterogeneous range shows Mixed fonts or Mixed sizes. Use
+document font and Use document size remove explicit marks. Selection changes,
+formatting commands, and reopened content refresh the displayed values.
 
 The controls write bounded Tiptap `fontFamily` and `fontSize` marks. The marks
 remain inside the existing document envelope, survive save, close, and reopen,

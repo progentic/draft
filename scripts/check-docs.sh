@@ -162,10 +162,10 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '## Phase 46'
   require_document_text "${ledger}" '### Automated Evidence'
   require_document_text "${ledger}" '### Findings And Dispositions'
-  require_document_text "${ledger}" '| UX-46-001 | UX-0 | Open |'
+  require_document_text "${ledger}" '| UX-46-001 | UX-0 | Closed |'
   require_document_text "${ledger}" '| UX-46-002 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-003 | UX-2 | Open |'
-  require_document_text "${ledger}" '| UX-46-004 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-004 | UX-2 | Closed |'
   require_document_text "${ledger}" '| UX-46-005 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-006 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-007 | UX-1 | Open |'
@@ -179,13 +179,20 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-015 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-016 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-017 | UX-1 | Open |'
-  require_document_text "${ledger}" '| UX-46-018 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-018 | UX-1 | Closed |'
+  require_document_text "${ledger}" '| UX-46-019 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-020 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-021 | UX-1 | Open |'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
-    "UX-46-001\` through \`UX-46-018"
+    "font-control finding \`UX-46-019\`"
   require_document_text docs/maintainers/CONFIGURATION.md \
     "\`arial\`, \`avenir_next\`, \`baskerville\`, \`courier_new\`, \`georgia\`, \`helvetica\`, \`menlo\`, \`palatino\`, \`times_new_roman\`, \`trebuchet_ms\`, \`verdana\`"
   require_document_text docs/maintainers/CONFIGURATION.md \
     "\`MAX_TEXT_IMPORT_BYTES\` | 8 MiB"
+  require_document_text docs/maintainers/CONFIGURATION.md \
+    "| Document font family | \`georgia\` |"
+  require_document_text docs/maintainers/CONFIGURATION.md \
+    '| Document body font size | 13 points |'
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \
     'whole point sizes from 8 through 72 in one-point'
   require_document_text docs/maintainers/PHASE46_WORKFLOWS.md \

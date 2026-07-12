@@ -641,6 +641,8 @@ check_text_format_contract() {
   local rust_path='src-tauri/src/documents/text_format.rs'
   local frontend_path='src/documents/textFormatting.ts'
   local mark_path='src/editor/TextFormattingMarks.ts'
+  local control_state_path='src/editor/fontControlState.ts'
+  local control_test_path='src/editor/fontControlState.test.ts'
   local rust_tests=(
     supported_family_and_size_marks_validate
     canonical_font_allowlist_maps_every_identifier_to_docx
@@ -656,6 +658,8 @@ check_text_format_contract() {
   require_file src/documents/textFormatting.test.ts
   require_file "${mark_path}"
   require_file src/editor/TextFormattingMarks.test.ts
+  require_file "${control_state_path}"
+  require_file "${control_test_path}"
   for test_name in "${rust_tests[@]}"; do
     require_rust_test "${test_name}" "${rust_path}"
   done
@@ -668,6 +672,19 @@ check_text_format_contract() {
   require_source_pattern 'span[data-draft-font-family]' "${mark_path}"
   require_source_pattern 'span[data-draft-font-size]' "${mark_path}"
   require_source_pattern 'FONT_FAMILIES.map((family)' src/editor/EditorToolbar.tsx
+  require_source_pattern 'DOCUMENT_FONT_FAMILY: FontFamilyId = "georgia"' \
+    "${control_state_path}"
+  require_source_pattern 'DOCUMENT_FONT_SIZE_POINTS = 13' "${control_state_path}"
+  require_source_pattern 'MIXED_FONT_VALUE = "__mixed__"' "${control_state_path}"
+  require_source_pattern 'reports document and heading defaults instead of empty placeholders' \
+    "${control_test_path}"
+  require_source_pattern 'follows explicit formatting at the caret after a JSON round trip' \
+    "${control_test_path}"
+  require_source_pattern 'reports mixed family and size for a heterogeneous range' \
+    "${control_test_path}"
+  assert_no_matches 'empty font-control placeholders' \
+    'Default font|Default size' \
+    src/editor/EditorToolbar.tsx
   require_rust_test every_supported_font_family_emits_explicit_docx_run_properties \
     src-tauri/src/exports/docx_tests.rs
   require_source_pattern 'ignores pasted font CSS and accepts only canonical DRAFT attributes' \

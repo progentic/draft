@@ -122,12 +122,18 @@ describe("DRAFT workspace shell", () => {
     const family = screen.getByRole("combobox", { name: "Font family" });
     const size = screen.getByRole("combobox", { name: "Font size in points" });
     const editor = screen.getByRole("textbox", { name: "Document editor" });
-    await user.selectOptions(family, "georgia");
-    await waitFor(() => expect(document.activeElement).toBe(editor));
     expect((family as HTMLSelectElement).value).toBe("georgia");
+    expect((size as HTMLSelectElement).value).toBe("13");
+    await user.selectOptions(family, "arial");
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    expect((family as HTMLSelectElement).value).toBe("arial");
     await user.selectOptions(size, "18");
     await waitFor(() => expect(document.activeElement).toBe(editor));
     expect((size as HTMLSelectElement).value).toBe("18");
+    await user.selectOptions(family, "__document_default__");
+    await waitFor(() => expect((family as HTMLSelectElement).value).toBe("georgia"));
+    await user.selectOptions(size, "__document_default__");
+    await waitFor(() => expect((size as HTMLSelectElement).value).toBe("13"));
   });
 
   it("exposes a horizontal formatting toolbar with one Tab entry", async () => {

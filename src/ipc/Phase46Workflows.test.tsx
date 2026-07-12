@@ -163,6 +163,8 @@ describe("Phase 46 visible workflows", () => {
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     expect(editor.querySelector('[data-draft-font-family="avenir_next"]')).toBeTruthy();
     expect(editor.querySelector('[data-draft-font-size="19"]')).toBeTruthy();
+    expect((screen.getByRole("combobox", { name: "Font family" }) as HTMLSelectElement).value).toBe("avenir_next");
+    expect((screen.getByRole("combobox", { name: "Font size in points" }) as HTMLSelectElement).value).toBe("19");
   });
 
   it("creates a focused blank document with a caret ready for typing", async () => {

@@ -23,10 +23,11 @@ second-level headings, bulleted and numbered lists, and block quotes. Formatting
 applies to the current selection.
 
 Choose Arial, Avenir Next, Baskerville, Courier New, Georgia, Helvetica, Menlo,
-Palatino, Times New Roman, Trebuchet MS, or Verdana, or choose **Default font**
-to remove the family from the selected text. Choose a
-whole point size from 8 through 72, or **Default size** to remove the size.
-These choices are saved with the document and included in DOCX export.
+Palatino, Times New Roman, Trebuchet MS, or Verdana. Choose a whole point size
+from 8 through 72. The controls show effective values at the caret and a mixed
+state for selections with different formatting. Choose **Use document font**
+or **Use document size** to remove the explicit setting. These choices are
+saved with the document and included in DOCX export.
 
 The outline lists document headings and moves the cursor to the selected
 heading. The Document panel shows live word, character, and heading counts.

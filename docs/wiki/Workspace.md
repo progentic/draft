@@ -27,8 +27,10 @@ Formatting applies to the current selection.
 Use **Font family** to choose Arial, Avenir Next, Baskerville, Courier New,
 Georgia, Helvetica, Menlo, Palatino, Times New Roman, Trebuchet MS, or Verdana.
 Use **Font size in points** to choose a whole size from 8 through 72. The
-Default choices remove that font setting from the selected text. Family and
-size are saved with the DRAFT document and included in DOCX export.
+controls show the effective formatting at the caret, or a mixed state when a
+selection contains different values. **Use document font** and **Use document
+size** remove explicit settings from the selected text. Family and size are
+saved with the DRAFT document and included in DOCX export.
 
 Press Tab to enter the formatting toolbar. Use Left Arrow and Right Arrow to
 move between enabled controls. Home moves to the first and End to the last.

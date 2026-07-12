@@ -68,13 +68,13 @@ All icon-only controls have visible focus treatment, accessible names, and
 tooltips.
 
 Font family and font size are adjacent labeled select controls rather than
-members of the roving button toolbar. Family choices are Default, Arial,
-Avenir Next, Baskerville, Courier New, Georgia, Helvetica, Menlo, Palatino,
-Times New Roman, Trebuchet MS, and Verdana. Size choices are Default or a whole
-point from 8 through 72. Default removes only the corresponding mark. A change
+members of the roving button toolbar. Family choices use the eleven canonical
+families, and size choices use whole points from 8 through 72. Use document
+font and Use document size remove only the corresponding mark. A change
 preserves other marks and returns focus to the editor without scrolling it.
-The selected values come from Tiptap state; React does not keep a separate
-authoritative formatting value.
+`fontControlState.ts` resolves the effective document default, explicit caret
+marks, or a mixed-range sentinel from Tiptap state; React does not keep a
+separate authoritative formatting value.
 Pasted HTML styling is not a font-authority path. The marks parse only
 `data-draft-font-family` and `data-draft-font-size`, then revalidate the
 canonical value before rendering.

@@ -96,13 +96,15 @@ evidence. All findings and release rows remain open until direct human retest.
 - Executable SHA-256: `3b4e996091d9a6618d62570070fcc3d412b394690b855b502114d4f2cc1e7dd0`
 - Mechanical result: package construction, arm64 validation, embedded icon
   validation, and embedded deterministic text-analysis helper execution passed.
-- Human result: pending.
+- Human result: partial; New, Open, and Save passed, while the font controls,
+  native File menu, and packaged icon exposed findings `UX-46-019` through
+  `UX-46-021`.
 
-The artifact returns basename-only save identity and updates the displayed
-filename only after success. It has not yet proven that the native panel shows
-Save rather than Open, that the filename transition renders correctly, or that
-cancel and failure recovery remain understandable in the packaged app.
-`UX-46-018`, `RC-01` through `RC-04`, and `GATE-46` remain open.
+The artifact returned basename-only save identity and updated the displayed
+filename only after success. Direct testing confirmed New, Open, and Save work
+as expected, closing the specific historical findings `UX-46-001`,
+`UX-46-004`, and `UX-46-018`. The complete packaged workflow and every RC row
+remain open.
 
 ### Replacement Artifact Product-Boundary Review
 
@@ -152,10 +154,10 @@ No untested task is counted as passed.
 
 | ID | Severity | Status | Evidence | Disposition |
 | :--- | :--- | :--- | :--- | :--- |
-| UX-46-001 | UX-0 | Open | During manual validation of packaged artifact `154c34c`, invoking Save caused DRAFT to become unresponsive and display the macOS beach ball. Save did not complete, no recovery action was available, and the application required force-quit. | Replace the synchronous blocking dialog path with async Tauri commands and non-blocking Rust-owned dialog callbacks, then rebuild, rehash, and rerun the complete packaged workflow. |
+| UX-46-001 | UX-0 | Closed | Artifact `154c34c` beach-balled during Save and required force-quit. Direct validation of artifact `3b4e9960` confirmed Save works as expected through the asynchronous dialog path. | Closed for the specific unresponsive Save defect; the broader packaged workflow and RC rows remain open. |
 | UX-46-002 | UX-2 | Open | The first artifact exposed no font-family control. The corrected candidate exposed a bounded control, but its family list was too narrow for the intended workflow. | Expand one canonical allowlist across validation, toolbar, editor marks, persistence, and DOCX mapping; then rebuild, rehash, and validate persistence and export in the corrected package. |
 | UX-46-003 | UX-2 | Open | The packaged editor exposed no font-size control. | Add a bounded point-size control only if the DRAFT envelope persists it, reopen restores it, and DOCX preserves it accurately. Rebuild, rehash, and validate the corrected package before disposition. |
-| UX-46-004 | UX-2 | Open | New opened seeded content instead of a blank page ready for immediate typing. | Return one empty paragraph from Rust, focus its caret only after success, then validate the replacement package. |
+| UX-46-004 | UX-2 | Closed | The earlier package opened seeded content. Direct validation of artifact `3b4e9960` confirmed New now opens the expected blank document. | Closed for the specific New-document defect; remaining lifecycle and release evidence stays open. |
 | UX-46-005 | UX-2 | Open | Open did not offer plain-text files. | Import bounded UTF-8 `.txt` as a new unsaved Rust-owned envelope, preserve the source, and validate first Save to a new `.draft` target. |
 | UX-46-006 | UX-2 | Open | Open did not offer Markdown files. | Import bounded UTF-8 `.md` as literal editable text without parsing or preview claims, then validate the packaged workflow. |
 | UX-46-007 | UX-1 | Open | Text and Markdown import source-preservation behavior could not be exercised because those inputs were unavailable. | Prove the source path never becomes save authority, first Save selects a new `.draft` target, and the source remains byte-for-byte unchanged in automated and packaged tests. |
@@ -169,6 +171,9 @@ No untested task is counted as passed.
 | UX-46-015 | UX-2 | Open | Command spacing, grouping, editor canvas composition, and outline layout do not meet the intended desktop-product quality threshold. | Address visual hierarchy and layout in the governed desktop UI phase, then validate normal, narrow, scaled, keyboard, and reduced-motion states from the packaged app. |
 | UX-46-016 | UX-1 | Open | Manual review confirmed that the native File menu does not expose New Document, Open, Close, Save, Save As, and Export in expected desktop-document order with state-aware shortcuts. | Phase 48 must implement one shared dispatcher for native and visible commands, standard macOS shortcuts, and document-state enablement before packaged retest. |
 | UX-46-017 | UX-1 | Open | Manual review confirmed that the visible menu icon remains stale and toolbar grouping does not consistently separate document lifecycle commands from research and analysis commands. | Phase 48 must replace the stale icon, align labels and icons, remove conflicting command locations, and validate the resulting hierarchy in the packaged app. |
-| UX-46-018 | UX-1 | Open | During Save, the native panel presented Open instead of Save, and successful save feedback did not replace the provisional title with the selected filename. Open and Close completed without mutating the source file. | Keep the native-panel label independently open; return basename-only save identity from Rust, update visible state only after success, preserve state on cancel or failure, rebuild, rehash, and manually retest first and later Save. |
+| UX-46-018 | UX-1 | Closed | An earlier package presented Open during Save and did not show the selected filename. Direct validation of artifact `3b4e9960` confirmed Save works as expected with the corrected typed result and visible filename transition. | Closed for the specific save-panel and filename defect; complete packaged recovery evidence remains required by the open RC rows. |
+| UX-46-019 | UX-1 | Open | Font family and size controls show Default font and Default size instead of the effective value at the caret or selection; mixed formatting is not disclosed. | Phase 46 must show document defaults, explicit caret values, and mixed states immediately and after save/reopen, then prove persistence and DOCX fidelity in a replacement package. |
+| UX-46-020 | UX-1 | Open | The native macOS File menu exposes only Close Window rather than the accepted document command hierarchy. | Phase 48 must add New Document, Open, Close, Save, Save As, and Export DOCX through the shared state-aware dispatcher with standard shortcuts. |
+| UX-46-021 | UX-1 | Open | The packaged macOS identity does not consistently use the intended `DRAFT_Logo(1).png` source artwork even though the newer mark appears inside the window. | Phase 48 must regenerate the icon chain from the supplied source and validate `.icns`, bundle configuration/resources, Finder, Dock, window branding, and clean-install cache behavior. |
 
 `RC-01` through `RC-04` and `GATE-46` remain open.

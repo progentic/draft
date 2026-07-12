@@ -24,6 +24,13 @@ import {
   isFontFamilyId,
   isFontSizePoints,
 } from "../documents/textFormatting";
+import {
+  DOCUMENT_FONT_FAMILY,
+  DOCUMENT_FONT_SIZE_POINTS,
+  MIXED_FONT_VALUE,
+  RESET_FONT_VALUE,
+  effectiveFontControlState,
+} from "./fontControlState";
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -41,7 +48,20 @@ interface ToolbarButtonProps {
   onPress: () => void;
 }
 
-type ToolbarState = typeof EMPTY_TOOLBAR_STATE;
+interface ToolbarState {
+  blockquote: boolean;
+  bold: boolean;
+  bulletList: boolean;
+  canRedo: boolean;
+  canUndo: boolean;
+  fontFamily: string;
+  fontSize: string;
+  headingOne: boolean;
+  headingTwo: boolean;
+  italic: boolean;
+  orderedList: boolean;
+  strike: boolean;
+}
 type ToolbarNavigationKey = "ArrowLeft" | "ArrowRight" | "End" | "Home";
 
 const EMPTY_TOOLBAR_STATE = {
@@ -50,8 +70,8 @@ const EMPTY_TOOLBAR_STATE = {
   bulletList: false,
   canRedo: false,
   canUndo: false,
-  fontFamily: "",
-  fontSize: "",
+  fontFamily: DOCUMENT_FONT_FAMILY,
+  fontSize: String(DOCUMENT_FONT_SIZE_POINTS),
   headingOne: false,
   headingTwo: false,
   italic: false,
@@ -101,23 +121,31 @@ function FontTools(props: { editor: Editor | null; state: ToolbarState }) {
         className="font-tools__family"
         aria-label="Font family"
         value={props.state.fontFamily}
+        disabled={!props.editor}
         onChange={(event) => setFontFamily(props.editor, event.currentTarget.value)}
       >
-        <option value="">Default font</option>
+        {props.state.fontFamily === MIXED_FONT_VALUE && (
+          <option value={MIXED_FONT_VALUE} disabled>Mixed fonts</option>
+        )}
         {FONT_FAMILIES.map((family) => (
           <option key={family.id} value={family.id}>{family.label}</option>
         ))}
+        <option value={RESET_FONT_VALUE}>Use document font</option>
       </select>
       <select
         className="font-tools__size"
         aria-label="Font size in points"
         value={props.state.fontSize}
+        disabled={!props.editor}
         onChange={(event) => setFontSize(props.editor, event.currentTarget.value)}
       >
-        <option value="">Default size</option>
+        {props.state.fontSize === MIXED_FONT_VALUE && (
+          <option value={MIXED_FONT_VALUE} disabled>Mixed sizes</option>
+        )}
         {fontSizeOptions().map((points) => (
           <option key={points} value={points}>{points} pt</option>
         ))}
+        <option value={RESET_FONT_VALUE}>Use document size</option>
       </select>
     </div>
   );
@@ -128,10 +156,10 @@ function setFontFamily(editor: Editor | null, value: string) {
     return;
   }
   const chain = editor.chain().focus(undefined, { scrollIntoView: false });
-  if (isFontFamilyId(value)) {
-    chain.setMark("fontFamily", { family: value }).run();
-  } else {
+  if (value === RESET_FONT_VALUE) {
     chain.unsetMark("fontFamily").run();
+  } else if (isFontFamilyId(value)) {
+    chain.setMark("fontFamily", { family: value }).run();
   }
   restoreEditorFocus(editor);
 }
@@ -142,10 +170,10 @@ function setFontSize(editor: Editor | null, value: string) {
   }
   const points = Number(value);
   const chain = editor.chain().focus(undefined, { scrollIntoView: false });
-  if (value !== "" && isFontSizePoints(points)) {
-    chain.setMark("fontSize", { points }).run();
-  } else {
+  if (value === RESET_FONT_VALUE) {
     chain.unsetMark("fontSize").run();
+  } else if (isFontSizePoints(points)) {
+    chain.setMark("fontSize", { points }).run();
   }
   restoreEditorFocus(editor);
 }
@@ -383,11 +411,9 @@ function getToolbarState(editor: Editor | null) {
 }
 
 function selectedFontFamily(editor: Editor) {
-  const family = editor.getAttributes("fontFamily").family;
-  return isFontFamilyId(family) ? family : "";
+  return effectiveFontControlState(editor).fontFamily;
 }
 
 function selectedFontSize(editor: Editor) {
-  const points = editor.getAttributes("fontSize").points;
-  return isFontSizePoints(points) ? String(points) : "";
+  return effectiveFontControlState(editor).fontSize;
 }

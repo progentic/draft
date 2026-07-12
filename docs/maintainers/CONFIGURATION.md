@@ -170,6 +170,8 @@ period. It cannot detect an unreported same-size in-place modification.
 | Formatting styles | `apa7`, `mla9`, `chicago17_author_date` | `formatting/checks.rs` | Closed consistency identifiers, not complete style conformance. |
 | `DEFAULT_FORMATTING_STYLE` | `apa7` | `src/ipc/formattingReview.ts` | Initial review selection; either other closed identifier may be selected before a run. |
 | Font-family identifiers | `arial`, `avenir_next`, `baskerville`, `courier_new`, `georgia`, `helvetica`, `menlo`, `palatino`, `times_new_roman`, `trebuchet_ms`, `verdana` | Rust and TypeScript text-format modules | Complete accepted family allowlist. Each identifier maps to the same named DOCX family without substitution. |
+| Document font family | `georgia` | `fontControlState.ts`, `styles.css` | Effective editor family when text has no explicit family mark. |
+| Document body font size | 13 points | `fontControlState.ts`, `styles.css` | Effective editor size for unmarked body text. Heading defaults are 24, 18, and 14 points for levels 1, 2, and 3 or later. |
 | `MIN_FONT_SIZE_POINTS` | 8 points | Rust and TypeScript text-format modules | Smallest accepted text size. |
 | `MAX_FONT_SIZE_POINTS` | 72 points | Rust and TypeScript text-format modules | Largest accepted text size. Sizes are whole points in one-point increments and export as DOCX half-points. |
 | `MAX_DOCX_SOURCE_BYTES` | 8 MiB | `exports/docx.rs` | Serialized source-document bound. |
