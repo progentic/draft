@@ -78,11 +78,12 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
 | `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and no finding changes content without an explicit current-target user action. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot and returns content-free indexed findings. Phase 34 adds a typed command, closed actions, generation invalidation, and exact-node guards. Citation findings remain inspect-only; heading apply requires user input. Tests and scans deny persistence, filesystem, export, PDF, Python, network, worker, and automatic mutation authority. | The `verify` job runs the Rust domain/command tests, frontend IPC/generation/target/interaction tests, and formatting-boundary scans through `scripts/verify.sh`. |
 | `INV-UX-01` | Accepted | Every enabled visible control invokes an implemented user workflow. Controls for unavailable capabilities do not appear active. | `ARCHITECTURE.md` §4.1 and §5.1 | Interaction tests and the v1 usability gate require implemented control outcomes and explicit unavailable states before workflow closure. | The `verify` job runs the same interaction tests and conditional release-evidence checks. |
-| `INV-UX-02` | Accepted | User-facing text does not expose internal command, schema, provider, registry, job, IPC, or persistence terminology. | `ARCHITECTURE.md` §4.1 and §12 | Phase 47 inventories every visible string; prohibited implementation wording remains a release finding until corrected or removed. | The `verify` job requires the accepted contract and blocks gate closure without the visible-language evidence ledger. |
-| `INV-UX-03` | Accepted | Long-running or fallible visible operations expose deterministic pending, success, and failure states. | `ARCHITECTURE.md` §5.2, §5.3, and §12 | Operation interaction tests and perceived-performance evidence must prove visible state transitions without duplicate activation. | The `verify` job runs interaction tests and blocks Phase 47 closure without the required state and timing evidence. |
-| `INV-UX-04` | Accepted | Every visible failure states whether document data remains safe and exposes only recovery actions the current interface can honor. | `ARCHITECTURE.md` §12 | Typed error-presentation tests remain exhaustive; Phase 46 and Phase 48 evidence must cover data-safety wording and safe recovery. | The `verify` job runs error presentation tests and conditional usability/security evidence checks. |
-| `INV-UX-05` | Accepted | A user-facing concept has one canonical name across menus, controls, errors, documentation, and accessibility labels. | `ARCHITECTURE.md` §4.1 | Phase 47's visible-language inventory records each concept and resolves inconsistent terminology before release. | The `verify` job blocks Phase 47 closure without terminology and first-time-user comprehension evidence. |
-| `INV-UX-06` | Accepted | The supported v1 workflow is completable with keyboard input without lost focus or inaccessible controls. | `ARCHITECTURE.md` §4.1, §5, and §12 | Phase 46 interaction tests and Phase 49 packaged validation must cover the complete keyboard-only workflow. | The `verify` job blocks the accessibility and candidate gates without exact keyboard evidence. |
+| `INV-UX-02` | Accepted | User-facing text does not expose internal command, schema, provider, registry, job, IPC, or persistence terminology. | `ARCHITECTURE.md` §4.1 and §12 | Phase 49 inventories every visible string; prohibited implementation wording remains a release finding until corrected or removed. | The `verify` job requires the accepted contracts and blocks gate closure without the visible-language evidence ledger. |
+| `INV-UX-03` | Accepted | Long-running or fallible visible operations expose deterministic pending, success, and failure states. | `ARCHITECTURE.md` §5.2, §5.3, and §12 | Operation interaction tests and perceived-performance evidence must prove visible state transitions without duplicate activation. | The `verify` job runs interaction tests and blocks Phase 49 closure without the required state and timing evidence. |
+| `INV-UX-04` | Accepted | Every visible failure states whether document data remains safe and exposes only recovery actions the current interface can honor. | `ARCHITECTURE.md` §12 | Typed error-presentation tests remain exhaustive; Phase 46 and Phase 51 evidence must cover data-safety wording and safe recovery. | The `verify` job runs error presentation tests and conditional usability/security evidence checks. |
+| `INV-UX-05` | Accepted | A user-facing concept has one canonical name across menus, controls, errors, documentation, and accessibility labels. | `ARCHITECTURE.md` §4.1 | Phase 49's visible-language inventory records each concept and resolves inconsistent terminology before release. | The `verify` job blocks Phase 49 closure without terminology and first-time-user comprehension evidence. |
+| `INV-UX-06` | Accepted | The supported v1 workflow is completable with keyboard input without lost focus or inaccessible controls. | `ARCHITECTURE.md` §4.1, §5, and §12 | Phase 46 interaction tests and Phase 52 packaged validation must cover the complete keyboard-only workflow. | The `verify` job blocks the accessibility and candidate gates without exact keyboard evidence. |
+| `INV-UX-07` | Proposed | Every major maintainer subsystem guide begins with a plain-language explanation of the problem and solution before normative requirements or implementation details. | `DOCUMENTATION.md` §2.1 and accepted ADR-003 Phases 49-50 | Accepted decision checks pin the human-first rule and required future section order. Phase 50 must realign existing major guides, add structural heading checks, and record maintainer-onboarding review before this invariant can become Accepted. | The `verify` job enforces Proposed status. Accepted enforcement remains pending and no current release gate may treat the invariant as closed. |
 
 ---
 
@@ -435,6 +436,14 @@ not imply that PDF behavior exists; it preserves the current absence until a
 governed implementation adds parser-based output, resource-bound,
 deterministic-failure, and source-preservation tests.
 
+Accepted ADR-003 extends `INV-09` to external-format work. Source identity and
+all writes remain in Rust, no-edit external files remain byte-for-byte
+unchanged, and same-format save is denied when current content cannot be
+represented safely. Until Phases 47 and 48 implement these contracts, the
+accepted decision guard rejects external-document ownership,
+round-trip/lossiness state, format parser/save-back commands, and native-menu
+dispatch in production source.
+
 ---
 
 ### INV-10: Centralized Network Client
@@ -733,12 +742,13 @@ these invariants. Phase 46 implements the visible document, reference/citation,
 five-check local analysis, and DOCX paths, but implementation alone does not
 close their release rows.
 
-Current enforcement preserves that distinction. `RC-01` through `RC-04` and
-`GATE-46` through `GATE-48` remain open while stable complete packaged Phase 46
-evidence is missing. The release-candidate script rejects a closed gate unless
-the cumulative usability evidence ledger contains the phase-specific
-automated, packaged, and human evidence named by the contract.
-Phase 49 must additionally reject open `UX-0` and `UX-1` findings and require a
+Current enforcement preserves that distinction. `RC-01` through `RC-08` and
+`GATE-46` through `GATE-51` remain open while stable complete packaged Phase 46
+evidence and every later phase's required evidence are missing. The
+release-candidate script rejects a closed gate unless the cumulative usability
+evidence ledger contains the phase-specific automated, packaged, and human
+evidence named by the accepted contracts. Phase 52 must additionally reject
+open `UX-0` and `UX-1` findings and require a
 disposition for every `UX-2` finding.
 
 Phase 46 formatting evidence keeps font choices inside the same contract:
@@ -762,8 +772,14 @@ HTML attributes, bounded sizes, and every-family DOCX mapping evidence.
 
 Automated source scans may protect bounded terminology and authority rules, but
 they cannot prove that a first-time user understood a control. Uncoached human
-task evidence remains mandatory for Phase 47 and packaged rerun evidence remains
-mandatory for Phase 49.
+task evidence remains mandatory for Phase 49 and packaged rerun evidence remains
+mandatory for Phase 52.
+
+Accepted ADR-003 moves human validation to Phase 49 after separate
+interoperability and desktop-workflow phases, preserves Phase 50 as
+realignment, and moves security and candidate work to Phases 51 and 52. The
+decision remaps ownership without closing any release row or fabricating
+evidence.
 
 Minimum verification:
 
@@ -772,6 +788,35 @@ bash scripts/check-docs.sh
 bash scripts/check-invariants.sh
 bash scripts/check-release-candidate.sh
 bash scripts/verify.sh
+```
+
+---
+
+### INV-UX-07: Documentation Readability (Proposed)
+
+Maintainer documentation is a teaching surface as well as a specification.
+A competent engineer who has not seen DRAFT must be able to understand the
+subsystem's purpose, problem, solution, trade-offs, change boundary, protected
+rules, code location, failure modes, and test evidence before parsing
+implementation detail.
+
+The required layered structure is defined in `DOCUMENTATION.md` §2.1. New or
+substantively revised major guides follow it immediately. Phase 49 reviews
+documentation terminology and comprehension with engineers unfamiliar with
+the repository. Phase 50 realigns existing major guides and adds
+structural checks for the required sections.
+
+This invariant remains Proposed. Presence checks cannot prove that an
+explanation is clear, and the existing guide set has not completed the Phase 50
+realignment. Human review plus mechanical section enforcement are both required
+before a governed change may mark `INV-UX-07` Accepted.
+
+Minimum current verification:
+
+```bash
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+bash scripts/check-release-candidate.sh
 ```
 
 ---

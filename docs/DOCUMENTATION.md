@@ -12,6 +12,15 @@ This file does not replace `README.md`, `GOVERNANCE.md`, `INVARIANTS.md`, `ARCHI
 
 Every meaningful change must leave the documentation in a true state.
 
+Write documentation so that a competent engineer who has never seen DRAFT can
+understand what the subsystem does, why it exists, and how to change it safely
+before reading the implementation.
+
+Optimize documentation for human comprehension first and precision second.
+This does not reduce rigor. It separates explanation from specification so a
+reader learns the problem and intent before encountering repository-specific
+types, commands, or enforcement details.
+
 If a change adds, removes, renames, or changes behavior in code, the author must check whether documentation also needs to change.
 
 This applies to:
@@ -29,6 +38,60 @@ This applies to:
 - build and verification commands
 - known limitations
 - wiki knowledge articles
+
+### 2.1 Plain Language Requirement
+
+Maintainer documentation must be understandable without prior knowledge of
+DRAFT or agent-driven development practices. Before implementation details, a
+major subsystem guide must answer:
+
+- What is this?
+- Why does it exist?
+- What problem does it solve?
+- What can change?
+- What must never change?
+- Where is the code?
+- How is it tested?
+
+Important concepts use three layers:
+
+1. **Plain-language explanation:** five or six sentences that explain the
+   problem, solution, and user or maintainer value with only necessary jargon.
+2. **Technical explanation:** ownership, data flow, boundaries, and trade-offs
+   stated for an engineer who understands the stack but not this repository.
+3. **Normative specification:** exact requirements, types, errors, invariants,
+   limits, enforcement, and tests.
+
+New major maintainer guides, and existing guides that receive a substantive
+structural revision after this rule is accepted, use this order:
+
+```text
+Purpose
+Problem
+Solution
+Trade-offs
+Technical Contract
+Implementation Notes
+Failure Modes
+Tests
+Related Documents
+```
+
+The opening explanation comes before normative or code-level detail. Prefer
+direct statements such as "Rust receives the request, validates it, performs
+the operation, and returns a typed result." Use repository terms such as
+"authority boundary," "orchestrates," or "composes" only when the term adds
+meaning, and explain it when first used.
+
+Structural checks can prove that required sections exist. They cannot prove
+that prose teaches the concept clearly. Human review remains responsible for
+clarity, useful examples, accurate trade-offs, and whether a new maintainer can
+explain why the boundary exists without first reading source code.
+
+Existing major guides remain truthful but do not all use this structure yet.
+Accepted ADR-003 assigns their plain-language, terminology, onboarding, and
+cross-link realignment to Phase 50. `INV-UX-07` remains Proposed and cannot
+become Accepted until that review and structural enforcement exist.
 
 ## 3. Documentation Surfaces
 
@@ -707,6 +770,13 @@ refines that Phase 45 rule without reopening the phase. It owns the supported
 workflow, first-time-user thresholds, `UX-*` taxonomy, Phase 46 through 50
 evidence requirements, and cumulative maintainer evidence ledger without
 documenting a workflow as available before implementation.
+
+Accepted ADR-003 and
+`docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md` own the binding
+Phase 47 through 53 release sequence. The contract defines required future
+behavior without claiming that interoperability, native menus, round-trip
+saving, or later-phase evidence already exist. `INV-UX-07` remains Proposed
+until Phase 50 supplies structural enforcement and human onboarding evidence.
 
 Recommended checks:
 

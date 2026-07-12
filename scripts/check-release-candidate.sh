@@ -19,8 +19,9 @@ main() {
   check_generated_release_artifacts
   check_phase45_release_rule
   check_v1_usability_acceptance
+  check_adr_003_accepted_gate
 
-  printf 'INFO Phase 49 remains blocked by RC-01 through RC-06 and GATE-46 through GATE-48.\n'
+  printf 'INFO Phase 52 remains blocked by RC-01 through RC-08 and GATE-46 through GATE-51.\n'
   printf 'Release-candidate hardening baseline passed.\n'
 }
 
@@ -28,9 +29,9 @@ check_inventory_structure() {
   local contract='docs/maintainers/RELEASE_CANDIDATE.md'
 
   require_file "${contract}"
-  require_inventory_group "${contract}" 'RC-' 'Release blocker' 'Open' 6
-  require_inventory_group "${contract}" 'GATE-' 'Must close before Phase 49' 'Open' 3
-  require_inventory_group "${contract}" 'GATE-' 'Must close before Phase 49' 'Closed' 1
+  require_inventory_group "${contract}" 'RC-' 'Release blocker' 'Open' 8
+  require_inventory_group "${contract}" 'GATE-' 'Roadmap gate' 'Open' 6
+  require_inventory_group "${contract}" 'GATE-' 'Roadmap gate' 'Closed' 1
   require_inventory_group "${contract}" 'LIMIT-' 'Accepted v1 limitation' 'Accepted' 5
   require_inventory_group "${contract}" 'MAINT-' 'P2 maintenance backlog' 'Backlog' 3
   require_inventory_group "${contract}" 'POST-' 'Post-v1 work' 'Deferred' 4
@@ -44,7 +45,7 @@ check_phase45_release_rule() {
   require_literal "${release_rule}" docs/maintainers/RELEASE_CANDIDATE.md
   require_literal '| RC-01 | Release blocker | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md
-  require_literal '| GATE-45 | Must close before Phase 49 | Closed |' \
+  require_literal '| GATE-45 | Roadmap gate | Closed |' \
     docs/maintainers/RELEASE_CANDIDATE.md
   require_literal 'Status: Accepted' \
     docs/adr/002-limit-v1-analysis-to-local-text.md
@@ -61,24 +62,64 @@ check_v1_usability_acceptance() {
   require_literal '## Supported v1 Workflow' "${contract}"
   require_literal '## First-Time-User Task Validation' "${contract}"
   require_literal '## Measurable Release Thresholds' "${contract}"
-  require_literal '## Phase 48 - Secure Usability' "${contract}"
-  require_literal '## Phase 49 - Packaged Release-Candidate Gate' "${contract}"
-  require_literal '## Phase 50 - Release Entry Point' "${contract}"
+  require_literal '## Phase 49 - Usability And Performance Validation' "${contract}"
+  require_literal '## Phase 51 - Secure Usability' "${contract}"
+  require_literal '## Phase 52 - Packaged Release-Candidate Gate' "${contract}"
+  require_literal '## Phase 53 - Release Entry Point' "${contract}"
   require_gate_usability_row GATE-46
   require_gate_usability_row GATE-47
   require_gate_usability_row GATE-48
+  require_gate_usability_row GATE-49
+  require_gate_usability_row GATE-50
+  require_gate_usability_row GATE-51
 
   require_usability_evidence_if_closed GATE-46 '## Phase 46' "${ledger}"
   require_usability_evidence_if_closed GATE-47 '## Phase 47' "${ledger}"
   require_usability_evidence_if_closed GATE-48 '## Phase 48' "${ledger}"
+  require_usability_evidence_if_closed GATE-49 '## Phase 49' "${ledger}"
+  require_usability_evidence_if_closed GATE-50 '## Phase 50' "${ledger}"
+  require_usability_evidence_if_closed GATE-51 '## Phase 51' "${ledger}"
   require_candidate_usability_evidence_if_closed "${ledger}"
+}
+
+check_adr_003_accepted_gate() {
+  local adr='docs/adr/003-expand-v1-document-interoperability.md'
+  local contract='docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_literal 'Status: Accepted' "${adr}"
+  require_literal 'Accepted through: PR #37' "${adr}"
+  require_literal 'status: Accepted' "${contract}"
+  require_literal '## Accepted ADR-003 Gate Chain' "${release}"
+  require_literal '| RC-01 | Release blocker | Open |' "${release}"
+  require_literal '| RC-02 | Release blocker | Open |' "${release}"
+  require_literal '| RC-03 | Release blocker | Open |' "${release}"
+  require_literal '| RC-04 | Release blocker | Open |' "${release}"
+  require_literal '| RC-07 | Release blocker | Open |' "${release}"
+  require_literal '| RC-08 | Release blocker | Open |' "${release}"
+  require_literal '| GATE-46 | Roadmap gate | Open |' "${release}"
+  require_literal '| GATE-47 | Roadmap gate | Open |' "${release}"
+  require_literal '| GATE-48 | Roadmap gate | Open |' "${release}"
+  require_literal '| GATE-49 | Roadmap gate | Open |' "${release}"
+  require_literal '| GATE-50 | Roadmap gate | Open |' "${release}"
+  require_literal '| GATE-51 | Roadmap gate | Open |' "${release}"
+  require_literal "| \`INV-UX-07\` | Proposed |" docs/INVARIANTS.md
+  require_literal 'maintainer-documentation comprehension' "${release}"
+  require_literal "| \`GATE-50\` | Phase 50 | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and drift realignment evidence. |" \
+    "${release}"
+  if rg --quiet --regexp \
+    '^\| (RC-0[78]|GATE-(47|48|49|50|51)) \| [^|]+ \| Closed \|' \
+    "${release}"; then
+    echo 'ADR-003 acceptance record cannot close a successor release row' >&2
+    return 1
+  fi
 }
 
 require_gate_usability_row() {
   local gate_id="$1"
 
   if ! rg --quiet --regexp \
-    "^\\| ${gate_id} \\| Must close before Phase 49 \\| (Open|Closed) \\|" \
+    "^\\| ${gate_id} \\| Roadmap gate \\| (Open|Closed) \\|" \
     docs/maintainers/RELEASE_CANDIDATE.md; then
     printf 'Missing v1 usability gate row: %s\n' "${gate_id}" >&2
     return 1
@@ -91,7 +132,7 @@ require_usability_evidence_if_closed() {
   local ledger="$3"
 
   if ! rg --quiet --fixed-strings \
-    "| ${gate_id} | Must close before Phase 49 | Closed |" \
+    "| ${gate_id} | Roadmap gate | Closed |" \
     docs/maintainers/RELEASE_CANDIDATE.md; then
     return
   fi
@@ -111,14 +152,14 @@ require_candidate_usability_evidence_if_closed() {
   fi
 
   require_file "${ledger}"
-  require_literal '## Phase 49' "${ledger}"
+  require_literal '## Phase 52' "${ledger}"
   require_literal '### Packaged Workflow Evidence' "${ledger}"
   if rg --quiet --regexp '^\| UX-[^|]+ \| UX-[01] \| Open \|' "${ledger}"; then
-    echo 'Phase 49 cannot close with an open UX-0 or UX-1 finding' >&2
+    echo 'Phase 52 cannot close with an open UX-0 or UX-1 finding' >&2
     return 1
   fi
   if rg --quiet --regexp '^\| UX-[^|]+ \| UX-2 \| Open \|' "${ledger}"; then
-    echo 'Phase 49 cannot close with an undispositioned UX-2 finding' >&2
+    echo 'Phase 52 cannot close with an undispositioned UX-2 finding' >&2
     return 1
   fi
 }

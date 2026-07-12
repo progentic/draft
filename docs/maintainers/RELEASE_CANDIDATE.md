@@ -20,8 +20,8 @@ the supported document path.
 
 - **Release blocker:** current product or distribution behavior that prevents a
   defensible v1 candidate.
-- **Must close before Phase 49:** a mandatory roadmap review gate, even when it
-  is not itself a product defect.
+- **Roadmap gate:** a mandatory phase boundary, even when it is not itself a
+  product defect.
 - **Accepted v1 limitation:** bounded behavior that may ship when user wording
   remains accurate and the release notes preserve the limitation.
 - **P2 maintenance backlog:** useful work that does not block the active release
@@ -39,12 +39,17 @@ closure condition. Removing a row is not closure.
 | RC-02 | Release blocker | Open | Manual reference create/list and citation insertion are visible and Rust-authorized; a stable packaged reference/citation workflow run is still missing. Metadata lookup, PDF intake, and bibliography management remain intentionally unavailable. | Research workflow | Phase 46 | The supported research and citation workflow is visible, understandable, Rust-authorized, recoverable, and covered in the packaged app. |
 | RC-03 | Release blocker | Open | Accepted ADR-002 is implemented through the typed production command, packaged helper discovery, exact five-check workflow, deterministic/offline/size/error tests, and bounded heuristic wording; a stable complete packaged interaction run is still missing. | Analysis workflow | Phase 46 | A typed production Rust boundary and user-visible workflow expose exactly the five named heuristics; identical input and configuration produce stable bounded output locally without network or credentials; representative, empty, malformed, size-boundary, offline, and packaged tests pass; and UI plus documentation frame findings as signals without generative, semantic, originality, intelligence, or quality-assessment claims. |
 | RC-04 | Release blocker | Open | The Rust-owned DOCX target flow and visible export control are implemented with source-preservation tests; a stable packaged success/failure/recovery run is still missing. | Export workflow | Phase 46 | The supported DOCX path is reachable through a clear Rust-owned target flow and passes packaged source-preservation and recovery tests. |
-| RC-05 | Release blocker | Open | Tauri CSP is `null`. | Security review | Phase 48 | A restrictive packaged-app CSP is configured, enforced structurally, and verified against every required local asset and IPC flow. |
-| RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 49 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, built from the exact candidate commit, and passes the complete packaged usability workflow without adding updater or upload authority implicitly. |
-| GATE-45 | Must close before Phase 49 | Closed | Phase 45 reconciles release, roadmap, public, maintainer, Wiki, and enforcement truth without changing product behavior. | Documentation and governance | Phase 45 | The realignment assigns every blocker and binds the v1 usability and interaction-clarity rule without claiming implementation. |
-| GATE-46 | Must close before Phase 49 | Open | Automated accessibility, keyboard, focus, announcement, state, recovery, responsive-layout, and visible-workflow checks pass, but `UX-46-001` through `UX-46-015` remain open. Findings `UX-46-008` through `UX-46-015` expose a larger interoperability and desktop-product boundary that requires separate governance before Phase 46 can be narrowed or closed. | Frontend accessibility and workflow clarity | Phase 46 | Critical flows satisfy the accepted discoverability, understanding, state, recovery, keyboard, focus, naming, announcement, terminology, and unavailable-state criteria. |
-| GATE-47 | Must close before Phase 49 | Open | The complete visible-language, workflow-usability, first-time-user, and realistic responsiveness validation has not run. | Usability and perceived performance | Phase 47 | At least five uncoached participants meet every critical-task requirement, each 80-percent task/terminology/recovery threshold, and each median-satisfaction threshold while measured limits and ambiguous waits are resolved or remain blockers. |
-| GATE-48 | Must close before Phase 49 | Open | The final trust-boundary, packaged CSP, and secure-usability review has not run. | Security | Phase 48 | Invariant, dependency, capability, CSP, path, archive/XML, secret, network, frontend-authority, security-wording, safe-recovery, and work-preservation review is green with findings closed or blocking. |
+| RC-05 | Release blocker | Open | Tauri CSP is `null`. | Security review | Phase 51 | A restrictive packaged-app CSP is configured, enforced structurally, and verified against every required local asset and IPC flow. |
+| RC-06 | Release blocker | Open | The only package is an unsigned Apple Silicon `.app`; no release is published. | Release engineering | Phase 52 | The candidate distribution is signed, notarized when required, installation-tested, checksummed, built from the exact candidate commit, and passes the complete packaged usability workflow without adding updater or upload authority implicitly. |
+| RC-07 | Release blocker | Open | Parsed Markdown, DOCX import and safe round-trip save, format lossiness state, and governed ODT/RTF dispositions are absent. | Document interoperability | Phase 47 | Supported-format fixtures, Rust-owned lifecycle state, explicit fidelity classes, no-edit source preservation, typed failures, and lossless or rejected-lossy save behavior pass. |
+| RC-08 | Release blocker | Open | Primary workflows lack native macOS menu integration, shared action dispatch, final window branding, and accepted desktop-layout evidence. | Desktop UI and native workflow | Phase 48 | Native menus, visible controls, and shortcuts share one state-aware action path and pass packaged icon, layout, focus, enablement, and keyboard evidence. |
+| GATE-45 | Roadmap gate | Closed | Phase 45 reconciles release, roadmap, public, maintainer, Wiki, and enforcement truth without changing product behavior. | Documentation and governance | Phase 45 | The realignment assigns every blocker and binds the v1 usability and interaction-clarity rule without claiming implementation. |
+| GATE-46 | Roadmap gate | Open | Automated accessibility, keyboard, focus, announcement, state, recovery, responsive-layout, and visible-workflow checks pass, but `UX-46-001` through `UX-46-015` remain open. Accepted ADR-003 assigns findings `UX-46-008` through `UX-46-015` to later interoperability and desktop-workflow phases without closing this gate. | Frontend accessibility and workflow clarity | Phase 46 | `RC-01` through `RC-04` close and critical flows satisfy accepted discoverability, understanding, state, recovery, keyboard, focus, naming, announcement, terminology, and unavailable-state criteria. |
+| GATE-47 | Roadmap gate | Open | The accepted document-interoperability implementation and evidence do not exist. | Document interoperability | Phase 47 | `RC-07` closes with the accepted format matrix, lifecycle, fidelity, lossiness, source-preservation, and fixture evidence. |
+| GATE-48 | Roadmap gate | Open | The accepted desktop UI and native workflow integration and packaged evidence do not exist. | Desktop UI and native workflow | Phase 48 | `RC-08` closes with shared dispatch, native-menu parity, state, icon, layout, focus, and keyboard evidence. |
+| GATE-49 | Roadmap gate | Open | First-time-user, documentation-comprehension, realistic-workload, and measured/perceived performance validation has not run. | Usability and performance | Phase 49 | Accepted task, terminology, recovery, satisfaction, documentation, and performance thresholds pass without open `UX-0` or `UX-1` findings. |
+| GATE-50 | Roadmap gate | Open | The post-interoperability and desktop-workflow documentation and drift realignment has not run. | Documentation and governance | Phase 50 | Repository, user, maintainer, architecture, contract, release, implementation, terminology, onboarding, and cross-link truth agree; `INV-UX-07` remains Proposed until its separate acceptance evidence exists. |
+| GATE-51 | Roadmap gate | Open | The final trust-boundary, parser, dependency, packaged CSP, source-safety, and secure-usability review has not run. | Security | Phase 51 | `RC-05` closes and invariant, dependency, capability, CSP, path, archive/XML, secret, network, frontend-authority, security-wording, safe-recovery, and work-preservation review is green. |
 
 ## Accepted v1 Limitations
 
@@ -60,7 +65,7 @@ closure condition. Removing a row is not closure.
 
 | ID | Classification | Status | Evidence | Owner | Closure Phase | Closure Condition |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| MAINT-01 | P2 maintenance backlog | Backlog | Vite reports one JavaScript chunk above its 500 kB advisory threshold. | Frontend performance | Phase 47 triage | Measure startup and interaction impact before deciding whether code splitting is release-relevant. |
+| MAINT-01 | P2 maintenance backlog | Backlog | Vite reports one JavaScript chunk above its 500 kB advisory threshold. | Frontend performance | Phase 49 triage | Measure startup and interaction impact before deciding whether code splitting is release-relevant. |
 | MAINT-02 | P2 maintenance backlog | Backlog | `rustdoc -D missing_docs` has hundreds of granular findings. | Maintainer documentation | Post-v1 maintenance | Enable the lint only after focused public API documentation work. |
 | MAINT-03 | P2 maintenance backlog | Backlog | ShellCheck, shfmt, Ruff, and frontend linting are not all required locally. | Tooling | Post-v1 maintenance | Pin and require tools only through a dedicated parity-preserving tooling change. |
 
@@ -80,20 +85,20 @@ understand their labels, predict their effects, recover from visible failures,
 and complete the supported document workflow without relying on maintainer
 knowledge.
 
-This is a release condition, not informal polish. Phase 46 owns control
-discoverability, labels, menu terminology, unavailable states, keyboard and
-focus behavior, announcements, and supported-workflow completion. Phase 47
-owns feedback during operations, ambiguous waiting states, and measured and
-perceived responsiveness. The complete workflow, evidence schema, thresholds,
-and phase-specific gates are defined in
-`docs/contracts/V1_USABILITY_ACCEPTANCE.md`.
+This is a release condition, not informal polish. Phase 46 owns the clarity of
+its supported workflows, Phase 48 owns native desktop action integration, and
+Phase 49 owns complete terminology, comprehension, human-task, and measured and
+perceived responsiveness validation. The complete workflow and thresholds are
+defined in `docs/contracts/V1_USABILITY_ACCEPTANCE.md`; interoperability and
+desktop evidence are defined in
+`docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md`.
 
 ## Usability Finding Taxonomy
 
 - **UX-0:** data loss, inaccessible critical action, or inability to complete
-  the primary workflow. Any open `UX-0` blocks Phase 49.
+  the primary workflow. Any open `UX-0` blocks Phase 52.
 - **UX-1:** misleading label, hidden primary control, unrecoverable confusion,
-  or unsupported capability claim. Any open `UX-1` blocks Phase 49.
+  or unsupported capability claim. Any open `UX-1` blocks Phase 52.
 - **UX-2:** meaningful friction that should be fixed before release. Every
   `UX-2` requires a recorded fix, accepted limitation, or owner-approved
   deferral with rationale.
@@ -107,19 +112,40 @@ empty or fabricated results.
 ## Closure Sequence
 
 1. Phase 46 must close `RC-01` through `RC-04` before it can close `GATE-46`.
-2. Phase 47 closes `GATE-47` only after the complete visible-language audit,
-   realistic scenarios, measured/perceived responsiveness checks, and
-   first-time-user thresholds pass or produce explicit blockers.
-3. Phase 48 closes `RC-05` and `GATE-48` through the final security and
-   secure-usability review.
-4. Phase 49 may close `RC-06` and cut a candidate only when every prior row is
+2. Phase 47 closes `RC-07` and `GATE-47` through accepted interoperability evidence.
+3. Phase 48 closes `RC-08` and `GATE-48` through accepted desktop workflow evidence.
+4. Phase 49 closes `GATE-49` only after the complete human usability,
+   documentation-comprehension, and performance thresholds pass.
+5. Phase 50 closes `GATE-50` through mandatory documentation and drift realignment.
+6. Phase 51 closes `RC-05` and `GATE-51` through final security and secure-usability review.
+7. Phase 52 may close `RC-06` and cut a candidate only when every prior row is
    closed, the exact package passes the complete workflow, no `UX-0` or `UX-1`
    remains open, and every `UX-2` has a recorded disposition.
-5. Phase 50 may tag and publish only after first-run, Start Here, shortcut,
+8. Phase 53 may tag and publish only after first-run, Start Here, shortcut,
    troubleshooting, user release-note, download, and launch evidence is green.
 
 Phase 45 closes only `GATE-45`. It does not close a product, security,
 performance, accessibility, or distribution blocker.
+
+## Accepted ADR-003 Gate Chain
+
+ADR-003 and its successor contract are accepted and binding. This remap changes
+phase ownership without treating renumbering as closure. Every new or remapped
+row remains open until its named evidence exists.
+
+| Row | Owner | Closure basis |
+| :--- | :--- | :--- |
+| `RC-01` through `RC-04`, `GATE-46` | Phase 46 | Existing supported-workflow and accessibility evidence. |
+| `RC-07`, `GATE-47` | Phase 47 | Document interoperability, format ownership, lossiness, fidelity, and source-preservation evidence. |
+| `RC-08`, `GATE-48` | Phase 48 | Native-menu and visible-control parity, shared dispatch, state, keyboard, icon, and desktop-layout evidence. |
+| `GATE-49` | Phase 49 | First-time-user usability, maintainer-documentation comprehension, and measured and perceived performance evidence. |
+| `GATE-50` | Phase 50 | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and drift realignment evidence. |
+| `RC-05`, `GATE-51` | Phase 51 | Security, parser, CSP, dependency, source-safety, and secure-usability evidence. |
+| `RC-06` | Phase 52 | Exact final-candidate distribution and complete packaged workflow evidence. |
+| Release | Phase 53 | Every prior row is closed and v1.0.0 publication checks pass. |
+
+The former `GATE-47` usability and `GATE-48` security meanings are superseded.
+Structural checks reject closure against that obsolete numbering.
 
 ## Executable Gates
 
@@ -137,7 +163,7 @@ Phase 44 exits when:
 - `scripts/check-release-candidate.sh` passes locally and in hosted CI; and
 - the full verifier passes.
 
-Phase 49 entry is stricter: every prior-phase `RC-*` and `GATE-*` row must be
+Phase 52 entry is stricter: every prior-phase `RC-*` and `GATE-*` row must be
 closed with the named evidence, and the usability ledger must contain no open
 `UX-0` or `UX-1`. Phase 44 hardening and Phase 45 realignment do not satisfy
 that future gate.
@@ -146,5 +172,5 @@ that future gate.
 
 Phases 44 and 45 add no product workflow, UI control, signing identity, credential,
 notarization command, upload logic, updater, broad package target, release tag,
-changelog release entry, or Phase 49 candidate execution. Phase 46 is the next
+changelog release entry, or Phase 52 candidate execution. Phase 46 is the next
 implementation and interaction-clarity boundary.
