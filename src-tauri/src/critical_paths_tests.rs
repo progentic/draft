@@ -44,14 +44,20 @@ fn create_document(registry: &DocumentRegistry, path: &Path) {
     let outcome = save_document(registry, snapshot, || Ok(Some(path.to_owned())))
         .expect("first save should create and register the document");
 
-    assert_eq!(outcome, saved_outcome());
+    assert_eq!(outcome, saved_outcome(path, true));
 }
 
 fn save_cited_document(registry: &DocumentRegistry) -> DocumentEnvelope {
     let snapshot = document_snapshot("Cited", cited_content());
     let outcome = save_document(registry, snapshot.clone(), no_path_selection)
         .expect("existing document should save to its retained path");
-    assert_eq!(outcome, saved_outcome());
+    assert!(matches!(
+        outcome,
+        SaveDocumentOutcome::Saved {
+            was_save_as: false,
+            ..
+        }
+    ));
     validated_envelope(snapshot)
 }
 
@@ -119,7 +125,13 @@ fn save_and_export_supported_document(registry: &DocumentRegistry, source_path: 
     let expected = validated_envelope(snapshot.clone());
     let outcome = save_document(registry, snapshot.clone(), no_path_selection)
         .expect("supported document should save");
-    assert_eq!(outcome, saved_outcome());
+    assert!(matches!(
+        outcome,
+        SaveDocumentOutcome::Saved {
+            was_save_as: false,
+            ..
+        }
+    ));
     let source_before_export = fs::read(source_path).expect("saved source should read");
     assert_eq!(
         serde_json::from_slice::<Value>(&source_before_export).unwrap(),
@@ -157,15 +169,18 @@ fn close_document(registry: &DocumentRegistry, document_id: DocumentId) {
 
 fn opened_envelope(registry: &DocumentRegistry, path: &Path) -> DocumentEnvelope {
     match open_document(registry, Some(path.to_owned())).expect("document should reopen") {
-        OpenDocumentOutcome::Opened { envelope } => envelope,
+        OpenDocumentOutcome::OpenedDraft { envelope } => envelope,
+        OpenDocumentOutcome::ImportedText { .. } => panic!("DRAFT source must reopen natively"),
         OpenDocumentOutcome::Cancelled => panic!("explicit path must not cancel"),
     }
 }
 
-fn saved_outcome() -> SaveDocumentOutcome {
+fn saved_outcome(path: &Path, was_save_as: bool) -> SaveDocumentOutcome {
     SaveDocumentOutcome::Saved {
         document_id: validated_envelope(document_snapshot("Saved", plain_content("Saved")))
             .document_id(),
+        display_name: path.file_name().unwrap().to_str().unwrap().to_owned(),
+        was_save_as,
     }
 }
 

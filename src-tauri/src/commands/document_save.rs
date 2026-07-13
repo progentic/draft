@@ -4,7 +4,10 @@ use tauri::{AppHandle, State};
 
 use crate::documents::{
     dialog::select_save_document,
-    persistence::{SaveDocumentError, SaveDocumentOutcome, save_document as save_snapshot},
+    persistence::{
+        SaveDocumentError, SaveDocumentOutcome, save_document as save_snapshot,
+        save_requires_target,
+    },
     registry::DocumentRegistry,
 };
 
@@ -17,18 +20,37 @@ pub(crate) struct SaveDocumentRequest {
 
 /// Saves one explicit validated snapshot through the atomic writer.
 #[tauri::command]
-pub(crate) fn save_document(
+pub(crate) async fn save_document(
     app_handle: AppHandle,
     registry: State<'_, DocumentRegistry>,
     request: SaveDocumentRequest,
 ) -> Result<SaveDocumentOutcome, SaveDocumentError> {
+    let selected = if save_requires_target(&registry, &request.snapshot)? {
+        Some(
+            select_save_document(&app_handle)
+                .await
+                .map_err(|_| SaveDocumentError::UnsupportedFileLocation)?,
+        )
+    } else {
+        None
+    };
     save_snapshot(&registry, request.snapshot, || {
-        select_save_document(&app_handle).map_err(|_| SaveDocumentError::UnsupportedFileLocation)
+        selected_save_target(selected)
+    })
+}
+
+fn selected_save_target(
+    selected: Option<Option<std::path::PathBuf>>,
+) -> Result<Option<std::path::PathBuf>, SaveDocumentError> {
+    selected.ok_or(SaveDocumentError::Registry {
+        cause: crate::documents::registry::DocumentRegistryError::RegistryUnavailable,
     })
 }
 
 #[cfg(test)]
 mod tests {
+    use std::future::Future;
+
     use serde_json::json;
 
     use super::*;
@@ -39,15 +61,17 @@ mod tests {
     };
 
     const DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000001";
-    const TYPED_COMMAND: for<'a> fn(
-        AppHandle,
-        State<'a, DocumentRegistry>,
-        SaveDocumentRequest,
-    ) -> Result<SaveDocumentOutcome, SaveDocumentError> = save_document;
+    fn typed_command<'a>(
+        app_handle: AppHandle,
+        registry: State<'a, DocumentRegistry>,
+        request: SaveDocumentRequest,
+    ) -> impl Future<Output = Result<SaveDocumentOutcome, SaveDocumentError>> + 'a {
+        save_document(app_handle, registry, request)
+    }
 
     #[test]
     fn command_signature_is_typed() {
-        let _ = TYPED_COMMAND;
+        let _ = typed_command;
     }
 
     #[test]
@@ -69,14 +93,23 @@ mod tests {
     fn response_serialization_is_stable() {
         let document_id = envelope().document_id();
         let responses = [
-            SaveDocumentOutcome::Saved { document_id },
+            SaveDocumentOutcome::Saved {
+                document_id,
+                display_name: "Research notes.draft".to_owned(),
+                was_save_as: true,
+            },
             SaveDocumentOutcome::Cancelled,
         ];
 
         assert_eq!(
             serde_json::to_value(responses).expect("responses should serialize"),
             json!([
-                { "status": "saved", "documentId": DOCUMENT_ID },
+                {
+                    "status": "saved",
+                    "documentId": DOCUMENT_ID,
+                    "displayName": "Research notes.draft",
+                    "wasSaveAs": true
+                },
                 { "status": "cancelled" }
             ]),
         );
@@ -86,6 +119,7 @@ mod tests {
     fn error_serialization_is_stable() {
         let errors = [
             SaveDocumentError::UnsupportedFileLocation,
+            SaveDocumentError::InvalidTarget,
             SaveDocumentError::InvalidEnvelope {
                 cause: DocumentEnvelopeError::InvalidDocumentRoot,
             },
@@ -103,6 +137,7 @@ mod tests {
             serde_json::to_value(errors).expect("errors should serialize"),
             json!([
                 { "code": "unsupported_file_location" },
+                { "code": "invalid_target" },
                 {
                     "code": "invalid_envelope",
                     "cause": { "code": "invalid_document_root" }

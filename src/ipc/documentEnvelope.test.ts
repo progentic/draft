@@ -15,6 +15,14 @@ describe("document envelope mirror", () => {
     { ...envelope(), title: " " },
     { ...envelope(), document: { type: "paragraph", content: [] } },
     { ...envelope(), document: documentWithCitation({ schema_version: 2 }) },
+    { ...envelope(), document: documentWithFont("fontFamily", { family: "injected" }) },
+    { ...envelope(), document: documentWithFont("fontSize", { points: 7 }) },
+    { ...envelope(), document: documentWithMarks([null]) },
+    { ...envelope(), document: documentWithMarks(["fontFamily"]) },
+    { ...envelope(), document: documentWithMarks([1]) },
+    { ...envelope(), document: documentWithMarks([[]]) },
+    { ...envelope(), document: documentWithMarks([{}]) },
+    { ...envelope(), document: documentWithMarks([{ type: 1 }]) },
     { ...envelope(), references: [] },
   ])("rejects an invalid response mirror", (value) => {
     expect(isDocumentEnvelopeSnapshot(value)).toBe(false);
@@ -41,6 +49,19 @@ describe("document envelope mirror", () => {
       }),
     ).toBe(false);
   });
+
+  it("recognizes structured text-format failures", () => {
+    expect(isDocumentEnvelopeError({
+      code: "invalid_text_format",
+      path: "document.content[0].content[0].marks[0]",
+      cause: { code: "invalid_font_size" },
+    })).toBe(true);
+    expect(isDocumentEnvelopeError({
+      code: "invalid_text_format",
+      path: "document.content[0].content[0].marks[0]",
+      cause: { code: "unknown" },
+    })).toBe(false);
+  });
 });
 
 function envelope() {
@@ -49,6 +70,20 @@ function envelope() {
     document_id: DOCUMENT_ID,
     title: "Document",
     document: { type: "doc", content: [] },
+  };
+}
+
+function documentWithFont(type: string, attrs: Record<string, unknown>) {
+  return documentWithMarks([{ type, attrs }]);
+}
+
+function documentWithMarks(marks: unknown[]) {
+  return {
+    type: "doc",
+    content: [{
+      type: "paragraph",
+      content: [{ type: "text", text: "Text", marks }],
+    }],
   };
 }
 

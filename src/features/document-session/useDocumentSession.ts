@@ -1,0 +1,495 @@
+import type { Editor, JSONContent } from "@tiptap/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { closeDocument } from "../../ipc/documentClose";
+import { createUnsavedDocument } from "../../ipc/documentCreate";
+import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
+import { openDocument } from "../../ipc/documentOpen";
+import { saveDocument } from "../../ipc/documentSave";
+
+export type PendingDocumentAction = "close" | "new" | "open";
+export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "saving";
+
+type DocumentOrigin = "imported_text" | "new" | "opened_draft";
+
+interface DocumentIdentity {
+  displayName: string;
+  documentId: string;
+  origin: DocumentOrigin;
+  persisted: boolean;
+  title: string;
+}
+
+export interface DocumentSession {
+  canClose: boolean;
+  canExport: boolean;
+  canSave: boolean;
+  documentId: string | null;
+  feedback: string;
+  operation: DocumentOperation;
+  pendingAction: PendingDocumentAction | null;
+  requestClose: () => void;
+  requestNew: () => void;
+  requestOpen: () => void;
+  resolvePendingAction: (decision: "cancel" | "discard" | "save") => void;
+  save: () => Promise<boolean>;
+  snapshot: () => DocumentEnvelopeSnapshot | null;
+  statusLabel: string;
+  title: string;
+}
+
+const EMPTY_DOCUMENT: JSONContent = { type: "doc", content: [] };
+
+export function useDocumentSession(editor: Editor | null): DocumentSession {
+  const [identity, setIdentity] = useState<DocumentIdentity | null>(null);
+  const identityRef = useRef(identity);
+  const initializationStarted = useRef(false);
+  const [dirty, setDirty] = useState(false);
+  const [operation, setOperation] = useState<DocumentOperation>("creating");
+  const [feedback, setFeedback] = useState("");
+  const [pendingAction, setPendingAction] = useState<PendingDocumentAction | null>(null);
+
+  useEffect(() => subscribeToDocumentUpdates(editor, setDirty, setIdentity), [editor]);
+  useEffect(() => {
+    if (editor && !initializationStarted.current) {
+      initializationStarted.current = true;
+      void initializeDocumentSession(
+        editor,
+        setIdentity,
+        setDirty,
+        setOperation,
+        setFeedback,
+      );
+    }
+  }, [editor]);
+  useEffect(() => {
+    identityRef.current = identity;
+  }, [identity]);
+
+  const snapshot = useCallback(
+    () => currentSnapshot(editor, identity),
+    [editor, identity],
+  );
+
+  const save = useCallback(async () => {
+    const current = snapshot();
+    if (!current) {
+      setFeedback("Create or open a document before saving.");
+      return false;
+    }
+    setOperation("saving");
+    const result = await saveDocument(current);
+    setOperation("ready");
+    if (result.status !== "saved") {
+      setFeedback(saveFailureMessage(result));
+      return false;
+    }
+    const savedIdentity = {
+      displayName: result.displayName,
+      documentId: current.document_id,
+      origin: "opened_draft" as const,
+      persisted: true,
+      title: current.title,
+    };
+    identityRef.current = savedIdentity;
+    setIdentity(savedIdentity);
+    setDirty(false);
+    setFeedback(`Saved as ${result.displayName}.`);
+    return true;
+  }, [snapshot]);
+
+  const executeAction = useCallback(
+    async (action: PendingDocumentAction) => {
+      if (action === "new") {
+        await createIntoSession(
+          editor,
+          identityRef.current,
+          setIdentity,
+          setDirty,
+          setOperation,
+          setFeedback,
+        );
+        return;
+      }
+      if (action === "open") {
+        await openIntoSession(
+          editor,
+          identityRef.current,
+          setIdentity,
+          setDirty,
+          setOperation,
+          setFeedback,
+        );
+        return;
+      }
+      const closed = await closeCurrent(identityRef.current, setOperation, setFeedback);
+      if (!closed) {
+        return;
+      }
+      clearDocument(editor, setIdentity, setDirty, setFeedback);
+    },
+    [editor],
+  );
+
+  const request = useCallback(
+    (action: PendingDocumentAction) => {
+      if (dirty) {
+        setPendingAction(action);
+        return;
+      }
+      void executeAction(action);
+    },
+    [dirty, executeAction],
+  );
+
+  const resolvePendingAction = useCallback(
+    (decision: "cancel" | "discard" | "save") => {
+      const action = pendingAction;
+      setPendingAction(null);
+      if (!action || decision === "cancel") {
+        return;
+      }
+      void continuePendingAction(action, decision, save, executeAction);
+    },
+    [executeAction, pendingAction, save],
+  );
+
+  return useMemo(
+    () => ({
+      canClose: identity !== null && operation === "ready",
+      canExport: identity !== null && operation === "ready",
+      canSave: identity !== null && operation === "ready",
+      documentId: identity?.documentId ?? null,
+      feedback,
+      operation,
+      pendingAction,
+      requestClose: () => request("close"),
+      requestNew: () => request("new"),
+      requestOpen: () => request("open"),
+      resolvePendingAction,
+      save,
+      snapshot,
+      statusLabel: documentStatus(identity, dirty, operation),
+      title: identity?.displayName ?? "No document open",
+    }),
+    [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, snapshot],
+  );
+}
+
+async function continuePendingAction(
+  action: PendingDocumentAction,
+  decision: "discard" | "save",
+  save: () => Promise<boolean>,
+  execute: (action: PendingDocumentAction) => Promise<void>,
+) {
+  if (decision === "save" && !(await save())) {
+    return;
+  }
+  await execute(action);
+}
+
+function subscribeToDocumentUpdates(
+  editor: Editor | null,
+  setDirty: (dirty: boolean) => void,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+) {
+  if (!editor) {
+    return;
+  }
+  const handleUpdate = () => {
+    setDirty(true);
+    setIdentity((identity) =>
+      identity
+        ? { ...identity, title: documentTitle(editor.getJSON(), identity.title) }
+        : identity,
+    );
+  };
+  editor.on("update", handleUpdate);
+  return () => {
+    editor.off("update", handleUpdate);
+  };
+}
+
+async function openIntoSession(
+  editor: Editor | null,
+  current: DocumentIdentity | null,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  if (!editor) {
+    return;
+  }
+  setOperation("opening");
+  const result = await openDocument();
+  if (!isSuccessfulOpen(result)) {
+    setOperation("ready");
+    setFeedback(openFailureMessage(result));
+    return;
+  }
+  const persisted = result.status === "opened_draft";
+  if (
+    current?.persisted &&
+    !(await releaseReplacedDocument(current, result.envelope, persisted))
+  ) {
+    setOperation("ready");
+    setFeedback("DRAFT could not replace the open document. Your current document remains open.");
+    return;
+  }
+  loadEnvelope(editor, result.envelope);
+  setIdentity({
+    displayName: result.envelope.title,
+    documentId: result.envelope.document_id,
+    origin: result.status,
+    persisted,
+    title: result.envelope.title,
+  });
+  setDirty(!persisted);
+  setOperation("ready");
+  setFeedback(
+    persisted
+      ? "DRAFT document opened."
+      : "Text imported. Save as a DRAFT document to keep your work.",
+  );
+}
+
+function isSuccessfulOpen(
+  result: Awaited<ReturnType<typeof openDocument>>,
+): result is Extract<
+  Awaited<ReturnType<typeof openDocument>>,
+  { status: "imported_text" | "opened_draft" }
+> {
+  return result.status === "opened_draft" || result.status === "imported_text";
+}
+
+async function initializeDocumentSession(
+  editor: Editor,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  const result = await createUnsavedDocument();
+  if (result.status !== "created") {
+    clearDocument(editor, setIdentity, setDirty, setFeedback);
+    setOperation("ready");
+    setFeedback("DRAFT could not create a document. Choose New to try again.");
+    return;
+  }
+  loadCreatedDocument(editor, result.envelope, setIdentity, setDirty);
+  setOperation("ready");
+}
+
+async function createIntoSession(
+  editor: Editor | null,
+  current: DocumentIdentity | null,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  if (!editor) {
+    return;
+  }
+  setOperation("creating");
+  const result = await createUnsavedDocument();
+  if (result.status !== "created") {
+    setOperation("ready");
+    setFeedback("DRAFT could not create a document. Try again.");
+    return;
+  }
+  if (current?.persisted && !(await releaseCurrentDocument(current))) {
+    setOperation("ready");
+    setFeedback("DRAFT could not replace the open document. Your current document remains open.");
+    return;
+  }
+  loadCreatedDocument(editor, result.envelope, setIdentity, setDirty);
+  setOperation("ready");
+  setFeedback("New document ready.");
+}
+
+async function releaseCurrentDocument(current: DocumentIdentity) {
+  const result = await closeDocument(current.documentId);
+  return result.status === "closed";
+}
+
+async function releaseReplacedDocument(
+  current: DocumentIdentity,
+  replacement: DocumentEnvelopeSnapshot,
+  replacementPersisted: boolean,
+) {
+  const closed = await closeDocument(current.documentId);
+  if (closed.status === "closed") {
+    return true;
+  }
+  if (replacementPersisted) {
+    await closeDocument(replacement.document_id);
+  }
+  return false;
+}
+
+async function closeCurrent(
+  identity: DocumentIdentity | null,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  if (!identity?.persisted) {
+    return true;
+  }
+  setOperation("closing");
+  const result = await closeDocument(identity.documentId);
+  setOperation("ready");
+  if (result.status === "closed") {
+    return true;
+  }
+  setFeedback("DRAFT could not close the document. Try again before leaving it.");
+  return false;
+}
+
+function loadCreatedDocument(
+  editor: Editor,
+  envelope: DocumentEnvelopeSnapshot,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+) {
+  loadEnvelope(editor, envelope);
+  focusEditorStart(editor);
+  setIdentity({
+    displayName: envelope.title,
+    documentId: envelope.document_id,
+    origin: "new",
+    persisted: false,
+    title: envelope.title,
+  });
+  setDirty(false);
+}
+
+function clearDocument(
+  editor: Editor | null,
+  setIdentity: (identity: DocumentIdentity | null) => void,
+  setDirty: (dirty: boolean) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  replaceEditorDocument(editor, EMPTY_DOCUMENT);
+  editor?.setEditable(false);
+  setIdentity(null);
+  setDirty(false);
+  setFeedback("Document closed.");
+}
+
+function loadEnvelope(editor: Editor, envelope: DocumentEnvelopeSnapshot) {
+  editor.setEditable(true);
+  replaceEditorDocument(editor, envelope.document as JSONContent);
+}
+
+function replaceEditorDocument(editor: Editor | null, document: JSONContent) {
+  editor
+    ?.chain()
+    .command(({ tr }) => {
+      tr.setMeta("addToHistory", false);
+      return true;
+    })
+    .setContent(document, { emitUpdate: false })
+    .run();
+}
+
+function currentSnapshot(
+  editor: Editor | null,
+  identity: DocumentIdentity | null,
+): DocumentEnvelopeSnapshot | null {
+  if (!editor || !identity) {
+    return null;
+  }
+  const document = editor.getJSON();
+  return {
+    schema_version: 1,
+    document_id: identity.documentId,
+    title: documentTitle(document, identity.title),
+    document: document as DocumentEnvelopeSnapshot["document"],
+  };
+}
+
+function documentTitle(document: JSONContent, fallback: string) {
+  const heading = document.content?.find((node) => node.type === "heading" && node.attrs?.level === 1);
+  const text = heading?.content?.map((node) => node.text ?? "").join("").trim();
+  return text || fallback;
+}
+
+function focusEditorStart(editor: Editor) {
+  queueMicrotask(() => editor.commands.focus("start", { scrollIntoView: false }));
+}
+
+function documentStatus(
+  identity: DocumentIdentity | null,
+  dirty: boolean,
+  operation: DocumentOperation,
+) {
+  if (operation !== "ready") {
+    if (operation === "saving") {
+      return "Saving";
+    }
+    if (operation === "opening") {
+      return "Opening";
+    }
+    return operation === "creating" ? "Creating" : "Closing";
+  }
+  if (!identity) {
+    return "No document open";
+  }
+  if (identity.origin === "imported_text" && !identity.persisted) {
+    return "Imported, unsaved";
+  }
+  if (dirty) {
+    return "Unsaved changes";
+  }
+  return identity.persisted ? "Saved" : "Not saved";
+}
+
+function openFailureMessage(result: Awaited<ReturnType<typeof openDocument>>) {
+  if (result.status === "cancelled") {
+    return "Open cancelled.";
+  }
+  if (result.status === "error" && result.error.type === "command") {
+    return openCommandFailureMessage(result.error.error.code);
+  }
+  return "DRAFT could not open the document. Try again.";
+}
+
+function openCommandFailureMessage(
+  code: import("../../ipc/documentErrors").OpenDocumentCommandError["code"],
+) {
+  switch (code) {
+    case "file_not_found":
+      return "That file is no longer available. Choose another document.";
+    case "unsupported_file_type":
+      return "Choose a DRAFT, plain-text, or Markdown file.";
+    case "invalid_text_encoding":
+      return "Text and Markdown files must use UTF-8 encoding.";
+    case "text_too_large":
+      return "That text file is too large to import. Choose a file no larger than 8 MiB.";
+    case "malformed_json":
+    case "invalid_envelope":
+      return "That DRAFT document is invalid or uses an unsupported format.";
+    case "read_failed":
+      return "DRAFT could not read that file. Check access and try again.";
+    case "registry":
+      return "That DRAFT document is already open or unavailable.";
+    case "unsupported_file_location":
+      return "DRAFT could not use that file location. Choose another file.";
+  }
+}
+
+function saveFailureMessage(result: Awaited<ReturnType<typeof saveDocument>>) {
+  if (result.status === "cancelled") {
+    return "Save cancelled. Your document remains unsaved.";
+  }
+  if (
+    result.status === "error" &&
+    result.error.type === "command" &&
+    result.error.error.code === "invalid_target"
+  ) {
+    return "Choose a .draft file name. Your document remains unsaved.";
+  }
+  return "DRAFT could not save the document. Your open document has not been replaced.";
+}

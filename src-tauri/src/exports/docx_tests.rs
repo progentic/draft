@@ -75,8 +75,58 @@ fn unicode_headings_breaks_and_marks_render_without_raw_markup() {
     assert!(xml.contains("<w:b/>"));
     assert!(xml.contains("<w:i/>"));
     assert!(xml.contains("<w:u w:val=\"single\"/>"));
+    assert!(xml.contains("<w:rFonts w:ascii=\"Georgia\" w:hAnsi=\"Georgia\""));
+    assert!(xml.contains("<w:sz w:val=\"34\"/>"));
+    assert!(xml.contains("<w:szCs w:val=\"34\"/>"));
     assert!(xml.contains("<w:br/>"));
     assert_source_order(&xml, &["Heading text", "Café", "After break"]);
+}
+
+#[test]
+fn mixed_font_runs_keep_distinct_docx_properties() {
+    let document = envelope(document(vec![paragraph(vec![
+        json!({
+            "type": "text",
+            "text": "Arial ten",
+            "marks": [
+                { "type": "fontFamily", "attrs": { "family": "arial" } },
+                { "type": "fontSize", "attrs": { "points": 10 } }
+            ]
+        }),
+        json!({
+            "type": "text",
+            "text": "Times twenty-four",
+            "marks": [
+                { "type": "fontFamily", "attrs": { "family": "times_new_roman" } },
+                { "type": "fontSize", "attrs": { "points": 24 } }
+            ]
+        }),
+    ])]));
+    let artifact = compile_docx(&document).unwrap();
+    let mut archive = open_archive(&artifact);
+    let xml = read_part(&mut archive, "word/document.xml");
+
+    assert!(xml.contains("<w:rFonts w:ascii=\"Arial\""));
+    assert!(xml.contains("<w:sz w:val=\"20\"/>"));
+    assert!(xml.contains("<w:rFonts w:ascii=\"Times New Roman\""));
+    assert!(xml.contains("<w:sz w:val=\"48\"/>"));
+    assert_source_order(&xml, &["Arial ten", "Times twenty-four"]);
+}
+
+#[test]
+fn every_supported_font_family_emits_explicit_docx_run_properties() {
+    let definitions = supported_font_definitions();
+    let runs = definitions
+        .iter()
+        .map(|(identifier, name)| formatted_font_run(identifier, name))
+        .collect();
+    let artifact = compile_docx(&envelope(document(vec![paragraph(runs)]))).unwrap();
+    let mut archive = open_archive(&artifact);
+    let xml = read_part(&mut archive, "word/document.xml");
+
+    for (_, name) in definitions {
+        assert!(xml.contains(&format!("<w:rFonts w:ascii=\"{name}\" w:hAnsi=\"{name}\"")));
+    }
 }
 
 #[test]
@@ -309,6 +359,30 @@ fn relationships_contain_no_external_targets_or_active_content() {
     assert!(!PACKAGE_PATHS.iter().any(|path| path.contains("vbaProject")));
 }
 
+fn supported_font_definitions() -> [(&'static str, &'static str); 11] {
+    [
+        ("arial", "Arial"),
+        ("avenir_next", "Avenir Next"),
+        ("baskerville", "Baskerville"),
+        ("courier_new", "Courier New"),
+        ("georgia", "Georgia"),
+        ("helvetica", "Helvetica"),
+        ("menlo", "Menlo"),
+        ("palatino", "Palatino"),
+        ("times_new_roman", "Times New Roman"),
+        ("trebuchet_ms", "Trebuchet MS"),
+        ("verdana", "Verdana"),
+    ]
+}
+
+fn formatted_font_run(identifier: &str, text: &str) -> Value {
+    json!({
+        "type": "text",
+        "text": text,
+        "marks": [{ "type": "fontFamily", "attrs": { "family": identifier } }]
+    })
+}
+
 fn failed_write(cause: AtomicDocumentWriteError) -> DocxExportError {
     export_docx_with_writer(&minimal_envelope(), Path::new("report.docx"), |_, _| {
         Err(cause)
@@ -337,7 +411,9 @@ fn rich_envelope() -> DocumentEnvelope {
                 "marks": [
                     { "type": "bold" },
                     { "type": "italic" },
-                    { "type": "underline" }
+                    { "type": "underline" },
+                    { "type": "fontFamily", "attrs": { "family": "georgia" } },
+                    { "type": "fontSize", "attrs": { "points": 17 } }
                 ]
             }),
             json!({ "type": "hardBreak" }),

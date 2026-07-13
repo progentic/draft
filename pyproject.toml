@@ -2,11 +2,11 @@
 name = "draft-helpers"
 version = "0.1.0"
 description = "Constrained helper-worker surface for DRAFT"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dependencies = []
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py39"
 line-length = 88
 
 [tool.ruff.lint]

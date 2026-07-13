@@ -2,30 +2,34 @@
 
 ## Status
 
-The implemented frontend is one transient local writing workspace. It exposes
-editing, formatting controls, a transient formatting review, an outline,
-document statistics, and Rust runtime status. It does not expose durable
-document, research, analysis, import, export, or background-job workflows.
+The frontend exposes one local writing workspace with explicit document
+lifecycle, manual references and citation insertion, formatting review, five
+local text checks, DOCX export, an outline, statistics, and Rust runtime status.
+Rust remains authoritative for persistence, filesystem dialogs, reference
+storage, helper execution, and export.
 
 ## Component Ownership
 
 | Layer | Surface | Responsibility |
 | :--- | :--- | :--- |
-| Shell | `DraftWorkspace` | Owns outline visibility and composes the workspace. |
-| Header | `WorkspaceHeader` | Exposes the outline toggle, application heading, document label, and unsaved status. |
+| Shell | `DraftWorkspace` | Owns outline visibility, one active workflow panel, and workspace composition. |
+| Header | `WorkspaceHeader` | Exposes the application heading, current document title and lifecycle status. |
+| Document actions | `WorkspaceCommandBar` | Exposes labeled lifecycle, reference, review, export, and close commands. |
+| Document session | `useDocumentSession`, `UnsavedChangesDialog` | Coordinates explicit snapshots, Rust-owned commands, dirty state, and recovery choices. |
 | Outline | `DocumentOutline` | Derives headings from the current Tiptap state and moves the selection. |
 | Editor | `DraftEditor`, `useDraftEditor` | Owns the transient Tiptap instance and initial document. |
-| Formatting | `EditorToolbar` | Invokes existing Tiptap commands and reports selected state. |
+| Formatting | `EditorToolbar`, `TextFormattingMarks` | Invokes Tiptap commands, reports selected state, and constrains font family and size to the document contract. |
 | Formatting review | `FormattingReviewPanel`, `useFormattingReview` | Runs bounded checks and owns transient review state and explicit actions. |
+| References | `ReferenceLibraryPanel` | Adds bounded manual records and inserts existing citation nodes. |
+| Text checks | `TextAnalysisPanel`, `textAnalysisSnapshot` | Runs five fixed checks, invalidates stale generations, and locates passages. |
+| DOCX export | `useDocxExport` | Presents Rust-owned export and source-safety results. |
 | Inspector | `DocumentInspector` | Derives session metrics and maps runtime status to visible copy. |
 | Runtime session | `useRuntimeStatus`, `startRuntimeStatusSession` | Coordinates the typed command and event wrappers without adding durable state. |
 | Connectivity session | `useConnectivityMode`, `ConnectivityModeControl` | Mirrors and changes the Rust-owned online/offline session policy. |
 | Error presentation | `errorPresentation.ts` | Maps only visible typed failures to stable copy and recovery dispositions. |
 
-All editor content, outline visibility, selection, and metrics are WebView state.
-Reloading the WebView discards them. Rust remains authoritative for every
-durable or privileged operation even though those commands are not wired to
-workspace controls yet.
+Outline visibility, selection, metrics, panel state, and findings are transient
+WebView state. Document and reference persistence crosses only typed IPC.
 
 ## Semantic Structure
 
@@ -39,10 +43,13 @@ The outline and inspector are complementary landmarks with distinct accessible
 names. The hidden outline uses both `aria-hidden` and `inert`, so its controls
 leave the focus order when the panel is closed.
 
-The formatting review is a labeled section controlled by the toolbar button.
-When closed it uses `hidden` and `inert`. Its style fieldset, status messages,
-group headings, command labels, and finding-specific dismiss labels remain
-available to assistive technology when the panel is open.
+Formatting, reference, and text-check panels are labeled sections controlled by
+their corresponding buttons. Closed panels use `hidden`. Open panels expose
+headings, plain-language controls, and live status messages.
+
+The unsaved-changes surface is an `alertdialog`. It receives focus, contains
+Tab navigation, handles Escape as Keep editing, and restores focus to the
+invoking action.
 
 ## Toolbar Keyboard Contract
 
@@ -59,6 +66,24 @@ Formatting buttons use toggle semantics only when they represent persistent
 selection state. Undo and Redo are commands and do not expose `aria-pressed`.
 All icon-only controls have visible focus treatment, accessible names, and
 tooltips.
+
+Font family and font size are adjacent labeled select controls rather than
+members of the roving button toolbar. Family choices use the eleven canonical
+families, and size choices use whole points from 8 through 72. Use document
+font and Use document size remove only the corresponding mark. A change
+preserves other marks and returns focus to the editor without scrolling it.
+`fontControlState.ts` resolves the effective document default, explicit caret
+marks, or a mixed-range sentinel from Tiptap state; React does not keep a
+separate authoritative formatting value.
+Pasted HTML styling is not a font-authority path. The marks parse only
+`data-draft-font-family` and `data-draft-font-size`, then revalidate the
+canonical value before rendering.
+
+The document session stores one explicit origin: `new`, `imported_text`, or
+`opened_draft`. New and imported sessions both lack a path, but the latter
+shows the source filename with `Imported, unsaved`. The filename is display
+metadata only. No path enters React, and only successful Save changes either
+origin to native persisted DRAFT state.
 
 ## Connectivity Control
 
@@ -109,6 +134,10 @@ review, and citation rendering. Each visible failure is retryable, actionable,
 or terminal. Unknown runtime command input uses one outer fallback; validated
 known variants remain exhaustive.
 
+Phase 46 feature copy remains owned by each bounded visible workflow. Messages
+contain no raw path, source text, helper output, database detail, or internal
+error name. See `PHASE46_WORKFLOWS.md`.
+
 ## Formatting Review State
 
 The formatting review represents idle, running, ready, stale, and failed
@@ -131,6 +160,13 @@ semantics, retry, and workspace integration.
 The Phase 39 policy suite covers every visible typed variant, disposition,
 existing-control label, and outer fallback.
 
+Phase 46 suites cover command validation, save/close/reopen, first-save handle
+release, unsaved dialog focus, manual reference insertion, text-check
+pending/success/stale states, UTF-8 passage mapping, DOCX source safety, and
+rendered narrow-window behavior. They also cover font controls, keyboard entry,
+selection isolation, JSON round trips, save/close/reopen restoration, invalid
+font rejection, and mixed DOCX run properties.
+
 The reduced-motion contract is checked against the production stylesheet.
 Browser-level inspection is still required when a change affects real focus
 movement, focus visibility, or rendered landmark order.
@@ -146,10 +182,12 @@ bash scripts/verify.sh
 
 ## Current Limits
 
-- The header always identifies an untitled, unsaved document.
-- No create, open, save, close, reopen, autosave, or recovery control exists.
-- Citation rendering has no insertion or library workflow.
-- Rust analysis, import, and export boundaries have no controls.
-- Formatting review is advisory and does not provide full style conformance,
-  persistence, citation conversion, or automatic repair.
-- No product worker emits progress into the workspace.
+- There is no autosave, crash recovery, or version history.
+- Manual references cannot be edited, deleted, imported, or synchronized from
+  the visible workspace.
+- Text and formatting findings are advisory, transient, and never automatic.
+- Font formatting is limited to eleven named families and whole point sizes from
+  8 through 72.
+- DOCX export rejects citation nodes and other unsupported content.
+- PDF intake, metadata lookup, diagnostics, credentials, provider-backed
+  orchestration, and background jobs remain without visible workflows.

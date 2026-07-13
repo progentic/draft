@@ -18,11 +18,18 @@ describe("saveDocument", () => {
 
   it("sends the explicit immutable snapshot to Rust", async () => {
     const snapshot = envelope();
-    invokeMock.mockResolvedValue({ status: "saved", documentId: DOCUMENT_ID });
+    invokeMock.mockResolvedValue({
+      status: "saved",
+      documentId: DOCUMENT_ID,
+      displayName: "Research notes.draft",
+      wasSaveAs: true,
+    });
 
     await expect(saveDocument(snapshot)).resolves.toEqual({
       status: "saved",
       documentId: DOCUMENT_ID,
+      displayName: "Research notes.draft",
+      wasSaveAs: true,
     });
     expect(invokeMock).toHaveBeenCalledWith("save_document", { request: { snapshot } });
   });
@@ -34,7 +41,25 @@ describe("saveDocument", () => {
   });
 
   it("rejects an invalid save response", async () => {
-    invokeMock.mockResolvedValue({ status: "saved", documentId: "not-a-uuid" });
+    invokeMock.mockResolvedValue({
+      status: "saved",
+      documentId: "not-a-uuid",
+      displayName: "Research notes.draft",
+      wasSaveAs: true,
+    });
+
+    await expect(saveDocument(envelope())).resolves.toEqual({
+      status: "error",
+      error: { type: "invalid-response" },
+    });
+  });
+
+  it.each([
+    ["missing display name", { status: "saved", documentId: DOCUMENT_ID, wasSaveAs: true }],
+    ["path-like display name", { status: "saved", documentId: DOCUMENT_ID, displayName: "/private/research.draft", wasSaveAs: true }],
+    ["missing save mode", { status: "saved", documentId: DOCUMENT_ID, displayName: "research.draft" }],
+  ])("rejects a saved response with %s", async (_description, response) => {
+    invokeMock.mockResolvedValue(response);
 
     await expect(saveDocument(envelope())).resolves.toEqual({
       status: "error",
@@ -59,6 +84,15 @@ describe("saveDocument", () => {
     await expect(saveDocument(envelope())).resolves.toEqual({
       status: "error",
       error: { type: "command", error },
+    });
+  });
+
+  it("preserves a typed invalid first-save target", async () => {
+    invokeMock.mockRejectedValue({ code: "invalid_target" });
+
+    await expect(saveDocument(envelope())).resolves.toEqual({
+      status: "error",
+      error: { type: "command", error: { code: "invalid_target" } },
     });
   });
 

@@ -5,6 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::network::connectivity::{ConnectivityMode, ConnectivityPolicy};
 use crate::workers::{
     cancellation::{CancelWorkerOutcome, WorkerCancellationRegistry},
     python::{TextAnalysisCategory, TextAnalysisFinding, TextAnalysisFindingCode},
@@ -66,6 +67,40 @@ fn text_analysis_round_trip_returns_explainable_non_destructive_findings() {
             && !finding.explanation().contains("Café")
             && finding.start_byte() < finding.end_byte()
     }));
+}
+
+#[test]
+fn text_analysis_runs_while_connectivity_policy_is_offline() {
+    let connectivity = ConnectivityPolicy::default();
+    connectivity.set_mode(ConnectivityMode::Offline).unwrap();
+    let runner = PythonHelperRunner::new(python_executable(), package_root()).unwrap();
+    let registry = WorkerCancellationRegistry::new();
+    let registration = registry.register().unwrap();
+
+    let result = tauri::async_runtime::block_on(
+        runner.run_text_analysis(
+            TextAnalysisInput::new("Café café. Because this is IMPORTANT. Because we revise it.")
+                .unwrap(),
+            registration,
+        ),
+    );
+
+    assert!(result.is_ok());
+    assert_eq!(connectivity.mode(), Ok(ConnectivityMode::Offline));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn macos_system_python_executes_the_production_helper() {
+    let runner = PythonHelperRunner::new(Path::new("/usr/bin/python3"), package_root()).unwrap();
+    let registry = WorkerCancellationRegistry::new();
+    let registration = registry.register().unwrap();
+
+    let result = tauri::async_runtime::block_on(
+        runner.run_text_analysis(TextAnalysisInput::new("Word word.").unwrap(), registration),
+    );
+
+    assert!(result.is_ok());
 }
 
 #[test]

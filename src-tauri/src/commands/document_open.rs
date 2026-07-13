@@ -16,19 +16,22 @@ pub(crate) struct OpenDocumentRequest {}
 
 /// Opens a Rust-selected document path after envelope validation.
 #[tauri::command]
-pub(crate) fn open_document(
+pub(crate) async fn open_document(
     app_handle: AppHandle,
     registry: State<'_, DocumentRegistry>,
     request: OpenDocumentRequest,
 ) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     let OpenDocumentRequest {} = request;
     let selected_path = select_open_document(&app_handle)
+        .await
         .map_err(|_| OpenDocumentError::UnsupportedFileLocation)?;
     open_selected_document(&registry, selected_path)
 }
 
 #[cfg(test)]
 mod tests {
+    use std::future::Future;
+
     use serde_json::json;
 
     use super::*;
@@ -38,15 +41,17 @@ mod tests {
     };
 
     const DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000001";
-    const TYPED_COMMAND: for<'a> fn(
-        AppHandle,
-        State<'a, DocumentRegistry>,
-        OpenDocumentRequest,
-    ) -> Result<OpenDocumentOutcome, OpenDocumentError> = open_document;
+    fn typed_command<'a>(
+        app_handle: AppHandle,
+        registry: State<'a, DocumentRegistry>,
+        request: OpenDocumentRequest,
+    ) -> impl Future<Output = Result<OpenDocumentOutcome, OpenDocumentError>> + 'a {
+        open_document(app_handle, registry, request)
+    }
 
     #[test]
     fn command_signature_is_typed() {
-        let _ = TYPED_COMMAND;
+        let _ = typed_command;
     }
 
     #[test]
@@ -64,7 +69,10 @@ mod tests {
     #[test]
     fn response_serialization_is_stable() {
         let responses = [
-            OpenDocumentOutcome::Opened {
+            OpenDocumentOutcome::OpenedDraft {
+                envelope: envelope(),
+            },
+            OpenDocumentOutcome::ImportedText {
                 envelope: envelope(),
             },
             OpenDocumentOutcome::Cancelled,
@@ -73,7 +81,8 @@ mod tests {
         assert_eq!(
             serde_json::to_value(responses).expect("responses should serialize"),
             json!([
-                { "status": "opened", "envelope": envelope_value() },
+                { "status": "opened_draft", "envelope": envelope_value() },
+                { "status": "imported_text", "envelope": envelope_value() },
                 { "status": "cancelled" }
             ]),
         );
@@ -83,9 +92,12 @@ mod tests {
     fn error_serialization_is_stable() {
         let errors = [
             OpenDocumentError::UnsupportedFileLocation,
+            OpenDocumentError::UnsupportedFileType,
             OpenDocumentError::FileNotFound,
             OpenDocumentError::ReadFailed,
             OpenDocumentError::MalformedJson,
+            OpenDocumentError::InvalidTextEncoding,
+            OpenDocumentError::TextTooLarge,
             OpenDocumentError::InvalidEnvelope {
                 cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
             },
@@ -101,9 +113,12 @@ mod tests {
             serde_json::to_value(errors).expect("errors should serialize"),
             json!([
                 { "code": "unsupported_file_location" },
+                { "code": "unsupported_file_type" },
                 { "code": "file_not_found" },
                 { "code": "read_failed" },
                 { "code": "malformed_json" },
+                { "code": "invalid_text_encoding" },
+                { "code": "text_too_large" },
                 {
                     "code": "invalid_envelope",
                     "cause": { "code": "unsupported_schema_version", "found": 2 }

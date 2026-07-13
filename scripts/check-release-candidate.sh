@@ -49,7 +49,7 @@ check_phase45_release_rule() {
     docs/maintainers/RELEASE_CANDIDATE.md
   require_literal 'Status: Accepted' \
     docs/adr/002-limit-v1-analysis-to-local-text.md
-  require_literal '| RC-03 | Release blocker | Open | Accepted ADR-002 limits v1 analysis to five local deterministic heuristics' \
+  require_literal '| RC-03 | Release blocker | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md
 }
 
@@ -203,20 +203,20 @@ check_live_blocker_evidence() {
     if (config.app?.security?.csp !== null) process.exit(1);
   '
   require_literal '--no-sign' scripts/package-macos.sh
-  require_literal 'You cannot create, open, save, close, or reopen a document file' \
-    docs/wiki/Current-Limitations.md
-  require_literal 'There is no visible reference library.' docs/wiki/Current-Limitations.md
-  require_literal 'Automated source analysis is currently unavailable.' \
-    docs/wiki/Current-Limitations.md
-  require_literal 'You cannot export a DOCX file from the workspace.' \
-    docs/wiki/Current-Limitations.md
   require_literal '"csp": null' src-tauri/tauri.conf.json
-
-  if rg --quiet '\b(openDocument|saveDocument|exportDocx|runAiAnalysis|openExternalAccess)\b' \
-    --glob '!src/ipc/**' --glob '!*.test.*' src; then
-    echo 'A blocker-owned visible workflow changed without RC inventory reassessment' >&2
-    return 1
-  fi
+  require_literal 'useDocumentSession' src/app/DraftWorkspace.tsx
+  require_literal 'ReferenceLibraryPanel' src/app/DraftWorkspace.tsx
+  require_literal 'TextAnalysisPanel' src/app/DraftWorkspace.tsx
+  require_literal 'useDocxExport' src/app/DraftWorkspace.tsx
+  require_literal 'five local text checks' docs/wiki/Current-Limitations.md
+  require_literal 'Citation nodes are not currently included in DOCX output.' \
+    docs/wiki/Current-Limitations.md
+  require_literal 'a stable complete packaged-app lifecycle run is still missing' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_literal 'a stable complete packaged interaction run is still missing' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_literal 'a stable packaged success/failure/recovery run is still missing' \
+    docs/maintainers/RELEASE_CANDIDATE.md
 }
 
 require_literal() {

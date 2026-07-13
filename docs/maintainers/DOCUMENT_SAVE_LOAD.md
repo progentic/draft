@@ -11,26 +11,30 @@ architecture or invariants.
 
 Phase 13 adds typed Rust `open_document` and `save_document` commands plus
 frontend request/response wrappers. Phase 14 hardens the writer against
-interruption, replacement failure, cleanup failure, and concurrent saves. The
-visible workspace does not invoke these commands yet, so this remains a
-protected backend lifecycle rather than a completed user workflow.
+interruption, replacement failure, cleanup failure, and concurrent saves.
+Phase 46 adds `create_document` and `close_document`, then connects the complete
+bounded lifecycle to the visible workspace.
 
 These phases do not add:
 
 - direct frontend dialog or filesystem access
 - a frontend-provided filesystem path
 - implicit reads from the live Tiptap instance
-- autosave, recovery, or a close command
+- autosave or crash recovery
 - reference records, CSL JSON, or citation metadata in the envelope
 - export, migration, network, analysis, or formatting behavior
 
 ## Open Command
 
 `open_document` receives an empty request. Rust opens the native file picker
-through `tauri-plugin-dialog` with `.draft` and `.json` filters. The frontend
-cannot choose or inspect a path through IPC.
+through `tauri-plugin-dialog` with `.draft`, compatible legacy `.json`, `.txt`,
+and `.md` filters. The frontend cannot choose or inspect a path through IPC.
 
-After selection, Rust:
+The command and dialog adapter are asynchronous. The adapter parents the
+picker to the main window, uses the plugin callback API, and awaits a one-shot
+typed result. It never uses a blocking dialog call on the application thread.
+
+For `.draft` and `.json`, Rust:
 
 1. Reads the selected bytes.
 2. Parses JSON.
@@ -42,11 +46,45 @@ After selection, Rust:
 Malformed, invalid, or duplicate files never replace an existing registry
 entry.
 
+For `.txt` and `.md`, Rust reads at most 8 MiB of UTF-8, creates a new validated
+unsaved envelope, and returns `imported_text`. Every LF-delimited line becomes
+one paragraph; a terminal CR is removed so CRLF input behaves consistently.
+Markdown punctuation remains literal text. The response title contains only
+the source filename. Rust does not register or return the source path, and the
+source bytes are never changed. Invalid UTF-8, oversized input, unreadable
+files, and unsupported extensions fail before registration or persistence.
+
+## Create And Close Commands
+
+`create_document` accepts an exact empty request. Rust generates the UUID and
+validates the fixed initial envelope before returning it. The command does not
+open a path, persist the document, or register a live handle. React never
+generates a durable document identity.
+
+`close_document` accepts one Rust-issued document ID and releases its live
+registry handle. Closing an unsaved document requires no Rust mutation because
+it has no registered source path. New, Open, and Close protect edited content
+through the visible unsaved-changes dialog before replacement.
+
+The visible lifecycle is explicit:
+
+1. Rust creates a validated envelope with an unsaved identity and one empty paragraph.
+2. The frontend edits that envelope as transient content.
+3. The first successful Save selects a path and establishes the durable handle.
+4. Later saves update the same registered document.
+5. Close releases the active handle; an unsaved document has no handle to release.
+
+The frontend records one explicit origin: `new`, `imported_text`, or
+`opened_draft`. A Rust-owned ID is in-memory identity, not proof of persistence.
+Only `opened_draft` has a durable Rust-registered path. Successful first Save
+transitions either unsaved origin to `opened_draft`; cancellation preserves the
+prior origin and visible state.
+
 ## Save Command
 
 `save_document` receives one explicit `snapshot` JSON value. Rust never reaches
-into the WebView or Tiptap instance for live state. The normal future caller
-must serialize the current editor state and place it in the envelope before
+into the WebView or Tiptap instance for live state. The visible frontend client
+serializes the current editor state and places it in the envelope before
 invoking the command.
 
 Rust validates the entire snapshot before opening a dialog or writing. A known
@@ -56,8 +94,20 @@ its live handle. Rust rejects a path already owned by another live document.
 Cancellation and failed writes do not register, replace, or attach the
 document snapshot.
 
+A newly selected target must use the `.draft` extension. Rust enforces this
+before writer invocation; the native dialog filter is not treated as the
+authority. Existing compatible `.json` documents may continue saving only to
+their already registered path.
+
+A read-only preflight decides whether a target dialog is required. The actual
+save path validates again while holding the existing lifecycle lock, so the
+preflight does not grant registry or filesystem authority. First-save target
+selection uses the same asynchronous callback contract as Open and Export.
+
 Unknown top-level envelope fields remain invalid, so save cannot add reference
 records, embedded citation metadata, analysis output, or export state.
+Canonical font-family and whole-point font-size marks are validated nested
+document content, not new top-level envelope fields.
 
 ## Atomic Replacement
 
@@ -95,15 +145,19 @@ release gate.
 Open errors are typed as:
 
 - `unsupported_file_location`
+- `unsupported_file_type`
 - `file_not_found`
 - `read_failed`
 - `malformed_json`
+- `invalid_text_encoding`
+- `text_too_large`
 - `invalid_envelope` with a typed envelope `cause`
 - `registry` with a typed registry `cause`
 
 Save errors are typed as:
 
 - `unsupported_file_location`
+- `invalid_target` when a new target does not end in `.draft`
 - `invalid_envelope` with a typed envelope `cause`
 - `serialization_failed`
 - `registry` with a typed registry `cause`
@@ -116,11 +170,16 @@ paths and operating-system errors never cross IPC.
 
 User cancellation is a successful `cancelled` response, not an error.
 
+Open success is also explicit: `opened_draft` means Rust retained a native
+save target; `imported_text` means the returned envelope has no target and must
+use Save As; `cancelled` means no session state changed.
+
 ## Frontend Boundary
 
-`src/ipc/documentOpen.ts` and `src/ipc/documentSave.ts` are the only frontend
-command wrappers. `src/ipc/documentEnvelope.ts` mirrors the Rust envelope for
-response validation and request typing. Rust remains the validation authority.
+`src/ipc/documentCreate.ts`, `documentOpen.ts`, `documentSave.ts`, and
+`documentClose.ts` are the frontend lifecycle wrappers.
+`src/ipc/documentEnvelope.ts` mirrors the Rust envelope for response validation
+and request typing. Rust remains the identity and validation authority.
 
 No frontend source imports `@tauri-apps/plugin-dialog`,
 `@tauri-apps/plugin-fs`, Node filesystem APIs, or another direct file surface.
@@ -130,7 +189,7 @@ The save wrapper accepts a snapshot, not a path.
 
 | Layer | Function or type | Responsibility |
 | :--- | :--- | :--- |
-| High | `open_document` / `save_document` commands | Coordinate one typed IPC request. |
+| High | create/open/save/close commands | Coordinate one typed IPC request. |
 | Mid | persistence `open_document` / `save_document` | Enforce validation, registry, and lifecycle policy. |
 | Mid | `DocumentRegistry` | Own one handle, source path, and current snapshot. |
 | Low | dialog helpers / JSON / atomic writer | Perform native API, parsing, and filesystem mechanics. |
@@ -146,6 +205,11 @@ cancellation, retained paths, path ownership conflicts, failed-write registry
 rollback, and save-close-reopen round trips. Registry tests pin every serialized
 nested error code used by document commands.
 
+Phase 46 adds async-dialog and font-format coverage: no blocking native dialog
+API remains; preflight behavior matches registry state; malformed font marks
+fail before target selection; and valid family and size marks persist through
+first save, close, and reopen.
+
 Frontend tests cover envelope mirroring, exact command arguments, opened/saved/
 cancelled responses, malformed responses, registry failures, typed write-stage
 failures, durability uncertainty, citation-node causes, and transport
@@ -154,7 +218,8 @@ fail before registry insertion or path selection.
 
 Phase 41 adds crate-level evidence that first save, retained-path update,
 close, reopen, duplicate-open rejection, citation resolution, and export use
-these production paths together. It does not add a close command or file UI.
+these production paths together. Phase 46 adds the visible lifecycle without
+changing those persistence paths.
 
 `scripts/check-invariants.sh` requires these tests and sources, checks command
 name parity, rejects frontend path/dialog authority, and rejects direct target
@@ -171,8 +236,8 @@ GitHub Actions. The evidence is recorded in
 Phase 18 validates citation nodes nested inside the existing envelope without
 adding top-level fields or changing envelope version 1. The implementation is
 documented in `docs/maintainers/CITATION_NODE.md`. Reference metadata,
-bibliography behavior, network lookup, imports, and workspace file controls
-remain outside the document file contract.
+bibliography behavior, network lookup, and imports remain outside the document
+file contract.
 
 ## Configuration Index
 

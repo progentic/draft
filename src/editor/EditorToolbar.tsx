@@ -17,6 +17,21 @@ import {
   Undo2,
 } from "lucide-react";
 
+import {
+  FONT_FAMILIES,
+  MAX_FONT_SIZE_POINTS,
+  MIN_FONT_SIZE_POINTS,
+  isFontFamilyId,
+  isFontSizePoints,
+} from "../documents/textFormatting";
+import {
+  DOCUMENT_FONT_FAMILY,
+  DOCUMENT_FONT_SIZE_POINTS,
+  MIXED_FONT_VALUE,
+  RESET_FONT_VALUE,
+  effectiveFontControlState,
+} from "./fontControlState";
+
 interface EditorToolbarProps {
   editor: Editor | null;
   formattingReviewOpen: boolean;
@@ -33,7 +48,20 @@ interface ToolbarButtonProps {
   onPress: () => void;
 }
 
-type ToolbarState = typeof EMPTY_TOOLBAR_STATE;
+interface ToolbarState {
+  blockquote: boolean;
+  bold: boolean;
+  bulletList: boolean;
+  canRedo: boolean;
+  canUndo: boolean;
+  fontFamily: string;
+  fontSize: string;
+  headingOne: boolean;
+  headingTwo: boolean;
+  italic: boolean;
+  orderedList: boolean;
+  strike: boolean;
+}
 type ToolbarNavigationKey = "ArrowLeft" | "ArrowRight" | "End" | "Home";
 
 const EMPTY_TOOLBAR_STATE = {
@@ -42,6 +70,8 @@ const EMPTY_TOOLBAR_STATE = {
   bulletList: false,
   canRedo: false,
   canUndo: false,
+  fontFamily: DOCUMENT_FONT_FAMILY,
+  fontSize: String(DOCUMENT_FONT_SIZE_POINTS),
   headingOne: false,
   headingTwo: false,
   italic: false,
@@ -59,25 +89,103 @@ export function EditorToolbar(props: EditorToolbarProps) {
   ]);
 
   return (
-    <div
-      ref={toolbarRef}
-      className="editor-toolbar"
-      role="toolbar"
-      aria-label="Text formatting"
-      aria-orientation="horizontal"
-      onKeyDown={navigateToolbar}
-    >
-      <HistoryTools editor={props.editor} state={state} />
-      <span className="toolbar-separator" aria-hidden="true" />
-      <InlineTools editor={props.editor} state={state} />
-      <span className="toolbar-separator" aria-hidden="true" />
-      <StructureTools editor={props.editor} state={state} />
-      <span className="toolbar-separator" aria-hidden="true" />
-      <ReviewTools
-        isOpen={props.formattingReviewOpen}
-        onToggle={props.onToggleFormattingReview}
-      />
+    <div className="editor-formatting-row">
+      <div
+        ref={toolbarRef}
+        className="editor-toolbar"
+        role="toolbar"
+        aria-label="Text formatting"
+        aria-orientation="horizontal"
+        onKeyDown={navigateToolbar}
+      >
+        <HistoryTools editor={props.editor} state={state} />
+        <span className="toolbar-separator" aria-hidden="true" />
+        <InlineTools editor={props.editor} state={state} />
+        <span className="toolbar-separator" aria-hidden="true" />
+        <StructureTools editor={props.editor} state={state} />
+        <span className="toolbar-separator" aria-hidden="true" />
+        <ReviewTools
+          isOpen={props.formattingReviewOpen}
+          onToggle={props.onToggleFormattingReview}
+        />
+      </div>
+      <FontTools editor={props.editor} state={state} />
     </div>
+  );
+}
+
+function FontTools(props: { editor: Editor | null; state: ToolbarState }) {
+  return (
+    <div className="font-tools" role="group" aria-label="Font formatting">
+      <select
+        className="font-tools__family"
+        aria-label="Font family"
+        value={props.state.fontFamily}
+        disabled={!props.editor}
+        onChange={(event) => setFontFamily(props.editor, event.currentTarget.value)}
+      >
+        {props.state.fontFamily === MIXED_FONT_VALUE && (
+          <option value={MIXED_FONT_VALUE} disabled>Mixed fonts</option>
+        )}
+        {FONT_FAMILIES.map((family) => (
+          <option key={family.id} value={family.id}>{family.label}</option>
+        ))}
+        <option value={RESET_FONT_VALUE}>Use document font</option>
+      </select>
+      <select
+        className="font-tools__size"
+        aria-label="Font size in points"
+        value={props.state.fontSize}
+        disabled={!props.editor}
+        onChange={(event) => setFontSize(props.editor, event.currentTarget.value)}
+      >
+        {props.state.fontSize === MIXED_FONT_VALUE && (
+          <option value={MIXED_FONT_VALUE} disabled>Mixed sizes</option>
+        )}
+        {fontSizeOptions().map((points) => (
+          <option key={points} value={points}>{points} pt</option>
+        ))}
+        <option value={RESET_FONT_VALUE}>Use document size</option>
+      </select>
+    </div>
+  );
+}
+
+function setFontFamily(editor: Editor | null, value: string) {
+  if (!editor) {
+    return;
+  }
+  const chain = editor.chain().focus(undefined, { scrollIntoView: false });
+  if (value === RESET_FONT_VALUE) {
+    chain.unsetMark("fontFamily").run();
+  } else if (isFontFamilyId(value)) {
+    chain.setMark("fontFamily", { family: value }).run();
+  }
+  restoreEditorFocus(editor);
+}
+
+function setFontSize(editor: Editor | null, value: string) {
+  if (!editor) {
+    return;
+  }
+  const points = Number(value);
+  const chain = editor.chain().focus(undefined, { scrollIntoView: false });
+  if (value === RESET_FONT_VALUE) {
+    chain.unsetMark("fontSize").run();
+  } else if (isFontSizePoints(points)) {
+    chain.setMark("fontSize", { points }).run();
+  }
+  restoreEditorFocus(editor);
+}
+
+function restoreEditorFocus(editor: Editor) {
+  queueMicrotask(() => editor.commands.focus(undefined, { scrollIntoView: false }));
+}
+
+function fontSizeOptions() {
+  return Array.from(
+    { length: MAX_FONT_SIZE_POINTS - MIN_FONT_SIZE_POINTS + 1 },
+    (_, index) => MIN_FONT_SIZE_POINTS + index,
   );
 }
 
@@ -292,10 +400,20 @@ function getToolbarState(editor: Editor | null) {
     bulletList: editor.isActive("bulletList"),
     canRedo: editor.can().chain().focus().redo().run(),
     canUndo: editor.can().chain().focus().undo().run(),
+    fontFamily: selectedFontFamily(editor),
+    fontSize: selectedFontSize(editor),
     headingOne: editor.isActive("heading", { level: 1 }),
     headingTwo: editor.isActive("heading", { level: 2 }),
     italic: editor.isActive("italic"),
     orderedList: editor.isActive("orderedList"),
     strike: editor.isActive("strike"),
   };
+}
+
+function selectedFontFamily(editor: Editor) {
+  return effectiveFontControlState(editor).fontFamily;
+}
+
+function selectedFontSize(editor: Editor) {
+  return effectiveFontControlState(editor).fontSize;
 }

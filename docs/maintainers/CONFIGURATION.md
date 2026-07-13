@@ -30,7 +30,8 @@ implementation choices that can change without altering one of those contracts.
 | Node engine | `>=22.12.0` | `package.json` | Supported local runtime floor. GitHub Actions currently verifies Node 24. |
 | npm version | `11.16.0` | `package.json` | Locked package-manager contract. |
 | Tauri CLI | `2.11.4` | `package.json`, `package-lock.json` | Pinned desktop build and icon-generation tool. |
-| Python CI version | `3.12` | `.github/workflows/verify.yml` | Hosted helper-test runtime. Production Python packaging is not implemented. |
+| Python CI version | `3.12` | `.github/workflows/verify.yml` | Hosted helper-test runtime. |
+| Production Python minimum | `3.9` | `pyproject.toml` | Matches the Apple system runtime used by the initial macOS package. |
 | CI timeout | 30 minutes | `.github/workflows/verify.yml` | Upper bound for the aggregate Verify job. |
 | Development URL | `http://localhost:1420` | `src-tauri/tauri.conf.json` | Vite endpoint used only by Tauri development. |
 | Frontend output | `../dist` | `src-tauri/tauri.conf.json` | Production WebView assets consumed by Tauri builds, relative to `src-tauri/`. |
@@ -110,6 +111,7 @@ database, Python, or credential-store probe. See
 | `NETWORK_REQUEST_TIMEOUT` | 30 seconds | `network/client.rs` | Complete request bound. |
 | `PROVIDER_REQUEST_INTERVAL` | 1 second | `network/client.rs` | Minimum interval per metadata provider. |
 | `MAX_METADATA_RESPONSE_BYTES` | 1 MiB | `network/client.rs` | Maximum retained metadata response. |
+| `MAX_TEXT_IMPORT_BYTES` | 8 MiB | `documents/text_import.rs` | Maximum `.txt` or `.md` source read before a typed rejection. |
 | `MAX_RATE_LIMIT_BACKOFF` | 60 seconds | `network/client.rs` | Maximum bounded HTTP 429 delay. |
 | `STABLE_WRITE_DEBOUNCE` | 1 second | `imports/pdf.rs` | Required quiet period before watched PDF confirmation. |
 | `MAX_EXTERNAL_URL_LENGTH` | 2,048 characters | `research/external_access.rs` | Maximum accepted browser-handoff URL. |
@@ -149,6 +151,9 @@ period. It cannot detect an unreported same-size in-place modification.
 | `PYTHON_HELPER_TIMEOUT` | 5 seconds | `workers/python/runner.rs` | Process execution bound. |
 | `MAX_TEXT_ANALYSIS_FINDINGS` | 100 | Rust text-analysis boundary | Validated result bound. |
 | `SUPPORTED_LOCALE` | `en-US` | `python/draft_helpers/worker.py` | Only accepted helper locale. |
+| Production executable | `/usr/bin/python3` | `commands/text_analysis.rs` | Fixed initial-platform runtime; no user-selected executable. |
+| Packaged helper resource | `python/draft_helpers` | `tauri.conf.json` | Trusted helper files embedded in the `.app`. |
+| Isolated helper `TMPDIR` | `/tmp` | `workers/python/runner.rs` | Sole value restored after `env_clear` to keep Apple system Python silent. |
 | `MAX_FINDINGS_PER_CHECK` | 20 | `python/draft_helpers/worker.py` | Maximum findings emitted by one heuristic. |
 | `LONG_SENTENCE_WORDS` | 30 words | `python/draft_helpers/worker.py` | Clarity heuristic threshold. |
 | `MIN_ALL_CAPS_LETTERS` | 5 letters | `python/draft_helpers/worker.py` | Tone heuristic threshold. |
@@ -164,13 +169,19 @@ period. It cannot detect an unreported same-size in-place modification.
 | Heading levels | 1 through 6 | `formatting/checks.rs` | Accepted outline range. |
 | Formatting styles | `apa7`, `mla9`, `chicago17_author_date` | `formatting/checks.rs` | Closed consistency identifiers, not complete style conformance. |
 | `DEFAULT_FORMATTING_STYLE` | `apa7` | `src/ipc/formattingReview.ts` | Initial review selection; either other closed identifier may be selected before a run. |
+| Font-family identifiers | `arial`, `avenir_next`, `baskerville`, `courier_new`, `georgia`, `helvetica`, `menlo`, `palatino`, `times_new_roman`, `trebuchet_ms`, `verdana` | Rust and TypeScript text-format modules | Complete accepted family allowlist. Each identifier maps to the same named DOCX family without substitution. |
+| Document font family | `georgia` | `fontControlState.ts`, `styles.css` | Effective editor family when text has no explicit family mark. |
+| Document body font size | 13 points | `fontControlState.ts`, `styles.css` | Effective editor size for unmarked body text. Heading defaults are 24, 18, and 14 points for levels 1, 2, and 3 or later. |
+| `MIN_FONT_SIZE_POINTS` | 8 points | Rust and TypeScript text-format modules | Smallest accepted text size. |
+| `MAX_FONT_SIZE_POINTS` | 72 points | Rust and TypeScript text-format modules | Largest accepted text size. Sizes are whole points in one-point increments and export as DOCX half-points. |
 | `MAX_DOCX_SOURCE_BYTES` | 8 MiB | `exports/docx.rs` | Serialized source-document bound. |
 | `MAX_DOCX_NODES` | 100,000 | `exports/docx.rs` | Structural object count bound. |
 | `MAX_DOCX_NESTING_DEPTH` | 16 | `exports/docx.rs` | Recursive parser depth bound. |
 | `MAX_DOCX_ARTIFACT_BYTES` | 16 MiB | `exports/docx.rs` | Complete package bound before filesystem replacement. |
 
-DOCX compilation supports paragraphs, headings, text, hard breaks, and the
-closed bold, italic, strike, and code marks. Unknown fields, unsupported nodes
+DOCX compilation supports paragraphs, headings, text, hard breaks, the closed
+bold, italic, and underline marks, and the canonical font-family and font-size
+marks above. Unknown fields, unsupported nodes
 or marks, citations, active content, external relationships, malformed XML
 characters, and resource-limit violations fail explicitly.
 

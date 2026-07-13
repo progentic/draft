@@ -18,9 +18,10 @@ Rust resolves the Tauri application-data directory and opens the database
 before command handling begins. Startup fails closed when location, migration,
 or schema verification fails.
 
-The only command that reads the store is `resolve_citation`; it performs exact
-citekey resolution and returns no record metadata. No create, update, delete,
-list, or visible reference-library workflow exists yet.
+`resolve_citation` performs exact citekey resolution and returns no record
+metadata. Phase 46 adds bounded manual create and summary-list commands. The
+frontend receives only citekey and title; update, delete, full-record, bulk
+import, and synchronization commands remain absent.
 
 ## Dependency and Location
 

@@ -246,12 +246,47 @@ fn write_text_run(
 }
 
 fn write_run_properties(writer: &mut XmlWriter, marks: TextMarks) -> Result<(), DocxExportError> {
-    if !marks.bold && !marks.italic && !marks.underline {
+    if !has_run_properties(marks) {
         return Ok(());
     }
     start(writer, "w:rPr", &[])?;
+    write_font_properties(writer, marks)?;
     write_enabled_marks(writer, marks)?;
     end(writer, "w:rPr")
+}
+
+fn has_run_properties(marks: TextMarks) -> bool {
+    marks.bold
+        || marks.italic
+        || marks.underline
+        || marks.font_family.is_some()
+        || marks.font_size.is_some()
+}
+
+fn write_font_properties(writer: &mut XmlWriter, marks: TextMarks) -> Result<(), DocxExportError> {
+    if let Some(family) = marks.font_family {
+        let name = family.docx_name();
+        empty(
+            writer,
+            "w:rFonts",
+            &[
+                ("w:ascii", name),
+                ("w:hAnsi", name),
+                ("w:eastAsia", name),
+                ("w:cs", name),
+            ],
+        )?;
+    }
+    if let Some(size) = marks.font_size {
+        write_font_size(writer, size.half_points())?;
+    }
+    Ok(())
+}
+
+fn write_font_size(writer: &mut XmlWriter, half_points: u16) -> Result<(), DocxExportError> {
+    let value = half_points.to_string();
+    empty(writer, "w:sz", &[("w:val", value.as_str())])?;
+    empty(writer, "w:szCs", &[("w:val", value.as_str())])
 }
 
 fn write_enabled_marks(writer: &mut XmlWriter, marks: TextMarks) -> Result<(), DocxExportError> {

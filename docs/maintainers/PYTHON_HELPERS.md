@@ -19,8 +19,9 @@ Rust validates them and owns all user-facing wording. The detailed behavior is
 recorded in `docs/maintainers/TEXT_ANALYSIS.md`.
 
 Together these phases add no formatting helper, parsing, PDF or metadata work,
-model call, Tauri or frontend surface, event, persistence, document mutation,
-third-party Python dependency, or packaged-runtime discovery.
+model call, event, persistence, document mutation, or third-party Python
+dependency. Phase 46 adds the production Tauri/frontend call path and packaged
+resource discovery without expanding the helper protocol or Python authority.
 
 ## Typed Protocol
 
@@ -50,9 +51,9 @@ the package root fails validation. Helper requests contain no path, command,
 argument, environment, credential, or persistence field.
 
 Rust starts the executable directly with `-I` and `-B`; no shell is involved.
-The command clears inherited environment variables, fixes the working directory
-to the validated package root, pipes all standard streams, and enables
-kill-on-drop.
+The command clears inherited environment variables, restores only the fixed
+`TMPDIR=/tmp` required by Apple system Python, fixes the working directory to
+the validated package root, pipes all standard streams, and enables kill-on-drop.
 
 Rust writes one JSON request and closes stdin. It drains stdout and stderr
 concurrently while waiting for process exit. Stdout retains at most 64 KiB and
@@ -125,13 +126,19 @@ package, is reachable only through a `cfg(test)` constructor, and is excluded
 only from production-helper API scans that would otherwise reject its deliberate
 test behavior.
 
-## Current Limits
+## Phase 46 Production Path
 
-No application state initializes `PythonHelperRunner`, and no Tauri or frontend
-surface can start it. Packaging still needs a trusted Python runtime/resource
-location. The Phase 29 text-analysis extension remains internal and review-only.
-Phase 31 formatting checks are separately bounded as pure Rust work and do not
-expand Python authority.
+The `run_text_analysis` command is the only production constructor for
+`PythonHelperRunner`. It resolves the packaged `python/draft_helpers` resource,
+uses the fixed `/usr/bin/python3` executable on the supported macOS platform,
+and delegates one validated snapshot through the existing process boundary.
+The unsigned package check executes the embedded helper under an isolated
+environment before accepting the bundle.
+
+The visible workflow exposes exactly the existing five heuristic finding
+types. It adds no provider, credential, model runtime, network, persistence, or
+document-mutation authority. Phase 31 formatting checks remain separately
+bounded pure Rust work.
 
 ## Configuration Index
 

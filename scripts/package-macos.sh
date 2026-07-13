@@ -13,11 +13,15 @@ readonly APP_BUNDLE='src-tauri/target/release/bundle/macos/DRAFT.app'
 readonly APP_PLIST="${APP_BUNDLE}/Contents/Info.plist"
 readonly APP_EXECUTABLE="${APP_BUNDLE}/Contents/MacOS/draft"
 readonly APP_ICON="${APP_BUNDLE}/Contents/Resources/icon.icns"
+readonly APP_HELPER_ROOT="${APP_BUNDLE}/Contents/Resources/python/draft_helpers"
+readonly APP_HELPER_INIT="${APP_HELPER_ROOT}/__init__.py"
+readonly APP_HELPER_WORKER="${APP_HELPER_ROOT}/worker.py"
 readonly SOURCE_ICON='src-tauri/icons/icon.icns'
+readonly SYSTEM_PYTHON='/usr/bin/python3'
 
 main() {
   cd "$(repository_root)"
-  require_tools cmp file npm plutil rg uname
+  require_tools cmp env file npm plutil rg uname
   require_supported_host
   require_file package-lock.json
   require_file src-tauri/Cargo.lock
@@ -54,11 +58,15 @@ verify_application_bundle() {
   require_file "${APP_PLIST}"
   require_file "${APP_EXECUTABLE}"
   require_file "${APP_ICON}"
+  require_file "${APP_HELPER_INIT}"
+  require_file "${APP_HELPER_WORKER}"
+  require_file "${SYSTEM_PYTHON}"
   require_plist_value CFBundleIdentifier com.progentic.draft
   require_plist_value CFBundleExecutable draft
   require_plist_value CFBundleIconFile icon.icns
   require_apple_silicon_executable
   require_embedded_icon_match
+  require_embedded_helper_execution
 }
 
 require_plist_value() {
@@ -84,6 +92,19 @@ require_apple_silicon_executable() {
 require_embedded_icon_match() {
   if ! cmp -s "${SOURCE_ICON}" "${APP_ICON}"; then
     echo 'Packaged icon does not match the tracked DRAFT icon' >&2
+    return 1
+  fi
+}
+
+require_embedded_helper_execution() {
+  local request
+  local response
+  request='{"protocolVersion":1,"requestId":"00000000-0000-4000-8000-000000000000","helper":"text_analysis","helperVersion":1,"input":{"text":"Word word.","locale":"en-US"}}'
+  response="$(printf '%s' "${request}" | env -i TMPDIR=/tmp "${SYSTEM_PYTHON}" -I -B "${APP_HELPER_WORKER}")"
+
+  if ! rg --quiet --fixed-strings '"status":"ok"' <<<"${response}" ||
+    ! rg --quiet --fixed-strings '"code":"repeated_word"' <<<"${response}"; then
+    echo 'Packaged deterministic text helper did not return its typed result' >&2
     return 1
   fi
 }

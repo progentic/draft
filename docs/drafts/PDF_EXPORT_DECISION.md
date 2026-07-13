@@ -67,7 +67,7 @@ state:
 - why reliable PDF output is not supportable at this checkpoint;
 - which technical or licensing decisions remain unresolved;
 - that DOCX is the only implemented derived format;
-- that no visible export workflow exists yet; and
+- that the visible DOCX workflow does not imply PDF support; and
 - what evidence is required to reconsider the decision.
 
 The Phase 33 PDF absence gate remains active and is relabeled as an accepted

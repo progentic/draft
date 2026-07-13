@@ -231,6 +231,39 @@ struct ReferenceTracking {
 }
 
 impl ReferenceRecord {
+    /// Creates one bounded manual reference through the normal schema validator.
+    pub fn manual(
+        citekey: impl Into<String>,
+        title: impl Into<String>,
+        author: impl Into<String>,
+        year: u16,
+    ) -> Result<Self, ReferenceRecordError> {
+        Self::from_json_value(serde_json::json!({
+            "schema_version": REFERENCE_RECORD_SCHEMA_VERSION,
+            "reference_id": Uuid::new_v4(),
+            "citekey": citekey.into(),
+            "kind": "other",
+            "title": title.into(),
+            "contributors": [{
+                "role": "author",
+                "name": { "type": "organization", "literal": author.into() }
+            }],
+            "issued": { "year": year, "month": null, "day": null },
+            "container_title": null,
+            "publisher": null,
+            "volume": null,
+            "issue": null,
+            "pages": null,
+            "resolution_state": "resolved",
+            "identifiers": { "doi": null, "isbn": [], "url": null },
+            "provenance": {
+                "source": "manual",
+                "source_record_id": null,
+                "manual_overrides": []
+            }
+        }))
+    }
+
     /// Validates an untrusted JSON value without persistence, IPC, or network work.
     pub fn from_json_value(value: Value) -> Result<Self, ReferenceRecordError> {
         let mut fields = reference_fields(value)?;
@@ -256,6 +289,11 @@ impl ReferenceRecord {
     /// Returns the validated case-sensitive citation key.
     pub fn citekey(&self) -> &str {
         &self.identity.citekey
+    }
+
+    /// Returns the validated non-blank title.
+    pub fn title(&self) -> &str {
+        &self.identity.title
     }
 }
 

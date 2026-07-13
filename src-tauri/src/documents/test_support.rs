@@ -14,10 +14,14 @@ pub(crate) struct TestDocumentPath {
 
 impl TestDocumentPath {
     pub(crate) fn new(label: &str) -> Self {
+        Self::with_extension(label, "draft")
+    }
+
+    pub(crate) fn with_extension(label: &str, extension: &str) -> Self {
         let directory = unique_test_directory();
         fs::create_dir_all(&directory).expect("test directory should exist");
         Self {
-            path: directory.join(format!("{label}.draft")),
+            path: directory.join(format!("{label}.{extension}")),
             directory,
         }
     }

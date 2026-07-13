@@ -3,24 +3,15 @@ import type { Editor, JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
 import { CitationNode } from "./CitationNode";
+import { FontFamilyMark, FontSizeMark } from "./TextFormattingMarks";
 
 interface DraftEditorProps {
   editor: Editor | null;
 }
 
-const INITIAL_DOCUMENT: JSONContent = {
+export const INITIAL_DOCUMENT: JSONContent = {
   type: "doc",
-  content: [
-    {
-      type: "heading",
-      attrs: { level: 1 },
-      content: [{ type: "text", text: "Untitled document" }],
-    },
-    {
-      type: "paragraph",
-      content: [{ type: "text", text: "Begin writing here." }],
-    },
-  ],
+  content: [{ type: "paragraph" }],
 };
 
 export function DraftEditor(props: DraftEditorProps) {
@@ -50,6 +41,8 @@ export function useDraftEditor() {
           levels: [1, 2, 3],
         },
       }),
+      FontFamilyMark,
+      FontSizeMark,
       CitationNode,
     ],
   });

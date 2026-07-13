@@ -3,6 +3,11 @@ import {
   isCitationNodeError,
   type CitationNodeError,
 } from "../citations/citationNode";
+import {
+  hasValidTextFormatting,
+  isTextFormatError,
+  type TextFormatError,
+} from "../documents/textFormatting";
 
 export interface DocumentEnvelopeSnapshot {
   schema_version: 1;
@@ -28,7 +33,8 @@ export type DocumentEnvelopeError =
   | { code: "missing_document" }
   | { code: "invalid_document_root" }
   | { code: "invalid_document_content" }
-  | { code: "invalid_citation_node"; path: string; cause: CitationNodeError };
+  | { code: "invalid_citation_node"; path: string; cause: CitationNodeError }
+  | { code: "invalid_text_format"; path: string; cause: TextFormatError };
 
 const ENVELOPE_FIELDS = ["schema_version", "document_id", "title", "document"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -43,7 +49,8 @@ export function isDocumentEnvelopeSnapshot(value: unknown): value is DocumentEnv
     typeof value.title === "string" &&
     value.title.trim().length > 0 &&
     isDocumentRoot(value.document) &&
-    hasValidCitationNodes(value.document)
+    hasValidCitationNodes(value.document) &&
+    hasValidTextFormatting(value.document)
   );
 }
 
@@ -83,6 +90,12 @@ function hasValidEnvelopeErrorFields(value: Record<string, unknown>): boolean {
         hasExactFields(value, ["code", "path", "cause"]) &&
         typeof value.path === "string" &&
         isCitationNodeError(value.cause)
+      );
+    case "invalid_text_format":
+      return (
+        hasExactFields(value, ["code", "path", "cause"]) &&
+        typeof value.path === "string" &&
+        isTextFormatError(value.cause)
       );
     default:
       return hasExactFields(value, ["code"]) && isFieldlessEnvelopeErrorCode(value.code);

@@ -413,6 +413,8 @@ check_python_helper_contract() {
     test_oversized_serialized_request_fails_closed
   )
   local test_name
+  local command_path
+  local command_scan_paths=()
 
   require_file "${protocol_path}"
   require_file "${protocol_test_path}"
@@ -447,7 +449,7 @@ check_python_helper_contract() {
   require_source_pattern 'CONTRACT_PROBE_HELPER = "contract_probe"' "${worker_path}"
   require_source_pattern 'MAX_REQUEST_BYTES = 64 * 1024' "${worker_path}"
   require_source_pattern 'dependencies = []' pyproject.toml
-  require_source_pattern 'tokio = { version = "1.52.3", features = ["io-util", "macros", "process", "time"] }' src-tauri/Cargo.toml
+  require_source_pattern 'tokio = { version = "1.52.3", features = ["io-util", "macros", "process", "sync", "time"] }' src-tauri/Cargo.toml
   # The hostile worker fixture deliberately sleeps, reads PATH, writes stderr,
   # and overproduces output. Production authority scans cover only the package.
   assert_no_matches "INV-11 production Python authority" \
@@ -462,9 +464,18 @@ check_python_helper_contract() {
   assert_no_matches "Phase 28 helper Tauri or detached-task authority" \
     '#\[tauri::command\]|\btauri::|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
     "${protocol_path}" "${runner_path}"
-  assert_no_matches "Phase 28 application or command helper authority" \
+  # Phase 46 owns the sole command-level runner adapter. Every other command
+  # and the application layer remain prohibited from constructing helpers.
+  for command_path in src-tauri/src/commands/*.rs; do
+    if [[ "${command_path}" != 'src-tauri/src/commands/text_analysis.rs' ]]; then
+      command_scan_paths[${#command_scan_paths[@]}]="${command_path}"
+    fi
+  done
+  assert_no_matches "Phase 28 application or unowned command helper authority" \
     '\bPythonHelperRunner\b|\bcontract_probe\b|draft_helpers/worker\.py' \
-    src-tauri/src/application src-tauri/src/commands
+    src-tauri/src/application "${command_scan_paths[@]}"
+  require_source_pattern 'PythonHelperRunner::new(executable, package_root)' \
+    src-tauri/src/commands/text_analysis.rs
   assert_no_matches "Phase 28 frontend helper authority" \
     '\bPythonHelper\b|\bcontract_probe\b|\bContractProbe\b' src
   printf 'PASS INV-11 Phase 28 Python helper contract\n'
@@ -499,6 +510,10 @@ check_text_analysis_contract() {
     test_text_analysis_false_positive_guards
   )
   local test_name
+  local command_path
+  local frontend_path
+  local command_scan_paths=()
+  local frontend_scan_paths=()
 
   require_file "${protocol_path}"
   require_file "${model_path}"
@@ -508,6 +523,10 @@ check_text_analysis_contract() {
   require_file "${python_test_path}"
   require_file docs/drafts/TEXT_ANALYSIS.md
   require_file docs/maintainers/TEXT_ANALYSIS.md
+  require_file src-tauri/src/commands/text_analysis.rs
+  require_file src/ipc/textAnalysis.ts
+  require_file src/features/text-analysis/TextAnalysisPanel.tsx
+  require_file src/features/text-analysis/textAnalysisSnapshot.ts
   for test_name in "${required_rust_tests[@]}"; do
     require_rust_test "${test_name}" src-tauri/src/workers/python
   done
@@ -547,11 +566,29 @@ check_text_analysis_contract() {
   assert_no_matches "Phase 29 Tauri, network, or detached-task authority" \
     '#\[tauri::command\]|\btauri::|\breqwest\b|\bNetworkClient\b|(?:tokio(?:::task)?|tauri::async_runtime|std::thread)::spawn\s*\(' \
     "${protocol_path}" "${model_path}" "${worker_path}"
-  assert_no_matches "Phase 29 application or command text-analysis authority" \
-    '\bTextAnalysis\b|\btext_analysis\b' src-tauri/src/application src-tauri/src/commands
-  assert_no_matches "Phase 29 frontend text-analysis authority" \
-    '\bTextAnalysis\b|\btext_analysis\b|\bRepeatedWord\b' src
-  printf 'PASS INV-15 Phase 29 review-only text-analysis contract\n'
+  for command_path in src-tauri/src/commands/*.rs; do
+    case "${command_path}" in
+      src-tauri/src/commands/mod.rs|src-tauri/src/commands/text_analysis.rs) ;;
+      *) command_scan_paths[${#command_scan_paths[@]}]="${command_path}" ;;
+    esac
+  done
+  while IFS= read -r frontend_path; do
+    case "${frontend_path}" in
+      src/ipc/textAnalysis.ts|src/ipc/textAnalysis.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/text-analysis/TextAnalysisPanel.tsx|src/features/text-analysis/textAnalysisSnapshot.ts|src/features/text-analysis/textAnalysisSnapshot.test.ts) ;;
+      *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
+    esac
+  done < <(rg --files src)
+  assert_no_matches "Phase 46 unowned command text-analysis authority" \
+    '\bTextAnalysis\b|\btext_analysis\b' src-tauri/src/application "${command_scan_paths[@]}"
+  assert_no_matches "Phase 46 unowned frontend text-analysis authority" \
+    '\bTextAnalysis\b|\btext_analysis\b|\bRepeatedWord\b' "${frontend_scan_paths[@]}"
+  require_source_pattern 'export const FINDING_POLICIES = {' src/ipc/textAnalysis.ts
+  require_source_pattern 'repeated_word:' src/ipc/textAnalysis.ts
+  require_source_pattern 'long_sentence:' src/ipc/textAnalysis.ts
+  require_source_pattern 'all_caps_emphasis:' src/ipc/textAnalysis.ts
+  require_source_pattern 'repeated_sentence_opener:' src/ipc/textAnalysis.ts
+  require_source_pattern 'mixed_first_person:' src/ipc/textAnalysis.ts
+  printf 'PASS INV-15 Phase 46 visible review-only text-analysis contract\n'
 }
 
 check_formatting_contract() {
@@ -596,7 +633,84 @@ check_formatting_contract() {
   require_formatting_contract_markers "${source_path}"
   check_formatting_authority "${source_path}"
   check_formatting_review_contract "${review_path}" "${command_path}"
+  check_text_format_contract
   printf 'PASS INV-16 Phase 34 review-only formatting contract\n'
+}
+
+check_text_format_contract() {
+  local rust_path='src-tauri/src/documents/text_format.rs'
+  local frontend_path='src/documents/textFormatting.ts'
+  local mark_path='src/editor/TextFormattingMarks.ts'
+  local control_state_path='src/editor/fontControlState.ts'
+  local control_test_path='src/editor/fontControlState.test.ts'
+  local rust_tests=(
+    supported_family_and_size_marks_validate
+    canonical_font_allowlist_maps_every_identifier_to_docx
+    unsupported_font_values_fail_with_bounded_paths
+    fractional_zero_negative_and_malformed_sizes_fail
+    malformed_mark_shapes_fail_before_persistence
+    strict_font_mark_fields_and_attrs_fail_closed
+  )
+  local test_name
+
+  require_file "${rust_path}"
+  require_file "${frontend_path}"
+  require_file src/documents/textFormatting.test.ts
+  require_file "${mark_path}"
+  require_file src/editor/TextFormattingMarks.test.ts
+  require_file "${control_state_path}"
+  require_file "${control_test_path}"
+  for test_name in "${rust_tests[@]}"; do
+    require_rust_test "${test_name}" "${rust_path}"
+  done
+  require_source_pattern 'MIN_FONT_SIZE_POINTS: u64 = 8' "${rust_path}"
+  require_source_pattern 'MAX_FONT_SIZE_POINTS: u64 = 72' "${rust_path}"
+  check_font_identifier_parity "${rust_path}" "${frontend_path}"
+  require_source_pattern 'export const MIN_FONT_SIZE_POINTS = 8' "${frontend_path}"
+  require_source_pattern 'export const MAX_FONT_SIZE_POINTS = 72' "${frontend_path}"
+  require_source_pattern 'typeof value.type !== "string"' "${frontend_path}"
+  require_source_pattern 'span[data-draft-font-family]' "${mark_path}"
+  require_source_pattern 'span[data-draft-font-size]' "${mark_path}"
+  require_source_pattern 'FONT_FAMILIES.map((family)' src/editor/EditorToolbar.tsx
+  require_source_pattern 'DOCUMENT_FONT_FAMILY: FontFamilyId = "georgia"' \
+    "${control_state_path}"
+  require_source_pattern 'DOCUMENT_FONT_SIZE_POINTS = 13' "${control_state_path}"
+  require_source_pattern 'MIXED_FONT_VALUE = "__mixed__"' "${control_state_path}"
+  require_source_pattern 'reports document and heading defaults instead of empty placeholders' \
+    "${control_test_path}"
+  require_source_pattern 'follows explicit formatting at the caret after a JSON round trip' \
+    "${control_test_path}"
+  require_source_pattern 'reports mixed family and size for a heterogeneous range' \
+    "${control_test_path}"
+  assert_no_matches 'empty font-control placeholders' \
+    'Default font|Default size' \
+    src/editor/EditorToolbar.tsx
+  require_rust_test every_supported_font_family_emits_explicit_docx_run_properties \
+    src-tauri/src/exports/docx_tests.rs
+  require_source_pattern 'ignores pasted font CSS and accepts only canonical DRAFT attributes' \
+    src/editor/TextFormattingMarks.test.ts
+  assert_no_matches "arbitrary pasted font style import" \
+    "parseHTML:.*(?:font-family|font-size)|getAttribute\\([\"']style" \
+    "${mark_path}"
+  printf 'PASS bounded persistent text-format contract\n'
+}
+
+check_font_identifier_parity() {
+  local rust_path="$1"
+  local frontend_path="$2"
+  local expected actual_rust actual_frontend
+
+  expected="$(printf '%s\n' arial avenir_next baskerville courier_new georgia \
+    helvetica menlo palatino times_new_roman trebuchet_ms verdana | sort)"
+  actual_rust="$(rg --multiline --only-matching --replace '$1' \
+    'font\(\s*"([a-z_]+)"' "${rust_path}" | sort)"
+  actual_frontend="$(rg --only-matching --replace '$1' \
+    '\{ id: "([a-z_]+)"' "${frontend_path}" | sort)"
+
+  if [[ "${actual_rust}" != "${expected}" || "${actual_frontend}" != "${expected}" ]]; then
+    printf 'FAILED Rust and TypeScript font identifiers must match the exact 11-family contract\n' >&2
+    return 1
+  fi
 }
 
 require_formatting_contract_markers() {
@@ -668,6 +782,7 @@ check_docx_export_contract() {
     equal_documents_compile_to_equal_bytes
     every_package_xml_part_is_well_formed
     unicode_headings_breaks_and_marks_render_without_raw_markup
+    mixed_font_runs_keep_distinct_docx_properties
     empty_paragraphs_and_headings_are_preserved
     unknown_fields_nodes_and_marks_fail_without_silent_omission
     malformed_nested_shapes_and_xml_controls_fail_typed
@@ -715,6 +830,9 @@ require_docx_contract_markers() {
   require_source_pattern 'SimpleFileOptions::DEFAULT' "${package_path}"
   require_source_pattern 'CompressionMethod::Stored' "${package_path}"
   require_source_pattern 'BytesText::new(value)' "${package_path}"
+  require_source_pattern 'w:rFonts' "${package_path}"
+  require_source_pattern 'w:sz' "${package_path}"
+  require_source_pattern 'half_points()' "${package_path}"
   require_source_pattern 'quick-xml = "0.41.0"' src-tauri/Cargo.toml
   require_source_pattern 'zip = { version = "8.6.0", default-features = false }' src-tauri/Cargo.toml
 }
@@ -722,6 +840,10 @@ require_docx_contract_markers() {
 check_docx_export_authority() {
   local model_path="$1"
   local package_path="$2"
+  local command_path
+  local frontend_path
+  local command_scan_paths=()
+  local frontend_scan_paths=()
 
   assert_no_matches "Phase 32 persistence or direct filesystem authority" \
     '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
@@ -733,11 +855,26 @@ check_docx_export_authority() {
     '\bTargetMode\b|vbaProject|macroEnabled|\.bin["\x27]' "${package_path}"
   assert_no_matches "Phase 32 manual XML interpolation" \
     'format!\s*\(' "${model_path}" "${package_path}"
-  assert_no_matches "Phase 32 application or command export authority" \
+  for command_path in src-tauri/src/commands/*.rs; do
+    case "${command_path}" in
+      src-tauri/src/commands/docx_export.rs|src-tauri/src/commands/mod.rs) ;;
+      *) command_scan_paths[${#command_scan_paths[@]}]="${command_path}" ;;
+    esac
+  done
+  while IFS= read -r frontend_path; do
+    case "${frontend_path}" in
+      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts) ;;
+      *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
+    esac
+  done < <(rg --files src)
+  assert_no_matches "Phase 46 unowned application or command export authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
-    src-tauri/src/application src-tauri/src/commands
-  assert_no_matches "Phase 32 frontend DOCX authority" \
-    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' src
+    src-tauri/src/application "${command_scan_paths[@]}"
+  assert_no_matches "Phase 46 unowned frontend DOCX authority" \
+    '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
+    "${frontend_scan_paths[@]}"
+  require_source_pattern 'export_docx(document, &target)' src-tauri/src/commands/docx_export.rs
+  require_source_pattern 'export async function exportDocument' src/ipc/docxExport.ts
   assert_no_matches "Phase 32 Python DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' python
 }
@@ -761,6 +898,7 @@ check_document_envelope_contract() {
     envelope_failure_shape_is_stable
     valid_nested_citation_round_trips
     invalid_nested_citation_fails_with_path
+    invalid_nested_font_format_fails_with_path
   )
   local test_name
 
@@ -1215,7 +1353,7 @@ check_v1_analysis_decision_guard() {
   require_source_pattern 'production analysis is limited to local deterministic text' "${adr}"
   require_source_pattern '## Analysis Layers' "${adr}"
   require_source_pattern 'permitted v1 findings are exactly' "${adr}"
-  require_source_pattern 'remains open until Phase 46' "${draft}"
+  require_source_pattern 'remains open until a stable complete packaged' "${draft}"
   assert_no_matches "ADR-002 production model dependencies" \
     '(?i)^[[:space:]]*["\x27]?(?:async-openai|anthropic|candle-core|candle-transformers|genai|llama-cpp|llama-cpp-2|mistralrs|ollama-rs|openai-api-rs|ort|rig-core|tch)["\x27]?[[:space:]]*(?:=|:)' \
     src-tauri/Cargo.toml package.json pyproject.toml
@@ -1508,12 +1646,16 @@ check_document_file_contract() {
   local atomic_writer_path="src-tauri/src/documents/atomic_write.rs"
   local required_tests=(
     document_round_trip_preserves_updated_snapshot
+    font_formatting_persists_through_save_close_and_reopen
     malformed_json_fails_before_registry_entry
     unsupported_document_versions_fail_without_mutation
     duplicate_load_returns_already_open
     save_uses_explicit_snapshot_and_retained_path
     save_new_snapshot_uses_rust_selected_path
+    save_target_preflight_matches_registry_state
+    save_target_preflight_rejects_invalid_snapshot
     cancelled_first_save_does_not_register_document
+    first_save_rejects_non_draft_target_before_write
     invalid_snapshot_fails_before_path_selection
     save_does_not_reopen_dialog_for_loaded_document
     failed_first_save_does_not_register_document
@@ -1524,6 +1666,12 @@ check_document_file_contract() {
     concurrent_saves_keep_disk_and_registry_consistent
     invalid_citation_open_fails_before_registry_entry
     invalid_citation_save_fails_before_path_selection
+    invalid_font_format_fails_before_path_selection
+    text_import_is_unsaved_and_first_save_preserves_source
+    later_import_save_reuses_only_the_chosen_draft_target
+    markdown_import_uses_basename_and_remains_literal_editable_source
+    malformed_and_oversized_text_imports_fail_without_mutation
+    unsupported_open_extension_fails_before_read_or_registration
   )
   local test_name
 
@@ -1531,6 +1679,18 @@ check_document_file_contract() {
   for test_name in "${required_tests[@]}"; do
     require_rust_test "${test_name}" "${persistence_path}"
   done
+  require_source_pattern 'keeps the complete canonical font allowlist stable' \
+    src/documents/textFormatting.test.ts
+  require_source_pattern 'keeps an imported filename display-only through first and later saves' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'keeps an imported session unsaved when its first Save is cancelled' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'rejects a non-DRAFT first-save target without changing import state' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'preserves native content, selection, title, and state when Open is cancelled' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'preserves unsaved content when a later New command fails' \
+    src/ipc/Phase46Workflows.test.tsx
   require_rust_test source_path_cannot_back_two_live_handles \
     src-tauri/src/documents/registry.rs
   require_rust_test source_path_conflict_preserves_unattached_handle \
@@ -1539,8 +1699,40 @@ check_document_file_contract() {
     src-tauri/src/documents/registry.rs
   require_atomic_writer_tests "${atomic_writer_path}"
   check_document_write_boundary "${atomic_writer_path}"
+  check_async_native_dialog_boundary
   check_frontend_document_file_boundary
   printf 'PASS INV-03/06/09 document file contract\n'
+}
+
+check_async_native_dialog_boundary() {
+  local dialog_path='src-tauri/src/documents/dialog.rs'
+
+  assert_no_matches "blocking native dialog API" \
+    '\bblocking_(?:pick|save)_file\s*\(' \
+    src-tauri/src
+  require_source_pattern 'pub(crate) async fn select_open_document(' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn select_save_document(' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn select_export_docx(' "${dialog_path}"
+  require_source_pattern '.pick_file(move |selected|' "${dialog_path}"
+  require_source_pattern '.save_file(move |selected|' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn open_document(' \
+    src-tauri/src/commands/document_open.rs
+  require_source_pattern 'pub(crate) async fn save_document(' \
+    src-tauri/src/commands/document_save.rs
+  require_source_pattern 'select_save_document(&app_handle)' \
+    src-tauri/src/commands/document_save.rs
+  assert_no_matches 'Save command avoids open dialog selector' \
+    'select_open_document' \
+    src-tauri/src/commands/document_save.rs
+  require_source_pattern 'display_name: String' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'was_save_as: bool' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'displayName: string; wasSaveAs: boolean' \
+    src/ipc/documentSave.ts
+  require_source_pattern 'pub(crate) async fn export_document(' \
+    src-tauri/src/commands/docx_export.rs
+  printf 'PASS async Rust-owned native dialog contract\n'
 }
 
 check_critical_path_contract() {
@@ -1569,6 +1761,7 @@ require_document_file_sources() {
   require_file src-tauri/src/documents/atomic_write.rs
   require_file src-tauri/src/documents/dialog.rs
   require_file src-tauri/src/documents/persistence.rs
+  require_file src-tauri/src/documents/text_import.rs
   require_file src/ipc/documentEnvelope.test.ts
   require_file src/ipc/documentEnvelope.ts
   require_file src/ipc/documentErrors.ts
@@ -1576,6 +1769,14 @@ require_document_file_sources() {
   require_file src/ipc/documentOpen.test.ts
   require_file src/ipc/documentSave.ts
   require_file src/ipc/documentSave.test.ts
+  require_source_pattern 'MAX_TEXT_IMPORT_BYTES: usize = 8 * 1024 * 1024' \
+    src-tauri/src/documents/text_import.rs
+  require_source_pattern 'OpenedDraft { envelope: DocumentEnvelope }' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'ImportedText { envelope: DocumentEnvelope }' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md"]' \
+    src-tauri/src/documents/dialog.rs
 }
 
 require_atomic_writer_tests() {
@@ -1619,9 +1820,31 @@ check_document_write_boundary() {
 }
 
 check_frontend_document_file_boundary() {
+  local document_identity_paths=(
+    src/features/document-session
+    src/ipc/documentCreate.ts
+  )
+
   assert_no_matches "frontend document path authority" \
     '\b(?:path|filePath|file_path)\s*:' \
-    src/ipc/documentOpen.ts src/ipc/documentSave.ts
+    src/features/document-session/useDocumentSession.ts \
+    src/ipc/documentCreate.ts src/ipc/documentOpen.ts src/ipc/documentSave.ts
+  assert_no_matches "frontend document identity authority" \
+    '\bcrypto\.randomUUID\s*\(|\b(?:uuidv[147]|nanoid|createId)\s*\(' \
+    "${document_identity_paths[@]}"
+  assert_no_matches "frontend document identity dependency" \
+    "from\\s+['\"](?:uuid|nanoid|@paralleldrive/cuid2)['\"]" \
+    "${document_identity_paths[@]}"
+  require_source_pattern 'DocumentEnvelope::create_initial()' \
+    src-tauri/src/commands/document_create.rs
+  require_source_pattern 'type DocumentOrigin = "imported_text" | "new" | "opened_draft"' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'origin: result.status' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'origin: "opened_draft" as const' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'return "Imported, unsaved"' \
+    src/features/document-session/useDocumentSession.ts
 }
 
 require_source_pattern() {

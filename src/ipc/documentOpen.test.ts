@@ -16,10 +16,22 @@ describe("openDocument", () => {
   });
 
   it("returns a validated Rust-loaded envelope", async () => {
-    invokeMock.mockResolvedValue({ status: "opened", envelope: envelope() });
+    invokeMock.mockResolvedValue({ status: "opened_draft", envelope: envelope() });
 
-    await expect(openDocument()).resolves.toEqual({ status: "opened", envelope: envelope() });
+    await expect(openDocument()).resolves.toEqual({
+      status: "opened_draft",
+      envelope: envelope(),
+    });
     expect(invokeMock).toHaveBeenCalledWith("open_document", { request: {} });
+  });
+
+  it("distinguishes an unsaved Rust-created text import", async () => {
+    invokeMock.mockResolvedValue({ status: "imported_text", envelope: envelope() });
+
+    await expect(openDocument()).resolves.toEqual({
+      status: "imported_text",
+      envelope: envelope(),
+    });
   });
 
   it("preserves user cancellation", async () => {
@@ -30,7 +42,7 @@ describe("openDocument", () => {
 
   it("rejects an invalid loaded envelope", async () => {
     invokeMock.mockResolvedValue({
-      status: "opened",
+      status: "opened_draft",
       envelope: { ...envelope(), schema_version: 2 },
     });
 
@@ -52,6 +64,18 @@ describe("openDocument", () => {
       error: { type: "command", error },
     });
   });
+
+  it.each(["unsupported_file_type", "invalid_text_encoding", "text_too_large"])(
+    "preserves typed %s import failures",
+    async (code) => {
+      invokeMock.mockRejectedValue({ code });
+
+      await expect(openDocument()).resolves.toEqual({
+        status: "error",
+        error: { type: "command", error: { code } },
+      });
+    },
+  );
 
   it("classifies unknown failures without leaking details", async () => {
     invokeMock.mockRejectedValue(new Error("private path detail"));

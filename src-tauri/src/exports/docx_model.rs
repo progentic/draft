@@ -2,6 +2,10 @@ use std::io::{self, Write};
 
 use serde_json::{Map, Value};
 
+use crate::documents::text_format::{
+    FontFamily, FontSizePoints, parse_font_family_attrs, parse_font_size_attrs,
+};
+
 use super::docx::{
     DocxContentPath, DocxExportError, MAX_DOCX_NESTING_DEPTH, MAX_DOCX_NODES, MAX_DOCX_SOURCE_BYTES,
 };
@@ -13,6 +17,7 @@ const HEADING_ATTR_FIELDS: [&str; 1] = ["level"];
 const TEXT_FIELDS: [&str; 3] = ["type", "text", "marks"];
 const HARD_BREAK_FIELDS: [&str; 1] = ["type"];
 const MARK_FIELDS: [&str; 1] = ["type"];
+const FONT_MARK_FIELDS: [&str; 2] = ["type", "attrs"];
 
 pub(super) struct DocxDocument {
     pub(super) blocks: Vec<DocxBlock>,
@@ -31,6 +36,8 @@ pub(super) enum DocxInline {
 #[derive(Clone, Copy, Default)]
 pub(super) struct TextMarks {
     pub(super) bold: bool,
+    pub(super) font_family: Option<FontFamily>,
+    pub(super) font_size: Option<FontSizePoints>,
     pub(super) italic: bool,
     pub(super) underline: bool,
 }
@@ -201,12 +208,53 @@ fn add_mark(
     path: &DocxContentPath,
 ) -> Result<(), DocxExportError> {
     let fields = node_fields(value, path)?;
+    match node_type(fields, path)? {
+        "fontFamily" => add_font_family(marks, fields, path),
+        "fontSize" => add_font_size(marks, fields, path),
+        mark_type => add_boolean_mark(marks, fields, mark_type, path),
+    }
+}
+
+fn add_boolean_mark(
+    marks: &mut TextMarks,
+    fields: &Map<String, Value>,
+    mark_type: &str,
+    path: &DocxContentPath,
+) -> Result<(), DocxExportError> {
     require_exact_fields(fields, &MARK_FIELDS, path)?;
-    let slot = mark_slot(marks, node_type(fields, path)?, path)?;
+    let slot = mark_slot(marks, mark_type, path)?;
     if *slot {
         return Err(invalid_structure(path));
     }
     *slot = true;
+    Ok(())
+}
+
+fn add_font_family(
+    marks: &mut TextMarks,
+    fields: &Map<String, Value>,
+    path: &DocxContentPath,
+) -> Result<(), DocxExportError> {
+    require_exact_fields(fields, &FONT_MARK_FIELDS, path)?;
+    let attrs = fields.get("attrs").ok_or_else(|| invalid_structure(path))?;
+    let family = parse_font_family_attrs(attrs).map_err(|_| unsupported_content(path))?;
+    if marks.font_family.replace(family).is_some() {
+        return Err(invalid_structure(path));
+    }
+    Ok(())
+}
+
+fn add_font_size(
+    marks: &mut TextMarks,
+    fields: &Map<String, Value>,
+    path: &DocxContentPath,
+) -> Result<(), DocxExportError> {
+    require_exact_fields(fields, &FONT_MARK_FIELDS, path)?;
+    let attrs = fields.get("attrs").ok_or_else(|| invalid_structure(path))?;
+    let size = parse_font_size_attrs(attrs).map_err(|_| unsupported_content(path))?;
+    if marks.font_size.replace(size).is_some() {
+        return Err(invalid_structure(path));
+    }
     Ok(())
 }
 

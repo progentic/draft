@@ -1,5 +1,7 @@
 use std::{error::Error, fmt, path::Path};
 
+use serde::Serialize;
+
 use crate::documents::{
     atomic_write::{AtomicDocumentWriteError, write_document_atomically},
     envelope::DocumentEnvelope,
@@ -23,13 +25,14 @@ pub struct DocxArtifact {
 }
 
 /// Bounded structural location containing indexes only, never source content.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct DocxContentPath {
     indexes: Vec<usize>,
 }
 
 /// Atomic write stage that prevented a DOCX target replacement.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DocxWriteStage {
     OpenTemporaryFile,
     WriteTemporaryFile,
@@ -39,7 +42,8 @@ pub enum DocxWriteStage {
 }
 
 /// Bounded failures from strict DOCX compilation and atomic export.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(tag = "code", rename_all = "snake_case")]
 pub enum DocxExportError {
     InvalidTarget,
     SourceTooLarge,
