@@ -30,7 +30,7 @@ export function useDocxExport(session: DocumentSession): DocxExportState {
   return {
     disabled: exporting,
     feedback,
-    label: exporting ? "Exporting DOCX" : "Export DOCX",
+    label: exporting ? "Exporting DOCX" : "Export DOCX…",
     run,
   };
 }

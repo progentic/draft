@@ -1,4 +1,5 @@
 import { FileText, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import draftIconUrl from "../../src-tauri/icons/32x32.png";
 
 import { ConnectivityModeControl } from "../features/connectivity/ConnectivityModeControl";
 import type { ConnectivityModeState } from "../features/connectivity/useConnectivityMode";
@@ -42,7 +43,7 @@ function HeaderBrand(props: WorkspaceHeaderProps) {
         <OutlineIcon aria-hidden="true" size={18} strokeWidth={1.8} />
       </button>
       <h1 className="wordmark">
-        <span className="wordmark__mark" aria-hidden="true">D</span>
+        <img className="wordmark__mark" src={draftIconUrl} alt="" aria-hidden="true" />
         <span className="wordmark__name">DRAFT</span>
       </h1>
     </div>

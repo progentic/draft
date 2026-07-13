@@ -171,17 +171,10 @@ button:focus-visible,
 }
 
 .wordmark__mark {
-  display: grid;
   width: 25px;
   height: 25px;
-  place-items: center;
-  color: #ffffff;
-  background: var(--accent);
-  border: 1px solid #4da69b;
   border-radius: 4px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.9375rem;
-  font-weight: 700;
+  object-fit: contain;
 }
 
 .wordmark__name {

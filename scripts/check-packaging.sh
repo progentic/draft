@@ -22,6 +22,7 @@ main() {
 require_packaging_sources() {
   local source_path
   local required_sources=(
+    assets/DRAFT_Logo.png
     package.json
     scripts/package-macos.sh
     src-tauri/tauri.conf.json
@@ -39,6 +40,7 @@ require_packaging_sources() {
 
 check_structured_configuration() {
   node --input-type=module -e '
+    import crypto from "node:crypto";
     import fs from "node:fs";
     const config = JSON.parse(fs.readFileSync("src-tauri/tauri.conf.json", "utf8"));
     const manifest = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -49,6 +51,13 @@ check_structured_configuration() {
       "icons/icon.icns",
       "icons/icon.ico"
     ];
+    const expectedHashes = new Map([
+      ["assets/DRAFT_Logo.png", "ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043"],
+      ["src-tauri/icons/32x32.png", "111d44f795b2945b61627faf3c2508b8280b9ecd4508abfcb13b3befef4fe98d"],
+      ["src-tauri/icons/128x128.png", "1d245717e19b250131fed1c51e2684810892216f3864b7639a12f05a250fbf84"],
+      ["src-tauri/icons/128x128@2x.png", "fcb5d936aef3c07be472812d189dd46a586d6d26cdd918ba6986bdcd22edf4eb"],
+      ["src-tauri/icons/icon.ico", "d70beb61bf0b4a2a5fa1d031201449f6cc9381f6192eeec966ef4277c7a65db3"]
+    ]);
     if (config.bundle?.active !== true) throw new Error("bundle.active must be true");
     if (JSON.stringify(config.bundle.targets) !== JSON.stringify(["app"])) {
       throw new Error("bundle.targets must contain only app");
@@ -58,6 +67,13 @@ check_structured_configuration() {
     }
     if (manifest.scripts?.["package:macos"] !== "bash scripts/package-macos.sh") {
       throw new Error("package:macos must invoke the owned package script");
+    }
+    for (const [path, expected] of expectedHashes) {
+      const actual = crypto.createHash("sha256").update(fs.readFileSync(path)).digest("hex");
+      if (actual !== expected) throw new Error("icon asset hash drifted: " + path);
+    }
+    if (fs.readFileSync("src-tauri/icons/icon.icns").subarray(0, 4).toString() !== "icns") {
+      throw new Error("macOS icon container is invalid");
     }
   '
 }

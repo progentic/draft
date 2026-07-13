@@ -2,19 +2,24 @@
 
 ## Create And Save Documents
 
-Use the document action bar to choose **New**, **Open**, **Save**, **Export
-DOCX**, or **Close**. DRAFT shows the current document name and a visible state
+Use either the File menu or document action bar to choose **New Document**,
+**Open…**, **Close**, **Save**, **Save As…**, or **Export DOCX…**. Both surfaces
+run the same actions. DRAFT shows the current document name and a visible state
 such as Not saved, Unsaved changes, Saving, or Saved.
 
 New, Open, and Close protect edited text. When changes have not been saved,
 DRAFT asks whether to save and continue, discard the changes, or keep editing.
 There is no autosave or crash recovery, so save important work explicitly.
 
-**New** opens a blank page with the cursor ready. **Open** loads a DRAFT
+**New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
 document or imports a UTF-8 `.txt` or `.md` file as editable text. An import is
 shown as imported and unsaved; its filename is for orientation only. The first
 Save asks for a new `.draft` destination and never overwrites the imported
 source. Markdown punctuation remains literal text rather than a preview.
+
+Use **Save As…** to choose a new `.draft` file while preserving the previous
+file. After it succeeds, later Save operations use the new file. Cancelling or
+failing Save As leaves the current filename and file unchanged.
 
 ## Write And Format
 
@@ -77,7 +82,7 @@ intent.
 
 ## Export DOCX
 
-Choose **Export DOCX**, select a destination in the system dialog, and wait for
+Choose **Export DOCX…**, select a destination in the system dialog, and wait for
 the completion message. Export does not change the DRAFT source document.
 
 DOCX export supports the documented basic writing subset, including the eleven
@@ -98,6 +103,11 @@ The setting resets to online when DRAFT restarts. It does not indicate whether
 the operating system has a connection and does not retry or queue requests.
 
 ## Keyboard And Status
+
+The File menu uses Command-N for New Document, Command-O for Open, Command-W
+for Close, Command-S for Save, Shift-Command-S for Save As, and Shift-Command-E
+for Export DOCX. Unavailable actions are disabled while another document or
+export operation is pending.
 
 Press Tab to reach the document actions and formatting toolbar. In the
 formatting toolbar, use Left Arrow and Right Arrow to move, Home for the first

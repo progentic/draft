@@ -4,56 +4,55 @@ import {
   FilePlus2,
   FolderOpen,
   Save,
+  SaveAll,
   ScanText,
   X,
 } from "lucide-react";
 
-import type { DocumentSession } from "../features/document-session/useDocumentSession";
+import type { WorkspaceActions } from "../features/workspace-actions/useWorkspaceActions";
 
 interface WorkspaceCommandBarProps {
   activePanel: "references" | "text-review" | null;
-  documentSession: DocumentSession;
-  exportDisabled: boolean;
+  actions: WorkspaceActions;
   feedback: string;
   exportLabel: string;
-  onExport: () => void;
-  onTogglePanel: (panel: "references" | "text-review") => void;
 }
 
 export function WorkspaceCommandBar(props: WorkspaceCommandBarProps) {
-  const session = props.documentSession;
-  const busy = session.operation !== "ready" || props.exportDisabled;
+  const actions = props.actions;
 
   return (
     <nav className="workspace-command-bar" aria-label="Document actions">
-      <CommandButton icon={FilePlus2} label="New" disabled={busy} onClick={session.requestNew} />
-      <CommandButton icon={FolderOpen} label="Open" disabled={busy} onClick={session.requestOpen} />
-      <CommandButton icon={Save} label="Save" disabled={busy || !session.canSave} onClick={() => void session.save()} />
+      <CommandButton icon={FilePlus2} label="New Document" disabled={!actions.enabled.new_document} onClick={() => actions.dispatch("new_document")} />
+      <CommandButton icon={FolderOpen} label="Open…" disabled={!actions.enabled.open_document} onClick={() => actions.dispatch("open_document")} />
+      <CommandButton icon={X} label="Close" disabled={!actions.enabled.close_document} onClick={() => actions.dispatch("close_document")} />
       <span className="workspace-command-bar__separator" aria-hidden="true" />
-      <CommandButton
-        icon={BookOpen}
-        label="References"
-        disabled={busy}
-        controls="reference-library-panel"
-        expanded={props.activePanel === "references"}
-        onClick={() => props.onTogglePanel("references")}
-      />
-      <CommandButton
-        icon={ScanText}
-        label="Text checks"
-        disabled={busy}
-        controls="text-analysis-panel"
-        expanded={props.activePanel === "text-review"}
-        onClick={() => props.onTogglePanel("text-review")}
-      />
+      <CommandButton icon={Save} label="Save" disabled={!actions.enabled.save_document} onClick={() => actions.dispatch("save_document")} />
+      <CommandButton icon={SaveAll} label="Save As…" disabled={!actions.enabled.save_document_as} onClick={() => actions.dispatch("save_document_as")} />
       <span className="workspace-command-bar__separator" aria-hidden="true" />
       <CommandButton
         icon={Download}
         label={props.exportLabel}
-        disabled={props.exportDisabled || !session.canExport}
-        onClick={props.onExport}
+        disabled={!actions.enabled.export_docx}
+        onClick={() => actions.dispatch("export_docx")}
       />
-      <CommandButton icon={X} label="Close" disabled={busy || !session.canClose} onClick={session.requestClose} />
+      <span className="workspace-command-bar__separator" aria-hidden="true" />
+      <CommandButton
+        icon={BookOpen}
+        label="References"
+        disabled={!actions.enabled.open_references}
+        controls="reference-library-panel"
+        expanded={props.activePanel === "references"}
+        onClick={() => actions.dispatch("open_references")}
+      />
+      <CommandButton
+        icon={ScanText}
+        label="Text checks"
+        disabled={!actions.enabled.run_text_checks}
+        controls="text-analysis-panel"
+        expanded={props.activePanel === "text-review"}
+        onClick={() => actions.dispatch("run_text_checks")}
+      />
       <span className="workspace-command-bar__feedback" role="status" aria-live="polite" aria-atomic="true">
         {props.feedback}
       </span>

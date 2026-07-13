@@ -138,3 +138,9 @@ output; remove them before export when that message appears. Export failure
 does not change the DRAFT source document.
 
 Return to [Home](Home).
+## Native Menu Is Unavailable
+
+If DRAFT reports that it could not read or update the native menu, use the
+matching action in the visible document toolbar. Finish or cancel any pending
+save, open, close, or export operation before trying again. Restart DRAFT if
+the menu remains out of sync with the toolbar.

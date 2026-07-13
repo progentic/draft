@@ -72,6 +72,7 @@ enum SavePlan {
     Existing(PathBuf),
     Attach(PathBuf),
     Register(PathBuf),
+    ReplaceSource(PathBuf),
     Cancelled,
 }
 
@@ -143,7 +144,30 @@ pub(crate) fn save_document<SelectPath>(
 where
     SelectPath: FnOnce() -> Result<Option<PathBuf>, SaveDocumentError>,
 {
-    save_document_with_writer(registry, snapshot, select_path, write_document_atomically)
+    save_document_with_writer(
+        registry,
+        snapshot,
+        select_path,
+        false,
+        write_document_atomically,
+    )
+}
+
+pub(crate) fn save_document_as<SelectPath>(
+    registry: &DocumentRegistry,
+    snapshot: Value,
+    select_path: SelectPath,
+) -> Result<SaveDocumentOutcome, SaveDocumentError>
+where
+    SelectPath: FnOnce() -> Result<Option<PathBuf>, SaveDocumentError>,
+{
+    save_document_with_writer(
+        registry,
+        snapshot,
+        select_path,
+        true,
+        write_document_atomically,
+    )
 }
 
 pub(crate) fn save_requires_target(
@@ -162,6 +186,7 @@ fn save_document_with_writer<SelectPath, WriteDocument>(
     registry: &DocumentRegistry,
     snapshot: Value,
     select_path: SelectPath,
+    force_new_target: bool,
     write_document: WriteDocument,
 ) -> Result<SaveDocumentOutcome, SaveDocumentError>
 where
@@ -171,7 +196,12 @@ where
     let envelope = validate_snapshot(snapshot)?;
     let contents = serialize_envelope(&envelope)?;
     let _file_operation = lock_file_operation(registry).map_err(map_save_registry_error)?;
-    let plan = plan_save(registry, envelope.document_id(), select_path)?;
+    let plan = plan_save(
+        registry,
+        envelope.document_id(),
+        select_path,
+        force_new_target,
+    )?;
     apply_save_plan(registry, envelope, contents, plan, write_document)
 }
 
@@ -224,15 +254,24 @@ fn plan_save<SelectPath>(
     registry: &DocumentRegistry,
     document_id: DocumentId,
     select_path: SelectPath,
+    force_new_target: bool,
 ) -> Result<SavePlan, SaveDocumentError>
 where
     SelectPath: FnOnce() -> Result<Option<PathBuf>, SaveDocumentError>,
 {
-    let plan = match registry.source_path(document_id) {
-        Ok(Some(path)) => SavePlan::Existing(path),
-        Ok(None) => selected_save_plan(select_path, SavePlan::Attach)?,
-        Err(DocumentRegistryError::NotOpen) => selected_save_plan(select_path, SavePlan::Register)?,
-        Err(cause) => return Err(SaveDocumentError::Registry { cause }),
+    let plan = match (force_new_target, registry.source_path(document_id)) {
+        (true, Ok(Some(_))) => selected_save_plan(select_path, SavePlan::ReplaceSource)?,
+        (true, Ok(None)) => selected_save_plan(select_path, SavePlan::Attach)?,
+        (true, Err(DocumentRegistryError::NotOpen)) => {
+            selected_save_plan(select_path, SavePlan::Register)?
+        }
+        (true, Err(cause)) => return Err(SaveDocumentError::Registry { cause }),
+        (false, Ok(Some(path))) => SavePlan::Existing(path),
+        (false, Ok(None)) => selected_save_plan(select_path, SavePlan::Attach)?,
+        (false, Err(DocumentRegistryError::NotOpen)) => {
+            selected_save_plan(select_path, SavePlan::Register)?
+        }
+        (false, Err(cause)) => return Err(SaveDocumentError::Registry { cause }),
     };
     validate_target_ownership(registry, document_id, &plan)?;
     Ok(plan)
@@ -299,7 +338,10 @@ fn save_display_name(target_path: &Path) -> Result<String, SaveDocumentError> {
 }
 
 fn save_plan_selects_target(plan: &SavePlan) -> bool {
-    matches!(plan, SavePlan::Attach(_) | SavePlan::Register(_))
+    matches!(
+        plan,
+        SavePlan::Attach(_) | SavePlan::Register(_) | SavePlan::ReplaceSource(_)
+    )
 }
 
 fn handle_write_failure(
@@ -330,7 +372,10 @@ fn validate_target_ownership(
 
 fn save_target_path(plan: &SavePlan) -> Option<&Path> {
     match plan {
-        SavePlan::Existing(path) | SavePlan::Attach(path) | SavePlan::Register(path) => Some(path),
+        SavePlan::Existing(path)
+        | SavePlan::Attach(path)
+        | SavePlan::Register(path)
+        | SavePlan::ReplaceSource(path) => Some(path),
         SavePlan::Cancelled => None,
     }
 }
@@ -344,6 +389,7 @@ fn commit_registry_update(
         SavePlan::Existing(_) => registry.update(envelope),
         SavePlan::Attach(path) => registry.update_source(envelope, path),
         SavePlan::Register(path) => registry.open_from_path(envelope, path),
+        SavePlan::ReplaceSource(path) => registry.update_source(envelope, path),
         SavePlan::Cancelled => return Ok(()),
     };
     result.map_err(|cause| SaveDocumentError::Registry { cause })
@@ -916,6 +962,71 @@ mod tests {
     }
 
     #[test]
+    fn save_as_preserves_old_source_and_rebinds_future_saves() {
+        let source = TestDocumentPath::new("save-as-source");
+        let target = TestDocumentPath::new("save-as-target");
+        let original = serialized_envelope("Original");
+        source.write(&original);
+        let registry = DocumentRegistry::new();
+        open_document(&registry, Some(source.path().to_owned())).unwrap();
+        let snapshot = envelope_value("Saved as copy");
+
+        let outcome = save_document_as(&registry, snapshot.clone(), || {
+            Ok(Some(target.path().to_owned()))
+        })
+        .unwrap();
+
+        assert_eq!(
+            outcome,
+            SaveDocumentOutcome::Saved {
+                document_id: document_id(&snapshot),
+                display_name: target
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_owned(),
+                was_save_as: true,
+            }
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), original);
+        assert_eq!(read_json(target.path()), snapshot);
+        assert_eq!(
+            registry.source_path(document_id(&snapshot)),
+            Ok(Some(target.path().to_owned()))
+        );
+
+        let later = envelope_value("Later save");
+        save_document(&registry, later.clone(), || {
+            panic!("save after Save As must reuse the replacement target")
+        })
+        .unwrap();
+        assert_eq!(read_json(target.path()), later);
+        assert_eq!(fs::read(source.path()).unwrap(), original);
+    }
+
+    #[test]
+    fn cancelled_save_as_preserves_current_source_authority() {
+        let source = TestDocumentPath::new("cancelled-save-as");
+        let original = serialized_envelope("Original");
+        source.write(&original);
+        let registry = DocumentRegistry::new();
+        open_document(&registry, Some(source.path().to_owned())).unwrap();
+        let snapshot = envelope_value("Not saved");
+
+        assert_eq!(
+            save_document_as(&registry, snapshot.clone(), || Ok(None)),
+            Ok(SaveDocumentOutcome::Cancelled)
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), original);
+        assert_eq!(
+            registry.source_path(document_id(&snapshot)),
+            Ok(Some(source.path().to_owned()))
+        );
+    }
+
+    #[test]
     fn durability_failure_advances_registry_to_complete_source() {
         let target = TestDocumentPath::new("durability-state");
         target.write(&serialized_envelope("Original"));
@@ -927,6 +1038,7 @@ mod tests {
             &registry,
             updated.clone(),
             no_path_selection,
+            false,
             write_then_report_uncertain,
         );
 
@@ -969,6 +1081,7 @@ mod tests {
                     &first_registry,
                     first,
                     no_path_selection,
+                    false,
                     |path, contents| {
                         write_document_atomically(path, contents)?;
                         first_entered_tx.send(()).unwrap();
@@ -985,6 +1098,7 @@ mod tests {
                     &second_registry,
                     second,
                     no_path_selection,
+                    false,
                     |path, contents| {
                         second_entered_tx.send(()).unwrap();
                         write_document_atomically(path, contents)

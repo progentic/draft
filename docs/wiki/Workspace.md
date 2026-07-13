@@ -2,21 +2,27 @@
 
 ## Create And Save A Document
 
-The document action bar contains **New**, **Open**, **Save**, **References**,
-**Text checks**, **Export DOCX**, and **Close**. The header shows the document
-name and whether it is not saved, has unsaved changes, is saving, or is saved.
+The File menu and document action bar contain the same **New Document**,
+**Open…**, **Close**, **Save**, **Save As…**, and **Export DOCX…** actions. The
+action bar also contains **References** and **Text checks**. The header shows the
+document name and whether it is not saved, has unsaved changes, is saving, or
+is saved.
 
 When edited text would be replaced or closed, choose **Save and continue**,
 **Discard changes**, or **Keep editing**. DRAFT does not autosave and cannot
 recover unsaved work after a crash, so save important changes explicitly.
 
-**New** opens a blank page with the cursor ready. **Open** loads a DRAFT
+**New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
 document or imports a UTF-8 `.txt` or `.md` file as editable text. Imported
 content shows its source filename and `Imported, unsaved`; the filename does
 not become a save location. The first Save asks for a new `.draft` destination,
 and the original text or Markdown file remains unchanged. After Save succeeds,
 the header shows the selected `.draft` filename. Later saves reuse that target
 without reopening the dialog. Markdown syntax is kept as literal text.
+
+**Save As…** chooses a new `.draft` target while preserving the previous file.
+After it succeeds, later Save operations use the new target. Cancellation or a
+failed write leaves the current filename and file unchanged.
 
 ## Write And Format
 
@@ -76,7 +82,7 @@ transmission. If the document changes during a run, check it again.
 
 ## Export DOCX
 
-Choose **Export DOCX** and select a destination. Wait for the completion
+Choose **Export DOCX…** and select a destination. Wait for the completion
 message. Export does not change the DRAFT source.
 
 The supported subset includes the eleven named font families and whole point
@@ -92,6 +98,18 @@ Local editing, review, references, saving, and export remain available.
 
 The setting resets to online when DRAFT restarts and is not an operating-system
 network indicator.
+
+## File Menu Shortcuts
+
+- Command-N: New Document
+- Command-O: Open
+- Command-W: Close
+- Command-S: Save
+- Shift-Command-S: Save As
+- Shift-Command-E: Export DOCX
+
+Actions that cannot run in the current document state are disabled. While a
+document or export operation is pending, competing actions remain unavailable.
 
 See [Troubleshooting](Troubleshooting) for message-specific recovery and
 [Current limitations](Current-Limitations) for the complete current boundary.

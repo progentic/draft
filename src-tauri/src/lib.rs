@@ -2,6 +2,7 @@ pub mod analysis;
 mod application;
 pub mod citations;
 mod commands;
+mod desktop_menu;
 mod diagnostics;
 pub mod documents;
 pub mod events;
@@ -24,7 +25,9 @@ mod critical_paths_tests;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .on_menu_event(desktop_menu::handle_event)
         .setup(|app| {
+            desktop_menu::install(app)?;
             application::secret_store::initialize_secret_store(app);
             application::network_client::initialize_network_client(app)?;
             application::reference_store::initialize_reference_store(app)?;
@@ -48,6 +51,7 @@ pub fn run() {
             commands::reference_library::add_reference,
             commands::reference_library::list_references,
             commands::runtime_status::get_runtime_status,
+            commands::native_menu::set_native_menu_state,
             commands::text_analysis::run_text_analysis,
             commands::worker_cancellation::cancel_worker
         ])

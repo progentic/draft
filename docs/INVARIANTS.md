@@ -439,10 +439,13 @@ deterministic-failure, and source-preservation tests.
 Accepted ADR-003 extends `INV-09` to external-format work. Source identity and
 all writes remain in Rust, no-edit external files remain byte-for-byte
 unchanged, and same-format save is denied when current content cannot be
-represented safely. Until Phases 47 and 48 implement these contracts, the
-accepted decision guard rejects external-document ownership,
-round-trip/lossiness state, format parser/save-back commands, and native-menu
-dispatch in production source.
+represented safely. The accepted decision guard continues to reject
+external-document ownership, round-trip/lossiness state, and format
+parser/save-back commands before Phase 47. Phase 48 replaces the native-menu
+absence check with structural enforcement for the Rust menu, typed event and
+state boundaries, shared frontend dispatcher, path-free DTO, exact File action
+set, and visible command parity. Packaged interaction evidence remains required
+before `RC-08` or `GATE-48` can close.
 
 ---
 

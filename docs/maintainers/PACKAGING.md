@@ -9,7 +9,7 @@ create a DMG, configure updates, or publish a release.
 
 ## Source And Generated Assets
 
-One approved square PNG is the source for icon generation. Do not derive one
+One approved square PNG at `assets/DRAFT_Logo.png` is the source for icon generation. Do not derive one
 platform from another generated platform asset. Regenerate the complete set
 with the pinned Tauri CLI:
 
@@ -21,7 +21,7 @@ with the pinned Tauri CLI:
 | SHA-256 | `ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043` |
 
 ```bash
-npm run tauri -- icon path/to/DRAFT_Logo.png
+npm run tauri -- icon assets/DRAFT_Logo.png
 ```
 
 Tauri 2.11.4 preserves the square source geometry and currently generates 52
@@ -35,6 +35,12 @@ files under `src-tauri/icons/`:
 The complete standard output is tracked so a clean checkout has the same asset
 set used in review. Generated iOS and Android assets do not add a supported
 mobile target or enter the desktop bundle list.
+
+`scripts/check-packaging.sh` pins the canonical source hash and the stable
+desktop PNG/ICO derivatives. The `.icns` container is structurally checked and
+the supported-host package command requires its embedded copy to match the
+tracked container byte-for-byte. The visible workspace mark uses the generated
+`32x32.png`, so in-window and packaged identity derive from the same source.
 
 ## Desktop Bundle Contract
 

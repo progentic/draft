@@ -15,6 +15,7 @@ storage, helper execution, and export.
 | Shell | `DraftWorkspace` | Owns outline visibility, one active workflow panel, and workspace composition. |
 | Header | `WorkspaceHeader` | Exposes the application heading, current document title and lifecycle status. |
 | Document actions | `WorkspaceCommandBar` | Exposes labeled lifecycle, reference, review, export, and close commands. |
+| Shared actions | `useWorkspaceActions` | Routes toolbar and validated native-menu actions through one availability policy. |
 | Document session | `useDocumentSession`, `UnsavedChangesDialog` | Coordinates explicit snapshots, Rust-owned commands, dirty state, and recovery choices. |
 | Outline | `DocumentOutline` | Derives headings from the current Tiptap state and moves the selection. |
 | Editor | `DraftEditor`, `useDraftEditor` | Owns the transient Tiptap instance and initial document. |
@@ -84,6 +85,24 @@ The document session stores one explicit origin: `new`, `imported_text`, or
 shows the source filename with `Imported, unsaved`. The filename is display
 metadata only. No path enters React, and only successful Save changes either
 origin to native persisted DRAFT state.
+
+## Native File Actions
+
+The native File menu and visible command bar use the same action identifiers
+and `useWorkspaceActions` dispatcher. Their labels are New Document, Open…,
+Close, Save, Save As…, and Export DOCX…. The File menu uses Command-N,
+Command-O, Command-W, Command-S, Shift-Command-S, and Shift-Command-E.
+
+The dispatcher derives availability from the current document operation and
+DOCX export state. It checks availability again when a native event arrives, so
+an event emitted before a state update cannot begin a stale operation. While a
+save, open, close, create, or export operation is pending, competing document
+and workflow-panel actions remain unavailable.
+
+Rust owns native menu objects and receives a bounded six-boolean state request.
+No path, content, or document identity enters the menu state. Invalid events or
+state-update failures leave the visible toolbar available with bounded recovery
+copy. See `NATIVE_DESKTOP_WORKFLOW.md` for the complete contract.
 
 ## Connectivity Control
 

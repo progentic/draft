@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { DocumentInspector } from "../components/DocumentInspector";
 import { DocumentOutline } from "../components/DocumentOutline";
@@ -16,6 +16,7 @@ import { ReferenceLibraryPanel } from "../features/references/ReferenceLibraryPa
 import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
 import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 import { TextAnalysisPanel } from "../features/text-analysis/TextAnalysisPanel";
+import { useWorkspaceActions } from "../features/workspace-actions/useWorkspaceActions";
 
 type WorkspacePanel = "formatting" | "references" | "text-review" | null;
 
@@ -28,9 +29,10 @@ export function DraftWorkspace() {
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>(null);
 
-  const togglePanel = (panel: Exclude<WorkspacePanel, null>) => {
+  const togglePanel = useCallback((panel: Exclude<WorkspacePanel, null>) => {
     setActivePanel((active) => (active === panel ? null : panel));
-  };
+  }, []);
+  const workspaceActions = useWorkspaceActions(documentSession, docxExport, togglePanel);
 
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
@@ -44,13 +46,10 @@ export function DraftWorkspace() {
         onToggleOutline={() => setIsOutlineOpen((isOpen) => !isOpen)}
       />
       <WorkspaceCommandBar
+        actions={workspaceActions}
         activePanel={activePanel === "references" || activePanel === "text-review" ? activePanel : null}
-        documentSession={documentSession}
-        exportDisabled={docxExport.disabled}
         exportLabel={docxExport.label}
-        feedback={docxExport.feedback || documentSession.feedback}
-        onExport={docxExport.run}
-        onTogglePanel={togglePanel}
+        feedback={workspaceActions.feedback || docxExport.feedback || documentSession.feedback}
       />
       <WorkspaceBody
         activePanel={activePanel}

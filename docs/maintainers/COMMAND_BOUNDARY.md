@@ -71,8 +71,10 @@ The complete lifecycle is documented in
 
 Phase 13 adds `open_document` and `save_document`. `open_document` accepts an
 empty request because Rust owns native file selection. `save_document` accepts
-one untrusted `snapshot` value; Rust validates the envelope before registry or
-filesystem work.
+one untrusted `snapshot` value and a closed `save` or `save_as` mode; Rust
+validates the envelope before registry or filesystem work. Normal Save selects
+a target only when none is registered. Save As always selects a replacement
+target and preserves the prior file.
 
 Both commands return typed opened/saved/cancelled responses and bounded nested
 errors. Phase 14 adds typed atomic-write stages and a distinct
@@ -80,6 +82,19 @@ errors. Phase 14 adds typed atomic-write stages and a distinct
 fails. The commands expose no path field to the frontend. The full lifecycle
 and atomic-write behavior are documented in
 `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
+
+## Native menu state command
+
+Phase 48 adds `set_native_menu_state`. It accepts exactly six booleans for New,
+Open, Close, Save, Save As, and DOCX export availability. The request contains
+no path, content, document ID, or arbitrary action name. Rust applies the state
+to the menu items it created and returns `{ "applied": true }` or the closed
+`menu_update_failed` error.
+
+Native selection travels in the other direction as a bounded
+`draft://native-menu-action` event. The event is not trusted until the typed
+frontend wrapper validates its one action field. Both menu and toolbar actions
+then use `useWorkspaceActions`; the state command performs no document work.
 
 ## Citation resolution command
 
@@ -180,6 +195,7 @@ titles contain a filename only and never become save authority.
 | Mid | `cancel_worker` | Validates the worker ID and maps cancellation outcomes to command DTOs. |
 | Mid | `open_document` | Selects a file in Rust and delegates validated loading. |
 | Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
+| Mid | `set_native_menu_state` | Applies path-free transient availability to Rust-owned native items. |
 | Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
 | Mid | `open_external_access` | Validates a research destination and delegates one system-browser launch. |
 | Mid | `run_formatting_review` | Validates one bounded snapshot and maps pure findings to closed actions. |

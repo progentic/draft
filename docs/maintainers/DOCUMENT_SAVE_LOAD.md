@@ -174,6 +174,14 @@ Open success is also explicit: `opened_draft` means Rust retained a native
 save target; `imported_text` means the returned envelope has no target and must
 use Save As; `cancelled` means no session state changed.
 
+Save requests include a closed mode: `save` or `save_as`. Normal Save reuses an
+existing Rust-owned target and selects a target only for a new or imported
+document. Save As always opens the Rust-owned save panel. A successful Save As
+writes the selected `.draft` file atomically, preserves the old file, rebinds
+the registry to the new target, and returns only the document ID, basename
+display name, and `wasSaveAs: true`. Cancellation or failure leaves the current
+target, display name, and dirty state unchanged.
+
 ## Frontend Boundary
 
 `src/ipc/documentCreate.ts`, `documentOpen.ts`, `documentSave.ts`, and
@@ -190,7 +198,7 @@ The save wrapper accepts a snapshot, not a path.
 | Layer | Function or type | Responsibility |
 | :--- | :--- | :--- |
 | High | create/open/save/close commands | Coordinate one typed IPC request. |
-| Mid | persistence `open_document` / `save_document` | Enforce validation, registry, and lifecycle policy. |
+| Mid | persistence `open_document` / `save_document` / `save_document_as` | Enforce validation, registry, and lifecycle policy. |
 | Mid | `DocumentRegistry` | Own one handle, source path, and current snapshot. |
 | Low | dialog helpers / JSON / atomic writer | Perform native API, parsing, and filesystem mechanics. |
 
