@@ -63,9 +63,13 @@ failure surfaces to bounded copy and closed recovery dispositions.
 
 Rust also owns a strict DOCX compiler and atomic export service. It uses
 `quick-xml` 0.41.0 for escaped event-based XML and `zip` 8.6.0 with default
-features disabled for deterministic stored package entries. Compilation is
-bounded and completes before the shared atomic writer touches a `.docx` target.
-Phase 46 exposes that service through one Rust-selected DOCX target flow.
+features disabled for deterministic stored package entries. The bounded DOCX
+reader enables only the `deflate` feature needed for common DOCX packages and
+enforces package, entry, compression, XML, relationship, and structure limits
+before producing canonical document data. Compilation is bounded and completes
+before the shared atomic writer touches a `.docx` target. Phase 46 exposes the
+export service; Phase 47 adds the read-only DOCX import boundary without adding
+same-format save.
 
 One `cfg(test)` critical-path module composes the existing document lifecycle,
 reference store, citation resolution, and DOCX exporter. It widens no
@@ -123,9 +127,9 @@ parser-verification, deterministic-failure, and source-preservation policies.
 - `serde_json` preserves structured Tiptap JSON inside the validated envelope.
 - `quick-xml` 0.41.0 writes escaped Office Open XML events without manual
   interpolation or XML serialization features.
-- `zip` 8.6.0 with default features disabled creates deterministic stored DOCX
-  entries without compression, encryption, or time features. DRAFT's package
-  policy separately emits no active content.
+- `zip` 8.6.0 with default features disabled and only `deflate` enabled creates
+  deterministic stored DOCX exports and reads bounded compressed DOCX imports.
+  DRAFT emits no compressed, encrypted, timed, or active-content export entry.
 - `tauri-plugin-dialog` keeps native open/save path selection inside Rust.
 - `tempfile` provides owned same-directory temporary files and platform-specific
   atomic replacement. DRAFT synchronizes content before replacement and the

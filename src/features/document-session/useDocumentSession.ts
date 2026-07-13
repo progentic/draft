@@ -12,13 +12,14 @@ import type { SaveDocumentMode } from "../../ipc/documentSave";
 export type PendingDocumentAction = "close" | "new" | "open";
 export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "saving";
 
-type DocumentOrigin = "imported_text" | "new" | "opened_draft";
+type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft";
 
 interface DocumentIdentity {
   displayName: string;
   documentId: string;
   origin: DocumentOrigin;
   persisted: boolean;
+  registered: boolean;
   title: string;
 }
 
@@ -93,6 +94,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       documentId: result.documentId,
       origin: "opened_draft" as const,
       persisted: true,
+      registered: true,
       title: current.title,
     };
     identityRef.current = savedIdentity;
@@ -237,9 +239,10 @@ async function openIntoSession(
     return;
   }
   const persisted = result.status === "opened_draft";
+  const registered = result.status !== "imported_text";
   if (
-    current?.persisted &&
-    !(await releaseReplacedDocument(current, result.envelope, persisted))
+    current?.registered &&
+    !(await releaseReplacedDocument(current, result.envelope, registered))
   ) {
     setOperation("ready");
     setFeedback("DRAFT could not replace the open document. Your current document remains open.");
@@ -247,28 +250,47 @@ async function openIntoSession(
   }
   loadEnvelope(editor, result.envelope);
   setIdentity({
-    displayName: result.envelope.title,
+    displayName:
+      result.status === "imported_external"
+        ? result.external.displayName
+        : result.envelope.title,
     documentId: result.envelope.document_id,
     origin: result.status,
     persisted,
+    registered,
     title: result.envelope.title,
   });
   setDirty(!persisted);
   setOperation("ready");
-  setFeedback(
-    persisted
-      ? "DRAFT document opened."
-      : "Text imported. Save as a DRAFT document to keep your work.",
-  );
+  setFeedback(openSuccessMessage(result));
 }
 
 function isSuccessfulOpen(
   result: Awaited<ReturnType<typeof openDocument>>,
 ): result is Extract<
   Awaited<ReturnType<typeof openDocument>>,
-  { status: "imported_text" | "opened_draft" }
+  { status: "imported_external" | "imported_text" | "opened_draft" }
 > {
-  return result.status === "opened_draft" || result.status === "imported_text";
+  return (
+    result.status === "opened_draft" ||
+    result.status === "imported_text" ||
+    result.status === "imported_external"
+  );
+}
+
+function openSuccessMessage(result: Extract<
+  Awaited<ReturnType<typeof openDocument>>,
+  { status: "imported_external" | "imported_text" | "opened_draft" }
+>) {
+  if (result.status === "opened_draft") {
+    return "DRAFT document opened.";
+  }
+  if (result.status === "imported_text") {
+    return "Text imported. Save as a DRAFT document to keep your work.";
+  }
+  return result.external.fidelity.classification === "unsupported_preservable"
+    ? "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged."
+    : "DOCX imported. Save as a DRAFT document to keep edits; the original stays unchanged.";
 }
 
 async function initializeDocumentSession(
@@ -307,7 +329,7 @@ async function createIntoSession(
     setFeedback("DRAFT could not create a document. Try again.");
     return;
   }
-  if (current?.persisted && !(await releaseCurrentDocument(current))) {
+  if (current?.registered && !(await releaseCurrentDocument(current))) {
     setOperation("ready");
     setFeedback("DRAFT could not replace the open document. Your current document remains open.");
     return;
@@ -325,13 +347,13 @@ async function releaseCurrentDocument(current: DocumentIdentity) {
 async function releaseReplacedDocument(
   current: DocumentIdentity,
   replacement: DocumentEnvelopeSnapshot,
-  replacementPersisted: boolean,
+  replacementRegistered: boolean,
 ) {
   const closed = await closeDocument(current.documentId);
   if (closed.status === "closed") {
     return true;
   }
-  if (replacementPersisted) {
+  if (replacementRegistered) {
     await closeDocument(replacement.document_id);
   }
   return false;
@@ -342,7 +364,7 @@ async function closeCurrent(
   setOperation: (operation: DocumentOperation) => void,
   setFeedback: (feedback: string) => void,
 ) {
-  if (!identity?.persisted) {
+  if (!identity?.registered) {
     return true;
   }
   setOperation("closing");
@@ -368,6 +390,7 @@ function loadCreatedDocument(
     documentId: envelope.document_id,
     origin: "new",
     persisted: false,
+    registered: false,
     title: envelope.title,
   });
   setDirty(false);
@@ -445,7 +468,10 @@ function documentStatus(
   if (!identity) {
     return "No document open";
   }
-  if (identity.origin === "imported_text" && !identity.persisted) {
+  if (
+    (identity.origin === "imported_text" || identity.origin === "imported_external") &&
+    !identity.persisted
+  ) {
     return "Imported, unsaved";
   }
   if (dirty) {
@@ -459,19 +485,19 @@ function openFailureMessage(result: Awaited<ReturnType<typeof openDocument>>) {
     return "Open cancelled.";
   }
   if (result.status === "error" && result.error.type === "command") {
-    return openCommandFailureMessage(result.error.error.code);
+    return openCommandFailureMessage(result.error.error);
   }
   return "DRAFT could not open the document. Try again.";
 }
 
 function openCommandFailureMessage(
-  code: import("../../ipc/documentErrors").OpenDocumentCommandError["code"],
+  error: import("../../ipc/documentErrors").OpenDocumentCommandError,
 ) {
-  switch (code) {
+  switch (error.code) {
     case "file_not_found":
       return "That file is no longer available. Choose another document.";
     case "unsupported_file_type":
-      return "Choose a DRAFT, plain-text, or Markdown file.";
+      return "Choose a DRAFT, DOCX, plain-text, or Markdown file.";
     case "invalid_text_encoding":
       return "Text and Markdown files must use UTF-8 encoding.";
     case "text_too_large":
@@ -485,6 +511,40 @@ function openCommandFailureMessage(
       return "That DRAFT document is already open or unavailable.";
     case "unsupported_file_location":
       return "DRAFT could not use that file location. Choose another file.";
+    case "external_import":
+      return externalImportFailureMessage(error.cause);
+  }
+}
+
+function externalImportFailureMessage(
+  error: import("../../ipc/documentErrors").ExternalDocumentImportError,
+) {
+  switch (error.code) {
+    case "file_not_found":
+      return "That DOCX file is no longer available. Choose another document.";
+    case "read_failed":
+      return "DRAFT could not read that DOCX file. Check access and try again.";
+    case "package_too_large":
+      return "That DOCX file is too large to import. Choose a file no larger than 16 MiB.";
+    case "invalid_canonical_document":
+      return "DRAFT could not convert that DOCX file safely. The original was not changed.";
+    case "docx":
+      return docxImportFailureMessage(error.cause.code);
+  }
+}
+
+function docxImportFailureMessage(
+  code: import("../../ipc/documentErrors").DocxImportError["code"],
+) {
+  switch (code) {
+    case "malformed_package":
+      return "That DOCX file is malformed. The original was not changed.";
+    case "unsafe_package":
+      return "That DOCX file exceeds DRAFT’s safety limits. The original was not changed.";
+    case "unsupported_external_feature":
+      return "That DOCX file contains structure DRAFT cannot import safely. The original was not changed.";
+    case "lossy_import_denied":
+      return "Importing that DOCX file would change unsupported formatting. The original was not changed.";
   }
 }
 

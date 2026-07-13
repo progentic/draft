@@ -203,11 +203,12 @@ not meet the intended academic interoperability boundary.
 Literal `.txt` import behaved within its documented contract. Markdown also
 behaved as implemented, but literal source display is now insufficient for the
 v1 product requirement because headings, emphasis, lists, quotations, links,
-code, and separators are not parsed into document structure. DOCX, RTF, and
-OpenDocument import are absent. Imported external formats cannot be saved back
-to their source format, and DRAFT has no lossiness or round-trip capability
-model. Legacy binary `.doc` remains a distinct unsupported format and is not
-treated as equivalent to DOCX.
+code, and separators are not parsed into document structure. Phase 47 now has
+mechanical coverage for a bounded DOCX paragraph import, closed fidelity
+categories, Rust-owned source provenance, and no-edit source preservation.
+Same-format DOCX save, compatible-reader fidelity evidence, RTF, and
+OpenDocument import remain absent. Legacy binary `.doc` remains a distinct
+unsupported format and is not treated as equivalent to DOCX.
 
 These observations do not authorize implementation in Phase 46. They require a
 separate governed interoperability and desktop-product boundary. PR #36
@@ -250,10 +251,10 @@ No untested task is counted as passed.
 | UX-46-008 | UX-2 | Open | The replacement artifact contained the tracked bundle icon, but the application icon did not render correctly in the visible packaged window chrome. | Keep bundle-icon validation separate from visible branding; inspect the title-bar/header asset path and validate the corrected packaged window in light and dark appearance. |
 | UX-46-009 | UX-1 | Open | File, research, review, and export controls share one sparse command row without sufficient grouping or predictable desktop-editor hierarchy, and native macOS menu integration does not exist. | Move this release-blocking workflow problem to a governed desktop UI phase with grouped controls, native menus, state-sensitive enablement, responsive overflow, and shared action dispatch. |
 | UX-46-010 | UX-1 | Open | Markdown opens as literal source, so headings, emphasis, lists, quotations, links, code, and separators are not represented as editable document structure. | Define and implement a bounded Markdown parser/serializer contract in the governed interoperability phase; unsupported constructs must fail or disclose loss rather than disappear. |
-| UX-46-011 | UX-1 | Open | DOCX import is unavailable even though DOCX export exists. | Add a separately governed DOCX import and safe round-trip contract with fidelity classes, fixtures, source preservation, and explicit unsupported-content behavior. |
+| UX-46-011 | UX-1 | Open | Phase 47 mechanically implements bounded DOCX paragraph import, closed fidelity categories, source preservation, and typed failure behavior. Packaged and compatible-reader evidence is not complete, and same-format save is unavailable. | Keep open until the accepted interoperability contract has complete fixture, compatible-reader, packaged, and human evidence for the supported subset and explicit unsupported-content behavior. |
 | UX-46-012 | UX-2 | Open | RTF import and save are unavailable. | The interoperability decision must either implement a bounded RTF subset or accept an explicit v1 deferral with user guidance. |
 | UX-46-013 | UX-2 | Open | OpenDocument import and save are unavailable. | The interoperability decision must either implement bounded ODT support or accept an explicit v1 deferral with user guidance. |
-| UX-46-014 | UX-1 | Open | Imported external formats become unsaved DRAFT documents and cannot be safely saved back to their original format. | Define Rust-owned external source identity, writable-format capability, lossiness state, no-edit byte preservation, overwrite safety, Save As behavior, and compatibility tests before enabling round-trip save. |
+| UX-46-014 | UX-1 | Open | Phase 47 now records Rust-owned DOCX source identity, fingerprints, fidelity, writer capability, and deterministic save disposition while exposing only path-free presentation data. The current DOCX writer capability is unavailable, so imported content saves only to `.draft` and export creates a separate copy. | Keep open until a governed same-format writer and overwrite policy, source-conflict checks, lossiness disclosure, compatible-reader tests, and packaged evidence exist. Mechanical provenance alone does not authorize round-trip save. |
 | UX-46-015 | UX-2 | Open | Command spacing, grouping, editor canvas composition, and outline layout do not meet the intended desktop-product quality threshold. | Address visual hierarchy and layout in the governed desktop UI phase, then validate normal, narrow, scaled, keyboard, and reduced-motion states from the packaged app. |
 | UX-46-016 | UX-1 | Open | Manual review confirmed that the native File menu does not expose New Document, Open, Close, Save, Save As, and Export in expected desktop-document order with state-aware shortcuts. | Phase 48 must implement one shared dispatcher for native and visible commands, standard macOS shortcuts, and document-state enablement before packaged retest. |
 | UX-46-017 | UX-1 | Open | Manual review confirmed that the visible menu icon remains stale and toolbar grouping does not consistently separate document lifecycle commands from research and analysis commands. | Phase 48 must replace the stale icon, align labels and icons, remove conflicting command locations, and validate the resulting hierarchy in the packaged app. |

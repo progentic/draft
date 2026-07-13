@@ -12,6 +12,8 @@ use crate::documents::{
     registry::{DocumentRegistry, DocumentRegistryError},
     text_import::{TextImportError, import_text_document},
 };
+use crate::interoperability::provenance::ExternalDocumentSummary;
+use crate::interoperability::{ExternalDocumentImportError, import_docx_source};
 
 #[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "code", rename_all = "snake_case")]
@@ -23,6 +25,7 @@ pub(crate) enum OpenDocumentError {
     MalformedJson,
     InvalidTextEncoding,
     TextTooLarge,
+    ExternalImport { cause: ExternalDocumentImportError },
     InvalidEnvelope { cause: DocumentEnvelopeError },
     Registry { cause: DocumentRegistryError },
 }
@@ -42,8 +45,16 @@ pub(crate) enum SaveDocumentError {
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub(crate) enum OpenDocumentOutcome {
-    OpenedDraft { envelope: DocumentEnvelope },
-    ImportedText { envelope: DocumentEnvelope },
+    OpenedDraft {
+        envelope: DocumentEnvelope,
+    },
+    ImportedText {
+        envelope: DocumentEnvelope,
+    },
+    ImportedExternal {
+        envelope: DocumentEnvelope,
+        external: ExternalDocumentSummary,
+    },
     Cancelled,
 }
 
@@ -51,6 +62,7 @@ pub(crate) enum OpenDocumentOutcome {
 enum OpenSourceKind {
     Draft,
     Text,
+    Docx,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -96,7 +108,23 @@ fn open_source(
     match source_kind {
         OpenSourceKind::Draft => open_draft_document(registry, source_path),
         OpenSourceKind::Text => import_text_source(&source_path),
+        OpenSourceKind::Docx => import_docx_document(registry, &source_path),
     }
+}
+
+fn import_docx_document(
+    registry: &DocumentRegistry,
+    source_path: &Path,
+) -> Result<OpenDocumentOutcome, OpenDocumentError> {
+    let imported = import_docx_source(source_path)
+        .map_err(|cause| OpenDocumentError::ExternalImport { cause })?;
+    registry
+        .open_imported_external(imported.envelope.clone(), imported.provenance)
+        .map_err(|cause| OpenDocumentError::Registry { cause })?;
+    Ok(OpenDocumentOutcome::ImportedExternal {
+        envelope: imported.envelope,
+        external: imported.summary,
+    })
 }
 
 fn open_draft_document(
@@ -122,6 +150,7 @@ fn classify_open_source(path: &Path) -> Result<OpenSourceKind, OpenDocumentError
         Some(extension) if extension.eq_ignore_ascii_case("json") => Ok(OpenSourceKind::Draft),
         Some(extension) if extension.eq_ignore_ascii_case("txt") => Ok(OpenSourceKind::Text),
         Some(extension) if extension.eq_ignore_ascii_case("md") => Ok(OpenSourceKind::Text),
+        Some(extension) if extension.eq_ignore_ascii_case("docx") => Ok(OpenSourceKind::Docx),
         _ => Err(OpenDocumentError::UnsupportedFileType),
     }
 }
@@ -409,10 +438,207 @@ mod tests {
     use crate::citations::node::CitationNodeError;
     use crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION;
     use crate::documents::test_support::TestDocumentPath;
+    use crate::exports::docx::{compile_docx, export_docx};
+    use crate::interoperability::docx_import::DocxImportError;
     use serde_json::json;
+
+    #[cfg(unix)]
+    use std::os::unix::fs::symlink;
 
     const DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000001";
     const SECOND_DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000002";
+
+    #[test]
+    fn docx_import_open_close_preserves_source_and_exposes_no_path() {
+        let source = TestDocumentPath::with_extension("docx-no-edit", "docx");
+        let source_bytes = docx_source_bytes("Imported");
+        source.write(&source_bytes);
+        let source_entries = directory_entries(source.path());
+        let registry = DocumentRegistry::new();
+
+        let (envelope, external) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let external_value = serde_json::to_value(external).unwrap();
+
+        assert_eq!(external_value["format"], "docx");
+        assert_eq!(external_value["displayName"], source_file_name(&source));
+        assert_eq!(
+            external_value["fidelity"],
+            json!({ "classification": "exact" })
+        );
+        assert_eq!(external_value["sameFormatSave"], "no_changes");
+        assert!(external_value.get("path").is_none());
+        assert!(external_value.get("sourceBytes").is_none());
+        assert_eq!(registry.source_path(envelope.document_id()), Ok(None));
+        assert_eq!(registry.close(envelope.document_id()), Ok(envelope));
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(directory_entries(source.path()), source_entries);
+    }
+
+    #[test]
+    fn imported_docx_saves_only_to_new_draft_target() {
+        let source = TestDocumentPath::with_extension("docx-save-as-source", "docx");
+        let target = TestDocumentPath::new("docx-save-as-target");
+        let source_bytes = docx_source_bytes("Imported");
+        source.write(&source_bytes);
+        let registry = DocumentRegistry::new();
+        let (envelope, _) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let snapshot = serde_json::to_value(&envelope).unwrap();
+
+        assert_eq!(save_requires_target(&registry, &snapshot), Ok(true));
+
+        let outcome = save_document(&registry, snapshot.clone(), || {
+            Ok(Some(target.path().to_owned()))
+        })
+        .unwrap();
+
+        assert!(matches!(
+            outcome,
+            SaveDocumentOutcome::Saved {
+                was_save_as: true,
+                ..
+            }
+        ));
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(read_json(target.path()), snapshot);
+        assert_eq!(
+            registry.source_path(envelope.document_id()),
+            Ok(Some(target.path().to_owned()))
+        );
+        registry.close(envelope.document_id()).unwrap();
+        assert!(matches!(
+            open_document(&registry, Some(target.path().to_owned())),
+            Ok(OpenDocumentOutcome::OpenedDraft { .. })
+        ));
+    }
+
+    #[test]
+    fn cancelled_docx_save_preserves_source_and_external_registration() {
+        let source = TestDocumentPath::with_extension("docx-cancelled-save", "docx");
+        let source_bytes = docx_source_bytes("Imported");
+        source.write(&source_bytes);
+        let registry = DocumentRegistry::new();
+        let (envelope, _) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let snapshot = serde_json::to_value(&envelope).unwrap();
+
+        assert_eq!(
+            save_document(&registry, snapshot, || Ok(None)),
+            Ok(SaveDocumentOutcome::Cancelled)
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(registry.source_path(envelope.document_id()), Ok(None));
+        assert_eq!(
+            open_document(&registry, Some(source.path().to_owned())),
+            Err(OpenDocumentError::Registry {
+                cause: DocumentRegistryError::SourcePathInUse,
+            })
+        );
+    }
+
+    #[test]
+    fn failed_docx_save_preserves_source_and_external_registration() {
+        let source = TestDocumentPath::with_extension("docx-failed-save", "docx");
+        let target = TestDocumentPath::under_missing_parent("docx-failed-target");
+        let source_bytes = docx_source_bytes("Imported");
+        source.write(&source_bytes);
+        let registry = DocumentRegistry::new();
+        let (envelope, _) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let snapshot = serde_json::to_value(&envelope).unwrap();
+
+        assert_eq!(
+            save_document(&registry, snapshot, || Ok(Some(target.path().to_owned()))),
+            Err(write_failure(AtomicDocumentWriteError::OpenTemporaryFile))
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(registry.source_path(envelope.document_id()), Ok(None));
+        assert_eq!(
+            open_document(&registry, Some(source.path().to_owned())),
+            Err(OpenDocumentError::Registry {
+                cause: DocumentRegistryError::SourcePathInUse,
+            })
+        );
+    }
+
+    #[test]
+    fn imported_docx_export_creates_copy_without_rebinding_source() {
+        let source = TestDocumentPath::with_extension("docx-export-source", "docx");
+        let target = TestDocumentPath::with_extension("docx-export-copy", "docx");
+        let source_bytes = docx_source_bytes("Imported");
+        source.write(&source_bytes);
+        let registry = DocumentRegistry::new();
+        let (envelope, _) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+
+        export_docx(&envelope, target.path()).unwrap();
+
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert!(target.path().exists());
+        assert_eq!(registry.source_path(envelope.document_id()), Ok(None));
+    }
+
+    #[test]
+    fn duplicate_docx_source_is_rejected_without_mutation() {
+        let source = TestDocumentPath::with_extension("docx-duplicate-source", "docx");
+        let source_bytes = docx_source_bytes("Imported");
+        source.write(&source_bytes);
+        let registry = DocumentRegistry::new();
+        let (first, _) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+
+        assert_eq!(
+            open_document(&registry, Some(source.path().to_owned())),
+            Err(OpenDocumentError::Registry {
+                cause: DocumentRegistryError::SourcePathInUse,
+            })
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(registry.close(first.document_id()), Ok(first));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn docx_path_aliases_share_one_canonical_external_identity() {
+        let source = TestDocumentPath::with_extension("docx-canonical-source", "docx");
+        source.write(&docx_source_bytes("Imported"));
+        let alias = source.path().with_file_name("docx-source-alias.docx");
+        symlink(source.path(), &alias).unwrap();
+        let registry = DocumentRegistry::new();
+        let (first, _) =
+            imported_external(open_document(&registry, Some(source.path().to_owned())).unwrap());
+
+        assert_eq!(
+            open_document(&registry, Some(alias)),
+            Err(OpenDocumentError::Registry {
+                cause: DocumentRegistryError::SourcePathInUse,
+            })
+        );
+        registry.close(first.document_id()).unwrap();
+    }
+
+    #[test]
+    fn failed_docx_import_preserves_source_and_registry() {
+        let source = TestDocumentPath::with_extension("malformed-docx", "docx");
+        let source_bytes = b"not a ZIP package";
+        source.write(source_bytes);
+        let existing = validated_envelope(envelope_value("Existing"));
+        let existing_id = existing.document_id();
+        let registry = DocumentRegistry::new();
+        registry.open(existing.clone()).unwrap();
+
+        assert_eq!(
+            open_document(&registry, Some(source.path().to_owned())),
+            Err(OpenDocumentError::ExternalImport {
+                cause: ExternalDocumentImportError::Docx {
+                    cause: DocxImportError::malformed(),
+                },
+            })
+        );
+        assert_eq!(fs::read(source.path()).unwrap(), source_bytes);
+        assert_eq!(registry.close(existing_id), Ok(existing));
+    }
 
     #[test]
     fn document_round_trip_preserves_updated_snapshot() {
@@ -1210,6 +1436,32 @@ mod tests {
             .expect("envelope should serialize")
     }
 
+    fn docx_source_bytes(title: &str) -> Vec<u8> {
+        compile_docx(&validated_envelope(envelope_value(title)))
+            .unwrap()
+            .as_bytes()
+            .to_vec()
+    }
+
+    fn imported_external(
+        outcome: OpenDocumentOutcome,
+    ) -> (DocumentEnvelope, ExternalDocumentSummary) {
+        match outcome {
+            OpenDocumentOutcome::ImportedExternal { envelope, external } => (envelope, external),
+            _ => panic!("DOCX source must import through the external boundary"),
+        }
+    }
+
+    fn source_file_name(source: &TestDocumentPath) -> String {
+        source
+            .path()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+    }
+
     fn serialized_envelope_value(value: Value) -> Vec<u8> {
         serde_json::to_vec(&validated_envelope(value)).expect("envelope should serialize")
     }
@@ -1273,6 +1525,7 @@ mod tests {
         match outcome {
             OpenDocumentOutcome::ImportedText { envelope } => envelope,
             OpenDocumentOutcome::OpenedDraft { .. } => panic!("text source must import"),
+            OpenDocumentOutcome::ImportedExternal { .. } => panic!("text source must import"),
             OpenDocumentOutcome::Cancelled => panic!("explicit text source must not cancel"),
         }
     }
@@ -1281,6 +1534,9 @@ mod tests {
         match outcome {
             OpenDocumentOutcome::OpenedDraft { envelope } => envelope,
             OpenDocumentOutcome::ImportedText { .. } => panic!("DRAFT source must open natively"),
+            OpenDocumentOutcome::ImportedExternal { .. } => {
+                panic!("DRAFT source must open natively")
+            }
             OpenDocumentOutcome::Cancelled => panic!("explicit DRAFT source must not cancel"),
         }
     }

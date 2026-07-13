@@ -27,6 +27,7 @@ main() {
   check_text_analysis_contract
   check_formatting_contract
   check_docx_export_contract
+  check_docx_import_contract
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -270,8 +271,14 @@ check_python_boundary() {
 }
 
 check_command_errors() {
+  # The two owned DOCX parser files return typed errors around
+  # HashMap<String, String>; the nested comma otherwise matches the flat
+  # Result<_, String> detector. The DOCX contract below verifies their exact
+  # typed boundary, so no broader interoperability path is excluded.
   assert_no_matches "INV-02 generic Rust command errors" \
     '\banyhow::Error\b|Box\s*<\s*dyn\s+(?:std::)?error::Error|Result\s*<[^;\n]+,\s*(?:String|serde_json::Value)\s*>' \
+    --glob '!src-tauri/src/interoperability/docx_import/document.rs' \
+    --glob '!src-tauri/src/interoperability/docx_import/package.rs' \
     src-tauri/src
 
   check_command_contract_coverage
@@ -835,7 +842,7 @@ require_docx_contract_markers() {
   require_source_pattern 'w:sz' "${package_path}"
   require_source_pattern 'half_points()' "${package_path}"
   require_source_pattern 'quick-xml = "0.41.0"' src-tauri/Cargo.toml
-  require_source_pattern 'zip = { version = "8.6.0", default-features = false }' src-tauri/Cargo.toml
+  require_source_pattern 'zip = { version = "8.6.0", default-features = false, features = ["deflate"] }' src-tauri/Cargo.toml
 }
 
 check_docx_export_authority() {
@@ -880,6 +887,100 @@ check_docx_export_authority() {
   require_source_pattern 'export async function exportDocument' src/ipc/docxExport.ts
   assert_no_matches "Phase 32 Python DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' python
+}
+
+check_docx_import_contract() {
+  local policy_path='src-tauri/src/interoperability/mod.rs'
+  local fidelity_path='src-tauri/src/interoperability/fidelity.rs'
+  local provenance_path='src-tauri/src/interoperability/provenance.rs'
+  local package_path='src-tauri/src/interoperability/docx_import/package.rs'
+  local document_path='src-tauri/src/interoperability/docx_import/document.rs'
+  local test_path='src-tauri/src/interoperability/docx_import/tests.rs'
+  local required_tests=(
+    supported_paragraph_properties_map_to_canonical_data
+    absent_paragraph_properties_remain_absent
+    alternate_heading_name_is_canonically_normalized
+    valid_unsupported_properties_require_source_preservation
+    nested_unsupported_properties_remain_preservable
+    package_semantics_classify_valid_uneditable_behavior
+    optional_relationship_and_style_parts_are_not_required
+    exact_and_at_least_line_rules_are_unsupported_not_malformed
+    unsupported_style_and_list_indentation_are_distinct_valid_features
+    malformed_properties_fail_without_fidelity_guessing
+    unrepresentable_bounds_are_lossy_and_never_clamped
+    exported_supported_paragraph_data_reimports_exactly
+    package_and_xml_safety_fail_with_closed_reasons
+    malformed_package_contracts_are_not_reported_as_unsafe_content
+    archive_compression_ratio_fails_closed_before_extraction
+    package_resource_limits_have_stable_safety_reasons
+    package_fixture_is_deterministic_and_hashable
+  )
+  local test_name
+
+  require_file "${policy_path}"
+  require_file "${fidelity_path}"
+  require_file "${provenance_path}"
+  require_file "${package_path}"
+  require_file "${document_path}"
+  require_file "${test_path}"
+  require_file src/ipc/externalDocument.ts
+  require_file src/ipc/externalDocument.test.ts
+  require_file docs/maintainers/DOCX_INTEROPERABILITY.md
+
+  for test_name in "${required_tests[@]}"; do
+    require_rust_test "${test_name}" "${test_path}"
+  done
+
+  require_source_pattern 'pub(crate) fn import_docx_source(' "${policy_path}"
+  require_rust_test oversized_source_fails_before_package_parsing "${policy_path}"
+  require_source_pattern 'pub enum ExternalFidelity' "${fidelity_path}"
+  require_source_pattern 'pub enum SameFormatSaveDisposition' "${provenance_path}"
+  require_source_pattern 'MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024' \
+    src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern 'MAX_DOCX_IMPORT_XML_BYTES: usize = 8 * 1024 * 1024' \
+    src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern 'MAX_DOCX_IMPORT_ENTRIES: usize = 128' \
+    src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern 'MAX_DOCX_IMPORT_UNCOMPRESSED_BYTES: u64 = 64 * 1024 * 1024' \
+    src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern 'MAX_DOCX_IMPORT_XML_DEPTH: usize = 64' \
+    src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern 'MAX_DOCX_IMPORT_COMPRESSION_RATIO: u64 = 100' \
+    src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern 'c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a' \
+    "${test_path}"
+  require_source_pattern 'accepts only path-free successful import summaries' \
+    src/ipc/externalDocument.test.ts
+  require_source_pattern 'returns path-free DOCX fidelity from the Rust import boundary' \
+    src/ipc/documentOpen.test.ts
+  require_source_pattern 'treats a path-free DOCX import as registered but unsaved' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'discloses unsupported DOCX behavior without exposing source authority' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'prevents stale Open responses by rejecting overlapping actions' \
+    src/ipc/Phase46Workflows.test.tsx
+
+  assert_no_matches "DOCX package parser outside its owned adapter" \
+    '\bquick_xml\b|\bzip::' \
+    "${policy_path}" "${fidelity_path}" "${provenance_path}"
+  assert_no_matches "frontend external-document path or package authority" \
+    '\bPathBuf\b|\bfilesystem\b|\bquick_xml\b|\bzip::|\brawXml\b|\bsourceBytes\b' \
+    src/ipc/externalDocument.ts
+  assert_no_matches "frontend same-format save decision authority" \
+    '\bsameFormatSave\b|\ballowed_exact\b|\ballowed_after_accepted_normalization\b|\bdenied_(?:unsupported_source_behavior|read_only|missing_provenance|fidelity_unknown|writer_unavailable|source_missing|source_changed)\b' \
+    --glob '!**/*.test.ts' --glob '!**/*.test.tsx' \
+    --glob '!src/ipc/externalDocument.ts' src
+
+  require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
+  require_source_pattern '| UX-46-011 | UX-1 | Open |' \
+    docs/maintainers/V1_USABILITY_EVIDENCE.md
+  require_source_pattern '| UX-46-014 | UX-1 | Open |' \
+    docs/maintainers/V1_USABILITY_EVIDENCE.md
+  require_source_pattern '| RC-07 | Release blocker | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_source_pattern '| GATE-47 | Roadmap gate | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  printf 'PASS Phase 47 bounded DOCX import and fidelity contract\n'
 }
 
 check_document_envelope_contract() {
@@ -1420,11 +1521,14 @@ check_adr_003_accepted_guard() {
   assert_no_matches 'ADR-003 premature documentation-readability acceptance' \
     '\| \x60INV-UX-07\x60 \| Accepted \|' \
     docs/INVARIANTS.md
-  assert_no_matches 'ADR-003 external document lifecycle before Phase 47' \
-    '\b(?:opened_external|imported_external|round_trip_status|lossiness_state|NativeFormat|SaveCapability)\b' \
-    src-tauri/src src
-  assert_no_matches 'ADR-003 format parser or save-back implementation before Phase 47' \
-    '\b(?:parse_markdown|import_docx|import_rtf|import_odt|save_external_document)\b' \
+  require_file src-tauri/src/interoperability/mod.rs
+  require_file src-tauri/src/interoperability/fidelity.rs
+  require_file src-tauri/src/interoperability/provenance.rs
+  require_file src/ipc/externalDocument.ts
+  require_source_pattern 'imported_external' src-tauri/src/documents/persistence.rs
+  require_source_pattern 'imported_external' src/ipc/documentOpen.ts
+  assert_no_matches 'ADR-003 unimplemented format or save-back authority' \
+    '\b(?:parse_markdown|import_rtf|import_odt|save_external_document)\b' \
     src-tauri/src src
   require_file src-tauri/src/desktop_menu.rs
   require_file src-tauri/src/commands/native_menu.rs
@@ -1722,6 +1826,8 @@ check_document_registry_contract() {
     distinct_documents_open_independently
     concurrent_open_allows_one_live_handle
     poisoned_registry_returns_unavailable
+    external_source_path_cannot_back_two_live_handles
+    draft_save_replaces_external_authority_only_after_registry_update
   )
   local test_name
 
@@ -1767,6 +1873,14 @@ check_document_file_contract() {
     markdown_import_uses_basename_and_remains_literal_editable_source
     malformed_and_oversized_text_imports_fail_without_mutation
     unsupported_open_extension_fails_before_read_or_registration
+    docx_import_open_close_preserves_source_and_exposes_no_path
+    imported_docx_saves_only_to_new_draft_target
+    cancelled_docx_save_preserves_source_and_external_registration
+    failed_docx_save_preserves_source_and_external_registration
+    imported_docx_export_creates_copy_without_rebinding_source
+    duplicate_docx_source_is_rejected_without_mutation
+    failed_docx_import_preserves_source_and_registry
+    docx_path_aliases_share_one_canonical_external_identity
   )
   local test_name
 
@@ -1862,15 +1976,19 @@ require_document_file_sources() {
   require_file src/ipc/documentErrors.ts
   require_file src/ipc/documentOpen.ts
   require_file src/ipc/documentOpen.test.ts
+  require_file src/ipc/externalDocument.ts
+  require_file src/ipc/externalDocument.test.ts
   require_file src/ipc/documentSave.ts
   require_file src/ipc/documentSave.test.ts
   require_source_pattern 'MAX_TEXT_IMPORT_BYTES: usize = 8 * 1024 * 1024' \
     src-tauri/src/documents/text_import.rs
-  require_source_pattern 'OpenedDraft { envelope: DocumentEnvelope }' \
+  require_source_pattern 'OpenedDraft {' \
     src-tauri/src/documents/persistence.rs
-  require_source_pattern 'ImportedText { envelope: DocumentEnvelope }' \
+  require_source_pattern 'ImportedText {' \
     src-tauri/src/documents/persistence.rs
-  require_source_pattern 'const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md"]' \
+  require_source_pattern 'ImportedExternal {' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md", "docx"]' \
     src-tauri/src/documents/dialog.rs
 }
 
@@ -1897,9 +2015,10 @@ check_document_write_boundary() {
   local atomic_writer_path="$1"
 
   # These exact test files write only temporary fixtures. The Python runner's
-  # write_all targets piped child stdin, and the DOCX package writer targets an
-  # in-memory ZipWriter. Neither writes a filesystem path. Production document,
-  # intake, job, and export mutation remain denied by separate source scans.
+  # write_all targets piped child stdin, and the DOCX package writer plus its
+  # colocated import fixtures target in-memory ZipWriter instances. None writes
+  # a filesystem path. Production document, intake, job, and export mutation
+  # remain denied by separate source scans.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
@@ -1907,6 +2026,7 @@ check_document_write_boundary() {
     --glob '!src-tauri/src/jobs/store_tests.rs' \
     --glob '!src-tauri/src/references/store_tests.rs' \
     --glob '!src-tauri/src/exports/docx_package.rs' \
+    --glob '!src-tauri/src/interoperability/docx_import/tests.rs' \
     --glob '!src-tauri/src/workers/python/runner.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
@@ -1932,7 +2052,7 @@ check_frontend_document_file_boundary() {
     "${document_identity_paths[@]}"
   require_source_pattern 'DocumentEnvelope::create_initial()' \
     src-tauri/src/commands/document_create.rs
-  require_source_pattern 'type DocumentOrigin = "imported_text" | "new" | "opened_draft"' \
+  require_source_pattern 'type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft"' \
     src/features/document-session/useDocumentSession.ts
   require_source_pattern 'origin: result.status' \
     src/features/document-session/useDocumentSession.ts

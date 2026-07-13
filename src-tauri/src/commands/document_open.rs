@@ -39,6 +39,10 @@ mod tests {
         envelope::{DocumentEnvelope, DocumentEnvelopeError},
         registry::DocumentRegistryError,
     };
+    use crate::interoperability::{
+        ExternalDocumentImportError, fidelity::ExternalFidelity,
+        provenance::ExternalDocumentSummary,
+    };
 
     const DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000001";
     fn typed_command<'a>(
@@ -75,6 +79,15 @@ mod tests {
             OpenDocumentOutcome::ImportedText {
                 envelope: envelope(),
             },
+            OpenDocumentOutcome::ImportedExternal {
+                envelope: envelope(),
+                external: ExternalDocumentSummary::imported_docx(
+                    "paper.docx".to_owned(),
+                    &test_provenance(),
+                    &envelope(),
+                    b"source",
+                ),
+            },
             OpenDocumentOutcome::Cancelled,
         ];
 
@@ -83,6 +96,16 @@ mod tests {
             json!([
                 { "status": "opened_draft", "envelope": envelope_value() },
                 { "status": "imported_text", "envelope": envelope_value() },
+                {
+                    "status": "imported_external",
+                    "envelope": envelope_value(),
+                    "external": {
+                        "format": "docx",
+                        "displayName": "paper.docx",
+                        "fidelity": { "classification": "exact" },
+                        "sameFormatSave": "no_changes"
+                    }
+                },
                 { "status": "cancelled" }
             ]),
         );
@@ -98,6 +121,9 @@ mod tests {
             OpenDocumentError::MalformedJson,
             OpenDocumentError::InvalidTextEncoding,
             OpenDocumentError::TextTooLarge,
+            OpenDocumentError::ExternalImport {
+                cause: ExternalDocumentImportError::PackageTooLarge,
+            },
             OpenDocumentError::InvalidEnvelope {
                 cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 3 },
             },
@@ -120,6 +146,10 @@ mod tests {
                 { "code": "invalid_text_encoding" },
                 { "code": "text_too_large" },
                 {
+                    "code": "external_import",
+                    "cause": { "code": "package_too_large" }
+                },
+                {
                     "code": "invalid_envelope",
                     "cause": { "code": "unsupported_schema_version", "found": 3 }
                 },
@@ -137,6 +167,15 @@ mod tests {
 
     fn envelope() -> DocumentEnvelope {
         DocumentEnvelope::from_json_value(envelope_value()).expect("envelope should validate")
+    }
+
+    fn test_provenance() -> crate::interoperability::provenance::ExternalSourceProvenance {
+        crate::interoperability::provenance::ExternalSourceProvenance::imported_docx(
+            std::path::PathBuf::from("paper.docx"),
+            b"source",
+            &envelope(),
+            ExternalFidelity::Exact,
+        )
     }
 
     fn envelope_value() -> serde_json::Value {

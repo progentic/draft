@@ -1,0 +1,691 @@
+use std::collections::{BTreeSet, HashMap};
+
+use quick_xml::{
+    Reader, XmlVersion,
+    events::{BytesRef, BytesStart, BytesText, Event},
+};
+use serde_json::{Value, json};
+
+use crate::documents::paragraph_format::{
+    LINE_SPACING_INCREMENT, MAX_LINE_SPACING_HUNDREDTHS, MAX_PARAGRAPH_SPACING_TWIPS,
+    MAX_SPECIAL_INDENT_TWIPS, MIN_LINE_SPACING_HUNDREDTHS, PARAGRAPH_STYLE_SCHEMA_VERSION,
+};
+
+use super::{DocxImportError, ExternalFeature, ExternalSafetyReason, FidelityAccumulator};
+
+const MAX_IMPORTED_NODES: usize = 100_000;
+const SUPPORTED_ALIGNMENT: [&str; 4] = ["left", "center", "right", "both"];
+const VALID_UNSUPPORTED_ALIGNMENT: [&str; 5] =
+    ["distribute", "end", "highKashida", "lowKashida", "start"];
+
+pub(super) fn parse_document(
+    xml: &[u8],
+    fidelity: &mut FidelityAccumulator,
+) -> Result<Value, DocxImportError> {
+    DocumentParser::new(fidelity).parse(xml)
+}
+
+struct DocumentParser<'a> {
+    fidelity: &'a mut FidelityAccumulator,
+    blocks: Vec<Value>,
+    paragraph: Option<ParagraphBuilder>,
+    run: Option<RunBuilder>,
+    stack: Vec<String>,
+    ignored_depth: usize,
+    nodes: usize,
+}
+
+impl<'a> DocumentParser<'a> {
+    fn new(fidelity: &'a mut FidelityAccumulator) -> Self {
+        Self {
+            fidelity,
+            blocks: Vec::new(),
+            paragraph: None,
+            run: None,
+            stack: Vec::new(),
+            ignored_depth: 0,
+            nodes: 0,
+        }
+    }
+
+    fn parse(mut self, xml: &[u8]) -> Result<Value, DocxImportError> {
+        let mut reader = Reader::from_reader(xml);
+        loop {
+            match reader
+                .read_event()
+                .map_err(|_| DocxImportError::malformed())?
+            {
+                Event::Start(element) => self.start(&element)?,
+                Event::Empty(element) => self.empty(&element)?,
+                Event::End(element) => self.end(local_name(element.name().as_ref()))?,
+                Event::Text(text) => self.text(&text)?,
+                Event::GeneralRef(reference) => self.reference(&reference)?,
+                Event::DocType(_) => return Err(unsafe_xml_entity()),
+                Event::CData(_) => return Err(DocxImportError::malformed()),
+                Event::Eof => return self.finish(),
+                _ => {}
+            }
+        }
+    }
+
+    fn start(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        let name = local_name(element.name().as_ref()).to_vec();
+        if self.ignored_depth > 0 {
+            self.ignored_depth += 1;
+        } else {
+            self.handle_element(&name, element)?;
+        }
+        self.stack.push(name_string(&name)?);
+        Ok(())
+    }
+
+    fn empty(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        let name = local_name(element.name().as_ref()).to_vec();
+        if self.ignored_depth > 0 {
+            return Ok(());
+        }
+        self.handle_element(&name, element)?;
+        self.handle_empty_content(&name)?;
+        self.ignored_depth = 0;
+        Ok(())
+    }
+
+    fn end(&mut self, name: &[u8]) -> Result<(), DocxImportError> {
+        let expected = self.stack.pop().ok_or_else(DocxImportError::malformed)?;
+        if expected.as_bytes() != name {
+            return Err(DocxImportError::malformed());
+        }
+        if self.ignored_depth > 0 {
+            self.ignored_depth -= 1;
+            return Ok(());
+        }
+        match name {
+            b"t" => self.finish_text(),
+            b"r" => self.finish_run(),
+            b"p" => self.finish_paragraph(),
+            _ => Ok(()),
+        }
+    }
+
+    fn text(&mut self, text: &BytesText<'_>) -> Result<(), DocxImportError> {
+        if self.ignored_depth > 0 {
+            return Ok(());
+        }
+        if self.stack.last().is_some_and(|name| name == "t") {
+            let decoded = text.decode().map_err(|_| DocxImportError::malformed())?;
+            self.current_run()?.text.push_str(&decoded);
+        }
+        Ok(())
+    }
+
+    fn reference(&mut self, reference: &BytesRef<'_>) -> Result<(), DocxImportError> {
+        if self.ignored_depth > 0 {
+            return Ok(());
+        }
+        if self.stack.last().is_none_or(|name| name != "t") {
+            return Err(unsafe_xml_entity());
+        }
+        let character = resolve_reference(reference)?;
+        self.current_run()?.text.push(character);
+        Ok(())
+    }
+
+    fn finish(self) -> Result<Value, DocxImportError> {
+        if !self.stack.is_empty()
+            || self.ignored_depth != 0
+            || self.paragraph.is_some()
+            || self.run.is_some()
+        {
+            return Err(DocxImportError::malformed());
+        }
+        Ok(json!({ "type": "doc", "content": self.blocks }))
+    }
+
+    fn handle_element(
+        &mut self,
+        name: &[u8],
+        element: &BytesStart<'_>,
+    ) -> Result<(), DocxImportError> {
+        match name {
+            b"document" | b"body" | b"pPr" | b"rPr" | b"t" => Ok(()),
+            b"p" => self.start_paragraph(),
+            b"r" => self.start_run(),
+            b"br" => self.push_break(element),
+            _ if self.in_paragraph_properties() => self.paragraph_property(name, element),
+            _ if self.in_run_properties() => self.run_property(name),
+            b"sectPr" => self.ignore_unsupported(ExternalFeature::UnsupportedDocumentStructure),
+            _ => self.reject_unknown_structure(name),
+        }
+    }
+
+    fn handle_empty_content(&mut self, name: &[u8]) -> Result<(), DocxImportError> {
+        match name {
+            b"p" => self.finish_paragraph(),
+            b"r" => self.finish_run(),
+            _ => Ok(()),
+        }
+    }
+
+    fn start_paragraph(&mut self) -> Result<(), DocxImportError> {
+        if self.paragraph.is_some() || self.run.is_some() {
+            return Err(DocxImportError::malformed());
+        }
+        self.increment_nodes()?;
+        self.paragraph = Some(ParagraphBuilder::default());
+        Ok(())
+    }
+
+    fn start_run(&mut self) -> Result<(), DocxImportError> {
+        if self.paragraph.is_none() || self.run.is_some() {
+            return Err(DocxImportError::malformed());
+        }
+        self.run = Some(RunBuilder::default());
+        Ok(())
+    }
+
+    fn push_break(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        if !is_supported_line_break(element)? {
+            return self.record_unsupported(ExternalFeature::UnsupportedDocumentStructure);
+        }
+        self.flush_text_node()?;
+        self.increment_nodes()?;
+        self.current_run()?
+            .content
+            .push(json!({ "type": "hardBreak" }));
+        Ok(())
+    }
+
+    fn finish_text(&mut self) -> Result<(), DocxImportError> {
+        self.flush_text_node()
+    }
+
+    fn finish_run(&mut self) -> Result<(), DocxImportError> {
+        self.flush_text_node()?;
+        let run = self.run.take().ok_or_else(DocxImportError::malformed)?;
+        self.current_paragraph()?.content.extend(run.content);
+        Ok(())
+    }
+
+    fn finish_paragraph(&mut self) -> Result<(), DocxImportError> {
+        if self.run.is_some() {
+            return Err(DocxImportError::malformed());
+        }
+        let paragraph = self
+            .paragraph
+            .take()
+            .ok_or_else(DocxImportError::malformed)?;
+        self.blocks.push(paragraph.into_json());
+        Ok(())
+    }
+
+    fn paragraph_property(
+        &mut self,
+        name: &[u8],
+        element: &BytesStart<'_>,
+    ) -> Result<(), DocxImportError> {
+        match name {
+            b"pStyle" => self.apply_paragraph_style(element),
+            b"jc" => self.apply_alignment(element),
+            b"spacing" => self.apply_spacing(element),
+            b"ind" => self.apply_indentation(element),
+            b"pBdr" => self.ignore_unsupported(ExternalFeature::ParagraphBorder),
+            b"shd" => self.record_unsupported(ExternalFeature::ParagraphShading),
+            b"tabs" => self.ignore_unsupported(ExternalFeature::ParagraphTab),
+            b"contextualSpacing" => self.record_unsupported(ExternalFeature::ContextualSpacing),
+            b"keepNext" | b"keepLines" | b"pageBreakBefore" | b"widowControl" => {
+                self.record_unsupported(ExternalFeature::PaginationControl)
+            }
+            b"numPr" => Err(unsupported(ExternalFeature::ListIndentation)),
+            _ => Err(unsupported(ExternalFeature::UnsupportedDocumentStructure)),
+        }
+    }
+
+    fn run_property(&mut self, _name: &[u8]) -> Result<(), DocxImportError> {
+        self.ignore_unsupported(ExternalFeature::RunFormatting)
+    }
+
+    fn reject_unknown_structure(&self, name: &[u8]) -> Result<(), DocxImportError> {
+        if self.paragraph.is_some() || matches!(name, b"hyperlink" | b"tbl" | b"sdt" | b"altChunk")
+        {
+            Err(unsupported(ExternalFeature::UnsupportedDocumentStructure))
+        } else {
+            Err(DocxImportError::malformed())
+        }
+    }
+
+    fn apply_paragraph_style(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        let value = required_value(element)?;
+        let paragraph = self.current_paragraph()?;
+        paragraph.mark_once("pStyle")?;
+        if value == "Normal" {
+            return Ok(());
+        }
+        if let Some(level) = heading_level(&value) {
+            paragraph.heading_level = Some(level);
+            return Ok(());
+        }
+        if let Some(level) = heading_level_with_space(&value) {
+            paragraph.heading_level = Some(level);
+            self.fidelity
+                .record_normalization(ExternalFeature::AlternateHeadingStyleName);
+            return Ok(());
+        }
+        Err(unsupported(ExternalFeature::UnsupportedStyleInheritance))
+    }
+
+    fn apply_alignment(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        let value = required_value(element)?;
+        self.current_paragraph()?.mark_once("jc")?;
+        if SUPPORTED_ALIGNMENT.contains(&value.as_str()) {
+            self.current_paragraph()?.style.alignment = match value.as_str() {
+                "left" => "left",
+                "center" => "center",
+                "right" => "right",
+                "both" => "justify",
+                _ => unreachable!("supported alignment checked above"),
+            };
+            self.current_paragraph()?.style.touched = true;
+            return Ok(());
+        }
+        if VALID_UNSUPPORTED_ALIGNMENT.contains(&value.as_str()) {
+            return Err(unsupported(ExternalFeature::UnsupportedDocumentStructure));
+        }
+        Err(DocxImportError::malformed())
+    }
+
+    fn apply_spacing(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        self.current_paragraph()?.mark_once("spacing")?;
+        let attributes = attributes(element)?;
+        reject_spacing_extensions(&attributes)?;
+        let paragraph = self.current_paragraph()?;
+        paragraph.style.apply_spacing(&attributes)?;
+        Ok(())
+    }
+
+    fn apply_indentation(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        self.current_paragraph()?.mark_once("ind")?;
+        let attributes = attributes(element)?;
+        reject_indent_extensions(&attributes)?;
+        let paragraph = self.current_paragraph()?;
+        paragraph.style.apply_indentation(&attributes)
+    }
+
+    fn record_unsupported(&mut self, feature: ExternalFeature) -> Result<(), DocxImportError> {
+        self.fidelity.record_unsupported(feature);
+        Ok(())
+    }
+
+    fn in_paragraph_properties(&self) -> bool {
+        self.stack.last().is_some_and(|name| name == "pPr")
+    }
+
+    fn in_run_properties(&self) -> bool {
+        self.stack.last().is_some_and(|name| name == "rPr")
+    }
+
+    fn current_paragraph(&mut self) -> Result<&mut ParagraphBuilder, DocxImportError> {
+        self.paragraph
+            .as_mut()
+            .ok_or_else(DocxImportError::malformed)
+    }
+
+    fn current_run(&mut self) -> Result<&mut RunBuilder, DocxImportError> {
+        self.run.as_mut().ok_or_else(DocxImportError::malformed)
+    }
+
+    fn flush_text_node(&mut self) -> Result<(), DocxImportError> {
+        if self.current_run()?.has_text() {
+            self.increment_nodes()?;
+            self.current_run()?.flush_text();
+        }
+        Ok(())
+    }
+
+    fn ignore_unsupported(&mut self, feature: ExternalFeature) -> Result<(), DocxImportError> {
+        self.record_unsupported(feature)?;
+        self.ignored_depth = 1;
+        Ok(())
+    }
+
+    fn increment_nodes(&mut self) -> Result<(), DocxImportError> {
+        self.nodes += 1;
+        if self.nodes > MAX_IMPORTED_NODES {
+            Err(DocxImportError::unsafe_input(
+                ExternalSafetyReason::XmlNodeCount,
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Default)]
+struct ParagraphBuilder {
+    heading_level: Option<u8>,
+    style: ParagraphStyleBuilder,
+    content: Vec<Value>,
+    seen: BTreeSet<&'static str>,
+}
+
+impl ParagraphBuilder {
+    fn mark_once(&mut self, property: &'static str) -> Result<(), DocxImportError> {
+        if self.seen.insert(property) {
+            Ok(())
+        } else {
+            Err(DocxImportError::malformed())
+        }
+    }
+
+    fn into_json(self) -> Value {
+        let mut fields = serde_json::Map::new();
+        fields.insert(
+            "type".to_owned(),
+            Value::String(self.block_type().to_owned()),
+        );
+        if let Some(attrs) = self.attrs() {
+            fields.insert("attrs".to_owned(), attrs);
+        }
+        if !self.content.is_empty() {
+            fields.insert("content".to_owned(), Value::Array(self.content));
+        }
+        Value::Object(fields)
+    }
+
+    fn block_type(&self) -> &'static str {
+        if self.heading_level.is_some() {
+            "heading"
+        } else {
+            "paragraph"
+        }
+    }
+
+    fn attrs(&self) -> Option<Value> {
+        let mut attrs = serde_json::Map::new();
+        if let Some(level) = self.heading_level {
+            attrs.insert("level".to_owned(), Value::from(level));
+        }
+        if self.style.touched {
+            attrs.insert("paragraphStyle".to_owned(), self.style.to_json());
+        }
+        (!attrs.is_empty()).then_some(Value::Object(attrs))
+    }
+}
+
+#[derive(Default)]
+struct RunBuilder {
+    text: String,
+    content: Vec<Value>,
+}
+
+impl RunBuilder {
+    fn has_text(&self) -> bool {
+        !self.text.is_empty()
+    }
+
+    fn flush_text(&mut self) {
+        if self.text.is_empty() {
+            return;
+        }
+        self.content
+            .push(json!({ "type": "text", "text": self.text }));
+        self.text.clear();
+    }
+}
+
+struct ParagraphStyleBuilder {
+    alignment: &'static str,
+    line_spacing_hundredths: u64,
+    space_before_twips: u64,
+    space_after_twips: u64,
+    left_indent_twips: u64,
+    right_indent_twips: u64,
+    special_kind: &'static str,
+    special_twips: u64,
+    touched: bool,
+}
+
+impl Default for ParagraphStyleBuilder {
+    fn default() -> Self {
+        Self {
+            alignment: "left",
+            line_spacing_hundredths: 100,
+            space_before_twips: 0,
+            space_after_twips: 0,
+            left_indent_twips: 0,
+            right_indent_twips: 0,
+            special_kind: "none",
+            special_twips: 0,
+            touched: false,
+        }
+    }
+}
+
+impl ParagraphStyleBuilder {
+    fn apply_spacing(
+        &mut self,
+        attributes: &HashMap<String, String>,
+    ) -> Result<(), DocxImportError> {
+        if let Some(value) = attributes.get("before") {
+            self.space_before_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.touched = true;
+        }
+        if let Some(value) = attributes.get("after") {
+            self.space_after_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.touched = true;
+        }
+        self.apply_line_spacing(attributes)
+    }
+
+    fn apply_line_spacing(
+        &mut self,
+        attributes: &HashMap<String, String>,
+    ) -> Result<(), DocxImportError> {
+        let Some(line) = attributes.get("line") else {
+            return Ok(());
+        };
+        match attributes
+            .get("lineRule")
+            .map(String::as_str)
+            .unwrap_or("auto")
+        {
+            "auto" => self.line_spacing_hundredths = automatic_line_spacing(line)?,
+            "exact" => return Err(unsupported(ExternalFeature::ExactLineSpacing)),
+            "atLeast" => return Err(unsupported(ExternalFeature::AtLeastLineSpacing)),
+            _ => return Err(DocxImportError::malformed()),
+        }
+        self.touched = true;
+        Ok(())
+    }
+
+    fn apply_indentation(
+        &mut self,
+        attributes: &HashMap<String, String>,
+    ) -> Result<(), DocxImportError> {
+        if let Some(value) = attributes.get("left") {
+            self.left_indent_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.touched = true;
+        }
+        if let Some(value) = attributes.get("right") {
+            self.right_indent_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.touched = true;
+        }
+        self.apply_special_indent(attributes)
+    }
+
+    fn apply_special_indent(
+        &mut self,
+        attributes: &HashMap<String, String>,
+    ) -> Result<(), DocxImportError> {
+        if attributes.contains_key("firstLine") && attributes.contains_key("hanging") {
+            return Err(DocxImportError::malformed());
+        }
+        if let Some(value) = attributes.get("firstLine") {
+            self.special_kind = "first_line";
+            self.special_twips = bounded_twips(value, MAX_SPECIAL_INDENT_TWIPS)?;
+            self.touched = true;
+        }
+        if let Some(value) = attributes.get("hanging") {
+            self.special_kind = "hanging";
+            self.special_twips = bounded_twips(value, MAX_SPECIAL_INDENT_TWIPS)?;
+            self.touched = true;
+        }
+        Ok(())
+    }
+
+    fn to_json(&self) -> Value {
+        json!({
+            "schemaVersion": PARAGRAPH_STYLE_SCHEMA_VERSION,
+            "alignment": self.alignment,
+            "lineSpacingHundredths": self.line_spacing_hundredths,
+            "spaceBeforeTwips": self.space_before_twips,
+            "spaceAfterTwips": self.space_after_twips,
+            "leftIndentTwips": self.left_indent_twips,
+            "rightIndentTwips": self.right_indent_twips,
+            "specialIndent": { "kind": self.special_kind, "twips": self.special_twips }
+        })
+    }
+}
+
+fn required_value(element: &BytesStart<'_>) -> Result<String, DocxImportError> {
+    let values = attributes(element)?;
+    if values.len() != 1 {
+        return Err(DocxImportError::malformed());
+    }
+    values
+        .get("val")
+        .cloned()
+        .ok_or_else(DocxImportError::malformed)
+}
+
+fn is_supported_line_break(element: &BytesStart<'_>) -> Result<bool, DocxImportError> {
+    let values = attributes(element)?;
+    match values.get("type").map(String::as_str) {
+        None | Some("textWrapping") if values.len() <= 1 => Ok(true),
+        Some("page" | "column") if values.len() == 1 => Ok(false),
+        _ => Err(DocxImportError::malformed()),
+    }
+}
+
+fn attributes(element: &BytesStart<'_>) -> Result<HashMap<String, String>, DocxImportError> {
+    let mut values = HashMap::new();
+    for attribute in element.attributes().with_checks(true) {
+        let attribute = attribute.map_err(|_| DocxImportError::malformed())?;
+        let name = name_string(local_name(attribute.key.as_ref()))?;
+        let value = attribute
+            .decoded_and_normalized_value(XmlVersion::Implicit1_0, element.decoder())
+            .map_err(|_| DocxImportError::malformed())?
+            .into_owned();
+        if values.insert(name, value).is_some() {
+            return Err(DocxImportError::malformed());
+        }
+    }
+    Ok(values)
+}
+
+fn reject_spacing_extensions(attributes: &HashMap<String, String>) -> Result<(), DocxImportError> {
+    let allowed = ["after", "before", "line", "lineRule"];
+    if attributes
+        .keys()
+        .all(|name| allowed.contains(&name.as_str()))
+    {
+        Ok(())
+    } else {
+        Err(unsupported(ExternalFeature::ContextualSpacing))
+    }
+}
+
+fn reject_indent_extensions(attributes: &HashMap<String, String>) -> Result<(), DocxImportError> {
+    let allowed = ["firstLine", "hanging", "left", "right"];
+    if attributes
+        .keys()
+        .all(|name| allowed.contains(&name.as_str()))
+    {
+        Ok(())
+    } else {
+        Err(unsupported(ExternalFeature::ListIndentation))
+    }
+}
+
+fn automatic_line_spacing(value: &str) -> Result<u64, DocxImportError> {
+    let units = unsigned_integer(value)?;
+    let scaled = units.checked_mul(100).ok_or_else(lossy_line_spacing)?;
+    if scaled % 240 != 0 {
+        return Err(lossy_line_spacing());
+    }
+    let hundredths = scaled / 240;
+    let in_range =
+        (MIN_LINE_SPACING_HUNDREDTHS..=MAX_LINE_SPACING_HUNDREDTHS).contains(&hundredths);
+    if in_range && hundredths.is_multiple_of(LINE_SPACING_INCREMENT) {
+        Ok(hundredths)
+    } else {
+        Err(lossy_line_spacing())
+    }
+}
+
+fn bounded_twips(value: &str, maximum: u64) -> Result<u64, DocxImportError> {
+    let twips = unsigned_integer(value)?;
+    if twips <= maximum {
+        Ok(twips)
+    } else {
+        Err(DocxImportError::lossy(vec![
+            ExternalFeature::UnsupportedDocumentStructure,
+        ]))
+    }
+}
+
+fn unsigned_integer(value: &str) -> Result<u64, DocxImportError> {
+    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(DocxImportError::malformed());
+    }
+    value.parse().map_err(|_| DocxImportError::malformed())
+}
+
+fn heading_level(value: &str) -> Option<u8> {
+    accepted_heading_level(value.strip_prefix("Heading")?)
+}
+
+fn heading_level_with_space(value: &str) -> Option<u8> {
+    accepted_heading_level(value.strip_prefix("Heading ")?)
+}
+
+fn accepted_heading_level(value: &str) -> Option<u8> {
+    value.parse().ok().filter(|level| (1..=6).contains(level))
+}
+
+fn resolve_reference(reference: &BytesRef<'_>) -> Result<char, DocxImportError> {
+    if let Some(character) = reference
+        .resolve_char_ref()
+        .map_err(|_| unsafe_xml_entity())?
+    {
+        return Ok(character);
+    }
+    let value: &[u8] = reference;
+    match value {
+        b"amp" => Ok('&'),
+        b"apos" => Ok('\''),
+        b"gt" => Ok('>'),
+        b"lt" => Ok('<'),
+        b"quot" => Ok('"'),
+        _ => Err(unsafe_xml_entity()),
+    }
+}
+
+fn local_name(name: &[u8]) -> &[u8] {
+    name.rsplit(|byte| *byte == b':').next().unwrap_or(name)
+}
+
+fn name_string(name: &[u8]) -> Result<String, DocxImportError> {
+    String::from_utf8(name.to_vec()).map_err(|_| DocxImportError::malformed())
+}
+
+fn unsupported(feature: ExternalFeature) -> DocxImportError {
+    DocxImportError::unsupported(vec![feature])
+}
+
+fn lossy_line_spacing() -> DocxImportError {
+    DocxImportError::lossy(vec![ExternalFeature::UnsupportedDocumentStructure])
+}
+
+fn unsafe_xml_entity() -> DocxImportError {
+    DocxImportError::unsafe_input(ExternalSafetyReason::XmlEntity)
+}

@@ -205,6 +205,14 @@ outcomes. Each client owns
 one command constant, sends one bounded request envelope, validates an unknown
 response, and preserves only its closed command errors.
 
+Phase 47 adds the exact `imported_external` Open outcome and the closed
+validators in `externalDocument.ts`. The frontend accepts only DOCX, a
+basename-only display name, a successful fidelity class, and a same-format
+save disposition. Unknown classes, unordered or duplicate feature identifiers,
+absolute or relative paths, raw XML, source bytes, and extra fields make the
+entire response invalid. Nested DOCX command failures retain their typed
+malformed, unsafe, unsupported, and lossy distinctions without raw details.
+
 ## Native menu wrappers
 
 `nativeMenu.ts` owns both Phase 48 native boundaries. It validates the closed
@@ -220,8 +228,10 @@ filesystem path or native menu object to React.
 
 The create client accepts no identity or content input; Rust returns the
 validated blank initial envelope. The Open client receives no path and never
-returns one. Its imported-text title is display-only, while the session stores
-the typed origin instead of inferring persistence from an ID or filename. The
+returns one. Imported text uses a display-only title. Imported DOCX uses a
+path-free external summary and remains Rust-registered without becoming a
+native save target. The session stores typed origin, registration, and
+persistence separately instead of inferring them from an ID or filename. The
 reference clients return citekey and title
 summaries only. The text client
 accepts no provider, credential, path, model, or runtime option and validates
@@ -229,6 +239,8 @@ the exact five finding codes, stable ordering, limits, and UTF-8 byte ranges.
 The export client receives no selected target path. Feature hooks use these
 results for transient presentation; Rust retains document, store, helper, and
 filesystem authority. See `docs/maintainers/PHASE46_WORKFLOWS.md`.
+The DOCX import boundary is documented in
+`docs/maintainers/DOCX_INTEROPERABILITY.md`.
 
 ## Enforcement
 

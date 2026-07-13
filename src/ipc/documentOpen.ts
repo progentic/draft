@@ -5,6 +5,10 @@ import {
   type DocumentEnvelopeSnapshot,
 } from "./documentEnvelope";
 import { isOpenDocumentCommandError, type OpenDocumentCommandError } from "./documentErrors";
+import {
+  isExternalDocumentSummary,
+  type ExternalDocumentSummary,
+} from "./externalDocument";
 
 export type OpenDocumentRequest = Record<string, never>;
 
@@ -16,6 +20,11 @@ export type OpenDocumentClientError =
 export type OpenDocumentResult =
   | { status: "opened_draft"; envelope: DocumentEnvelopeSnapshot }
   | { status: "imported_text"; envelope: DocumentEnvelopeSnapshot }
+  | {
+      status: "imported_external";
+      envelope: DocumentEnvelopeSnapshot;
+      external: ExternalDocumentSummary;
+    }
   | { status: "cancelled" }
   | { status: "error"; error: OpenDocumentClientError };
 
@@ -49,7 +58,29 @@ function resultFromResponse(response: unknown): OpenDocumentResult {
     return { status: "imported_text", envelope: response.envelope };
   }
 
+  if (isImportedExternalResponse(response)) {
+    return {
+      status: "imported_external",
+      envelope: response.envelope,
+      external: response.external,
+    };
+  }
+
   return { status: "error", error: { type: "invalid-response" } };
+}
+
+function isImportedExternalResponse(value: unknown): value is {
+  status: "imported_external";
+  envelope: DocumentEnvelopeSnapshot;
+  external: ExternalDocumentSummary;
+} {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === 3 &&
+    value.status === "imported_external" &&
+    isDocumentEnvelopeSnapshot(value.envelope) &&
+    isExternalDocumentSummary(value.external)
+  );
 }
 
 function clientErrorFrom(error: unknown): OpenDocumentClientError {

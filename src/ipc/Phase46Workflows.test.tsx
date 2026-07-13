@@ -133,7 +133,7 @@ describe("Phase 46 visible workflows", () => {
     }));
   });
 
-  it("prevents overlapping actions while Open is pending", async () => {
+  it("prevents stale Open responses by rejecting overlapping actions", async () => {
     const user = userEvent.setup();
     const pending = deferred<unknown>();
     installDefaultCommands({ openDocument: () => pending.promise });
@@ -247,6 +247,116 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
     expect(screen.getByText("Imported, unsaved")).toBeTruthy();
     expect(screen.getByText("notes.md")).toBeTruthy();
+  });
+
+  it("treats a path-free DOCX import as registered but unsaved", async () => {
+    const user = userEvent.setup();
+    const saveRequests: Record<string, unknown>[] = [];
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: externalSummary(),
+      }),
+      saveDocument: async (args) => {
+        saveRequests.push(args);
+        return {
+          status: "saved",
+          documentId: IMPORTED_ID,
+          displayName: "Paper.draft",
+          wasSaveAs: true,
+        };
+      },
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    expect(
+      await screen.findByText(
+        "DOCX imported. Save as a DRAFT document to keep edits; the original stays unchanged.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("paper.docx")).toBeTruthy();
+    expect(screen.getByText("Imported, unsaved")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Paper.draft")).toBeTruthy();
+    expect(screen.getByText("Saved")).toBeTruthy();
+    expect(saveRequests).toHaveLength(1);
+    expect(JSON.stringify(saveRequests)).not.toMatch(/path|xml|sourceBytes/i);
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(await screen.findByText("Document closed.")).toBeTruthy();
+    expect(commandNames()).toEqual([
+      "create_document",
+      "open_document",
+      "save_document",
+      "close_document",
+    ]);
+  });
+
+  it("discloses unsupported DOCX behavior without exposing source authority", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: {
+          ...externalSummary(),
+          fidelity: {
+            classification: "unsupported_preservable",
+            features: ["paragraph_border"],
+          },
+          sameFormatSave: "denied_unsupported_source_behavior",
+        },
+      }),
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+
+    expect(
+      await screen.findByText(
+        "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/\/Users|word\/document\.xml|same-format/i)).toBeNull();
+  });
+
+  it.each([
+    [
+      "malformed_package",
+      { classification: "malformed_external_input" },
+      "That DOCX file is malformed. The original was not changed.",
+    ],
+    [
+      "unsafe_package",
+      { classification: "unsafe", reason: "archive_path" },
+      "That DOCX file exceeds DRAFT’s safety limits. The original was not changed.",
+    ],
+    [
+      "unsupported_external_feature",
+      { classification: "unsupported_external_feature", features: ["exact_line_spacing"] },
+      "That DOCX file contains structure DRAFT cannot import safely. The original was not changed.",
+    ],
+    [
+      "lossy_import_denied",
+      { classification: "lossy", features: ["unsupported_document_structure"] },
+      "Importing that DOCX file would change unsupported formatting. The original was not changed.",
+    ],
+  ] as const)("presents bounded %s DOCX recovery", async (code, fidelity, message) => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => {
+        throw { code: "external_import", cause: { code: "docx", cause: { code, fidelity } } };
+      },
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+
+    expect(await screen.findByText(message)).toBeTruthy();
+    expect(screen.getByText("Not saved")).toBeTruthy();
   });
 
   it("keeps the saved filename and dirty state when a later Save fails", async () => {
@@ -588,6 +698,27 @@ function importedEnvelope() {
         { type: "paragraph", content: [{ type: "text", text: "**not parsed**" }] },
       ],
     },
+  };
+}
+
+function importedDocxEnvelope() {
+  return {
+    schema_version: 2,
+    document_id: IMPORTED_ID,
+    title: "Paper",
+    document: {
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "Imported paper" }] }],
+    },
+  };
+}
+
+function externalSummary() {
+  return {
+    format: "docx",
+    displayName: "paper.docx",
+    fidelity: { classification: "exact" },
+    sameFormatSave: "no_changes",
   };
 }
 

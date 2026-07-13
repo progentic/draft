@@ -8,15 +8,22 @@ Apple Silicon target.
 ## Documents
 
 - There is no autosave, crash recovery, version history, or cloud sync.
-- DRAFT opens and saves its version 1 document format. It can import UTF-8
-  `.txt` and `.md` files as literal editable text, but it does not parse or
-  preview Markdown. Unsupported or malformed input fails without changing the
+- DRAFT opens and saves its version 2 document format. It migrates valid version
+  1 DRAFT documents in memory and writes version 2 only after an explicit save.
+- DRAFT imports UTF-8 `.txt` and `.md` files as literal editable text, but it
+  does not parse or preview Markdown. Unsupported or malformed input fails
+  without changing the source file.
+- DRAFT can read a bounded DOCX paragraph subset, including supported headings,
+  alignment, line spacing, paragraph spacing, and indentation. Valid DOCX
+  features outside that subset are disclosed as requiring source preservation;
+  malformed, unsafe, unsupported, or lossy input fails without changing the
   source file.
-- Imported text and Markdown become unsaved DRAFT documents. They cannot be
-  saved back to the source format; first Save requires a new `.draft` target
-  and leaves the original source unchanged.
-- DOCX, RTF, OpenDocument (`.odt`), and legacy Word (`.doc`) import are
-  unavailable. DOCX is currently an export format only.
+- Imported text, Markdown, and DOCX content become unsaved DRAFT documents.
+  They cannot be saved back to the source format. First Save requires a new
+  `.draft` target, Export creates a separate DOCX copy, and the original source
+  remains unchanged.
+- RTF, OpenDocument (`.odt`), and legacy Word (`.doc`) import are unavailable.
+  Same-format DOCX save and round-trip fidelity are not currently supported.
 - The visible workspace manages one current document at a time.
 
 ## Desktop Interface

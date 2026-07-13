@@ -16,7 +16,7 @@ then offer a specific, useful message without exposing implementation details.
 | :--- | :--- | :--- |
 | Runtime status | `invalid_application_version`, `event_delivery_failed` | Visible in the document inspector through the Phase 39 presentation policy. |
 | Worker cancellation | `invalid_worker_id`, `worker_not_found`, `registry_unavailable` | No visible workflow currently consumes this wrapper. |
-| Document open | `unsupported_file_location`, `unsupported_file_type`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_text_encoding`, `text_too_large`, `invalid_envelope`, `registry` | The visible Open workflow preserves the current session on failure and gives bounded guidance for DRAFT, UTF-8 text, and Markdown input. |
+| Document open | `unsupported_file_location`, `unsupported_file_type`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_text_encoding`, `text_too_large`, `invalid_envelope`, `external_import`, `registry` | The visible Open workflow preserves the current session on failure and gives bounded guidance for DRAFT, UTF-8 text, Markdown, and DOCX input. `external_import` retains closed malformed, unsafe, unsupported, and lossy DOCX categories without exposing paths or package content. |
 | Document save | `unsupported_file_location`, `invalid_target`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | The visible Save and Save As workflows ask for a `.draft` name when needed, preserve unsaved state or the last complete document, and retain the prior target on cancellation or failure. |
 | Native menu state | `menu_update_failed` | The command bar remains available and visible copy directs the user to it; listener setup failures and invalid native event payloads use the same bounded recovery. |
 | Citation resolution | `invalid_citation`, `reference_not_found`, `reference_store` | The citation node renders bounded invalid, unavailable, or failed copy. No citation-management workflow exists. |
@@ -81,6 +81,9 @@ guidance lives in `docs/wiki/Troubleshooting.md`:
 | Citation input is invalid | Keep the citation unchanged. The workspace has no citation-repair control. |
 | Citation cannot be resolved or read | Keep the citation unchanged. Restart DRAFT only when the visible message directs it. |
 | Native menu action or state is unavailable | Use the matching document action in the visible toolbar. |
+| DOCX import is malformed or unsafe | Keep the source unchanged and open a trusted, valid copy. |
+| DOCX import is unsupported or lossy | Preserve the source and use a supported format; DRAFT does not claim safe round-trip editing. |
+| DOCX import requires source preservation | Save to `.draft` or export a separate DOCX copy; do not treat the imported source as a save target. |
 
 Maintainer copy, rendered copy, and the Wiki recovery page must change together.
 Typed errors for commands with no visible workflow stay in the inventory only;
@@ -89,7 +92,8 @@ action.
 
 ## Excluded Boundaries
 
-Document files, workers, external access, metadata, secrets, diagnostics,
-imports, exports, and other unwired boundaries remain inventory-only. Phase 39
-does not add commands, controls, recovery workflows, or frontend authority for
-them, and it does not define a generalized application-wide error framework.
+Workers, external access, metadata, secrets, diagnostics, and other unwired
+boundaries remain inventory-only. Later phases may connect a typed boundary to
+a visible workflow, as Phase 47 does for bounded DOCX import, without changing
+the Phase 39 presentation-policy scope or creating a generalized application-
+wide error framework.

@@ -9,6 +9,7 @@ use std::{
 use serde::Serialize;
 
 use crate::documents::envelope::{DocumentEnvelope, DocumentId};
+use crate::interoperability::provenance::ExternalSourceProvenance;
 
 /// Process-local owner of validated live document handles.
 #[derive(Default)]
@@ -30,6 +31,7 @@ pub enum DocumentRegistryError {
 struct LiveDocumentHandle {
     envelope: DocumentEnvelope,
     source_path: Option<PathBuf>,
+    external_source: Option<ExternalSourceProvenance>,
 }
 
 impl DocumentRegistry {
@@ -41,7 +43,7 @@ impl DocumentRegistry {
     /// Takes ownership of one validated envelope while its document is open.
     pub fn open(&self, envelope: DocumentEnvelope) -> Result<(), DocumentRegistryError> {
         let mut handles = self.lock_handles()?;
-        register_handle(&mut handles, envelope, None)
+        register_handle(&mut handles, envelope, None, None)
     }
 
     /// Opens a validated envelope with a Rust-selected source path.
@@ -51,7 +53,17 @@ impl DocumentRegistry {
         source_path: PathBuf,
     ) -> Result<(), DocumentRegistryError> {
         let mut handles = self.lock_handles()?;
-        register_handle(&mut handles, envelope, Some(source_path))
+        register_handle(&mut handles, envelope, Some(source_path), None)
+    }
+
+    /// Registers one validated external import without granting save-target authority.
+    pub(crate) fn open_imported_external(
+        &self,
+        envelope: DocumentEnvelope,
+        provenance: ExternalSourceProvenance,
+    ) -> Result<(), DocumentRegistryError> {
+        let mut handles = self.lock_handles()?;
+        register_handle(&mut handles, envelope, None, Some(provenance))
     }
 
     /// Returns the source path retained by Rust for one open document.
@@ -134,10 +146,15 @@ impl DocumentRegistryError {
 }
 
 impl LiveDocumentHandle {
-    fn new(envelope: DocumentEnvelope, source_path: Option<PathBuf>) -> Self {
+    fn new(
+        envelope: DocumentEnvelope,
+        source_path: Option<PathBuf>,
+        external_source: Option<ExternalSourceProvenance>,
+    ) -> Self {
         Self {
             envelope,
             source_path,
+            external_source,
         }
     }
 
@@ -147,6 +164,10 @@ impl LiveDocumentHandle {
 
     fn owns_source_path(&self, source_path: &Path) -> bool {
         self.source_path.as_deref() == Some(source_path)
+            || self
+                .external_source
+                .as_ref()
+                .is_some_and(|source| source.source_path() == source_path)
     }
 
     fn update(&mut self, envelope: DocumentEnvelope) {
@@ -156,6 +177,7 @@ impl LiveDocumentHandle {
     fn update_source(&mut self, envelope: DocumentEnvelope, source_path: PathBuf) {
         self.envelope = envelope;
         self.source_path = Some(source_path);
+        self.external_source = None;
     }
 
     fn into_envelope(self) -> DocumentEnvelope {
@@ -167,17 +189,30 @@ fn register_handle(
     handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
     envelope: DocumentEnvelope,
     source_path: Option<PathBuf>,
+    external_source: Option<ExternalSourceProvenance>,
 ) -> Result<(), DocumentRegistryError> {
     let document_id = envelope.document_id();
-    reject_source_path_conflict(handles, document_id, source_path.as_deref())?;
+    let authority_path = authority_path(source_path.as_deref(), external_source.as_ref());
+    reject_source_path_conflict(handles, document_id, authority_path)?;
 
     match handles.entry(document_id) {
         Entry::Occupied(_) => Err(DocumentRegistryError::AlreadyOpen),
         Entry::Vacant(entry) => {
-            entry.insert(LiveDocumentHandle::new(envelope, source_path));
+            entry.insert(LiveDocumentHandle::new(
+                envelope,
+                source_path,
+                external_source,
+            ));
             Ok(())
         }
     }
+}
+
+fn authority_path<'a>(
+    source_path: Option<&'a Path>,
+    external_source: Option<&'a ExternalSourceProvenance>,
+) -> Option<&'a Path> {
+    source_path.or_else(|| external_source.map(ExternalSourceProvenance::source_path))
 }
 
 fn source_path_for(
@@ -256,6 +291,9 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+    use crate::interoperability::{
+        fidelity::ExternalFidelity, provenance::ExternalSourceProvenance,
+    };
 
     const FIRST_DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000001";
     const SECOND_DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000002";
@@ -382,6 +420,55 @@ mod tests {
     }
 
     #[test]
+    fn external_source_path_cannot_back_two_live_handles() {
+        let registry = DocumentRegistry::new();
+        let source_path = PathBuf::from("shared-source.docx");
+        let first = envelope(FIRST_DOCUMENT_ID, "First");
+        let second = envelope(SECOND_DOCUMENT_ID, "Second");
+        registry
+            .open_imported_external(first.clone(), provenance(&first, source_path.clone()))
+            .unwrap();
+
+        assert_eq!(
+            registry.open_imported_external(second.clone(), provenance(&second, source_path)),
+            Err(DocumentRegistryError::SourcePathInUse)
+        );
+        assert_eq!(registry.close(first.document_id()), Ok(first));
+        assert_eq!(
+            registry.close(second.document_id()),
+            Err(DocumentRegistryError::NotOpen)
+        );
+    }
+
+    #[test]
+    fn draft_save_replaces_external_authority_only_after_registry_update() {
+        let registry = DocumentRegistry::new();
+        let external_path = PathBuf::from("source.docx");
+        let draft_path = PathBuf::from("saved.draft");
+        let imported = envelope(FIRST_DOCUMENT_ID, "Imported");
+        registry
+            .open_imported_external(
+                imported.clone(),
+                provenance(&imported, external_path.clone()),
+            )
+            .unwrap();
+
+        registry
+            .update_source(imported.clone(), draft_path.clone())
+            .unwrap();
+        let second = envelope(SECOND_DOCUMENT_ID, "Second import");
+        registry
+            .open_imported_external(second.clone(), provenance(&second, external_path))
+            .unwrap();
+
+        assert_eq!(
+            registry.source_path(imported.document_id()),
+            Ok(Some(draft_path))
+        );
+        assert_eq!(registry.source_path(second.document_id()), Ok(None));
+    }
+
+    #[test]
     fn registry_failure_shape_is_stable() {
         let errors = [
             DocumentRegistryError::AlreadyOpen,
@@ -446,5 +533,14 @@ mod tests {
             "document": { "type": "doc", "content": [] }
         }))
         .expect("test envelope should validate")
+    }
+
+    fn provenance(envelope: &DocumentEnvelope, source_path: PathBuf) -> ExternalSourceProvenance {
+        ExternalSourceProvenance::imported_docx(
+            source_path,
+            b"source",
+            envelope,
+            ExternalFidelity::Exact,
+        )
     }
 }
