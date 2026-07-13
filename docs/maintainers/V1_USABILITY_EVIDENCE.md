@@ -125,6 +125,36 @@ restoration, save/reopen restoration, and existing DOCX font fidelity. All RC
 rows and `GATE-46` remain open because this was not a complete workflow pass.
 Phase 48 findings `UX-46-020` and `UX-46-021` remain confirmed failures.
 
+## Phase 48 Mechanical Retest Candidate
+
+- Implementation commit: `857ae0899633f59bae7d690d8788d908fd03f211`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `7f252c85597f45bd2d5e00502c9db7b7da4d18d8af1c01889254996c6112fba6`
+- Canonical icon source SHA-256: `ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043`
+- Tracked and embedded `icon.icns` SHA-256: `fd07d079de1dd38bdc84eb222ab8ee90d856d488aad7f0550860c8a369b94236`
+- Mechanical result: the arm64 application package built successfully,
+  `Info.plist` names `icon.icns`, and the embedded icon is byte-for-byte
+  identical to the tracked generated asset.
+- Human result: pending.
+
+Automated tests and structural checks cover the File menu contract,
+state-aware shared dispatcher, Save As authority, and icon chain. They do not
+prove the following behavior in a direct packaged session:
+
+- File menu order and separators;
+- standard shortcuts;
+- New, Open, Close, Save, Save As, and Export from the native menu;
+- toolbar and native-menu parity;
+- disabled-action behavior during busy states;
+- Save As rebinding and Save As cancellation;
+- Finder, Dock, and application-switcher icons;
+- the in-window purple identity; or
+- behavior after clearing stale macOS icon caches.
+
+Findings `UX-46-020` and `UX-46-021`, `RC-08`, `GATE-48`, and every other
+release row remain open. The package hash and icon comparison are mechanical
+evidence only and cannot close either finding.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid
