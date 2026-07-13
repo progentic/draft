@@ -708,9 +708,11 @@ silently flattening content.
 The same decision requires native macOS menus, visible controls, and
 keyboard shortcuts to share one state-aware frontend action dispatcher. File,
 identity, persistence, import, export, and source-path authority remain in
-Rust. These boundaries govern Phases 47 and 48; they do not claim that the
-parsers, writers, external-source state, menu dispatcher, or visual changes
-already exist.
+Rust. Phase 48 implements the native File menu through Rust-owned menu items,
+typed events, a path-free state command, and the same frontend dispatcher used
+by the visible command bar. Save As selects and retains its replacement target
+in Rust and returns only document identity and basename display data. Phase 47
+parsers, writers, and external-source state remain absent.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 

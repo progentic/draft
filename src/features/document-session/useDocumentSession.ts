@@ -6,6 +6,7 @@ import { createUnsavedDocument } from "../../ipc/documentCreate";
 import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
 import { openDocument } from "../../ipc/documentOpen";
 import { saveDocument } from "../../ipc/documentSave";
+import type { SaveDocumentMode } from "../../ipc/documentSave";
 
 export type PendingDocumentAction = "close" | "new" | "open";
 export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "saving";
@@ -24,6 +25,7 @@ export interface DocumentSession {
   canClose: boolean;
   canExport: boolean;
   canSave: boolean;
+  canSaveAs: boolean;
   documentId: string | null;
   feedback: string;
   operation: DocumentOperation;
@@ -33,6 +35,7 @@ export interface DocumentSession {
   requestOpen: () => void;
   resolvePendingAction: (decision: "cancel" | "discard" | "save") => void;
   save: () => Promise<boolean>;
+  saveAs: () => Promise<boolean>;
   snapshot: () => DocumentEnvelopeSnapshot | null;
   statusLabel: string;
   title: string;
@@ -71,14 +74,14 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     [editor, identity],
   );
 
-  const save = useCallback(async () => {
+  const persist = useCallback(async (mode: SaveDocumentMode) => {
     const current = snapshot();
     if (!current) {
       setFeedback("Create or open a document before saving.");
       return false;
     }
     setOperation("saving");
-    const result = await saveDocument(current);
+    const result = await saveDocument(current, mode);
     setOperation("ready");
     if (result.status !== "saved") {
       setFeedback(saveFailureMessage(result));
@@ -86,7 +89,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     }
     const savedIdentity = {
       displayName: result.displayName,
-      documentId: current.document_id,
+      documentId: result.documentId,
       origin: "opened_draft" as const,
       persisted: true,
       title: current.title,
@@ -97,6 +100,8 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     setFeedback(`Saved as ${result.displayName}.`);
     return true;
   }, [snapshot]);
+  const save = useCallback(() => persist("save"), [persist]);
+  const saveAs = useCallback(() => persist("save_as"), [persist]);
 
   const executeAction = useCallback(
     async (action: PendingDocumentAction) => {
@@ -159,6 +164,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       canClose: identity !== null && operation === "ready",
       canExport: identity !== null && operation === "ready",
       canSave: identity !== null && operation === "ready",
+      canSaveAs: identity !== null && operation === "ready",
       documentId: identity?.documentId ?? null,
       feedback,
       operation,
@@ -168,11 +174,12 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       requestOpen: () => request("open"),
       resolvePendingAction,
       save,
+      saveAs,
       snapshot,
       statusLabel: documentStatus(identity, dirty, operation),
       title: identity?.displayName ?? "No document open",
     }),
-    [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, snapshot],
+    [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, saveAs, snapshot],
   );
 }
 

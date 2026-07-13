@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const invokeMock = vi.hoisted(() => vi.fn());
 const useRuntimeStatusMock = vi.hoisted(() => vi.fn());
 const useConnectivityModeMock = vi.hoisted(() => vi.fn());
+const listenToNativeMenuActionsMock = vi.hoisted(() => vi.fn());
+const setNativeMenuStateMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 vi.mock("../features/runtime-status/useRuntimeStatus", () => ({
@@ -12,6 +14,10 @@ vi.mock("../features/runtime-status/useRuntimeStatus", () => ({
 }));
 vi.mock("../features/connectivity/useConnectivityMode", () => ({
   useConnectivityMode: useConnectivityModeMock,
+}));
+vi.mock("./nativeMenu", () => ({
+  listenToNativeMenuActions: listenToNativeMenuActionsMock,
+  setNativeMenuState: setNativeMenuStateMock,
 }));
 
 import { App } from "../App";
@@ -31,6 +37,10 @@ describe("Phase 46 visible workflows", () => {
       refresh: vi.fn(),
       setMode: vi.fn(),
     });
+    listenToNativeMenuActionsMock.mockReset();
+    listenToNativeMenuActionsMock.mockResolvedValue(vi.fn());
+    setNativeMenuStateMock.mockReset();
+    setNativeMenuStateMock.mockResolvedValue({ status: "applied" });
     installDefaultCommands();
   });
 
@@ -47,7 +57,7 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Document closed.")).toBeTruthy();
     expect(screen.getAllByText("No document open")).toHaveLength(2);
 
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     expect(await screen.findAllByText("Reopened research notes")).toHaveLength(3);
     expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
       "Persisted evidence",
@@ -72,7 +82,7 @@ describe("Phase 46 visible workflows", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Heading 2" }));
-    const openButton = screen.getByRole("button", { name: "Open" });
+    const openButton = screen.getByRole("button", { name: "Open…" });
     await user.click(openButton);
 
     const dialog = screen.getByRole("alertdialog", { name: "Save your changes?" });
@@ -93,7 +103,7 @@ describe("Phase 46 visible workflows", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Heading 2" }));
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     await user.click(screen.getByRole("button", { name: "Save and continue" }));
 
     expect(await screen.findAllByText("Reopened research notes")).toHaveLength(3);
@@ -108,11 +118,19 @@ describe("Phase 46 visible workflows", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.getByText("Saving")).toBeTruthy();
-    await assertDocumentActionsDisabled(user, "Export DOCX");
+    await assertDocumentActionsDisabled(user, "Export DOCX…");
     expect(commandNames()).toEqual(["create_document", "save_document"]);
 
     await act(async () => pending.resolve({ status: "cancelled" }));
     expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
+    await waitFor(() => expect(setNativeMenuStateMock).toHaveBeenLastCalledWith({
+      canNew: true,
+      canOpen: true,
+      canClose: true,
+      canSave: true,
+      canSaveAs: true,
+      canExport: true,
+    }));
   });
 
   it("prevents overlapping actions while Open is pending", async () => {
@@ -121,9 +139,9 @@ describe("Phase 46 visible workflows", () => {
     installDefaultCommands({ openDocument: () => pending.promise });
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     expect(screen.getByText("Opening")).toBeTruthy();
-    await assertDocumentActionsDisabled(user, "Export DOCX");
+    await assertDocumentActionsDisabled(user, "Export DOCX…");
     expect(commandNames()).toEqual(["create_document", "open_document"]);
 
     await act(async () => pending.resolve({ status: "cancelled" }));
@@ -158,7 +176,7 @@ describe("Phase 46 visible workflows", () => {
     expect(JSON.stringify(savedEnvelope)).toContain('"family":"avenir_next"');
     expect(JSON.stringify(savedEnvelope)).toContain('"points":19');
     await user.click(screen.getByRole("button", { name: "Close" }));
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
 
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     expect(editor.querySelector('[data-draft-font-family="avenir_next"]')).toBeTruthy();
@@ -173,7 +191,7 @@ describe("Phase 46 visible workflows", () => {
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     await waitFor(() => expect(document.activeElement).toBe(editor));
     await user.type(editor, "Temporary text");
-    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.click(screen.getByRole("button", { name: "New Document" }));
     await user.click(screen.getByRole("button", { name: "Discard changes" }));
 
     await waitFor(() => expect(document.activeElement).toBe(editor));
@@ -200,7 +218,7 @@ describe("Phase 46 visible workflows", () => {
     render(<App />);
     const editor = screen.getByRole("textbox", { name: "Document editor" });
 
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     expect(await screen.findByText("Text imported. Save as a DRAFT document to keep your work.")).toBeTruthy();
     expect(screen.getByText("Imported, unsaved")).toBeTruthy();
     expect(screen.getByText("notes.md")).toBeTruthy();
@@ -223,7 +241,7 @@ describe("Phase 46 visible workflows", () => {
       saveDocument: async () => ({ status: "cancelled" }),
     });
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
@@ -260,6 +278,36 @@ describe("Phase 46 visible workflows", () => {
     expect(screen.getByText("Unsaved changes")).toBeTruthy();
   });
 
+  it("uses Save As once and reuses the Rust-owned replacement target", async () => {
+    const user = userEvent.setup();
+    const modes: string[] = [];
+    installDefaultCommands({
+      saveDocument: async (args) => {
+        const request = args.request as {
+          mode: string;
+          snapshot: { document_id: string };
+        };
+        modes.push(request.mode);
+        return {
+          status: "saved",
+          documentId: request.snapshot.document_id,
+          displayName: request.mode === "save_as" ? "Archive.draft" : "Research notes.draft",
+          wasSaveAs: request.mode === "save_as" || modes.length === 1,
+        };
+      },
+    });
+    render(<App />);
+    await screen.findByText("Not saved");
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByText("Research notes.draft");
+    await clickWorkspaceAction(user, "Save As…");
+    await screen.findByText("Archive.draft");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(modes).toEqual(["save", "save_as", "save"]));
+  });
+
   it("rejects a non-DRAFT first-save target without changing import state", async () => {
     const user = userEvent.setup();
     installDefaultCommands({
@@ -269,7 +317,7 @@ describe("Phase 46 visible workflows", () => {
       },
     });
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("Choose a .draft file name. Your document remains unsaved.")).toBeTruthy();
@@ -289,13 +337,13 @@ describe("Phase 46 visible workflows", () => {
           : { status: "cancelled" },
     });
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     editor.focus();
     selectText(editor.querySelector("p")?.firstChild, 2, 8);
     document.dispatchEvent(new Event("selectionchange"));
 
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open…" }));
     expect(await screen.findByText("Open cancelled.")).toBeTruthy();
     expect(editor.textContent).toContain("Persisted evidence");
     expect(screen.getAllByText("Reopened research notes")).toHaveLength(3);
@@ -316,8 +364,8 @@ describe("Phase 46 visible workflows", () => {
       },
     });
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Open" }));
-    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
 
     expect(await screen.findByText("That file is no longer available. Choose another document.")).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
@@ -340,7 +388,7 @@ describe("Phase 46 visible workflows", () => {
     render(<App />);
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     await user.type(editor, "Keep this text");
-    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.click(screen.getByRole("button", { name: "New Document" }));
     await user.click(screen.getByRole("button", { name: "Discard changes" }));
 
     expect(await screen.findByText("DRAFT could not create a document. Try again.")).toBeTruthy();
@@ -354,7 +402,7 @@ describe("Phase 46 visible workflows", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Document editor" }));
     });
-    await user.click(screen.getByRole("button", { name: "References" }));
+    await clickWorkspaceAction(user, "References");
     expect(await screen.findAllByText("No references saved yet.")).toHaveLength(2);
 
     await user.type(screen.getByRole("textbox", { name: "Citekey" }), "ada2026");
@@ -375,7 +423,7 @@ describe("Phase 46 visible workflows", () => {
     installDefaultCommands({ analysis: () => pending.promise });
     render(<App />);
     await user.type(screen.getByRole("textbox", { name: "Document editor" }), "Word word.");
-    await user.click(screen.getByRole("button", { name: "Text checks" }));
+    await clickWorkspaceAction(user, "Text checks");
     await user.click(screen.getByRole("button", { name: "Check document" }));
     expect(screen.getByText("Checking the current document.")).toBeTruthy();
 
@@ -392,7 +440,7 @@ describe("Phase 46 visible workflows", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Close" }));
-    await user.click(screen.getByRole("button", { name: "Text checks" }));
+    await clickWorkspaceAction(user, "Text checks");
     await user.click(screen.getByRole("button", { name: "Check document" }));
 
     expect(
@@ -411,7 +459,7 @@ describe("Phase 46 visible workflows", () => {
     });
     render(<App />);
     await user.type(screen.getByRole("textbox", { name: "Document editor" }), "Text to check.");
-    await user.click(screen.getByRole("button", { name: "Text checks" }));
+    await clickWorkspaceAction(user, "Text checks");
     await user.click(screen.getByRole("button", { name: "Check document" }));
 
     expect(
@@ -427,7 +475,7 @@ describe("Phase 46 visible workflows", () => {
     const pending = deferred<unknown>();
     installDefaultCommands({ analysis: () => pending.promise });
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Text checks" }));
+    await clickWorkspaceAction(user, "Text checks");
     await user.click(screen.getByRole("button", { name: "Check document" }));
     await user.click(screen.getByRole("button", { name: "Heading 2" }));
     await act(async () => pending.resolve({ result: { findings: [finding()] } }));
@@ -439,7 +487,7 @@ describe("Phase 46 visible workflows", () => {
   it("exports DOCX with visible completion and source-safety feedback", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Export DOCX" }));
+    await clickWorkspaceAction(user, "Export DOCX…");
 
     expect(await screen.findByText("DOCX export complete. Your DRAFT document was not changed.")).toBeTruthy();
     expect(commandNames()).toEqual(["create_document", "export_document"]);
@@ -451,13 +499,9 @@ describe("Phase 46 visible workflows", () => {
     installDefaultCommands({ exportDocument: () => pending.promise });
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Export DOCX" }));
+    await clickWorkspaceAction(user, "Export DOCX…");
     expect(screen.getByText("Preparing DOCX export.")).toBeTruthy();
-    for (const label of ["New", "Open", "Save", "References", "Text checks", "Exporting DOCX", "Close"]) {
-      const button = screen.getByRole("button", { name: label }) as HTMLButtonElement;
-      expect(button.disabled).toBe(true);
-      await user.click(button);
-    }
+    await assertDocumentActionsDisabled(user, "Exporting DOCX");
     expect(commandNames()).toEqual(["create_document", "export_document"]);
 
     await act(async () => pending.resolve({ status: "cancelled" }));
@@ -591,11 +635,30 @@ async function assertDocumentActionsDisabled(
   user: ReturnType<typeof userEvent.setup>,
   exportLabel: string,
 ) {
-  for (const label of ["New", "Open", "Save", "References", "Text checks", exportLabel, "Close"]) {
+  for (const label of ["New Document", "Open…", "Save", "Close"]) {
     const button = screen.getByRole("button", { name: label }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     await user.click(button);
   }
+  const menu = await openWorkspaceOverflow(user);
+  for (const label of ["Save As…", "References", "Text checks", exportLabel]) {
+    const button = within(menu).getByText(label).closest("button") as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    await user.click(button);
+  }
+}
+
+async function clickWorkspaceAction(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+) {
+  const menu = await openWorkspaceOverflow(user);
+  await user.click(within(menu).getByText(label).closest("button") as HTMLButtonElement);
+}
+
+async function openWorkspaceOverflow(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "More document actions" }));
+  return screen.getByRole("menu", { name: "More document actions" });
 }
 
 function deferred<T>() {

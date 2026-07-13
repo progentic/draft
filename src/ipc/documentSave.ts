@@ -7,8 +7,11 @@ import {
 import { isSaveDocumentCommandError, type SaveDocumentCommandError } from "./documentErrors";
 
 export interface SaveDocumentRequest {
+  mode: SaveDocumentMode;
   snapshot: DocumentEnvelopeSnapshot;
 }
+
+export type SaveDocumentMode = "save" | "save_as";
 
 export type SaveDocumentClientError =
   | { type: "command"; error: SaveDocumentCommandError }
@@ -27,8 +30,11 @@ type SaveDocumentArguments = {
 const COMMAND_NAME = "save_document";
 
 /** Saves only the explicit editor snapshot supplied by the frontend. */
-export async function saveDocument(snapshot: DocumentEnvelopeSnapshot): Promise<SaveDocumentResult> {
-  const commandArguments: SaveDocumentArguments = { request: { snapshot } };
+export async function saveDocument(
+  snapshot: DocumentEnvelopeSnapshot,
+  mode: SaveDocumentMode,
+): Promise<SaveDocumentResult> {
+  const commandArguments: SaveDocumentArguments = { request: { mode, snapshot } };
 
   try {
     const response = await invokeCommand<unknown>(COMMAND_NAME, commandArguments);

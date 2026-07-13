@@ -13,6 +13,10 @@ The current runtime-status event is deliberately finite. The existing command
 emits one typed `ready` update and returns. It does not start a worker, loop, or
 background task.
 
+Phase 48 adds a second finite event for native File menu selections. It carries
+one closed action and starts no work until the frontend validates and dispatches
+it through current application state.
+
 ## Runtime status event
 
 The stable event name is:
@@ -43,6 +47,17 @@ command-specific error:
 }
 ```
 
+## Native menu action event
+
+The stable event name is `draft://native-menu-action`. Its payload contains
+exactly one `action` field with one of: `new_document`, `open_document`,
+`close_document`, `save_document`, `save_document_as`, or `export_docx`.
+
+Rust creates the native item and emits the selected closed action. The frontend
+validates the payload as unknown input, rejects extra fields, and passes valid
+actions to `useWorkspaceActions`. The dispatcher checks live availability
+before invoking the same document or export operation used by the toolbar.
+
 ## Lifecycle
 
 The runtime-status session follows this order:
@@ -68,6 +83,7 @@ component remounts.
 | Mid | `get_runtime_status` | Builds status, emits its documented event, and returns a typed result. |
 | Mid | `listenToRuntimeStatus` | Validates unknown payloads and exposes the typed event. |
 | Low | `emit_runtime_status` | Calls the raw Tauri Rust emitter. |
+| Low | `emit_native_menu_action` | Emits one selected closed File action to the main window. |
 | Low | `listenToEvent` | Calls the raw Tauri TypeScript listener and extracts unknown payload data. |
 
 Raw TypeScript event APIs are isolated in `src/ipc/eventClient.ts`. Raw Rust
@@ -96,6 +112,8 @@ producer, and the WebView can only register or remove listeners.
 - Command failure after listener setup maps through the existing typed command
   result and keeps the listener cleanup function available.
 - Rust event delivery failure is observable as `event_delivery_failed`.
+- Invalid native menu payloads leave the toolbar available and show bounded
+  recovery guidance.
 
 ## Cancellation boundary
 
@@ -114,8 +132,8 @@ They have no stable `draft://` event name, Tauri emitter, registered command,
 WebView capability, frontend listener, or visible analysis workflow.
 
 The Python helper runner returns one terminal Rust result and emits no progress
-event. The runtime-status event therefore remains the only implemented
-Rust-to-frontend Tauri event at this checkpoint.
+event. Runtime status and native File actions are the only implemented
+Rust-to-frontend Tauri events at this checkpoint.
 
 ## Enforcement
 

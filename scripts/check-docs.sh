@@ -112,6 +112,7 @@ check_required_documents() {
     docs/maintainers/PYTHON_HELPERS.md
     docs/maintainers/TEXT_ANALYSIS.md
     docs/maintainers/METADATA_LOOKUP.md
+    docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md
     docs/maintainers/REFERENCE_RECORD.md
     docs/maintainers/REFERENCE_STORE.md
     docs/maintainers/RELEASE_CANDIDATE.md
@@ -183,8 +184,12 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-017 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-018 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-019 | UX-1 | Closed |'
-  require_document_text "${ledger}" '| UX-46-020 | UX-1 | Open |'
-  require_document_text "${ledger}" '| UX-46-021 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-020 | UX-1 | Closed |'
+  require_document_text "${ledger}" '| UX-46-021 | UX-1 | Closed |'
+  require_document_text "${ledger}" '| UX-46-022 | UX-1 | Closed |'
+  require_document_text "${ledger}" '| UX-46-023 | UX-2 | Closed |'
+  require_document_text "${ledger}" '| UX-46-024 | UX-1 | Open - governance blocked |'
+  require_document_text "${ledger}" '## Phase 48 Compact Chrome Retest Candidate'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
     'the complete eight-step workflow did not pass'
   require_document_text docs/maintainers/CONFIGURATION.md \
@@ -261,6 +266,15 @@ check_adr_003_accepted_state() {
     'maintainer-documentation comprehension'
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     '| Document interoperability and desktop workflows |'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    '## Technical Contract'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md 'RC-08'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    'The visible command bar stays intentionally compact.'
+  require_document_text docs/maintainers/WORKSPACE_UI.md \
+    "| Status | \`WorkspaceStatusBar\` |"
+  require_document_text docs/wiki/Workspace.md '## File Menu Shortcuts'
+  require_document_text docs/user/WORKSPACE.md 'Save As…'
   require_adr_003_coverage_areas
 
   if [[ -e docs/drafts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md ]]; then
@@ -627,6 +641,9 @@ check_coverage_symbols() {
     'src-tauri/src/commands/text_analysis.rs|run_text_analysis'
     'src-tauri/src/commands/docx_export.rs|export_document'
     'src/features/document-session/useDocumentSession.ts|useDocumentSession'
+    'src-tauri/src/desktop_menu.rs|NativeMenuItems'
+    'src-tauri/src/commands/native_menu.rs|set_native_menu_state'
+    'src/features/workspace-actions/useWorkspaceActions.ts|useWorkspaceActions'
     'src/features/text-analysis/TextAnalysisPanel.tsx|TextAnalysisPanel'
   )
   local entry
@@ -937,9 +954,12 @@ check_packaging_documentation() {
   require_document_text "${guide}" 'npm run package:macos'
   require_document_text "${guide}" 'Darwin arm64'
   require_document_text "${guide}" 'CFBundleIdentifier = com.progentic.draft'
+  require_document_text "${guide}" 'assets/DRAFT_Logo.png'
+  require_document_text "${guide}" 'ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043'
   require_document_text "${guide}" 'It does not produce a signed installer'
   require_document_text "${configuration}" "| Bundle activation | \`true\` |"
   require_document_text "${configuration}" "| Bundle targets | \`app\` only |"
+  require_document_text "${configuration}" '| Canonical icon source |'
   require_document_text docs/wiki/Current-Limitations.md 'a published download'
   require_document_text README.md 'Versioned downloads will be published on the'
 }

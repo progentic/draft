@@ -7,6 +7,8 @@ const useConnectivityModeMock = vi.hoisted(() => vi.fn());
 const setConnectivityModeMock = vi.hoisted(() => vi.fn());
 const refreshConnectivityMock = vi.hoisted(() => vi.fn());
 const createUnsavedDocumentMock = vi.hoisted(() => vi.fn());
+const listenToNativeMenuActionsMock = vi.hoisted(() => vi.fn());
+const setNativeMenuStateMock = vi.hoisted(() => vi.fn());
 
 vi.mock("./ipc/documentCreate", () => ({
   createUnsavedDocument: createUnsavedDocumentMock,
@@ -18,6 +20,11 @@ vi.mock("./features/runtime-status/useRuntimeStatus", () => ({
 
 vi.mock("./features/connectivity/useConnectivityMode", () => ({
   useConnectivityMode: useConnectivityModeMock,
+}));
+
+vi.mock("./ipc/nativeMenu", () => ({
+  listenToNativeMenuActions: listenToNativeMenuActionsMock,
+  setNativeMenuState: setNativeMenuStateMock,
 }));
 
 import { App } from "./App";
@@ -50,6 +57,10 @@ describe("DRAFT workspace shell", () => {
       refresh: refreshConnectivityMock,
       setMode: setConnectivityModeMock,
     });
+    listenToNativeMenuActionsMock.mockReset();
+    listenToNativeMenuActionsMock.mockResolvedValue(vi.fn());
+    setNativeMenuStateMock.mockReset();
+    setNativeMenuStateMock.mockResolvedValue({ status: "applied" });
   });
 
   it("renders the editor, navigation, and session state", async () => {
@@ -67,6 +78,20 @@ describe("DRAFT workspace shell", () => {
     expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
   });
 
+  it("keeps document and connectivity state in the bottom status bar", async () => {
+    render(<App />);
+    await screen.findByText("Not saved");
+
+    const header = document.querySelector<HTMLElement>(".workspace-header")!;
+    const status = screen.getByLabelText("Workspace status");
+
+    expect(within(header).queryByText("Not saved")).toBeNull();
+    expect(within(header).queryByText("Online")).toBeNull();
+    expect(within(status).getByText("Not saved")).toBeTruthy();
+    expect(within(status).getByText("Online")).toBeTruthy();
+    expect(within(status).getByText("Ready")).toBeTruthy();
+  });
+
   it("places the workspace title before panel headings", async () => {
     render(<App />);
     await screen.findByText("Not saved");
@@ -76,6 +101,9 @@ describe("DRAFT workspace shell", () => {
     const editor = screen.getByRole("textbox", { name: "Document editor" });
 
     expect(workspaceTitles).toHaveLength(1);
+    const productMark = workspaceTitles[0]?.querySelector<HTMLImageElement>("img.wordmark__mark");
+    expect(productMark?.getAttribute("src")).toContain("32x32.png");
+    expect(productMark?.getAttribute("alt")).toBe("");
     expect(workspaceTitles[0]?.compareDocumentPosition(outlineTitle)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );

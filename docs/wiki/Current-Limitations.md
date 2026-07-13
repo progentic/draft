@@ -21,13 +21,14 @@ Apple Silicon target.
 
 ## Desktop Interface
 
-- Primary workflows are available through in-window controls. A complete
-  native macOS menu structure with state-sensitive commands and conventional
-  shortcuts is not implemented.
+- Document lifecycle and DOCX export are available through matching native File
+  menu and in-window controls. Other native menu groups remain limited to
+  actions the current workspace can honor.
 - Command grouping, responsive overflow, editor spacing, and outline layout
   remain under release-blocking desktop workflow review.
-- The tracked bundle icon passes package validation, but visible packaged-window
-  branding has an open rendering defect.
+- The purple source artwork and generated bundle/header icons are integrated,
+  but Finder, Dock, application-switcher, and packaged-window identity still
+  require final packaged validation.
 
 ## Research And Citations
 

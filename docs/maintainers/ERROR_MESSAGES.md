@@ -17,7 +17,8 @@ then offer a specific, useful message without exposing implementation details.
 | Runtime status | `invalid_application_version`, `event_delivery_failed` | Visible in the document inspector through the Phase 39 presentation policy. |
 | Worker cancellation | `invalid_worker_id`, `worker_not_found`, `registry_unavailable` | No visible workflow currently consumes this wrapper. |
 | Document open | `unsupported_file_location`, `unsupported_file_type`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_text_encoding`, `text_too_large`, `invalid_envelope`, `registry` | The visible Open workflow preserves the current session on failure and gives bounded guidance for DRAFT, UTF-8 text, and Markdown input. |
-| Document save | `unsupported_file_location`, `invalid_target`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | The visible Save workflow asks for a `.draft` name when needed, preserves unsaved state or the last complete document, and offers only the existing Save action. |
+| Document save | `unsupported_file_location`, `invalid_target`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | The visible Save and Save As workflows ask for a `.draft` name when needed, preserve unsaved state or the last complete document, and retain the prior target on cancellation or failure. |
+| Native menu state | `menu_update_failed` | The command bar remains available and visible copy directs the user to it; listener setup failures and invalid native event payloads use the same bounded recovery. |
 | Citation resolution | `invalid_citation`, `reference_not_found`, `reference_store` | The citation node renders bounded invalid, unavailable, or failed copy. No citation-management workflow exists. |
 | External access | `invalid_url`, `invalid_doi`, `invalid_search_query`, `offline`, `connectivity_unavailable`, `browser_unavailable` | No visible research workflow currently consumes this wrapper. |
 | Connectivity mode | `connectivity_unavailable` | Command, invalid-response, and transport failures remain distinct. The header retains the last confirmed mode or reuses its retry control. |
@@ -79,6 +80,7 @@ guidance lives in `docs/wiki/Troubleshooting.md`:
 | Connectivity mode change failed | The visible prior mode remains effective. Retry the change or continue local work in that mode. |
 | Citation input is invalid | Keep the citation unchanged. The workspace has no citation-repair control. |
 | Citation cannot be resolved or read | Keep the citation unchanged. Restart DRAFT only when the visible message directs it. |
+| Native menu action or state is unavailable | Use the matching document action in the visible toolbar. |
 
 Maintainer copy, rendered copy, and the Wiki recovery page must change together.
 Typed errors for commands with no visible workflow stay in the inventory only;

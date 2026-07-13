@@ -863,7 +863,9 @@ check_docx_export_authority() {
   done
   while IFS= read -r frontend_path; do
     case "${frontend_path}" in
-      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts) ;;
+      # Phase 48 permits the closed action identifier only in its typed event,
+      # shared dispatcher, visible command, and colocated tests.
+      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/components/WorkspaceCommandBar.test.tsx|src/features/workspace-actions/useWorkspaceActions.ts) ;;
       *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
     esac
   done < <(rg --files src)
@@ -1423,10 +1425,43 @@ check_adr_003_accepted_guard() {
   assert_no_matches 'ADR-003 format parser or save-back implementation before Phase 47' \
     '\b(?:parse_markdown|import_docx|import_rtf|import_odt|save_external_document)\b' \
     src-tauri/src src
-  assert_no_matches 'ADR-003 native menu implementation before Phase 48' \
-    '\b(?:tauri::menu|MenuBuilder|SubmenuBuilder|on_menu_event|NativeMenuDispatcher)\b' \
-    src-tauri/src src
-  printf 'PASS ADR-003 accepted interoperability and desktop-workflow guard\n'
+  require_file src-tauri/src/desktop_menu.rs
+  require_file src-tauri/src/commands/native_menu.rs
+  require_file src/ipc/nativeMenu.ts
+  require_file src/features/workspace-actions/useWorkspaceActions.ts
+  require_source_pattern 'file.new_document' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.open_document' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.close_document' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.save_document' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.save_document_as' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.export_docx' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'commands::native_menu::set_native_menu_state' src-tauri/src/lib.rs
+  require_source_pattern 'listenToNativeMenuActions' \
+    src/features/workspace-actions/useWorkspaceActions.ts
+  require_source_pattern 'setNativeMenuState' \
+    src/features/workspace-actions/useWorkspaceActions.ts
+  require_source_pattern 'action="save_document_as"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'props.actions.dispatch(props.action)' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'aria-label="More document actions"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern '<WorkspaceStatusBar' src/app/DraftWorkspace.tsx
+  require_source_pattern 'className="workspace-status-bar"' \
+    src/components/WorkspaceStatusBar.tsx
+  assert_no_matches 'ADR-003 duplicate toolbar document authority' \
+    '\b(?:saveDocument|openDocument|closeDocument|exportDocument|DocumentSession)\b' \
+    src/components/WorkspaceCommandBar.tsx
+  assert_no_matches 'ADR-003 primary-header status regression' \
+    '\b(?:ConnectivityModeControl|connectivityState|documentStatus)\b' \
+    src/components/WorkspaceHeader.tsx
+  assert_no_matches 'unapproved paragraph-formatting model before governance' \
+    '\b(?:ParagraphFormatting|paragraphSpacing|lineSpacing|spacingBefore|spacingAfter|firstLineIndent|hangingIndent)\b' \
+    src src-tauri/src
+  assert_no_matches 'ADR-003 frontend native-menu path authority' \
+    '\b(?:path|sourcePath|targetPath|filePath)\b' \
+    src/ipc/nativeMenu.ts src/features/workspace-actions/useWorkspaceActions.ts
+  printf 'PASS ADR-003 accepted interoperability and implemented desktop-workflow guard\n'
 }
 
 require_citation_sources() {

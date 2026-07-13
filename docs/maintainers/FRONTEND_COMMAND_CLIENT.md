@@ -205,6 +205,19 @@ outcomes. Each client owns
 one command constant, sends one bounded request envelope, validates an unknown
 response, and preserves only its closed command errors.
 
+## Native menu wrappers
+
+`nativeMenu.ts` owns both Phase 48 native boundaries. It validates the closed
+six-action `draft://native-menu-action` event before feature code receives it,
+and it sends the path-free six-boolean request for `set_native_menu_state`.
+Malformed events, malformed responses, the closed `menu_update_failed` error,
+and unknown transport failures remain distinct.
+
+`useWorkspaceActions` consumes this wrapper. Native and visible actions use the
+same dispatcher, and that dispatcher checks current availability before calling
+the existing document-session or DOCX-export operation. The wrapper exposes no
+filesystem path or native menu object to React.
+
 The create client accepts no identity or content input; Rust returns the
 validated blank initial envelope. The Open client receives no path and never
 returns one. Its imported-text title is display-only, while the session stores

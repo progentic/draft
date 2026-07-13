@@ -1,10 +1,11 @@
 import type { Editor } from "@tiptap/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { DocumentInspector } from "../components/DocumentInspector";
 import { DocumentOutline } from "../components/DocumentOutline";
 import { WorkspaceHeader } from "../components/WorkspaceHeader";
 import { WorkspaceCommandBar } from "../components/WorkspaceCommandBar";
+import { WorkspaceStatusBar } from "../components/WorkspaceStatusBar";
 import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
 import { EditorToolbar } from "../editor/EditorToolbar";
 import { useConnectivityMode } from "../features/connectivity/useConnectivityMode";
@@ -16,6 +17,7 @@ import { ReferenceLibraryPanel } from "../features/references/ReferenceLibraryPa
 import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
 import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 import { TextAnalysisPanel } from "../features/text-analysis/TextAnalysisPanel";
+import { useWorkspaceActions } from "../features/workspace-actions/useWorkspaceActions";
 
 type WorkspacePanel = "formatting" | "references" | "text-review" | null;
 
@@ -28,29 +30,22 @@ export function DraftWorkspace() {
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>(null);
 
-  const togglePanel = (panel: Exclude<WorkspacePanel, null>) => {
+  const togglePanel = useCallback((panel: Exclude<WorkspacePanel, null>) => {
     setActivePanel((active) => (active === panel ? null : panel));
-  };
+  }, []);
+  const workspaceActions = useWorkspaceActions(documentSession, docxExport, togglePanel);
 
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
       <WorkspaceHeader
-        connectivityState={connectivity.state}
-        documentStatus={documentSession.statusLabel}
         documentTitle={documentSession.title}
         isOutlineOpen={isOutlineOpen}
-        onRefreshConnectivity={() => void connectivity.refresh()}
-        onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}
         onToggleOutline={() => setIsOutlineOpen((isOpen) => !isOpen)}
       />
       <WorkspaceCommandBar
+        actions={workspaceActions}
         activePanel={activePanel === "references" || activePanel === "text-review" ? activePanel : null}
-        documentSession={documentSession}
-        exportDisabled={docxExport.disabled}
         exportLabel={docxExport.label}
-        feedback={docxExport.feedback || documentSession.feedback}
-        onExport={docxExport.run}
-        onTogglePanel={togglePanel}
       />
       <WorkspaceBody
         activePanel={activePanel}
@@ -59,6 +54,15 @@ export function DraftWorkspace() {
         runtimeStatus={runtimeStatus}
         onClosePanel={() => setActivePanel(null)}
         onToggleFormattingReview={() => togglePanel("formatting")}
+      />
+      <WorkspaceStatusBar
+        connectivityState={connectivity.state}
+        documentStatus={documentSession.statusLabel}
+        exportPending={docxExport.disabled}
+        feedback={workspaceActions.feedback || docxExport.feedback || documentSession.feedback}
+        operation={documentSession.operation}
+        onRefreshConnectivity={() => void connectivity.refresh()}
+        onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}
       />
       <UnsavedChangesDialog
         action={documentSession.pendingAction}

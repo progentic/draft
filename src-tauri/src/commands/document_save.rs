@@ -6,7 +6,7 @@ use crate::documents::{
     dialog::select_save_document,
     persistence::{
         SaveDocumentError, SaveDocumentOutcome, save_document as save_snapshot,
-        save_requires_target,
+        save_document_as as save_snapshot_as, save_requires_target,
     },
     registry::DocumentRegistry,
 };
@@ -16,6 +16,14 @@ use crate::documents::{
 #[serde(deny_unknown_fields)]
 pub(crate) struct SaveDocumentRequest {
     snapshot: Value,
+    mode: SaveDocumentMode,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum SaveDocumentMode {
+    Save,
+    SaveAs,
 }
 
 /// Saves one explicit validated snapshot through the atomic writer.
@@ -25,7 +33,9 @@ pub(crate) async fn save_document(
     registry: State<'_, DocumentRegistry>,
     request: SaveDocumentRequest,
 ) -> Result<SaveDocumentOutcome, SaveDocumentError> {
-    let selected = if save_requires_target(&registry, &request.snapshot)? {
+    let selected = if request.mode == SaveDocumentMode::SaveAs
+        || save_requires_target(&registry, &request.snapshot)?
+    {
         Some(
             select_save_document(&app_handle)
                 .await
@@ -34,9 +44,14 @@ pub(crate) async fn save_document(
     } else {
         None
     };
-    save_snapshot(&registry, request.snapshot, || {
-        selected_save_target(selected)
-    })
+    match request.mode {
+        SaveDocumentMode::Save => save_snapshot(&registry, request.snapshot, || {
+            selected_save_target(selected)
+        }),
+        SaveDocumentMode::SaveAs => save_snapshot_as(&registry, request.snapshot, || {
+            selected_save_target(selected)
+        }),
+    }
 }
 
 fn selected_save_target(
@@ -77,16 +92,26 @@ mod tests {
     #[test]
     fn request_deserialization_is_stable() {
         let request = serde_json::from_value::<SaveDocumentRequest>(json!({
-            "snapshot": envelope_value()
+            "snapshot": envelope_value(),
+            "mode": "save"
         }))
         .expect("request should deserialize");
         let unknown = serde_json::from_value::<SaveDocumentRequest>(json!({
             "snapshot": envelope_value(),
+            "mode": "save",
             "path": "/tmp/document.draft"
         }));
 
         assert_eq!(request.snapshot, envelope_value());
+        assert_eq!(request.mode, SaveDocumentMode::Save);
         assert!(unknown.is_err());
+        assert!(
+            serde_json::from_value::<SaveDocumentRequest>(json!({
+                "snapshot": envelope_value(),
+                "mode": "replace"
+            }))
+            .is_err()
+        );
     }
 
     #[test]

@@ -8,13 +8,134 @@ local text checks, DOCX export, an outline, statistics, and Rust runtime status.
 Rust remains authoritative for persistence, filesystem dialogs, reference
 storage, helper execution, and export.
 
+## V3 Workspace Target
+
+This section records the intended workspace direction. It is a layout target,
+not evidence that every named command or panel capability exists. Current
+behavior remains defined by the implementation sections below and by accepted
+contracts. A target item cannot become active merely because its control has
+been drawn.
+
+### Layout Work
+
+The native macOS menu bar is the complete command hierarchy. The target top
+level is File, Edit, View, Insert, Format, Tools, Citations, and Help. The target
+File menu contains New Document, Open…, Recent, Save, Save As…, Export, and Close
+Window in conventional groups. The current Phase 48 implementation guarantees
+only the accepted File actions documented under Native File Actions; Recent and
+additional menu groups remain unavailable until real commands and state rules
+exist.
+
+The target window title is centered and follows `<document title> — DRAFT`, with
+`Untitled Document — DRAFT` for a new unsaved document. The title is presentation
+metadata only and cannot become path or persistence authority.
+
+The in-window command strip stays smaller than the native menu. Its v3 primary
+set is New, Open, Save, and More. Close, Save As, Export, References, and Text
+checks belong in the overflow or native menu rather than competing with the
+writing surface. New may keep a short visible label; familiar actions use icons
+with accessible names and tooltips. This target moves the current primary Close
+control into overflow when the v3 layout is implemented.
+
+The target shell has three clear regions:
+
+- a left library and citation region;
+- a centered document canvas; and
+- a right research and review region.
+
+The left region may expose the currently implemented manual reference list, Add
+Reference, and Insert Citation actions. Search, All/Recent/Favorites tabs,
+collection counts, richer reference cards, and library management are capability
+work and must not appear active before their data and command contracts exist.
+
+The center region keeps the page visually dominant. A centered white page,
+readable margins, restrained shadow, visible caret, and citation chips are
+layout work. A ruler may appear only as an accurate, non-interactive page guide
+until paragraph indents, tabs, and page geometry have accepted behavior; it must
+not look draggable before those actions exist.
+
+The right region is reserved for supported research and review workflows. Local
+Formatting review and Text checks may use it. Source search, result filters,
+Summarize, Paraphrase, Find Related, Outline, bibliography generation, citation
+conversion, DOI lookup, and source chat are capability work. Provider-backed or
+model-backed actions remain excluded from v1 under ADR-002 and must not appear
+active.
+
+The bottom status bar remains the only compact operational strip. It may show
+document state, active operation, runtime version, connectivity mode, and real
+word or character counts when space permits. Page count cannot appear until a
+pagination model exists. Active style or document mode appears only when the
+application has a real selectable state to report. Status values do not return
+to the title bar or primary command strip.
+
+### Capability Work
+
+The v3 formatting direction groups font family, font size, inline formatting,
+paragraph formatting, case, color, highlight, zoom, and sharing in a familiar
+order. Only the implemented subset may be active today: font family, whole-point
+font size, bold, italic, and strikethrough, plus the existing history, heading,
+list, blockquote, and formatting-review controls.
+
+The following require separate capability work before activation:
+
+- Underline needs persistence, reopen, validation, paste, and DOCX behavior.
+- Alignment, justification, line spacing, paragraph spacing, and indentation
+  remain governed by the paragraph-formatting contract.
+- Case Shift needs deterministic selection and undo behavior.
+- Text color and highlight need canonical values, persistence, paste, and DOCX
+  mappings.
+- Zoom needs a bounded viewport-only policy that cannot mutate document data.
+- Share needs an accepted export or handoff workflow and privacy boundary.
+- Research, bibliography, DOI, and source-chat actions need their own accepted
+  data, network, failure, privacy, and evidence contracts.
+
+Pure presentation changes may arrange space for accepted controls, but they do
+not authorize document marks, paragraph attributes, external requests, model
+actions, citation mutation, or sharing.
+
+## Availability And Visual Noise Policy
+
+The workspace uses one rule for every menu, toolbar, panel, and status surface:
+
+> A control may be enabled only when its complete operation exists and its
+> current state permits the operation.
+
+An implemented command that is temporarily unavailable because of document
+state, a pending operation, or missing selection stays in its stable location
+and is disabled with native or semantic disabled behavior. Its visual treatment
+is neutral gray with no active accent, pressed state, or misleading hover state.
+The disabled control cannot dispatch through pointer, keyboard, native menu, or
+stale event delivery.
+
+An unsupported or unapproved capability is omitted from the production
+workspace. A future accepted layout may reserve its compact control as disabled,
+but only when stable placement materially helps command discovery. Do not fill
+panels with disabled feature cards merely to preview a roadmap. In particular,
+unavailable AI, provider, bibliography, DOI, sharing, paragraph, and library
+management actions must not make the current product look more capable than it
+is.
+
+When an accepted v3 target control is present before its operation is available,
+the control stays disabled and gray. It is not replaced by an explanation,
+empty-state card, warning banner, or promotional message. One unavailable
+function should consume no more space than its normal compact control.
+
+Unavailable state does not justify permanent explanatory copy. Do not add
+`Coming soon` labels, promotional cards, instructional paragraphs, duplicate
+status badges, or capability disclaimers to the writing chrome. When a reason
+or recovery action is necessary, use one concise tooltip, menu hint, or existing
+status/error region. The message must name a recovery action the current product
+can honor; otherwise the disabled visual state is sufficient.
+
 ## Component Ownership
 
 | Layer | Surface | Responsibility |
 | :--- | :--- | :--- |
-| Shell | `DraftWorkspace` | Owns outline visibility, one active workflow panel, and workspace composition. |
-| Header | `WorkspaceHeader` | Exposes the application heading, current document title and lifecycle status. |
-| Document actions | `WorkspaceCommandBar` | Exposes labeled lifecycle, reference, review, export, and close commands. |
+| Shell | `DraftWorkspace` | Owns outline visibility, one active workflow panel, workspace composition, and placement of the bottom status bar. |
+| Header | `WorkspaceHeader` | Exposes the application identity and current document title. It does not own save, import, operation, or connectivity status. |
+| Document actions | `WorkspaceCommandBar` | Exposes compact primary document actions and an accessible overflow menu. All actions use the shared workspace dispatcher and mirror the native File menu where applicable. |
+| Shared actions | `useWorkspaceActions` | Routes toolbar and validated native-menu actions through one availability policy. |
+| Status | `WorkspaceStatusBar` | Displays document lifecycle, import state, active operation, connectivity mode, and bounded recovery information without taking durable authority. |
 | Document session | `useDocumentSession`, `UnsavedChangesDialog` | Coordinates explicit snapshots, Rust-owned commands, dirty state, and recovery choices. |
 | Outline | `DocumentOutline` | Derives headings from the current Tiptap state and moves the selection. |
 | Editor | `DraftEditor`, `useDraftEditor` | Owns the transient Tiptap instance and initial document. |
@@ -43,6 +164,18 @@ The outline and inspector are complementary landmarks with distinct accessible
 names. The hidden outline uses both `aria-hidden` and `inert`, so its controls
 leave the focus order when the panel is closed.
 
+The compact document controls are a navigation region named `Document actions`.
+Their primary controls form a group named `Primary document actions`. The More
+trigger exposes `aria-haspopup="menu"`, expanded state, and the controlled menu
+identifier. The menu has its own accessible name and uses only `menuitem` and
+`menuitemcheckbox` roles.
+
+The bottom status bar is a named `footer` labeled `Workspace status`. Document
+and operation labels remain ordinary text. Only bounded feedback uses a polite
+`status` live region, while a connectivity failure uses its existing dedicated
+alert. The status bar omits the operation label when it would duplicate the
+document state, so one transition is not repeated across visible status text.
+
 Formatting, reference, and text-check panels are labeled sections controlled by
 their corresponding buttons. Closed panels use `hidden`. Open panels expose
 headings, plain-language controls, and live status messages.
@@ -51,7 +184,30 @@ The unsaved-changes surface is an `alertdialog`. It receives focus, contains
 Tab navigation, handles Escape as Keep editing, and restores focus to the
 invoking action.
 
-## Toolbar Keyboard Contract
+## Document Action Keyboard Contract
+
+New retains a short visible label. Open, Save, Close, and More are icon-only
+controls with visible tooltips and accessible names. Ordinary Tab navigation
+reaches each enabled primary action and the overflow trigger.
+
+Enter or Space activates a focused document control. Down Arrow opens the More
+menu from its trigger. Within the menu:
+
+- Up and Down Arrow move between enabled items and wrap at each end.
+- Home moves to the first enabled item.
+- End moves to the last enabled item.
+- Enter or Space activates the focused item.
+- Escape closes the menu and restores focus to the More trigger.
+- disabled items are skipped and cannot dispatch.
+
+Activating a menu item also closes the menu and restores trigger focus. Pointer
+dismissal closes the menu without forcing focus. HTML controls leave disabled
+actions out of keyboard focus; the native menu may display disabled items under
+platform conventions, but neither surface can dispatch them. Primary controls,
+overflow items, native menu items, and keyboard shortcuts all call the same
+`useWorkspaceActions` dispatcher.
+
+## Formatting Toolbar Keyboard Contract
 
 The formatting toolbar is one named toolbar with grouped history, inline,
 structure, and review controls. Exactly one enabled control participates in ordinary Tab
@@ -81,14 +237,45 @@ canonical value before rendering.
 
 The document session stores one explicit origin: `new`, `imported_text`, or
 `opened_draft`. New and imported sessions both lack a path, but the latter
-shows the source filename with `Imported, unsaved`. The filename is display
-metadata only. No path enters React, and only successful Save changes either
-origin to native persisted DRAFT state.
+keeps the source filename as display metadata only. The bottom status bar shows
+the imported and unsaved state. No path enters React, and only successful Save
+changes either origin to native persisted DRAFT state.
+
+## Native File Actions
+
+The native File menu and visible command bar use the same action identifiers
+and `useWorkspaceActions` dispatcher. Their labels are New Document, Open…,
+Close, Save, Save As…, and Export DOCX…. The File menu uses Command-N,
+Command-O, Command-W, Command-S, Shift-Command-S, and Shift-Command-E.
+
+The dispatcher derives availability from the current document operation and
+DOCX export state. It checks availability again when a native event arrives, so
+an event emitted before a state update cannot begin a stale operation. While a
+save, open, close, create, or export operation is pending, competing document
+and workflow-panel actions remain unavailable.
+
+Rust owns native menu objects and receives a bounded six-boolean state request.
+No path, content, or document identity enters the menu state. Invalid events or
+state-update failures leave the visible toolbar available with bounded recovery
+copy. See `NATIVE_DESKTOP_WORKFLOW.md` for the complete contract.
+
+The command bar keeps New visible with a short label. Open, Save, and Close are
+icon-only controls with accessible names and tooltips. Save As, Export DOCX,
+References, and Text checks are in the More document actions menu. The menu
+skips disabled actions during keyboard navigation, supports Arrow, Home, End,
+and Escape, and returns focus to its trigger. Every item still uses the shared
+dispatcher; the compact layout adds no second command path.
+
+The header is reserved for DRAFT identity and the current document name. A
+bottom status bar presents the document lifecycle state, current background
+operation, bounded recovery message, and connectivity control. These values are
+transient presentation state and create no new persistence or network authority.
 
 ## Connectivity Control
 
-The header contains one binary session toggle. `Work offline` represents the
-online state; `Go online` represents offline and uses `aria-pressed="true"`.
+The bottom status bar contains one binary session connectivity control. `Work
+offline` represents the online state; `Go online` represents offline and uses
+`aria-pressed="true"`.
 The control remains available when the document inspector is hidden at narrow
 widths. Pending changes disable repeat activation. Failed changes retain the
 last confirmed visible mode and announce a bounded alert; an unreadable initial
@@ -108,9 +295,15 @@ Normal workspace panel transitions remain enabled. Under
 `prefers-reduced-motion: reduce`, the workspace grid and outline transitions
 are removed. The media query changes no spacing, color, or component behavior.
 
-The header, toolbar controls, panels, and editor use constrained dimensions so
-status text, icons, focus rings, and changing metrics do not resize the primary
-layout unexpectedly.
+The header, compact document controls, formatting toolbar, panels, status bar,
+and editor use constrained dimensions so status text, icons, focus rings, and
+changing metrics do not resize the primary layout unexpectedly.
+
+Secondary document actions remain in the overflow menu at every width, which
+keeps the command row bounded when the window narrows. The formatting toolbar
+may scroll horizontally when its controls need more room. The workspace shell
+must not grow beyond the viewport or allow either toolbar to overlap the editor
+or status bar.
 
 ## Visible Runtime Messages
 
@@ -152,6 +345,19 @@ that command; citations remain inspect-only.
 `src/App.test.tsx` covers shell landmarks, heading order, outline state,
 editable content, toolbar semantics, keyboard navigation, disabled-control
 skipping, review-panel disclosure, runtime labels, and error distinctions.
+It also verifies that document and connectivity state remain in the bottom
+status bar rather than the header.
+
+`src/components/WorkspaceCommandBar.test.tsx` covers the compact New action,
+icon-only accessible names and tooltips, primary and overflow dispatch, disabled
+item skipping, active-panel state, overflow focus order, Escape dismissal, and
+trigger-focus restoration. `useWorkspaceActions.test.tsx` proves toolbar and
+native-menu parity, stale-action rejection, availability synchronization,
+bounded state-update recovery, and contained native-listener setup failure.
+`WorkspaceStatusBar.test.tsx` covers document, operation, connectivity, and
+recovery placement. The component suppresses a repeated operation label and
+keeps bounded feedback separate from connectivity alerts.
+
 Formatting review suites cover IPC validation, generations, editor targets,
 interactions, and accessible labels. Other component and hook suites cover
 Tiptap, citation rendering, runtime sessions, and typed wrappers.
@@ -169,7 +375,24 @@ font rejection, and mixed DOCX run properties.
 
 The reduced-motion contract is checked against the production stylesheet.
 Browser-level inspection is still required when a change affects real focus
-movement, focus visibility, or rendered landmark order.
+movement, focus visibility, or rendered landmark order. Phase 48 rendered
+inspection covers normal and narrow windows, viewport overflow, control
+overlap, overflow-menu containment, disabled-item skipping, and visible focus.
+Packaged human review remains required for native shortcuts, toolbar/menu
+parity, busy-state behavior, status placement, and visible application identity.
+
+Any v3 implementation must add focused evidence that:
+
+- every enabled control completes one implemented operation;
+- state-disabled controls are visibly gray, semantically disabled, and cannot
+  dispatch through pointer, keyboard, menu, shortcut, or stale event;
+- unsupported controls remain absent unless an accepted layout explicitly
+  requires a stable disabled position;
+- no disabled function adds persistent explanatory or promotional copy;
+- command labels, accessible names, tooltips, and native-menu names remain
+  consistent; and
+- three-panel and toolbar changes preserve normal, narrow, scaled, keyboard,
+  reduced-motion, and status-announcement behavior.
 
 Run:
 
@@ -188,6 +411,19 @@ bash scripts/verify.sh
 - Text and formatting findings are advisory, transient, and never automatic.
 - Font formatting is limited to eleven named families and whole point sizes from
   8 through 72.
+- Paragraph alignment, line spacing, spacing before and after paragraphs, and
+  indentation controls are not implemented. The paragraph-formatting finding
+  remains governance-blocked and must not enter product code without an accepted
+  contract.
 - DOCX export rejects citation nodes and other unsupported content.
+- The native File menu, compact document controls, bottom status bar, and
+  tracked purple icon chain are implemented. Exact artifact `75373ffb` passed
+  direct review of overflow interaction, menu parity, busy states, Save As,
+  status placement, Finder, Dock, application switcher, in-window branding,
+  narrow layout, and keyboard behavior. This is not final UI-design approval;
+  `RC-08` and `GATE-48` remain open.
+- The v3 menu hierarchy, centered window title, three-panel composition, richer
+  formatting order, ruler, library organization, and research region are target
+  direction only. They are not current capability or completion evidence.
 - PDF intake, metadata lookup, diagnostics, credentials, provider-backed
   orchestration, and background jobs remain without visible workflows.

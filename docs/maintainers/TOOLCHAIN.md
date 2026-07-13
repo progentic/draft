@@ -186,8 +186,10 @@ every target delegates to a documented Bash script.
 `stylelint` is available at `/opt/homebrew/bin/stylelint`. Use it only for
 stylesheets changed by the active work and only against an explicit CSS
 contract; its presence does not authorize repository-wide formatting churn.
-The current Phase 46 save correction changes no CSS, so it has no stylelint
-evidence.
+Phase 48 runs a scoped built-in-rule configuration against `src/styles.css`
+after replacing the stale header badge with the generated product mark. The
+temporary configuration is not committed and no unrelated stylesheet is
+reformatted.
 
 `ksnip` is available at `/Applications/ksnip.app` for manual screenshots and
 annotations. Captures must identify the tested package and remain inside the
