@@ -77,6 +77,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
 | `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
 | `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and no finding changes content without an explicit current-target user action. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot and returns content-free indexed findings. Phase 34 adds a typed command, closed actions, generation invalidation, and exact-node guards. Citation findings remain inspect-only; heading apply requires user input. Tests and scans deny persistence, filesystem, export, PDF, Python, network, worker, and automatic mutation authority. | The `verify` job runs the Rust domain/command tests, frontend IPC/generation/target/interaction tests, and formatting-boundary scans through `scripts/verify.sh`. |
+| `INV-17` | Proposed | Paragraph formatting uses one strict canonical model across editor behavior, Rust validation, persistence, migration, and supported format mappings. Unsupported values and undisclosed lossy saves fail before mutation. | Proposed ADR-004 and `ARCHITECTURE.md` §15.1 | Proposal-state checks deny paragraph-model implementation while ADR-004 is under review. If accepted, Phase 47 must replace absence checks with behavioral validation, migration, persistence, DOCX fidelity, and non-mutation evidence before Phase 48 exposes controls. | The `verify` job enforces Proposed status and product absence. Accepted enforcement does not exist and no current release gate may treat this invariant as closed. |
 | `INV-UX-01` | Accepted | Every enabled visible control invokes an implemented user workflow. Controls for unavailable capabilities do not appear active. | `ARCHITECTURE.md` §4.1 and §5.1 | Interaction tests and the v1 usability gate require implemented control outcomes and explicit unavailable states before workflow closure. | The `verify` job runs the same interaction tests and conditional release-evidence checks. |
 | `INV-UX-02` | Accepted | User-facing text does not expose internal command, schema, provider, registry, job, IPC, or persistence terminology. | `ARCHITECTURE.md` §4.1 and §12 | Phase 49 inventories every visible string; prohibited implementation wording remains a release finding until corrected or removed. | The `verify` job requires the accepted contracts and blocks gate closure without the visible-language evidence ledger. |
 | `INV-UX-03` | Accepted | Long-running or fallible visible operations expose deterministic pending, success, and failure states. | `ARCHITECTURE.md` §5.2, §5.3, and §12 | Operation interaction tests and perceived-performance evidence must prove visible state transitions without duplicate activation. | The `verify` job runs interaction tests and blocks Phase 49 closure without the required state and timing evidence. |
@@ -810,6 +811,30 @@ This invariant remains Proposed. Presence checks cannot prove that an
 explanation is clear, and the existing guide set has not completed the Phase 50
 realignment. Human review plus mechanical section enforcement are both required
 before a governed change may mark `INV-UX-07` Accepted.
+
+Minimum current verification:
+
+```bash
+bash scripts/check-docs.sh
+bash scripts/check-invariants.sh
+bash scripts/check-release-candidate.sh
+```
+
+---
+
+### INV-17: Paragraph-Formatting Integrity (Proposed)
+
+Paragraph controls must not become a second formatting model. If ADR-004 is
+accepted, one strict block shape will define what the editor can apply, what
+Rust can validate and save, and what supported document formats can preserve.
+Unsupported values and undisclosed lossy save-back fail before state or source
+mutation.
+
+This invariant remains Proposed. Current enforcement proves only that the
+proposal is non-binding and that product code has not started implementing its
+identifiers. Phase 47 must replace those absence checks with validation,
+migration, selection, persistence, DOCX, source-preservation, and typed-failure
+tests before a governed change may mark `INV-17` Accepted.
 
 Minimum current verification:
 

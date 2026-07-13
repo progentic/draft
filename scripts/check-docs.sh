@@ -37,6 +37,7 @@ main() {
   check_v1_analysis_decision_state
   check_v1_usability_documentation
   check_adr_003_accepted_state
+  check_adr_004_proposal_state
   check_readme_scope
   check_pdf_decision_state
 
@@ -79,6 +80,8 @@ check_required_documents() {
     docs/GOVERNANCE.md
     docs/INVARIANTS.md
     docs/adr/003-expand-v1-document-interoperability.md
+    docs/adr/004-govern-paragraph-formatting.md
+    docs/drafts/PARAGRAPH_FORMATTING.md
     docs/PHASEMAP.md
     docs/ROADMAP.md
     docs/maintainers/AI_ORCHESTRATION.md
@@ -130,6 +133,81 @@ check_required_documents() {
 
   for document_path in "${required_documents[@]}"; do
     require_file "${document_path}"
+  done
+}
+
+check_adr_004_proposal_state() {
+  local adr='docs/adr/004-govern-paragraph-formatting.md'
+  local draft='docs/drafts/PARAGRAPH_FORMATTING.md'
+  local matrix='docs/maintainers/DOCUMENTATION_COVERAGE.md'
+  local accepted_surfaces=(
+    docs/ROADMAP.md
+    docs/PHASEMAP.md
+    docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md
+    docs/contracts/V1_USABILITY_ACCEPTANCE.md
+  )
+
+  require_document_text "${adr}" 'Status: Proposed'
+  require_document_text "${adr}" 'This decision does not renumber either phase or'
+  require_document_text "${draft}" 'status: Proposed'
+  require_document_text "${draft}" 'This contract is Proposed and non-binding.'
+  require_document_text docs/ARCHITECTURE.md \
+    'Proposed Paragraph-Formatting Boundary (Non-binding)'
+  require_document_text docs/INVARIANTS.md "| \`INV-17\` | Proposed |"
+  require_adr_004_coverage_areas "${matrix}"
+
+  reject_document_pattern \
+    'ADR-004|INV-17|PARAGRAPH_FORMATTING' \
+    'ADR-004 proposal content cannot alter accepted contracts or phase maps' \
+    "${accepted_surfaces[@]}"
+  reject_document_pattern \
+    'Status: Accepted|Accepted through:' \
+    'ADR-004 must remain proposed until merge' \
+    "${adr}"
+  reject_document_pattern \
+    'status: Accepted' \
+    'paragraph-formatting contract must remain non-binding in drafts' \
+    "${draft}"
+}
+
+require_adr_004_coverage_areas() {
+  local matrix="$1"
+  local suffixes=(
+    MODEL
+    SERIALIZATION
+    EDITOR
+    MIXED
+    DOCX
+    MIGRATION
+    FAILURE
+    EVIDENCE
+  )
+  local suffix
+  local identifier
+  local match_count
+
+  for suffix in "${suffixes[@]}"; do
+    identifier="ADR004-COV-${suffix}"
+    require_document_text "${matrix}" "| \`${identifier}\` |"
+    match_count="$(rg --only-matching --fixed-strings \
+      "${identifier}" "${matrix}" | wc -l)"
+    if [[ "${match_count}" -ne 1 ]]; then
+      printf 'ADR-004 coverage identifier %s expected once, found %s\n' \
+        "${identifier}" "${match_count}" >&2
+      return 1
+    fi
+    if rg --quiet --fixed-strings \
+      --glob '!**/DOCUMENTATION_COVERAGE.md' \
+      "${identifier}" docs; then
+      printf 'ADR-004 coverage identifier escaped its proposal table: %s\n' \
+        "${identifier}" >&2
+      return 1
+    fi
+    if rg --quiet --fixed-strings "${identifier}" src src-tauri/src; then
+      printf 'ADR-004 coverage identifier entered product source: %s\n' \
+        "${identifier}" >&2
+      return 1
+    fi
   done
 }
 

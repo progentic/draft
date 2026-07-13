@@ -20,6 +20,7 @@ main() {
   check_phase45_release_rule
   check_v1_usability_acceptance
   check_adr_003_accepted_gate
+  check_adr_004_proposal_gate
 
   printf 'INFO Phase 52 remains blocked by RC-01 through RC-08 and GATE-46 through GATE-51.\n'
   printf 'Release-candidate hardening baseline passed.\n'
@@ -113,6 +114,28 @@ check_adr_003_accepted_gate() {
     echo 'ADR-003 acceptance record cannot close a successor release row' >&2
     return 1
   fi
+}
+
+check_adr_004_proposal_gate() {
+  local adr='docs/adr/004-govern-paragraph-formatting.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+  local open_rows=(
+    RC-01 RC-02 RC-03 RC-04 RC-05 RC-06 RC-07 RC-08
+    GATE-46 GATE-47 GATE-48 GATE-49 GATE-50 GATE-51
+  )
+  local row
+
+  require_literal 'Status: Proposed' "${adr}"
+  require_literal "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
+  for row in "${open_rows[@]}"; do
+    require_literal "| ${row} |" "${release}"
+    if rg --quiet --fixed-strings "| ${row} |" "${release}" && \
+      rg --quiet --regexp "^\\| ${row} \\| [^|]+ \\| Closed \\|" "${release}"; then
+      printf 'ADR-004 proposal cannot close release row: %s\n' "${row}" >&2
+      return 1
+    fi
+  done
+  printf 'PASS ADR-004 proposed release-gate posture\n'
 }
 
 require_gate_usability_row() {
