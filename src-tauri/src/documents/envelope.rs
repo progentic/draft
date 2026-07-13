@@ -97,6 +97,19 @@ impl DocumentEnvelope {
         }))
     }
 
+    /// Creates one Rust-identified unsaved envelope from validated imported content.
+    pub(crate) fn create_imported(
+        title: String,
+        document: Value,
+    ) -> Result<Self, DocumentEnvelopeError> {
+        Self::from_json_value(serde_json::json!({
+            "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
+            "document_id": Uuid::new_v4().to_string(),
+            "title": title,
+            "document": document,
+        }))
+    }
+
     /// Validates an untrusted JSON value without reading or writing application data.
     pub fn from_json_value(value: Value) -> Result<Self, DocumentEnvelopeError> {
         let mut fields = envelope_fields(value)?;

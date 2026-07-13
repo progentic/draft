@@ -34,6 +34,39 @@ describe("openDocument", () => {
     });
   });
 
+  it("returns path-free DOCX fidelity from the Rust import boundary", async () => {
+    invokeMock.mockResolvedValue({
+      status: "imported_external",
+      envelope: envelope(),
+      external: externalSummary(),
+    });
+
+    await expect(openDocument()).resolves.toEqual({
+      status: "imported_external",
+      envelope: envelope(),
+      external: externalSummary(),
+    });
+  });
+
+  it.each([
+    { ...externalSummary(), path: "/private/paper.docx" },
+    { ...externalSummary(), sourceBytes: [1, 2, 3] },
+    { ...externalSummary(), rawXml: "<w:p/>" },
+    { ...externalSummary(), sameFormatSave: "future_disposition" },
+    { ...externalSummary(), fidelity: { classification: "future" } },
+  ])("rejects malformed or authority-bearing DOCX summaries", async (external) => {
+    invokeMock.mockResolvedValue({
+      status: "imported_external",
+      envelope: envelope(),
+      external,
+    });
+
+    await expect(openDocument()).resolves.toEqual({
+      status: "error",
+      error: { type: "invalid-response" },
+    });
+  });
+
   it("preserves user cancellation", async () => {
     invokeMock.mockResolvedValue({ status: "cancelled" });
 
@@ -77,6 +110,55 @@ describe("openDocument", () => {
     },
   );
 
+  it.each([
+    {
+      code: "external_import",
+      cause: {
+        code: "docx",
+        cause: {
+          code: "malformed_package",
+          fidelity: { classification: "malformed_external_input" },
+        },
+      },
+    },
+    {
+      code: "external_import",
+      cause: {
+        code: "docx",
+        cause: {
+          code: "unsafe_package",
+          fidelity: { classification: "unsafe", reason: "archive_path" },
+        },
+      },
+    },
+    { code: "external_import", cause: { code: "package_too_large" } },
+  ])("preserves a closed typed DOCX failure", async (error) => {
+    invokeMock.mockRejectedValue(error);
+
+    await expect(openDocument()).resolves.toEqual({
+      status: "error",
+      error: { type: "command", error },
+    });
+  });
+
+  it("rejects mismatched DOCX failure classifications", async () => {
+    invokeMock.mockRejectedValue({
+      code: "external_import",
+      cause: {
+        code: "docx",
+        cause: {
+          code: "unsafe_package",
+          fidelity: { classification: "malformed_external_input" },
+        },
+      },
+    });
+
+    await expect(openDocument()).resolves.toEqual({
+      status: "error",
+      error: { type: "transport" },
+    });
+  });
+
   it("classifies unknown failures without leaking details", async () => {
     invokeMock.mockRejectedValue(new Error("private path detail"));
 
@@ -93,5 +175,14 @@ function envelope() {
     document_id: DOCUMENT_ID,
     title: "Opened document",
     document: { type: "doc", content: [] },
+  };
+}
+
+function externalSummary() {
+  return {
+    format: "docx",
+    displayName: "paper.docx",
+    fidelity: { classification: "exact" },
+    sameFormatSave: "no_changes",
   };
 }

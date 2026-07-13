@@ -52,12 +52,20 @@ the current open document and does not promote a partial replacement.
 `Choose a .draft file name.` means the selected first-save name used another
 extension; choose **Save** again and use `.draft`.
 
-If a document cannot be opened, choose a valid DRAFT document or a UTF-8
-`.txt` or `.md` file no larger than 8 MiB. Other extensions, invalid UTF-8, and
-malformed DRAFT versions fail without changing that file. Imported text is
+If a document cannot be opened, choose a valid DRAFT document, a UTF-8 `.txt`
+or `.md` file no larger than 8 MiB, or a `.docx` file within the documented
+package limits. Other extensions, invalid UTF-8, malformed DRAFT versions, and
+invalid DOCX packages fail without changing that file. Imported content is
 unsaved; choose **Save** to select a new `.draft` destination. DRAFT never
 overwrites the imported source. DRAFT has no autosave or crash recovery, so
 discarded unsaved changes cannot be restored.
+
+If a DOCX message says the file is malformed or unsafe, keep the original file
+unchanged and open a trusted, valid copy. If DRAFT reports an unsupported or
+lossy feature, preserve the original and edit through a supported format rather
+than assuming DRAFT can round-trip it. A source-preservation notice means DRAFT
+opened the supported content but cannot safely save changes back to that DOCX.
+Save to `.draft` or export a separate DOCX copy instead.
 
 If DRAFT cannot close a saved document, keep it open and retry **Close** before
 switching documents.

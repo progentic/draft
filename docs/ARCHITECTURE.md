@@ -712,8 +712,16 @@ identity, persistence, import, export, and source-path authority remain in
 Rust. Phase 48 implements the native File menu through Rust-owned menu items,
 typed events, a path-free state command, and the same frontend dispatcher used
 by the visible command bar. Save As selects and retains its replacement target
-in Rust and returns only document identity and basename display data. Phase 47
-parsers, writers, and external-source state remain absent.
+in Rust and returns only document identity and basename display data.
+
+Phase 47 now adds a bounded Rust-owned DOCX reader and external-source
+registration. ZIP/XML validation and paragraph conversion complete before a
+live handle is registered. Rust retains the path and fingerprints; React
+receives only a basename, format, closed fidelity result, and same-format save
+disposition. Imported DOCX content has no native save target. First Save writes
+a new `.draft` file, export writes a separate DOCX copy, and the original DOCX
+is never overwritten by the current workflow. Same-format DOCX writing,
+complete format coverage, and human fidelity evidence remain absent.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 
@@ -851,7 +859,16 @@ boundary accepts version 1 and returns canonical version 2 state. The first
 successful explicit save writes version 2; migration never invents an all-
 default `paragraphStyle` object because absence is the canonical default.
 
-This implementation does not add paragraph controls, external-format import,
-same-format save, fidelity classification, or release evidence. Proposed
-`INV-17`, `UX-46-024`, `RC-07`, and `GATE-47` remain open until the complete
-behavioral and human evidence exists.
+This bounded unit imports the accepted DOCX paragraph subset through a
+Rust-owned ZIP/XML reader. It classifies exact, normalized, preservable,
+unsupported, lossy, malformed, and unsafe input without clamping or exposing
+format structures above the converter. External provenance and source
+fingerprints remain in the registry; the frontend receives a path-free typed
+summary. Opening, closing, cancellation, failed import, and failed Save leave
+the original bytes unchanged.
+
+This implementation does not add paragraph controls or same-format overwrite.
+Imported DOCX work saves to a new `.draft` target, and DOCX export remains a
+separate derived-copy operation. Proposed `INV-17`, `UX-46-024`, `RC-07`, and
+`GATE-47` remain open until controls, broader interoperability, compatible-
+reader comparison, packaged workflow, and human evidence exist.

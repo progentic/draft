@@ -17,12 +17,15 @@ autosave and cannot recover unsaved work after a crash, so save important
 changes explicitly.
 
 **New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
-document or imports a UTF-8 `.txt` or `.md` file as editable text. Imported
-content shows its source filename and `Imported, unsaved`; the filename does
-not become a save location. The first Save asks for a new `.draft` destination,
-and the original text or Markdown file remains unchanged. After Save succeeds,
-the header shows the selected `.draft` filename. Later saves reuse that target
-without reopening the dialog. Markdown syntax is kept as literal text.
+document, imports a UTF-8 `.txt` or `.md` file as editable text, or reads the
+supported paragraph subset from a `.docx` file. Imported content shows its
+source filename and `Imported, unsaved`; the filename does not become a save
+location. The first Save asks for a new `.draft` destination, and the original
+text, Markdown, or DOCX file remains unchanged. After Save succeeds, the header
+shows the selected `.draft` filename. Later saves reuse that target without
+reopening the dialog. Markdown syntax is kept as literal text. DOCX import
+reports when valid content requires source preservation or cannot be represented
+safely.
 
 **Save As…** chooses a new `.draft` target while preserving the previous file.
 After it succeeds, later Save operations use the new target. Cancellation or a

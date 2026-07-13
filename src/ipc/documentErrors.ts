@@ -3,6 +3,7 @@ import {
   isRecord,
   type DocumentEnvelopeError,
 } from "./documentEnvelope";
+import { isExternalFidelity, type ExternalFidelity } from "./externalDocument";
 
 export type DocumentRegistryError = {
   code: "already_open" | "not_open" | "source_path_in_use" | "registry_unavailable";
@@ -30,7 +31,31 @@ export type OpenDocumentCommandError =
         | "text_too_large";
     }
   | { code: "invalid_envelope"; cause: DocumentEnvelopeError }
+  | { code: "external_import"; cause: ExternalDocumentImportError }
   | { code: "registry"; cause: DocumentRegistryError };
+
+export type ExternalDocumentImportError =
+  | { code: "file_not_found" | "read_failed" | "package_too_large" }
+  | { code: "docx"; cause: DocxImportError }
+  | { code: "invalid_canonical_document"; cause: DocumentEnvelopeError };
+
+export type DocxImportError =
+  | {
+      code: "malformed_package";
+      fidelity: Extract<ExternalFidelity, { classification: "malformed_external_input" }>;
+    }
+  | {
+      code: "unsafe_package";
+      fidelity: Extract<ExternalFidelity, { classification: "unsafe" }>;
+    }
+  | {
+      code: "unsupported_external_feature";
+      fidelity: Extract<ExternalFidelity, { classification: "unsupported_external_feature" }>;
+    }
+  | {
+      code: "lossy_import_denied";
+      fidelity: Extract<ExternalFidelity, { classification: "lossy" }>;
+    };
 
 export type SaveDocumentCommandError =
   | {
@@ -51,9 +76,60 @@ export function isOpenDocumentCommandError(value: unknown): value is OpenDocumen
 
   return (
     isFieldlessOpenError(value) ||
+    isExternalImportError(value) ||
     isInvalidEnvelopeError(value) ||
     isRegistryCommandError(value)
   );
+}
+
+function isExternalImportError(
+  value: Record<string, unknown>,
+): value is { code: "external_import"; cause: ExternalDocumentImportError } {
+  return (
+    value.code === "external_import" &&
+    hasCodeAndCause(value) &&
+    isExternalDocumentImportError(value.cause)
+  );
+}
+
+function isExternalDocumentImportError(value: unknown): value is ExternalDocumentImportError {
+  if (!isRecord(value) || typeof value.code !== "string") {
+    return false;
+  }
+  if (
+    hasOnlyCode(value) &&
+    (value.code === "file_not_found" ||
+      value.code === "read_failed" ||
+      value.code === "package_too_large")
+  ) {
+    return true;
+  }
+  if (value.code === "docx" && hasCodeAndCause(value)) {
+    return isDocxImportError(value.cause);
+  }
+  return (
+    value.code === "invalid_canonical_document" &&
+    hasCodeAndCause(value) &&
+    isDocumentEnvelopeError(value.cause)
+  );
+}
+
+function isDocxImportError(value: unknown): value is DocxImportError {
+  if (!isRecord(value) || !hasCodeAndFidelity(value) || !isExternalFidelity(value.fidelity)) {
+    return false;
+  }
+  switch (value.code) {
+    case "malformed_package":
+      return value.fidelity.classification === "malformed_external_input";
+    case "unsafe_package":
+      return value.fidelity.classification === "unsafe";
+    case "unsupported_external_feature":
+      return value.fidelity.classification === "unsupported_external_feature";
+    case "lossy_import_denied":
+      return value.fidelity.classification === "lossy";
+    default:
+      return false;
+  }
 }
 
 export function isSaveDocumentCommandError(value: unknown): value is SaveDocumentCommandError {
@@ -147,4 +223,9 @@ function hasOnlyCode(value: Record<string, unknown>): boolean {
 function hasCodeAndCause(value: Record<string, unknown>): boolean {
   const keys = Object.keys(value);
   return keys.length === 2 && keys.includes("code") && keys.includes("cause");
+}
+
+function hasCodeAndFidelity(value: Record<string, unknown>): boolean {
+  const keys = Object.keys(value);
+  return keys.length === 2 && keys.includes("code") && keys.includes("fidelity");
 }

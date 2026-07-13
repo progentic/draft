@@ -13,7 +13,8 @@ Phase 13 adds typed Rust `open_document` and `save_document` commands plus
 frontend request/response wrappers. Phase 14 hardens the writer against
 interruption, replacement failure, cleanup failure, and concurrent saves.
 Phase 46 adds `create_document` and `close_document`, then connects the complete
-bounded lifecycle to the visible workspace.
+bounded lifecycle to the visible workspace. Phase 47 adds a bounded DOCX import
+outcome and Rust-owned external-source registration.
 
 These phases do not add:
 
@@ -28,7 +29,8 @@ These phases do not add:
 
 `open_document` receives an empty request. Rust opens the native file picker
 through `tauri-plugin-dialog` with `.draft`, compatible legacy `.json`, `.txt`,
-and `.md` filters. The frontend cannot choose or inspect a path through IPC.
+`.md`, and `.docx` filters. The frontend cannot choose or inspect a path through
+IPC.
 
 The command and dialog adapter are asynchronous. The adapter parents the
 picker to the main window, uses the plugin callback API, and awaits a one-shot
@@ -54,6 +56,14 @@ the source filename. Rust does not register or return the source path, and the
 source bytes are never changed. Invalid UTF-8, oversized input, unreadable
 files, and unsupported extensions fail before registration or persistence.
 
+For `.docx`, Rust validates a bounded ZIP/XML package and converts only the
+accepted paragraph subset. Validation, fidelity classification, and canonical
+envelope construction finish before registry mutation. A successful response
+is `imported_external` with basename-only display data. Rust registers the live
+external source and retains its path and fingerprints, but reports no native
+save target. Opening, closing, cancellation, and failed import leave the source
+bytes unchanged. See `docs/maintainers/DOCX_INTEROPERABILITY.md`.
+
 ## Create And Close Commands
 
 `create_document` accepts an exact empty request. Rust generates the UUID and
@@ -74,11 +84,13 @@ The visible lifecycle is explicit:
 4. Later saves update the same registered document.
 5. Close releases the active handle; an unsaved document has no handle to release.
 
-The frontend records one explicit origin: `new`, `imported_text`, or
-`opened_draft`. A Rust-owned ID is in-memory identity, not proof of persistence.
-Only `opened_draft` has a durable Rust-registered path. Successful first Save
-transitions either unsaved origin to `opened_draft`; cancellation preserves the
-prior origin and visible state.
+The frontend records one explicit origin: `new`, `imported_text`,
+`imported_external`, or `opened_draft`. It separately tracks whether Rust owns
+a live registration and whether a native DRAFT save succeeded. A Rust-owned ID
+is in-memory identity, not proof of persistence. `opened_draft` has a native
+save target. `imported_external` has a Rust registration but no native target.
+Successful first Save transitions an imported or new origin to
+`opened_draft`; cancellation preserves the prior origin and visible state.
 
 ## Save Command
 
@@ -162,6 +174,7 @@ Open errors are typed as:
 - `malformed_json`
 - `invalid_text_encoding`
 - `text_too_large`
+- `external_import` with a typed DOCX/package `cause`
 - `invalid_envelope` with a typed envelope `cause`
 - `registry` with a typed registry `cause`
 
@@ -182,8 +195,10 @@ paths and operating-system errors never cross IPC.
 User cancellation is a successful `cancelled` response, not an error.
 
 Open success is also explicit: `opened_draft` means Rust retained a native
-save target; `imported_text` means the returned envelope has no target and must
-use Save As; `cancelled` means no session state changed.
+save target; `imported_text` means the returned envelope has no registration or
+target; `imported_external` means Rust retained source provenance but granted
+no native or same-format save target; `cancelled` means no session state
+changed.
 
 Save requests include a closed mode: `save` or `save_as`. Normal Save reuses an
 existing Rust-owned target and selects a target only for a new or imported

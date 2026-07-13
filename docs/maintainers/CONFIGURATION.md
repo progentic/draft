@@ -183,6 +183,12 @@ period. It cannot detect an unreported same-size in-place modification.
 | `MAX_DOCX_NODES` | 100,000 | `exports/docx.rs` | Structural object count bound. |
 | `MAX_DOCX_NESTING_DEPTH` | 16 | `exports/docx.rs` | Recursive parser depth bound. |
 | `MAX_DOCX_ARTIFACT_BYTES` | 16 MiB | `exports/docx.rs` | Complete package bound before filesystem replacement. |
+| `MAX_DOCX_IMPORT_PACKAGE_BYTES` | 16 MiB | `interoperability/docx_import/mod.rs` | Largest complete DOCX package accepted before ZIP parsing. |
+| `MAX_DOCX_IMPORT_XML_BYTES` | 8 MiB | `interoperability/docx_import/mod.rs` | Largest extracted package part accepted by the bounded reader. |
+| `MAX_DOCX_IMPORT_ENTRIES` | 128 | `interoperability/docx_import/mod.rs` | Maximum declared and visible ZIP entries. |
+| `MAX_DOCX_IMPORT_UNCOMPRESSED_BYTES` | 64 MiB | `interoperability/docx_import/mod.rs` | Maximum total declared uncompressed package bytes. |
+| `MAX_DOCX_IMPORT_XML_DEPTH` | 64 | `interoperability/docx_import/mod.rs` | Maximum XML element depth before unsafe rejection. |
+| `MAX_DOCX_IMPORT_COMPRESSION_RATIO` | 100:1 | `interoperability/docx_import/mod.rs` | Maximum accepted per-entry uncompressed-to-compressed ratio. |
 
 DOCX compilation supports paragraphs, headings, text, hard breaks, the closed
 bold, italic, and underline marks, and the canonical font-family and font-size

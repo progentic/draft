@@ -35,8 +35,11 @@ Phase 47 adds optional canonical paragraph data for paragraphs and headings.
 Alignment maps to `w:jc`; automatic line spacing and space before/after map to
 `w:spacing`; left/right and first-line or hanging indentation map to `w:ind`.
 All explicit values are emitted deterministically. A block without
-`paragraphStyle` emits no default paragraph override. DOCX import and
-same-format save remain unimplemented and are not implied by this export map.
+`paragraphStyle` emits no default paragraph override. The bounded DOCX importer
+uses the inverse mapping for accepted paragraph values, but same-format save
+remains unavailable. Import and export are separate policies; this exporter
+does not authorize overwriting an imported DOCX. See
+`docs/maintainers/DOCX_INTEROPERABILITY.md`.
 
 Empty paragraphs and headings, Unicode text, source order, paragraph boundaries,
 heading levels, hard breaks, and supported marks are preserved. XML-invalid

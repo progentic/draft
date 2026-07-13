@@ -66,11 +66,13 @@ or failure preserves the prior display name and unsaved state.
 Open returns one typed origin outcome. `opened_draft` carries a validated
 native envelope whose path remains registered in Rust. `imported_text` carries
 a new unsaved Rust-owned envelope created from a bounded UTF-8 `.txt` or `.md`
-source. Its title is the source filename only, the source path is absent, and
-the first Save selects a new `.draft` target. `cancelled` leaves content,
-selection, title, dirty state, and origin unchanged. Markdown syntax remains
-literal text; CRLF and LF line endings become deterministic editor paragraphs,
-while the source file bytes remain untouched.
+source. `imported_external` carries the canonical supported subset of a DOCX
+document plus path-free fidelity and save-policy metadata. Imported content has
+no native save target, and the first Save selects a new `.draft` target.
+`cancelled` leaves content, selection, title, dirty state, and origin unchanged.
+Markdown syntax remains literal text; CRLF and LF line endings become
+deterministic editor paragraphs. Rust keeps imported source identity and bytes
+out of React, and the original source remains untouched.
 
 ## Font Formatting
 

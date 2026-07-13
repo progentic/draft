@@ -6,7 +6,7 @@ use tokio::sync::oneshot;
 
 const DOCUMENT_FILTER_NAME: &str = "DRAFT document";
 const DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json"];
-const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md"];
+const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md", "docx"];
 const TEXT_DOCUMENT_EXTENSIONS: &[&str] = &["txt", "md"];
 const DEFAULT_DOCUMENT_FILE_NAME: &str = "Untitled.draft";
 const DEFAULT_DOCX_FILE_NAME: &str = "Untitled.docx";
@@ -23,7 +23,8 @@ pub(crate) async fn select_open_document(
         .set_title("Open document")
         .add_filter("Supported documents", OPEN_DOCUMENT_EXTENSIONS)
         .add_filter(DOCUMENT_FILTER_NAME, DOCUMENT_EXTENSIONS)
-        .add_filter("Text or Markdown", TEXT_DOCUMENT_EXTENSIONS);
+        .add_filter("Text or Markdown", TEXT_DOCUMENT_EXTENSIONS)
+        .add_filter("Word document", &["docx"]);
     if let Some(window) = app_handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);
     }

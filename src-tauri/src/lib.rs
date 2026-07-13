@@ -9,6 +9,7 @@ pub mod events;
 pub mod exports;
 pub mod formatting;
 pub mod imports;
+pub mod interoperability;
 pub mod jobs;
 pub mod network;
 pub mod references;

@@ -16,10 +16,12 @@ whether to save, discard the changes, or keep editing. There is no autosave or
 crash recovery, so save important work explicitly.
 
 **New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
-document or imports a UTF-8 `.txt` or `.md` file as editable text. An import is
-shown as imported and unsaved; its filename is for orientation only. The first
-Save asks for a new `.draft` destination and never overwrites the imported
-source. Markdown punctuation remains literal text rather than a preview.
+document, imports a UTF-8 `.txt` or `.md` file as editable text, or reads the
+supported paragraph subset from a `.docx` file. An import is shown as imported
+and unsaved; its filename is for orientation only. The first Save asks for a new
+`.draft` destination and never overwrites the imported source. Markdown
+punctuation remains literal text rather than a preview. A DOCX notice identifies
+content that requires source preservation or cannot be represented safely.
 
 Use **Save As…** to choose a new `.draft` file while preserving the previous
 file. After it succeeds, later Save operations use the new file. Cancelling or

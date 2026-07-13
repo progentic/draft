@@ -3,8 +3,9 @@
 ## Purpose
 
 This model gives paragraph appearance one durable meaning across the editor,
-the DRAFT file, and DOCX export. It is Phase 47 infrastructure. It does not add
-paragraph controls or claim that external document round trips are complete.
+the DRAFT file, DOCX export, and the bounded DOCX paragraph importer. It is
+Phase 47 infrastructure. It does not add paragraph controls, same-format DOCX
+overwrite, or claim that external document round trips are complete.
 
 ## Problem
 

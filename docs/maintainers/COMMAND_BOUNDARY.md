@@ -186,6 +186,13 @@ document, `imported_text` identifies a new unsaved envelope derived from
 bounded UTF-8 text, and `cancelled` preserves the active session. Imported
 titles contain a filename only and never become save authority.
 
+Phase 47 adds `imported_external` to the same command. Rust reads and validates
+one selected DOCX, registers its source provenance without a native save
+target, and returns only a canonical envelope plus path-free fidelity summary.
+Malformed, unsafe, unsupported, and lossy packages return distinct nested
+typed failures. No DOCX package, relationship, XML, path, or fingerprint crosses
+the command boundary. See `docs/maintainers/DOCX_INTEROPERABILITY.md`.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |

@@ -26,6 +26,7 @@ main() {
   check_wiki_sources
   check_visible_error_recovery
   check_formatting_export_alignment
+  check_docx_interoperability_documentation
   check_offline_mode_documentation
   check_secret_storage_documentation
   check_diagnostic_snapshot_documentation
@@ -99,6 +100,7 @@ check_required_documents() {
     docs/maintainers/DOCUMENT_REGISTRY.md
     docs/maintainers/DOCUMENT_SAVE_LOAD.md
     docs/maintainers/DOCX_EXPORT.md
+    docs/maintainers/DOCX_INTEROPERABILITY.md
     docs/maintainers/ERROR_MESSAGES.md
     docs/maintainers/ERROR_UX.md
     docs/maintainers/EVENT_BOUNDARY.md
@@ -293,7 +295,7 @@ check_v1_usability_documentation() {
   require_document_text docs/wiki/Current-Limitations.md \
     'whole point sizes from 8 through 72'
   require_document_text docs/wiki/Current-Limitations.md \
-    "DOCX, RTF, OpenDocument (\`.odt\`), and legacy Word (\`.doc\`) import are"
+    "Same-format DOCX save and round-trip fidelity are not currently supported."
 }
 
 check_adr_003_accepted_state() {
@@ -712,6 +714,9 @@ check_coverage_symbols() {
     'src-tauri/src/commands/formatting_review.rs|run_formatting_review'
     'src/features/formatting-review/useFormattingReview.ts|useFormattingReview'
     'src-tauri/src/exports/docx.rs|compile_docx'
+    'src-tauri/src/interoperability/mod.rs|import_docx_source'
+    'src-tauri/src/interoperability/fidelity.rs|ExternalFidelity'
+    'src/ipc/externalDocument.ts|ExternalDocumentSummary'
     'src-tauri/src/commands/document_close.rs|close_document'
     'src-tauri/src/commands/document_create.rs|create_document'
     'src-tauri/src/commands/reference_library.rs|add_reference'
@@ -802,6 +807,12 @@ check_configuration_index() {
     MAX_DOCX_NODES
     MAX_DOCX_NESTING_DEPTH
     MAX_DOCX_ARTIFACT_BYTES
+    MAX_DOCX_IMPORT_PACKAGE_BYTES
+    MAX_DOCX_IMPORT_XML_BYTES
+    MAX_DOCX_IMPORT_ENTRIES
+    MAX_DOCX_IMPORT_UNCOMPRESSED_BYTES
+    MAX_DOCX_IMPORT_XML_DEPTH
+    MAX_DOCX_IMPORT_COMPRESSION_RATIO
     DOCUMENT_EXTENSIONS
     DEFAULT_DOCUMENT_FILE_NAME
   )
@@ -832,6 +843,7 @@ check_configuration_backlinks() {
     DOCUMENT_ENVELOPE.md
     DOCUMENT_SAVE_LOAD.md
     DOCX_EXPORT.md
+    DOCX_INTEROPERABILITY.md
     EXTERNAL_BROWSER_HANDOFF.md
     FORMATTING_CHECKS.md
     FORMATTING_UX.md
@@ -935,6 +947,29 @@ check_formatting_export_alignment() {
     'No command or visible workflow can invoke it|Findings are not persisted or visible|DOCX-export absence gate remains active' \
     'Phase 35 formatting documentation must describe the implemented review workflow' \
     "${checks}"
+}
+
+check_docx_interoperability_documentation() {
+  local guide='docs/maintainers/DOCX_INTEROPERABILITY.md'
+  local limits='docs/maintainers/CONFIGURATION.md'
+  local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_document_text "${guide}" '## Problem'
+  require_document_text "${guide}" '## Technical Contract'
+  require_document_text "${guide}" "\`ExternalFidelity\` has stable ordered variants"
+  require_document_text "${guide}" "\`SameFormatSaveDisposition\` distinguishes"
+  require_document_text "${guide}" 'source path, source SHA-256, imported'
+  require_document_text "${guide}" 'same-format writer evidence'
+  require_document_text "${limits}" 'MAX_DOCX_IMPORT_COMPRESSION_RATIO'
+  require_document_text docs/wiki/Workspace.md "supported paragraph subset from a \`.docx\` file"
+  require_document_text docs/wiki/Troubleshooting.md 'A source-preservation notice means'
+  require_document_text docs/wiki/Current-Limitations.md 'Same-format DOCX save and round-trip fidelity are not currently supported.'
+  require_document_text "${ledger}" '| UX-46-011 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-014 | UX-1 | Open |'
+  require_document_text "${release}" '| RC-07 | Release blocker | Open |'
+  require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
+  require_document_text docs/INVARIANTS.md "| \`INV-17\` | Proposed |"
 }
 
 check_offline_mode_documentation() {
