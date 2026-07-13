@@ -8,6 +8,125 @@ local text checks, DOCX export, an outline, statistics, and Rust runtime status.
 Rust remains authoritative for persistence, filesystem dialogs, reference
 storage, helper execution, and export.
 
+## V3 Workspace Target
+
+This section records the intended workspace direction. It is a layout target,
+not evidence that every named command or panel capability exists. Current
+behavior remains defined by the implementation sections below and by accepted
+contracts. A target item cannot become active merely because its control has
+been drawn.
+
+### Layout Work
+
+The native macOS menu bar is the complete command hierarchy. The target top
+level is File, Edit, View, Insert, Format, Tools, Citations, and Help. The target
+File menu contains New Document, Open…, Recent, Save, Save As…, Export, and Close
+Window in conventional groups. The current Phase 48 implementation guarantees
+only the accepted File actions documented under Native File Actions; Recent and
+additional menu groups remain unavailable until real commands and state rules
+exist.
+
+The target window title is centered and follows `<document title> — DRAFT`, with
+`Untitled Document — DRAFT` for a new unsaved document. The title is presentation
+metadata only and cannot become path or persistence authority.
+
+The in-window command strip stays smaller than the native menu. Its v3 primary
+set is New, Open, Save, and More. Close, Save As, Export, References, and Text
+checks belong in the overflow or native menu rather than competing with the
+writing surface. New may keep a short visible label; familiar actions use icons
+with accessible names and tooltips. This target moves the current primary Close
+control into overflow when the v3 layout is implemented.
+
+The target shell has three clear regions:
+
+- a left library and citation region;
+- a centered document canvas; and
+- a right research and review region.
+
+The left region may expose the currently implemented manual reference list, Add
+Reference, and Insert Citation actions. Search, All/Recent/Favorites tabs,
+collection counts, richer reference cards, and library management are capability
+work and must not appear active before their data and command contracts exist.
+
+The center region keeps the page visually dominant. A centered white page,
+readable margins, restrained shadow, visible caret, and citation chips are
+layout work. A ruler may appear only as an accurate, non-interactive page guide
+until paragraph indents, tabs, and page geometry have accepted behavior; it must
+not look draggable before those actions exist.
+
+The right region is reserved for supported research and review workflows. Local
+Formatting review and Text checks may use it. Source search, result filters,
+Summarize, Paraphrase, Find Related, Outline, bibliography generation, citation
+conversion, DOI lookup, and source chat are capability work. Provider-backed or
+model-backed actions remain excluded from v1 under ADR-002 and must not appear
+active.
+
+The bottom status bar remains the only compact operational strip. It may show
+document state, active operation, runtime version, connectivity mode, and real
+word or character counts when space permits. Page count cannot appear until a
+pagination model exists. Active style or document mode appears only when the
+application has a real selectable state to report. Status values do not return
+to the title bar or primary command strip.
+
+### Capability Work
+
+The v3 formatting direction groups font family, font size, inline formatting,
+paragraph formatting, case, color, highlight, zoom, and sharing in a familiar
+order. Only the implemented subset may be active today: font family, whole-point
+font size, bold, italic, and strikethrough, plus the existing history, heading,
+list, blockquote, and formatting-review controls.
+
+The following require separate capability work before activation:
+
+- Underline needs persistence, reopen, validation, paste, and DOCX behavior.
+- Alignment, justification, line spacing, paragraph spacing, and indentation
+  remain governed by the paragraph-formatting contract.
+- Case Shift needs deterministic selection and undo behavior.
+- Text color and highlight need canonical values, persistence, paste, and DOCX
+  mappings.
+- Zoom needs a bounded viewport-only policy that cannot mutate document data.
+- Share needs an accepted export or handoff workflow and privacy boundary.
+- Research, bibliography, DOI, and source-chat actions need their own accepted
+  data, network, failure, privacy, and evidence contracts.
+
+Pure presentation changes may arrange space for accepted controls, but they do
+not authorize document marks, paragraph attributes, external requests, model
+actions, citation mutation, or sharing.
+
+## Availability And Visual Noise Policy
+
+The workspace uses one rule for every menu, toolbar, panel, and status surface:
+
+> A control may be enabled only when its complete operation exists and its
+> current state permits the operation.
+
+An implemented command that is temporarily unavailable because of document
+state, a pending operation, or missing selection stays in its stable location
+and is disabled with native or semantic disabled behavior. Its visual treatment
+is neutral gray with no active accent, pressed state, or misleading hover state.
+The disabled control cannot dispatch through pointer, keyboard, native menu, or
+stale event delivery.
+
+An unsupported or unapproved capability is omitted from the production
+workspace. A future accepted layout may reserve its compact control as disabled,
+but only when stable placement materially helps command discovery. Do not fill
+panels with disabled feature cards merely to preview a roadmap. In particular,
+unavailable AI, provider, bibliography, DOI, sharing, paragraph, and library
+management actions must not make the current product look more capable than it
+is.
+
+When an accepted v3 target control is present before its operation is available,
+the control stays disabled and gray. It is not replaced by an explanation,
+empty-state card, warning banner, or promotional message. One unavailable
+function should consume no more space than its normal compact control.
+
+Unavailable state does not justify permanent explanatory copy. Do not add
+`Coming soon` labels, promotional cards, instructional paragraphs, duplicate
+status badges, or capability disclaimers to the writing chrome. When a reason
+or recovery action is necessary, use one concise tooltip, menu hint, or existing
+status/error region. The message must name a recovery action the current product
+can honor; otherwise the disabled visual state is sufficient.
+
 ## Component Ownership
 
 | Layer | Surface | Responsibility |
@@ -262,6 +381,19 @@ overlap, overflow-menu containment, disabled-item skipping, and visible focus.
 Packaged human review remains required for native shortcuts, toolbar/menu
 parity, busy-state behavior, status placement, and visible application identity.
 
+Any v3 implementation must add focused evidence that:
+
+- every enabled control completes one implemented operation;
+- state-disabled controls are visibly gray, semantically disabled, and cannot
+  dispatch through pointer, keyboard, menu, shortcut, or stale event;
+- unsupported controls remain absent unless an accepted layout explicitly
+  requires a stable disabled position;
+- no disabled function adds persistent explanatory or promotional copy;
+- command labels, accessible names, tooltips, and native-menu names remain
+  consistent; and
+- three-panel and toolbar changes preserve normal, narrow, scaled, keyboard,
+  reduced-motion, and status-announcement behavior.
+
 Run:
 
 ```bash
@@ -289,5 +421,8 @@ bash scripts/verify.sh
   overflow interaction, menu parity, busy states, Save As, status placement,
   Finder, Dock, application switcher, in-window branding, and stale icon-cache
   behavior remains open. `RC-08` and `GATE-48` are not closed.
+- The v3 menu hierarchy, centered window title, three-panel composition, richer
+  formatting order, ruler, library organization, and research region are target
+  direction only. They are not current capability or completion evidence.
 - PDF intake, metadata lookup, diagnostics, credentials, provider-backed
   orchestration, and background jobs remain without visible workflows.
