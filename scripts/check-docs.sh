@@ -182,11 +182,11 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-016 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-017 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-018 | UX-1 | Closed |'
-  require_document_text "${ledger}" '| UX-46-019 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-019 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-020 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-021 | UX-1 | Open |'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
-    "font-control finding \`UX-46-019\`"
+    'the complete eight-step workflow did not pass'
   require_document_text docs/maintainers/CONFIGURATION.md \
     "\`arial\`, \`avenir_next\`, \`baskerville\`, \`courier_new\`, \`georgia\`, \`helvetica\`, \`menlo\`, \`palatino\`, \`times_new_roman\`, \`trebuchet_ms\`, \`verdana\`"
   require_document_text docs/maintainers/CONFIGURATION.md \

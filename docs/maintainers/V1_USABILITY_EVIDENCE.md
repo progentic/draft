@@ -113,14 +113,17 @@ remain open.
 - Executable SHA-256: `8870dcc412dfb04ada5ae0ba28ea630eb37925bc94b55b4f182e423b5afd9eb4`
 - Mechanical result: package construction, arm64 validation, embedded icon
   validation, and embedded deterministic text-analysis helper execution passed.
-- Human result: pending.
+- Human result: partial; effective font family and size, Open, Save, and Close
+  passed. The complete eight-step workflow did not pass because the native File
+  menu and packaged application identity remain defective.
 
 This artifact derives the font controls from exact document defaults, explicit
-caret marks, or mixed selections. Automated tests cover immediate updates,
-reset behavior, JSON restoration, save/reopen restoration, and existing DOCX
-font fidelity. `UX-46-019`, all RC rows, and `GATE-46` remain open until direct
-packaged validation confirms those behaviors. Phase 48 findings `UX-46-020`
-and `UX-46-021` also remain open.
+caret marks, or mixed selections. Direct testing confirmed that the family and
+size controls show their effective current values, closing `UX-46-019`.
+Automated tests continue to cover immediate updates, reset behavior, JSON
+restoration, save/reopen restoration, and existing DOCX font fidelity. All RC
+rows and `GATE-46` remain open because this was not a complete workflow pass.
+Phase 48 findings `UX-46-020` and `UX-46-021` remain confirmed failures.
 
 ### Replacement Artifact Product-Boundary Review
 
@@ -188,8 +191,8 @@ No untested task is counted as passed.
 | UX-46-016 | UX-1 | Open | Manual review confirmed that the native File menu does not expose New Document, Open, Close, Save, Save As, and Export in expected desktop-document order with state-aware shortcuts. | Phase 48 must implement one shared dispatcher for native and visible commands, standard macOS shortcuts, and document-state enablement before packaged retest. |
 | UX-46-017 | UX-1 | Open | Manual review confirmed that the visible menu icon remains stale and toolbar grouping does not consistently separate document lifecycle commands from research and analysis commands. | Phase 48 must replace the stale icon, align labels and icons, remove conflicting command locations, and validate the resulting hierarchy in the packaged app. |
 | UX-46-018 | UX-1 | Closed | An earlier package presented Open during Save and did not show the selected filename. Direct validation of artifact `3b4e9960` confirmed Save works as expected with the corrected typed result and visible filename transition. | Closed for the specific save-panel and filename defect; complete packaged recovery evidence remains required by the open RC rows. |
-| UX-46-019 | UX-1 | Open | Font family and size controls show Default font and Default size instead of the effective value at the caret or selection; mixed formatting is not disclosed. | Phase 46 must show document defaults, explicit caret values, and mixed states immediately and after save/reopen, then prove persistence and DOCX fidelity in a replacement package. |
-| UX-46-020 | UX-1 | Open | The native macOS File menu exposes only Close Window rather than the accepted document command hierarchy. | Phase 48 must add New Document, Open, Close, Save, Save As, and Export DOCX through the shared state-aware dispatcher with standard shortcuts. |
-| UX-46-021 | UX-1 | Open | The packaged macOS identity does not consistently use the intended `DRAFT_Logo(1).png` source artwork even though the newer mark appears inside the window. | Phase 48 must regenerate the icon chain from the supplied source and validate `.icns`, bundle configuration/resources, Finder, Dock, window branding, and clean-install cache behavior. |
+| UX-46-019 | UX-1 | Closed | Artifact `8870dcc4` displayed the effective current font family and size during direct packaged retest. | Closed for the specific false-default control state; the complete eight-step workflow and release rows remain open. |
+| UX-46-020 | UX-1 | Open | Artifact `8870dcc4` exposed only Close Window in the native macOS File menu. | Phase 48 must add New Document (`Command-N`), Open (`Command-O`), Close (`Command-W`), Save (`Command-S`), Save As (`Shift-Command-S`), and Export DOCX with accepted separators through one shared state-aware dispatcher. |
+| UX-46-021 | UX-1 | Open | Artifact `8870dcc4` still used the older green D identity in the application while the packaged macOS icon chain was not proven to use the required purple `DRAFT_Logo.png` consistently. | Phase 48 must regenerate all macOS icon sizes and `.icns` from the canonical source, update Tauri bundle resources and in-app branding, then validate Finder, Dock, bundle resources, and clean-install behavior after clearing stale icon caches. |
 
 `RC-01` through `RC-04` and `GATE-46` remain open.
