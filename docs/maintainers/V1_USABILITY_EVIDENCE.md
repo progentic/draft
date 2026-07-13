@@ -127,9 +127,9 @@ Phase 48 findings `UX-46-020` and `UX-46-021` remain confirmed failures.
 
 ## Phase 48 Mechanical Retest Candidate
 
-- Implementation commit: `857ae0899633f59bae7d690d8788d908fd03f211`
+- Implementation commit: `6b1003273773563cfef06b30a76355f0062d25a3`
 - Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
-- Executable SHA-256: `7f252c85597f45bd2d5e00502c9db7b7da4d18d8af1c01889254996c6112fba6`
+- Executable SHA-256: `b9ebc25ee5cf3822024bf8f488385407c262679fb807056c70c08fadae60f558`
 - Canonical icon source SHA-256: `ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043`
 - Tracked and embedded `icon.icns` SHA-256: `fd07d079de1dd38bdc84eb222ab8ee90d856d488aad7f0550860c8a369b94236`
 - Mechanical result: the arm64 application package built successfully,
