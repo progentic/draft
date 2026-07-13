@@ -121,9 +121,11 @@ authority. `scripts/check-packaging.sh` pins the canonical source hash, stable
 desktop derivatives, explicit bundle paths, and macOS icon container.
 
 The unsigned package command verifies `Info.plist`, the embedded icon, and the
-Apple Silicon executable. Finder, Dock, application switcher, native menu, and
-window branding still require manual packaged validation. `RC-08` and
-`GATE-48` remain open until that evidence exists.
+Apple Silicon executable. Direct review of exact artifact `75373ffb` passed the
+Finder, Dock, application-switcher, native-menu, window-branding, dispatcher,
+Save As, disabled-state, narrow-window, and keyboard checklist. This validates
+the bounded Phase 48 implementation, not a final UI design. `RC-08`, `GATE-48`,
+and governance-blocked paragraph formatting remain open.
 
 ## Related Documents
 

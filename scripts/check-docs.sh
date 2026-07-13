@@ -185,9 +185,9 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-018 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-019 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-020 | UX-1 | Closed |'
-  require_document_text "${ledger}" '| UX-46-021 | UX-1 | Open |'
-  require_document_text "${ledger}" '| UX-46-022 | UX-1 | Open |'
-  require_document_text "${ledger}" '| UX-46-023 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-021 | UX-1 | Closed |'
+  require_document_text "${ledger}" '| UX-46-022 | UX-1 | Closed |'
+  require_document_text "${ledger}" '| UX-46-023 | UX-2 | Closed |'
   require_document_text "${ledger}" '| UX-46-024 | UX-1 | Open - governance blocked |'
   require_document_text "${ledger}" '## Phase 48 Compact Chrome Retest Candidate'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \

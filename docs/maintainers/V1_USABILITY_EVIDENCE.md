@@ -158,7 +158,8 @@ cannot close a visible icon finding.
 
 ## Phase 48 Compact Chrome Retest Candidate
 
-- Implementation commit: `1358e41e452a877b958b4e54ff6a9d93d2db00ba`
+- Package source commit: `36d999d9dd853c6a760721d4339e15bebbfb435b`
+- Product implementation ancestor: `1358e41e452a877b958b4e54ff6a9d93d2db00ba`
 - Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
 - Executable SHA-256: `75373ffbb2a0b8aedd995ace95a4387f403a2ab38fbb6b457143ce976ce6cb37`
 - Mechanical result: the arm64 package built successfully, the embedded helper
@@ -167,25 +168,29 @@ cannot close a visible icon finding.
 - Rendered-browser result: 1200 by 800 and 760 by 560 viewports had no page
   overflow, clipped controls, or overlap between workspace bars. The menu stayed
   inside the viewport, skipped disabled actions, and retained visible focus.
-- Human result: pending.
+- Human result: passed on 2026-07-13 against the exact executable hash above.
 
 This artifact contains the compact New action, icon-only Open, Save, and Close
 controls, one labeled overflow menu for secondary actions, and a bottom status
-bar for document, operation, recovery, and connectivity state. Automated and
-rendered-browser evidence does not prove the packaged interaction. Direct human
-testing must still confirm:
+bar for document, operation, recovery, and connectivity state. Direct human
+testing confirmed:
 
-- toolbar, overflow, native-menu, and shortcut parity;
+- the native File menu actions and standard shortcuts;
+- the compact top action bar and overflow behavior;
+- document, connectivity, operation, and recovery placement in the bottom bar;
+- toolbar, overflow, native-menu, and shortcut dispatcher parity;
 - disabled-action behavior during busy states;
-- overflow keyboard order, dismissal, focus restoration, and tooltips;
-- document, connectivity, operation, and recovery state in the bottom bar;
 - Save As rebinding and cancellation;
 - Finder, Dock, application-switcher, and in-window purple identity; and
-- behavior after clearing stale macOS icon caches.
+- narrow-window behavior and keyboard accessibility.
 
-Findings `UX-46-021` through `UX-46-024`, `RC-08`, `GATE-48`, and every other
-release row remain open. The paragraph-formatting finding remains blocked by
-governance and has no product implementation in this artifact.
+This pass closes findings `UX-46-021`, `UX-46-022`, and `UX-46-023` for the
+tested Phase 48 implementation. It is not approval of the final UI design; the
+broader v3 workspace target, paragraph formatting, research tools, sharing, and
+later visual refinement remain outside this evidence. Finding `UX-46-024`
+remains open and governance-blocked under ADR-004, with no paragraph-formatting
+product implementation in this artifact. `RC-08`, `GATE-48`, and every other RC
+and GATE row remain open.
 
 ### Replacement Artifact Product-Boundary Review
 
@@ -255,9 +260,10 @@ No untested task is counted as passed.
 | UX-46-018 | UX-1 | Closed | An earlier package presented Open during Save and did not show the selected filename. Direct validation of artifact `3b4e9960` confirmed Save works as expected with the corrected typed result and visible filename transition. | Closed for the specific save-panel and filename defect; complete packaged recovery evidence remains required by the open RC rows. |
 | UX-46-019 | UX-1 | Closed | Artifact `8870dcc4` displayed the effective current font family and size during direct packaged retest. | Closed for the specific false-default control state; the complete eight-step workflow and release rows remain open. |
 | UX-46-020 | UX-1 | Closed | Artifact `8870dcc4` exposed only Close Window in the native macOS File menu. Direct manual review of artifact `b9ebc25e` confirmed that the native File menu now provides a usable document workflow. | Closed for the native File-menu hierarchy. Other toolbar, state, icon, and complete-workflow evidence remains open. |
-| UX-46-021 | UX-1 | Open | Artifact `8870dcc4` still used the older green D identity in the application while the packaged macOS icon chain was not proven to use the required purple `DRAFT_Logo.png` consistently. | Phase 48 must regenerate all macOS icon sizes and `.icns` from the canonical source, update Tauri bundle resources and in-app branding, then validate Finder, Dock, bundle resources, and clean-install behavior after clearing stale icon caches. |
-| UX-46-022 | UX-1 | Open | Manual review of artifact `b9ebc25e` found that fully labeled New Document, Open, Save, Close, Export, and secondary actions create visual noise above the writing surface. | Phase 48 must keep a compact New action, use accessible icon-only common document actions, move secondary actions into a labeled overflow menu, and preserve shortcuts, focus order, state-sensitive enablement, tooltips, and the shared dispatcher. |
-| UX-46-023 | UX-2 | Open | Manual review of artifact `b9ebc25e` found that document state and connectivity consume primary header space. | Phase 48 must move document, connectivity, background-operation, count, and concise recovery status into a bottom status bar while keeping the header focused on document identity and writing actions. |
+| UX-46-021 | UX-1 | Closed | Exact artifact `75373ffb` passed direct review of the purple identity in the application, Finder, Dock, and application switcher after the canonical icon chain passed mechanical comparison. | Closed for the Phase 48 identity defect. This does not approve a final UI design or final release package. |
+| UX-46-022 | UX-1 | Closed | Exact artifact `75373ffb` passed direct review of the compact top bar, icon-only common actions, overflow behavior, shortcuts, focus, state-sensitive enablement, shared dispatch, and narrow-window behavior. | Closed for the over-labeled Phase 48 command-bar defect. The documented v3 workspace remains a later design target. |
+| UX-46-023 | UX-2 | Closed | Exact artifact `75373ffb` kept document, connectivity, operation, and recovery state in the bottom status bar during direct packaged review. | Closed for the Phase 48 header-status placement defect. Later status-bar refinements remain subject to the v3 target and release validation. |
 | UX-46-024 | UX-1 | Open - governance blocked | Manual review found that the editor lacks the paragraph controls required for alignment, line and paragraph spacing, and indentation. | Do not implement in PR #39. A separate governed proposal must define the persistent paragraph model, validation, Tiptap commands, mixed-selection and reset behavior, DOCX mapping and lossiness, compatibility and migration, enforcement, and manual evidence before product implementation begins. |
 
-`RC-01` through `RC-04` and `GATE-46` remain open.
+Every RC and GATE row remains open. Closing these three bounded findings does not
+close a release blocker or roadmap gate.

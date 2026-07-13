@@ -417,10 +417,11 @@ bash scripts/verify.sh
   contract.
 - DOCX export rejects citation nodes and other unsupported content.
 - The native File menu, compact document controls, bottom status bar, and
-  tracked purple icon chain are implemented. Final Phase 48 human evidence for
-  overflow interaction, menu parity, busy states, Save As, status placement,
-  Finder, Dock, application switcher, in-window branding, and stale icon-cache
-  behavior remains open. `RC-08` and `GATE-48` are not closed.
+  tracked purple icon chain are implemented. Exact artifact `75373ffb` passed
+  direct review of overflow interaction, menu parity, busy states, Save As,
+  status placement, Finder, Dock, application switcher, in-window branding,
+  narrow layout, and keyboard behavior. This is not final UI-design approval;
+  `RC-08` and `GATE-48` remain open.
 - The v3 menu hierarchy, centered window title, three-panel composition, richer
   formatting order, ruler, library organization, and research region are target
   direction only. They are not current capability or completion evidence.
