@@ -84,7 +84,7 @@ function exportError(error: unknown): ExportDocumentClientError {
   return { type: "transport" };
 }
 
-function isDocxExportError(value: unknown): value is { code: DocxExportErrorCode } {
+export function isDocxExportError(value: unknown): value is { code: DocxExportErrorCode } {
   return (
     isRecord(value) &&
     typeof value.code === "string" &&

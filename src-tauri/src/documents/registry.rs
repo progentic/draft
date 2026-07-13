@@ -24,6 +24,7 @@ pub struct DocumentRegistry {
 pub enum DocumentRegistryError {
     AlreadyOpen,
     NotOpen,
+    ExternalSourceUnavailable,
     SourcePathInUse,
     RegistryUnavailable,
 }
@@ -75,6 +76,15 @@ impl DocumentRegistry {
         source_path_for(&handles, document_id)
     }
 
+    /// Returns one cloned external provenance record without exposing it over IPC.
+    pub(crate) fn external_source(
+        &self,
+        document_id: DocumentId,
+    ) -> Result<ExternalSourceProvenance, DocumentRegistryError> {
+        let handles = self.lock_handles()?;
+        external_source_for(&handles, document_id)
+    }
+
     /// Confirms that no other live document owns a Rust-selected source path.
     pub fn ensure_source_path_available(
         &self,
@@ -99,6 +109,16 @@ impl DocumentRegistry {
     ) -> Result<(), DocumentRegistryError> {
         let mut handles = self.lock_handles()?;
         update_handle_source(&mut handles, envelope, source_path)
+    }
+
+    /// Commits one external replacement without changing its Rust-owned source path.
+    pub(crate) fn commit_external_write(
+        &self,
+        envelope: DocumentEnvelope,
+        source_bytes: &[u8],
+    ) -> Result<(), DocumentRegistryError> {
+        let mut handles = self.lock_handles()?;
+        commit_external_handle(&mut handles, envelope, source_bytes)
     }
 
     /// Releases one live handle and returns its validated in-memory envelope.
@@ -139,6 +159,7 @@ impl DocumentRegistryError {
         match self {
             Self::AlreadyOpen => "document already has a live editing handle",
             Self::NotOpen => "document does not have a live editing handle",
+            Self::ExternalSourceUnavailable => "document has no external source authority",
             Self::SourcePathInUse => "document source path already has a live editing handle",
             Self::RegistryUnavailable => "document registry is unavailable",
         }
@@ -162,6 +183,12 @@ impl LiveDocumentHandle {
         self.source_path.clone()
     }
 
+    fn external_source(&self) -> Result<ExternalSourceProvenance, DocumentRegistryError> {
+        self.external_source
+            .clone()
+            .ok_or(DocumentRegistryError::ExternalSourceUnavailable)
+    }
+
     fn owns_source_path(&self, source_path: &Path) -> bool {
         self.source_path.as_deref() == Some(source_path)
             || self
@@ -178,6 +205,20 @@ impl LiveDocumentHandle {
         self.envelope = envelope;
         self.source_path = Some(source_path);
         self.external_source = None;
+    }
+
+    fn commit_external_write(
+        &mut self,
+        envelope: DocumentEnvelope,
+        source_bytes: &[u8],
+    ) -> Result<(), DocumentRegistryError> {
+        let provenance = self
+            .external_source
+            .as_mut()
+            .ok_or(DocumentRegistryError::ExternalSourceUnavailable)?;
+        provenance.commit_write(&envelope, source_bytes);
+        self.envelope = envelope;
+        Ok(())
     }
 
     fn into_envelope(self) -> DocumentEnvelope {
@@ -225,6 +266,16 @@ fn source_path_for(
         .ok_or(DocumentRegistryError::NotOpen)
 }
 
+fn external_source_for(
+    handles: &HashMap<DocumentId, LiveDocumentHandle>,
+    document_id: DocumentId,
+) -> Result<ExternalSourceProvenance, DocumentRegistryError> {
+    handles
+        .get(&document_id)
+        .ok_or(DocumentRegistryError::NotOpen)?
+        .external_source()
+}
+
 fn update_handle(
     handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
     envelope: DocumentEnvelope,
@@ -244,6 +295,15 @@ fn update_handle_source(
     let handle = handle_for_update(handles, document_id)?;
     handle.update_source(envelope, source_path);
     Ok(())
+}
+
+fn commit_external_handle(
+    handles: &mut HashMap<DocumentId, LiveDocumentHandle>,
+    envelope: DocumentEnvelope,
+    source_bytes: &[u8],
+) -> Result<(), DocumentRegistryError> {
+    let handle = handle_for_update(handles, envelope.document_id())?;
+    handle.commit_external_write(envelope, source_bytes)
 }
 
 fn reject_source_path_conflict(
@@ -473,6 +533,7 @@ mod tests {
         let errors = [
             DocumentRegistryError::AlreadyOpen,
             DocumentRegistryError::NotOpen,
+            DocumentRegistryError::ExternalSourceUnavailable,
             DocumentRegistryError::SourcePathInUse,
             DocumentRegistryError::RegistryUnavailable,
         ];
@@ -482,6 +543,7 @@ mod tests {
             json!([
                 { "code": "already_open" },
                 { "code": "not_open" },
+                { "code": "external_source_unavailable" },
                 { "code": "source_path_in_use" },
                 { "code": "registry_unavailable" }
             ]),
@@ -538,6 +600,7 @@ mod tests {
     fn provenance(envelope: &DocumentEnvelope, source_path: PathBuf) -> ExternalSourceProvenance {
         ExternalSourceProvenance::imported_docx(
             source_path,
+            "source.docx".to_owned(),
             b"source",
             envelope,
             ExternalFidelity::Exact,

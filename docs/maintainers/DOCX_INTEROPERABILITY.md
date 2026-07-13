@@ -25,18 +25,27 @@ result. Unsupported but valid behavior is disclosed and requires retaining the
 untouched source rather than pretending the imported copy is exact.
 
 The external source remains registered in Rust, but it never becomes the
-native save target. The frontend receives only the source filename, format,
-fidelity class, and a same-format save disposition. Saving the imported work
-selects a new `.draft` target. Exporting creates a separate DOCX copy. Neither
-operation overwrites the imported DOCX.
+native `.draft` save target. The frontend receives only the source filename,
+format, fidelity class, and a same-format save disposition. Saving the imported
+work through the visible workflow selects a new `.draft` target. Exporting
+creates a separate DOCX copy.
+
+A separate same-format source-write command now exists for exact supported
+DOCX content and explicitly accepted canonical normalization. Rust alone keeps
+the source path and fingerprints, rechecks source identity immediately before
+replacement, and restores the original bytes if post-replacement durability or
+registry commit fails. Its strict frontend client is not wired to a visible
+control, so the capability is implemented but not yet exposed.
 
 ## Trade-offs
 
 - The importer is deliberately smaller than Microsoft Word's document model.
 - Plain text and the accepted paragraph properties remain editable; unsupported
   run or package behavior is not reconstructed in DRAFT.
-- An untouched source reports `no_changes`, but edited DOCX overwrite remains
-  unavailable because this unit adds no same-format writer workflow.
+- An untouched source reports `no_changes`; edited exact content is eligible
+  for the bounded writer, while normalized content requires explicit consent.
+- Unsupported source behavior, missing provenance, unknown fidelity, a missing
+  source, and an externally changed source deny replacement.
 - ZIP parts are read conservatively under the XML-part bound. Large embedded
   binary parts are therefore rejected rather than retained opaquely.
 - Human compatible-reader and packaged-workflow evidence remains pending.
@@ -92,10 +101,20 @@ same external path. It reports no native source path for the imported handle.
 
 `SameFormatSaveDisposition` distinguishes unchanged, exact, normalized,
 unsupported, read-only, missing-provenance, unknown-fidelity,
-writer-unavailable, missing-source, and changed-source outcomes. The current
-DOCX import is read-only and has no same-format writer. A successful save to a
-new `.draft` target replaces the external registration only after atomic write
-success. Cancellation and failure leave the external registration intact.
+writer-unavailable, missing-source, and changed-source outcomes. Exact imports
+receive exact writer support. Canonically normalized imports receive writer
+support that requires explicit acceptance. Unsupported-preservable imports
+remain read-only.
+
+`save_external_document` is separate from native `.draft` Save and derived-copy
+DOCX export. It compiles a complete replacement in memory, rechecks that source
+bytes still match the planned bytes, writes through the shared atomic writer,
+and commits the new source and envelope fingerprints only after replacement.
+If parent-directory durability or registry commit fails after replacement, it
+atomically restores the original bytes. A successful rollback is a typed
+failure with preserved source; a failed rollback is a distinct uncertain-state
+failure. Cancellation and every pre-replacement failure leave source bytes and
+registry state unchanged.
 
 ### Resource limits
 
@@ -143,6 +162,9 @@ typed response resolves, so no later operation can make that response stale.
   `lossy_import_denied`.
 - A failed canonical envelope conversion returns `invalid_canonical_document`.
 - A missing, unreadable, or oversized source fails before registration.
+- A missing or externally changed source denies same-format replacement.
+- A failed replacement reports whether the original bytes were restored or
+  whether source state is uncertain.
 
 Visible recovery says whether the original remained unchanged. Cancellation is
 a normal no-op. No failure changes the active document, source bytes, target,
@@ -158,16 +180,18 @@ ordering. The canonical stored-package fixture SHA-256 is
 `c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a`.
 
 Persistence tests prove no-edit open/close preservation, canonical path-alias
-deduplication, duplicate-source
-rejection, cancelled and failed Save preservation, import-to-new-`.draft`, and
-export-to-new-DOCX separation. TypeScript tests cover every fidelity shape,
-unknown variants, unstable feature lists, path-bearing DTO rejection, bounded
-visible recovery, and external-handle closure. Existing atomic-export tests
+deduplication, duplicate-source rejection, cancelled and failed Save
+preservation, import-to-new-`.draft`, and export-to-new-DOCX separation.
+Source-write tests cover exact replacement, normalization consent, source
+changes before replacement, compilation and write failure, durability and
+registry rollback, rollback failure, and fingerprint refresh. TypeScript tests
+cover every fidelity and source-write outcome, unknown variants, path-bearing
+DTO rejection, and exhaustive path-free recovery. Existing atomic-export tests
 continue to prove target promotion and partial-output cleanup.
 
-These are mechanical results. Compatible-reader comparison, packaged human
-validation, same-format writer evidence, complete format coverage, `RC-07`,
-and `GATE-47` remain open.
+These are mechanical results. The same-format writer has no visible consumer,
+and compatible-reader comparison, packaged human validation, complete format
+coverage, `RC-07`, and `GATE-47` remain open.
 
 ## Related Documents
 

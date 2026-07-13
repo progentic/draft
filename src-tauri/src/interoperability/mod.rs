@@ -46,12 +46,12 @@ pub(crate) fn import_docx_source(
         .map_err(|cause| ExternalDocumentImportError::InvalidCanonicalDocument { cause })?;
     let provenance = ExternalSourceProvenance::imported_docx(
         canonical_source,
+        display_name,
         &source_bytes,
         &envelope,
         parsed.fidelity,
     );
-    let summary =
-        ExternalDocumentSummary::imported_docx(display_name, &provenance, &envelope, &source_bytes);
+    let summary = ExternalDocumentSummary::imported_docx(&provenance, &envelope, &source_bytes);
     Ok(ImportedExternalDocument {
         envelope,
         summary,

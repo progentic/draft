@@ -893,6 +893,11 @@ check_docx_import_contract() {
   local policy_path='src-tauri/src/interoperability/mod.rs'
   local fidelity_path='src-tauri/src/interoperability/fidelity.rs'
   local provenance_path='src-tauri/src/interoperability/provenance.rs'
+  local source_write_path='src-tauri/src/documents/external_save.rs'
+  local source_write_tests='src-tauri/src/documents/external_save_tests.rs'
+  local source_write_command='src-tauri/src/commands/external_document_save.rs'
+  local source_write_client='src/ipc/externalDocumentSave.ts'
+  local source_write_client_tests='src/ipc/externalDocumentSave.test.ts'
   local package_path='src-tauri/src/interoperability/docx_import/package.rs'
   local document_path='src-tauri/src/interoperability/docx_import/document.rs'
   local test_path='src-tauri/src/interoperability/docx_import/tests.rs'
@@ -920,6 +925,11 @@ check_docx_import_contract() {
   require_file "${policy_path}"
   require_file "${fidelity_path}"
   require_file "${provenance_path}"
+  require_file "${source_write_path}"
+  require_file "${source_write_tests}"
+  require_file "${source_write_command}"
+  require_file "${source_write_client}"
+  require_file "${source_write_client_tests}"
   require_file "${package_path}"
   require_file "${document_path}"
   require_file "${test_path}"
@@ -935,6 +945,28 @@ check_docx_import_contract() {
   require_rust_test oversized_source_fails_before_package_parsing "${policy_path}"
   require_source_pattern 'pub enum ExternalFidelity' "${fidelity_path}"
   require_source_pattern 'pub enum SameFormatSaveDisposition' "${provenance_path}"
+  require_source_pattern 'pub(crate) async fn save_external_document(' \
+    "${source_write_command}"
+  require_source_pattern 'write_document_atomically' "${source_write_path}"
+  require_source_pattern 'registry.commit_external_write' "${source_write_path}"
+  require_source_pattern 'const COMMAND_NAME = "save_external_document"' \
+    "${source_write_client}"
+  require_source_pattern 'export async function saveExternalDocument(' \
+    "${source_write_client}"
+  require_rust_test exact_save_replaces_source_and_refreshes_provenance \
+    "${source_write_tests}"
+  require_rust_test normalization_requires_acceptance_and_cancel_never_writes \
+    "${source_write_tests}"
+  require_rust_test source_change_after_compilation_is_denied_before_replacement \
+    "${source_write_tests}"
+  require_rust_test pre_replacement_failure_preserves_source_and_registry \
+    "${source_write_tests}"
+  require_rust_test durability_failure_rolls_back_replacement \
+    "${source_write_tests}"
+  require_rust_test rollback_failure_reports_uncertain_source_state \
+    "${source_write_tests}"
+  require_rust_test registry_commit_failure_rolls_back_source \
+    "${source_write_tests}"
   require_source_pattern 'MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024' \
     src-tauri/src/interoperability/docx_import/mod.rs
   require_source_pattern 'MAX_DOCX_IMPORT_XML_BYTES: usize = 8 * 1024 * 1024' \
@@ -965,11 +997,18 @@ check_docx_import_contract() {
     "${policy_path}" "${fidelity_path}" "${provenance_path}"
   assert_no_matches "frontend external-document path or package authority" \
     '\bPathBuf\b|\bfilesystem\b|\bquick_xml\b|\bzip::|\brawXml\b|\bsourceBytes\b' \
-    src/ipc/externalDocument.ts
+    src/ipc/externalDocument.ts "${source_write_client}"
+  assert_no_matches "frontend external source path or fingerprint input" \
+    '\bsourcePath\b|\bsourceFingerprint\b|\btargetPath\b|\babsolutePath\b' \
+    "${source_write_client}" "${source_write_client_tests}"
   assert_no_matches "frontend same-format save decision authority" \
     '\bsameFormatSave\b|\ballowed_exact\b|\ballowed_after_accepted_normalization\b|\bdenied_(?:unsupported_source_behavior|read_only|missing_provenance|fidelity_unknown|writer_unavailable|source_missing|source_changed)\b' \
     --glob '!**/*.test.ts' --glob '!**/*.test.tsx' \
-    --glob '!src/ipc/externalDocument.ts' src
+    --glob '!src/ipc/externalDocument.ts' \
+    --glob '!src/ipc/externalDocumentSave.ts' src
+  assert_no_matches "visible external source-write consumer before workflow evidence" \
+    'externalDocumentSave|saveExternalDocument' \
+    src/app src/components src/features src/editor
 
   require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
   require_source_pattern '| UX-46-011 | UX-1 | Open |' \
@@ -1527,8 +1566,13 @@ check_adr_003_accepted_guard() {
   require_file src/ipc/externalDocument.ts
   require_source_pattern 'imported_external' src-tauri/src/documents/persistence.rs
   require_source_pattern 'imported_external' src/ipc/documentOpen.ts
-  assert_no_matches 'ADR-003 unimplemented format or save-back authority' \
-    '\b(?:parse_markdown|import_rtf|import_odt|save_external_document)\b' \
+  require_file src-tauri/src/documents/external_save.rs
+  require_file src-tauri/src/commands/external_document_save.rs
+  require_file src/ipc/externalDocumentSave.ts
+  require_source_pattern 'commands::external_document_save::save_external_document' \
+    src-tauri/src/lib.rs
+  assert_no_matches 'ADR-003 unimplemented Markdown, RTF, or ODT authority' \
+    '\b(?:parse_markdown|import_rtf|import_odt)\b' \
     src-tauri/src src
   require_file src-tauri/src/desktop_menu.rs
   require_file src-tauri/src/commands/native_menu.rs

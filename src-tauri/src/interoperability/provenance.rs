@@ -10,15 +10,12 @@ use super::fidelity::{ExternalDocumentFormat, ExternalFidelity};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ExternalAccessMode {
     ImportedReadOnly,
-    #[allow(dead_code)]
     OpenedWritable,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ExternalWriterSupport {
-    #[allow(dead_code)]
     Exact,
-    #[allow(dead_code)]
     AcceptedNormalization,
     Unavailable,
 }
@@ -53,6 +50,7 @@ pub(crate) struct ExternalDocumentSummary {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ExternalSourceProvenance {
     source_path: PathBuf,
+    display_name: String,
     source_fingerprint: [u8; 32],
     imported_document_fingerprint: [u8; 32],
     format: ExternalDocumentFormat,
@@ -69,14 +67,13 @@ pub(crate) enum CurrentSource<'a> {
 
 impl ExternalDocumentSummary {
     pub(crate) fn imported_docx(
-        display_name: String,
         provenance: &ExternalSourceProvenance,
         envelope: &DocumentEnvelope,
         source_bytes: &[u8],
     ) -> Self {
         Self {
             format: provenance.format,
-            display_name,
+            display_name: provenance.display_name.clone(),
             fidelity: provenance.fidelity.clone(),
             same_format_save: provenance
                 .save_disposition(envelope, CurrentSource::Bytes(source_bytes)),
@@ -87,23 +84,30 @@ impl ExternalDocumentSummary {
 impl ExternalSourceProvenance {
     pub(crate) fn imported_docx(
         source_path: PathBuf,
+        display_name: String,
         source_bytes: &[u8],
         envelope: &DocumentEnvelope,
         fidelity: ExternalFidelity,
     ) -> Self {
+        let (access_mode, writer_support) = docx_write_capability(&fidelity);
         Self {
             source_path,
+            display_name,
             source_fingerprint: fingerprint_bytes(source_bytes),
             imported_document_fingerprint: fingerprint_envelope(envelope),
             format: ExternalDocumentFormat::Docx,
             fidelity,
-            access_mode: ExternalAccessMode::ImportedReadOnly,
-            writer_support: ExternalWriterSupport::Unavailable,
+            access_mode,
+            writer_support,
         }
     }
 
     pub(crate) fn source_path(&self) -> &std::path::Path {
         &self.source_path
+    }
+
+    pub(crate) fn display_name(&self) -> &str {
+        &self.display_name
     }
 
     pub(crate) fn save_disposition(
@@ -112,6 +116,30 @@ impl ExternalSourceProvenance {
         current_source: CurrentSource<'_>,
     ) -> SameFormatSaveDisposition {
         evaluate_source_state(self, envelope, current_source)
+    }
+
+    pub(crate) fn commit_write(&mut self, envelope: &DocumentEnvelope, source_bytes: &[u8]) {
+        self.source_fingerprint = fingerprint_bytes(source_bytes);
+        self.imported_document_fingerprint = fingerprint_envelope(envelope);
+    }
+}
+
+fn docx_write_capability(
+    fidelity: &ExternalFidelity,
+) -> (ExternalAccessMode, ExternalWriterSupport) {
+    match fidelity {
+        ExternalFidelity::Exact => (
+            ExternalAccessMode::OpenedWritable,
+            ExternalWriterSupport::Exact,
+        ),
+        ExternalFidelity::CanonicallyNormalized { .. } => (
+            ExternalAccessMode::OpenedWritable,
+            ExternalWriterSupport::AcceptedNormalization,
+        ),
+        _ => (
+            ExternalAccessMode::ImportedReadOnly,
+            ExternalWriterSupport::Unavailable,
+        ),
     }
 }
 
@@ -176,7 +204,7 @@ mod tests {
     use crate::interoperability::fidelity::ExternalFeature;
 
     #[test]
-    fn imported_source_reports_no_change_then_rejects_edits_as_read_only() {
+    fn exact_source_reports_no_change_then_allows_supported_edits() {
         let original = envelope("Original");
         let provenance = imported_provenance(&original, ExternalFidelity::Exact);
 
@@ -186,7 +214,21 @@ mod tests {
         );
         assert_eq!(
             provenance.save_disposition(&envelope("Edited"), CurrentSource::Bytes(b"source")),
-            SameFormatSaveDisposition::DeniedReadOnly
+            SameFormatSaveDisposition::AllowedExact
+        );
+    }
+
+    #[test]
+    fn normalized_source_requires_explicit_normalization_acceptance() {
+        let original = envelope("Original");
+        let provenance = imported_provenance(
+            &original,
+            ExternalFidelity::CanonicallyNormalized { features: vec![] },
+        );
+
+        assert_eq!(
+            provenance.save_disposition(&envelope("Edited"), CurrentSource::Bytes(b"source")),
+            SameFormatSaveDisposition::AllowedAfterAcceptedNormalization
         );
     }
 
@@ -253,12 +295,7 @@ mod tests {
     fn summary_serialization_is_path_free() {
         let envelope = envelope("Original");
         let provenance = imported_provenance(&envelope, ExternalFidelity::Exact);
-        let summary = ExternalDocumentSummary::imported_docx(
-            "paper.docx".to_owned(),
-            &provenance,
-            &envelope,
-            b"source",
-        );
+        let summary = ExternalDocumentSummary::imported_docx(&provenance, &envelope, b"source");
         let value = serde_json::to_value(summary).unwrap();
 
         assert_eq!(value["displayName"], "paper.docx");
@@ -272,6 +309,7 @@ mod tests {
     ) -> ExternalSourceProvenance {
         ExternalSourceProvenance::imported_docx(
             PathBuf::from("paper.docx"),
+            "paper.docx".to_owned(),
             b"source",
             envelope,
             fidelity,

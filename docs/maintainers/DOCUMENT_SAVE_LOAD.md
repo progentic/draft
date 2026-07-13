@@ -197,8 +197,9 @@ User cancellation is a successful `cancelled` response, not an error.
 Open success is also explicit: `opened_draft` means Rust retained a native
 save target; `imported_text` means the returned envelope has no registration or
 target; `imported_external` means Rust retained source provenance but granted
-no native or same-format save target; `cancelled` means no session state
-changed.
+no native `.draft` save target; `cancelled` means no session state changed. An
+independent, currently unwired same-format DOCX command may use the external
+registration only when its closed fidelity and fingerprint rules allow it.
 
 Save requests include a closed mode: `save` or `save_as`. Normal Save reuses an
 existing Rust-owned target and selects a target only for a new or imported
@@ -227,6 +228,7 @@ The save wrapper accepts a snapshot, not a path.
 | :--- | :--- | :--- |
 | High | create/open/save/close commands | Coordinate one typed IPC request. |
 | Mid | persistence `open_document` / `save_document` / `save_document_as` | Enforce validation, registry, and lifecycle policy. |
+| Mid | `save_external_document` | Enforce same-format eligibility, source identity, atomic replacement, and rollback. |
 | Mid | `DocumentRegistry` | Own one handle, source path, and current snapshot. |
 | Low | dialog helpers / JSON / atomic writer | Perform native API, parsing, and filesystem mechanics. |
 
