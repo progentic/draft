@@ -234,6 +234,31 @@ headless conversion reopened exact and accepted-normalized replacements; the
 test records source and replacement hashes. These are mechanical corrections,
 not packaged-human evidence, and close no row.
 
+### Phase 47 Replacement Retest Candidate
+
+- Implementation commit: `0b357d436fce614c132b4f5692dda9f321656e85`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `cb36338524e042291fd2e2ac34bf8c09c855e461cb22ede451e2c92584415e83`
+- Package result: construction and mechanical packaging checks passed.
+- Human result: pending.
+
+The configured compatible-reader test used LibreOfficeDev 26.8 in headless
+conversion mode. The exact source SHA-256 was
+`74c38bdd8940a1524baa2c25394aaae4a29ea1ed742e8255dd31ba56e1fb05c1`;
+the normalized source SHA-256 was
+`0a42b331afc608253cca854a77ae6fa65149d0fcc7a0aeb2490d61ce36530a0f`.
+Both accepted replacements produced SHA-256
+`4009080983f73aa047b15862e80245d7d7918117cb782459d2a98429669443ea`,
+differed from their source, and converted to nonempty PDF output. This proves
+bounded package acceptance by the configured reader, not visual fidelity or
+the packaged user workflow.
+
+The replacement package still requires the complete manual gate: normalized
+warning and cancellation, stale-source rejection before replacement, native
+and overflow parity, busy-state denial, exact and normalized compatible-reader
+inspection, Markdown disclosure, DOCX safety recovery, and reset-label review.
+No row may close from the hash or mechanical reader result alone.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid
