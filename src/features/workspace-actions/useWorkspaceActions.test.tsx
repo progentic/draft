@@ -51,7 +51,7 @@ describe("workspace action dispatcher", () => {
       nativeAction = onAction;
       return vi.fn();
     });
-    const { rerender } = renderHook(
+    const { result, rerender } = renderHook(
       ({ current }) => useWorkspaceActions(current, exportState(), vi.fn()),
       { initialProps: { current: session } },
     );
@@ -78,6 +78,35 @@ describe("workspace action dispatcher", () => {
     act(() => nativeAction?.("save_document"));
 
     expect(session.save).not.toHaveBeenCalled();
+    expect(result.current.feedback).toBe("Finish the current document action first.");
+  });
+
+  it("gives toolbar and native Save Back the same stale-source disposition", async () => {
+    const session = {
+      ...documentSession(),
+      canSaveBack: false,
+      saveBackUnavailableReason:
+        "The source changed outside DRAFT. Reopen it before saving back.",
+    };
+    let nativeAction: ((action: string) => void) | undefined;
+    listenMock.mockImplementation(async (onAction) => {
+      nativeAction = onAction;
+      return vi.fn();
+    });
+    const { result } = renderHook(() =>
+      useWorkspaceActions(session, exportState(), vi.fn()),
+    );
+    await waitFor(() => expect(nativeAction).toBeTypeOf("function"));
+
+    act(() => result.current.dispatch("save_back_to_source"));
+    expect(result.current.feedback).toBe(session.saveBackUnavailableReason);
+    act(() => nativeAction?.("save_back_to_source"));
+
+    expect(result.current.feedback).toBe(session.saveBackUnavailableReason);
+    expect(session.requestSaveBack).not.toHaveBeenCalled();
+    await waitFor(() => expect(setStateMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ canSaveBack: false }),
+    ));
   });
 
   it("exposes bounded recovery when native state synchronization fails", async () => {

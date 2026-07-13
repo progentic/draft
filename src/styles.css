@@ -842,6 +842,21 @@ button:focus-visible,
   line-height: 1.5;
 }
 
+.confirmation-dialog__details {
+  margin: -6px 0 18px;
+  padding: 10px 12px;
+  color: #414945;
+  background: #f3f5f3;
+  border-left: 3px solid #65716b;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.confirmation-dialog__details ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
 .confirmation-dialog__actions {
   display: flex;
   flex-wrap: wrap;

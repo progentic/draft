@@ -26,6 +26,7 @@ describe("external source save workflow", () => {
     await waitFor(() => expect(result.current.confirmation).toEqual({
       displayName: "paper.docx",
       disposition: "allowed_exact",
+      normalizations: [],
     }));
     act(() => result.current.resolve("confirm"));
 
@@ -110,6 +111,32 @@ describe("external source save workflow", () => {
     );
     expect(result.current.unavailableReason).not.toMatch(/[/\\]|xml|fingerprint/i);
     expect(options.onSaved).not.toHaveBeenCalled();
+  });
+
+  it("blocks a source changed after confirmation without accepting saved state", async () => {
+    const options = workflowOptions();
+    saveExternalDocumentMock
+      .mockResolvedValueOnce(eligibility("allowed_exact"))
+      .mockResolvedValueOnce({
+        status: "denied",
+        documentId: DOCUMENT_ID,
+        disposition: "denied_source_changed",
+        recovery: "reopen_source",
+      });
+    const { result } = renderHook(() => useExternalSourceSave(options));
+
+    act(() => result.current.request());
+    await waitFor(() => expect(result.current.confirmation).not.toBeNull());
+    act(() => result.current.resolve("confirm"));
+
+    await waitFor(() => expect(result.current.unavailableReason).toBe(
+      "The source changed outside DRAFT. Reopen it before saving back.",
+    ));
+    expect(result.current.enabled).toBe(false);
+    expect(options.onSaved).not.toHaveBeenCalled();
+    expect(options.onFeedback).toHaveBeenLastCalledWith(
+      "The source changed outside DRAFT. Reopen it before saving back.",
+    );
   });
 
   it("preserves modified state and offers bounded retry after a safe write failure", async () => {
@@ -249,6 +276,10 @@ function eligibility(
     documentId: DOCUMENT_ID,
     displayName: "paper.docx",
     disposition,
+    normalizations:
+      disposition === "allowed_after_accepted_normalization"
+        ? (["alternate_heading_style_name"] as const)
+        : [],
     recovery,
   };
 }

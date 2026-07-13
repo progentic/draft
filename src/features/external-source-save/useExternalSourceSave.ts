@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
-import type { ExternalDocumentSummary } from "../../ipc/externalDocument";
+import type {
+  ExternalDocumentSummary,
+  ExternalNormalizationFeature,
+} from "../../ipc/externalDocument";
 import {
   saveExternalDocument,
   type SaveExternalDocumentResult,
@@ -19,6 +22,7 @@ export type ExternalSourceSaveOperation =
 export interface ExternalSourceSaveConfirmation {
   displayName: string;
   disposition: WritableDisposition;
+  normalizations: ExternalNormalizationFeature[];
 }
 
 interface PendingConfirmation extends ExternalSourceSaveConfirmation {
@@ -131,6 +135,7 @@ function presentEligibility(
       pending: {
         displayName: result.displayName,
         disposition: result.disposition,
+        normalizations: result.normalizations,
         revision,
         snapshot,
       },
@@ -368,6 +373,7 @@ function publicConfirmation(
   return {
     displayName: pending.displayName,
     disposition: pending.disposition,
+    normalizations: pending.normalizations,
   };
 }
 

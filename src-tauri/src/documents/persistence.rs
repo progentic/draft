@@ -50,6 +50,7 @@ pub(crate) enum OpenDocumentOutcome {
     },
     ImportedText {
         envelope: DocumentEnvelope,
+        format: TextImportFormat,
     },
     ImportedExternal {
         envelope: DocumentEnvelope,
@@ -58,10 +59,17 @@ pub(crate) enum OpenDocumentOutcome {
     Cancelled,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum TextImportFormat {
+    PlainText,
+    Markdown,
+}
+
 #[derive(Clone, Copy)]
 enum OpenSourceKind {
     Draft,
-    Text,
+    Text(TextImportFormat),
     Docx,
 }
 
@@ -107,7 +115,7 @@ fn open_source(
 ) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     match source_kind {
         OpenSourceKind::Draft => open_draft_document(registry, source_path),
-        OpenSourceKind::Text => import_text_source(&source_path),
+        OpenSourceKind::Text(format) => import_text_source(&source_path, format),
         OpenSourceKind::Docx => import_docx_document(registry, &source_path),
     }
 }
@@ -138,9 +146,12 @@ fn open_draft_document(
     Ok(OpenDocumentOutcome::OpenedDraft { envelope })
 }
 
-fn import_text_source(source_path: &Path) -> Result<OpenDocumentOutcome, OpenDocumentError> {
+fn import_text_source(
+    source_path: &Path,
+    format: TextImportFormat,
+) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     import_text_document(source_path)
-        .map(|envelope| OpenDocumentOutcome::ImportedText { envelope })
+        .map(|envelope| OpenDocumentOutcome::ImportedText { envelope, format })
         .map_err(map_text_import_error)
 }
 
@@ -148,8 +159,12 @@ fn classify_open_source(path: &Path) -> Result<OpenSourceKind, OpenDocumentError
     match path.extension().and_then(|extension| extension.to_str()) {
         Some(extension) if extension.eq_ignore_ascii_case("draft") => Ok(OpenSourceKind::Draft),
         Some(extension) if extension.eq_ignore_ascii_case("json") => Ok(OpenSourceKind::Draft),
-        Some(extension) if extension.eq_ignore_ascii_case("txt") => Ok(OpenSourceKind::Text),
-        Some(extension) if extension.eq_ignore_ascii_case("md") => Ok(OpenSourceKind::Text),
+        Some(extension) if extension.eq_ignore_ascii_case("txt") => {
+            Ok(OpenSourceKind::Text(TextImportFormat::PlainText))
+        }
+        Some(extension) if extension.eq_ignore_ascii_case("md") => {
+            Ok(OpenSourceKind::Text(TextImportFormat::Markdown))
+        }
         Some(extension) if extension.eq_ignore_ascii_case("docx") => Ok(OpenSourceKind::Docx),
         _ => Err(OpenDocumentError::UnsupportedFileType),
     }
@@ -797,8 +812,15 @@ mod tests {
         let source_bytes = b"First line\nSecond line\n";
         source.write(source_bytes);
         let registry = DocumentRegistry::new();
-        let envelope =
-            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let outcome = open_document(&registry, Some(source.path().to_owned())).unwrap();
+        assert!(matches!(
+            &outcome,
+            OpenDocumentOutcome::ImportedText {
+                format: TextImportFormat::PlainText,
+                ..
+            }
+        ));
+        let envelope = imported_envelope(outcome);
         let document_id = envelope.document_id();
         let snapshot = serde_json::to_value(&envelope).unwrap();
 
@@ -823,8 +845,15 @@ mod tests {
         let source_bytes = b"Imported source";
         source.write(source_bytes);
         let registry = DocumentRegistry::new();
-        let envelope =
-            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let outcome = open_document(&registry, Some(source.path().to_owned())).unwrap();
+        assert!(matches!(
+            &outcome,
+            OpenDocumentOutcome::ImportedText {
+                format: TextImportFormat::PlainText,
+                ..
+            }
+        ));
+        let envelope = imported_envelope(outcome);
         let snapshot = serde_json::to_value(&envelope).unwrap();
         save_document(&registry, snapshot.clone(), || {
             Ok(Some(target.path().to_owned()))
@@ -848,8 +877,15 @@ mod tests {
         let source_bytes = b"# Heading\n\n**literal emphasis**\n- source item";
         source.write(source_bytes);
         let registry = DocumentRegistry::new();
-        let envelope =
-            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let outcome = open_document(&registry, Some(source.path().to_owned())).unwrap();
+        assert!(matches!(
+            &outcome,
+            OpenDocumentOutcome::ImportedText {
+                format: TextImportFormat::Markdown,
+                ..
+            }
+        ));
+        let envelope = imported_envelope(outcome);
 
         assert_eq!(envelope.title(), "research-notes.md");
         assert_eq!(
@@ -1523,7 +1559,7 @@ mod tests {
 
     fn imported_envelope(outcome: OpenDocumentOutcome) -> DocumentEnvelope {
         match outcome {
-            OpenDocumentOutcome::ImportedText { envelope } => envelope,
+            OpenDocumentOutcome::ImportedText { envelope, .. } => envelope,
             OpenDocumentOutcome::OpenedDraft { .. } => panic!("text source must import"),
             OpenDocumentOutcome::ImportedExternal { .. } => panic!("text source must import"),
             OpenDocumentOutcome::Cancelled => panic!("explicit text source must not cancel"),

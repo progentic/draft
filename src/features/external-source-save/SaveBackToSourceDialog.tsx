@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import type { ExternalNormalizationFeature } from "../../ipc/externalDocument";
 import type { ExternalSourceSaveConfirmation } from "./useExternalSourceSave";
 
 interface SaveBackToSourceDialogProps {
@@ -37,6 +38,9 @@ export function SaveBackToSourceDialog(
         <p id="source-save-message">
           {sourceReplacementMessage(props.confirmation.displayName, normalized)}
         </p>
+        {normalized ? (
+          <NormalizationDetails features={props.confirmation.normalizations} />
+        ) : null}
         <div className="confirmation-dialog__actions">
           <button
             ref={confirmButton}
@@ -44,14 +48,14 @@ export function SaveBackToSourceDialog(
             type="button"
             onClick={() => props.onResolve("confirm")}
           >
-            {normalized ? "Accept and replace" : "Replace source"}
+            Replace
           </button>
           <button
             className="command-button"
             type="button"
             onClick={() => props.onResolve("cancel")}
           >
-            Keep source
+            Cancel
           </button>
         </div>
       </section>
@@ -99,7 +103,33 @@ function containFocus(event: React.KeyboardEvent, dialog: HTMLElement | null) {
 
 function sourceReplacementMessage(displayName: string, normalized: boolean) {
   if (normalized) {
-    return `DRAFT will replace ${displayName} and normalize its supported DOCX structure. Some source formatting may change. Use Save As to keep the original.`;
+    return `DRAFT will replace ${displayName} and apply the listed normalization. No unsupported source content is eligible for replacement.`;
   }
-  return `DRAFT will replace ${displayName} with the current supported content. Use Save As to keep the original.`;
+  return `DRAFT will replace ${displayName} with the current supported content. This overwrite cannot be undone in DRAFT.`;
+}
+
+function NormalizationDetails(props: { features: ExternalNormalizationFeature[] }) {
+  return (
+    <div className="confirmation-dialog__details">
+      <strong>What will change</strong>
+      <ul>
+        {props.features.map((feature) => (
+          <li key={feature}>{normalizationMessage(feature)}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function normalizationMessage(feature: ExternalNormalizationFeature) {
+  switch (feature) {
+    case "alternate_heading_style_name":
+      return "Alternate heading style names will use DRAFT’s standard heading names.";
+    default:
+      return assertNever(feature);
+  }
+}
+
+function assertNever(value: never): never {
+  throw new Error(`unreachable normalization feature: ${String(value)}`);
 }

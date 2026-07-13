@@ -1,12 +1,19 @@
 #[cfg(target_os = "macos")]
 use std::process::Command;
-use std::{cell::Cell, fs};
+use std::{
+    cell::Cell,
+    fs,
+    io::{Cursor, Read, Write},
+};
 
 use serde_json::json;
+use sha2::{Digest, Sha256};
+use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
 
 use super::*;
 use crate::{
     documents::test_support::TestDocumentPath,
+    exports::docx::compile_docx,
     interoperability::{
         fidelity::{ExternalFeature, ExternalFidelity},
         import_docx_source,
@@ -42,6 +49,7 @@ fn eligibility_inspection_never_writes_or_mutates_registry() {
             document_id: edited.document_id(),
             display_name: source_file_name(&source),
             disposition: SameFormatSaveDisposition::AllowedExact,
+            normalizations: vec![],
         }
     );
     assert_eq!(writes.get(), 0);
@@ -133,26 +141,22 @@ fn exact_save_replaces_source_and_refreshes_provenance() {
 #[cfg(target_os = "macos")]
 #[test]
 fn exact_and_normalized_replacements_open_in_macos_text_reader() {
-    for (label, fidelity, decision) in [
+    for (source, decision) in [
         (
-            "external-reader-exact",
-            ExternalFidelity::Exact,
+            exported_docx_source("external-reader-exact", "Original text"),
             ExternalSaveDecision::SaveExact,
         ),
         (
-            "external-reader-normalized",
-            ExternalFidelity::CanonicallyNormalized {
-                features: vec![ExternalFeature::AlternateHeadingStyleName],
-            },
+            normalized_docx_source("external-reader-normalized"),
             ExternalSaveDecision::AcceptNormalization,
         ),
     ] {
-        let source = docx_source(label);
-        let original = envelope("Original", "Original text");
-        let edited = envelope("Edited", "Replacement text");
-        let registry = registered_external(&source, &original, fidelity);
+        let imported = import_docx_source(source.path()).unwrap();
+        let edited = edited_import(&imported.envelope, "Replacement text");
+        let registry = registry_with_provenance(&imported.envelope, imported.provenance);
 
         save_external_document(&registry, snapshot(&edited), decision).unwrap();
+        let replacement = fs::read(source.path()).unwrap();
         let output = Command::new("/usr/bin/textutil")
             .args(["-convert", "txt", "-stdout"])
             .arg(source.path())
@@ -161,7 +165,71 @@ fn exact_and_normalized_replacements_open_in_macos_text_reader() {
 
         assert!(output.status.success());
         assert!(String::from_utf8_lossy(&output.stdout).contains("Replacement text"));
+        eprintln!("replacement_sha256={:x}", Sha256::digest(&replacement));
     }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+#[ignore = "requires DRAFT_COMPATIBLE_READER to name a headless office executable"]
+fn exact_and_normalized_replacements_render_in_configured_compatible_reader() {
+    let reader = std::env::var("DRAFT_COMPATIBLE_READER")
+        .expect("DRAFT_COMPATIBLE_READER must name the compatible reader");
+    for (source, decision) in compatible_reader_sources() {
+        let imported = import_docx_source(source.path()).unwrap();
+        let edited = edited_import(&imported.envelope, "Compatible reader evidence");
+        let registry = registry_with_provenance(&imported.envelope, imported.provenance);
+        let source_hash = Sha256::digest(fs::read(source.path()).unwrap());
+
+        save_external_document(&registry, snapshot(&edited), decision).unwrap();
+        let replacement = fs::read(source.path()).unwrap();
+        let profile = format!(
+            "-env:UserInstallation=file://{}",
+            source
+                .path()
+                .parent()
+                .unwrap()
+                .join("reader-profile")
+                .display()
+        );
+        let output = Command::new(&reader)
+            .arg(profile)
+            .args(["--headless", "--convert-to", "pdf", "--outdir"])
+            .arg(source.path().parent().unwrap())
+            .arg(source.path())
+            .output()
+            .expect("configured compatible reader should launch");
+        let rendered = source.path().with_extension("pdf");
+
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_ne!(
+            source_hash.as_slice(),
+            Sha256::digest(&replacement).as_slice()
+        );
+        assert!(fs::metadata(&rendered).unwrap().len() > 0);
+        eprintln!(
+            "reader={reader} source_sha256={source_hash:x} replacement_sha256={:x}",
+            Sha256::digest(&replacement)
+        );
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn compatible_reader_sources() -> [(TestDocumentPath, ExternalSaveDecision); 2] {
+    [
+        (
+            exported_docx_source("compatible-reader-exact", "Original text"),
+            ExternalSaveDecision::SaveExact,
+        ),
+        (
+            normalized_docx_source("compatible-reader-normalized"),
+            ExternalSaveDecision::AcceptNormalization,
+        ),
+    ]
 }
 
 #[test]
@@ -290,6 +358,83 @@ fn source_change_after_compilation_is_denied_before_replacement() {
         denied(&edited, SameFormatSaveDisposition::DeniedSourceChanged)
     );
     assert_source(&source, b"changed after preparation");
+}
+
+#[test]
+fn imported_source_changed_after_confirmation_is_denied_without_mutation() {
+    let source = exported_docx_source("external-imported-stale", "Original text");
+    let imported = import_docx_source(source.path()).unwrap();
+    let original = imported.envelope.clone();
+    let edited = edited_import(&original, "Edited text");
+    let registry = registry_with_provenance(&original, imported.provenance);
+
+    assert!(matches!(
+        save_external_document(&registry, snapshot(&edited), ExternalSaveDecision::Inspect)
+            .unwrap(),
+        SaveExternalDocumentOutcome::Eligibility {
+            disposition: SameFormatSaveDisposition::AllowedExact,
+            ..
+        }
+    ));
+    let external_change = compiled_docx("External change");
+    source.write(&external_change);
+
+    let outcome = save_external_document(
+        &registry,
+        snapshot(&edited),
+        ExternalSaveDecision::SaveExact,
+    )
+    .unwrap();
+
+    assert_eq!(
+        outcome,
+        denied(&edited, SameFormatSaveDisposition::DeniedSourceChanged)
+    );
+    assert_source(&source, &external_change);
+    assert_eq!(registry.close(original.document_id()), Ok(original));
+}
+
+#[test]
+fn imported_normalization_names_the_required_transformation() {
+    let source = normalized_docx_source("external-imported-normalized");
+    let imported = import_docx_source(source.path()).unwrap();
+    let edited = edited_import(&imported.envelope, "Edited heading");
+    let registry = registry_with_provenance(&imported.envelope, imported.provenance);
+
+    let outcome =
+        save_external_document(&registry, snapshot(&edited), ExternalSaveDecision::Inspect)
+            .unwrap();
+
+    assert!(matches!(
+        outcome,
+        SaveExternalDocumentOutcome::Eligibility {
+            disposition: SameFormatSaveDisposition::AllowedAfterAcceptedNormalization,
+            normalizations,
+            ..
+        } if normalizations == vec![ExternalFeature::AlternateHeadingStyleName]
+    ));
+}
+
+#[test]
+fn stale_normalized_source_returns_denial_without_obsolete_normalizations() {
+    let source = normalized_docx_source("external-normalized-stale");
+    let imported = import_docx_source(source.path()).unwrap();
+    let edited = edited_import(&imported.envelope, "Edited heading");
+    let registry = registry_with_provenance(&imported.envelope, imported.provenance);
+    source.write(&compiled_docx("External change"));
+
+    let outcome =
+        save_external_document(&registry, snapshot(&edited), ExternalSaveDecision::Inspect)
+            .unwrap();
+
+    assert!(matches!(
+        outcome,
+        SaveExternalDocumentOutcome::Eligibility {
+            disposition: SameFormatSaveDisposition::DeniedSourceChanged,
+            normalizations,
+            ..
+        } if normalizations.is_empty()
+    ));
 }
 
 #[test]
@@ -507,6 +652,84 @@ fn docx_source(label: &str) -> TestDocumentPath {
     source
 }
 
+fn exported_docx_source(label: &str, text: &str) -> TestDocumentPath {
+    let source = TestDocumentPath::with_extension(label, "docx");
+    source.write(&compiled_docx(text));
+    source
+}
+
+fn normalized_docx_source(label: &str) -> TestDocumentPath {
+    let source = TestDocumentPath::with_extension(label, "docx");
+    source.write(&normalized_docx_bytes());
+    source
+}
+
+fn compiled_docx(text: &str) -> Vec<u8> {
+    compile_docx(&envelope("Reader evidence", text))
+        .unwrap()
+        .as_bytes()
+        .to_vec()
+}
+
+fn normalized_docx_bytes() -> Vec<u8> {
+    let artifact = compile_docx(&heading_envelope()).unwrap();
+    rewrite_document_xml(artifact.as_bytes(), |xml| {
+        xml.replace("w:val=\"Heading2\"", "w:val=\"Heading 2\"")
+    })
+}
+
+fn rewrite_document_xml(bytes: &[u8], rewrite: impl FnOnce(String) -> String) -> Vec<u8> {
+    let parts = read_package_parts(bytes);
+    let mut rewrite = Some(rewrite);
+    let updated = parts.into_iter().map(|(name, contents)| {
+        if name == "word/document.xml" {
+            let xml = String::from_utf8(contents).unwrap();
+            (name, rewrite.take().unwrap()(xml).into_bytes())
+        } else {
+            (name, contents)
+        }
+    });
+    write_package_parts(updated)
+}
+
+fn read_package_parts(bytes: &[u8]) -> Vec<(String, Vec<u8>)> {
+    let mut archive = ZipArchive::new(Cursor::new(bytes)).unwrap();
+    (0..archive.len())
+        .map(|index| {
+            let mut file = archive.by_index(index).unwrap();
+            let name = file.name().to_owned();
+            let mut contents = Vec::new();
+            file.read_to_end(&mut contents).unwrap();
+            (name, contents)
+        })
+        .collect()
+}
+
+fn write_package_parts(parts: impl Iterator<Item = (String, Vec<u8>)>) -> Vec<u8> {
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    let options = SimpleFileOptions::DEFAULT
+        .compression_method(CompressionMethod::Stored)
+        .unix_permissions(0o644);
+    for (name, contents) in parts {
+        writer.start_file(name, options).unwrap();
+        writer.write_all(&contents).unwrap();
+    }
+    writer.finish().unwrap().into_inner()
+}
+
+fn edited_import(source: &DocumentEnvelope, text: &str) -> DocumentEnvelope {
+    let mut value = serde_json::to_value(source).unwrap();
+    value["title"] = json!("Edited");
+    value["document"] = json!({
+        "type": "doc",
+        "content": [{
+            "type": "paragraph",
+            "content": [{ "type": "text", "text": text }]
+        }]
+    });
+    DocumentEnvelope::from_json_value(value).unwrap()
+}
+
 fn source_file_name(source: &TestDocumentPath) -> String {
     source
         .path()
@@ -549,6 +772,23 @@ fn envelope_with_citation() -> DocumentEnvelope {
                         "render_style": "apa7"
                     }
                 }]
+            }]
+        }
+    }))
+    .unwrap()
+}
+
+fn heading_envelope() -> DocumentEnvelope {
+    DocumentEnvelope::from_json_value(json!({
+        "schema_version": crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION,
+        "document_id": DOCUMENT_ID,
+        "title": "Normalized heading",
+        "document": {
+            "type": "doc",
+            "content": [{
+                "type": "heading",
+                "attrs": { "level": 2 },
+                "content": [{ "type": "text", "text": "Heading" }]
             }]
         }
     }))

@@ -119,6 +119,9 @@ name and tooltip.
 - Save Back cancellation and denied eligibility preserve the current editor and
   source identity.
 - A missing or externally changed source requires reopening before Save Back.
+- Overflow and native Save Back events use the same dispatcher, eligibility
+  state, stale-source reason, and busy rejection. A stale event cannot bypass a
+  disabled action after the menu state changes.
 - A stale Finder or Dock cache can display an old icon even when the package is
   correct; inspect the bundle resource before clearing macOS caches.
 

@@ -201,7 +201,9 @@ so Phase 38 adds no visible diagnostics or support workflow. See
 Phase 46 adds strict clients for `create_document`, `close_document`, `add_reference`,
 `list_references`, `run_text_analysis`, and `export_document`, and extends the
 existing Open client with exact `opened_draft`, `imported_text`, and `cancelled`
-outcomes. Each client owns
+outcomes. `imported_text` includes a closed `plain_text` or `markdown` value so
+the visible workflow can disclose literal Markdown behavior without inferring
+from a filename. Each client owns
 one command constant, sends one bounded request envelope, validates an unknown
 response, and preserves only its closed command errors.
 
@@ -220,7 +222,10 @@ validation preserves eligibility, saved, unchanged, confirmation-required,
 denied, cancelled, invalid-response, and transport outcomes. Every denial and
 typed error maps exhaustively to one bounded recovery category: confirm known
 normalization, Save As `.draft`, reopen the source, retry, or no available
-recovery. The wrapper strips nested compiler details to stable codes.
+recovery. The eligibility response includes a closed list of known canonical
+normalizations. The wrapper rejects a normalized disposition with a missing or
+unknown transformation instead of showing a generic consent dialog, and it
+strips nested compiler details to stable codes.
 An invalid response or transport failure cannot prove whether replacement
 finished, so it requires reopening the source rather than offering immediate
 retry.

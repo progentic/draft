@@ -341,7 +341,9 @@ function openSuccessMessage(result: Extract<
     return "DRAFT document opened.";
   }
   if (result.status === "imported_text") {
-    return "Text imported. Save as a DRAFT document to keep your work.";
+    return result.format === "markdown"
+      ? "Markdown imported as literal editable text. DRAFT does not parse or preview Markdown. Save as a DRAFT document to keep your work."
+      : "Text imported. Save as a DRAFT document to keep your work.";
   }
   return result.external.fidelity.classification === "unsupported_preservable"
     ? "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged."
@@ -605,7 +607,7 @@ function docxImportFailureMessage(
     case "malformed_package":
       return "That DOCX file is malformed. The original was not changed.";
     case "unsafe_package":
-      return "That DOCX file exceeds DRAFT’s safety limits. The original was not changed.";
+      return "That DOCX exceeds DRAFT’s supported package, XML, or document-size limits. The original was not changed. Try a smaller document or remove large embedded content.";
     case "unsupported_external_feature":
       return "That DOCX file contains structure DRAFT cannot import safely. The original was not changed.";
     case "lossy_import_denied":

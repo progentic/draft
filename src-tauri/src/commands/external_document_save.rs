@@ -89,6 +89,7 @@ mod tests {
                 document_id,
                 display_name: "paper.docx".to_owned(),
                 disposition: SameFormatSaveDisposition::AllowedExact,
+                normalizations: vec![],
             },
             SaveExternalDocumentOutcome::Saved {
                 document_id,
@@ -113,6 +114,7 @@ mod tests {
         let value = serde_json::to_value(responses).unwrap();
 
         assert_eq!(value[0]["displayName"], "paper.docx");
+        assert_eq!(value[0]["normalizations"], json!([]));
         assert!(value.to_string().find("/private/").is_none());
         assert!(value.to_string().find("fingerprint").is_none());
     }

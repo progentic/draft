@@ -21,15 +21,17 @@ document, imports a UTF-8 `.txt` or `.md` file as editable text, or reads the
 supported paragraph subset from a `.docx` file. Text and Markdown imports are
 shown as imported and unsaved; their filename is for orientation only. Their
 first Save asks for a new `.draft` destination. Markdown punctuation remains
-literal text rather than a preview.
+literal text rather than a preview, and DRAFT states this when the import
+opens. The imported `.txt` or `.md` source is never overwritten.
 
 An opened DOCX remains associated with its Rust-owned source identity. Ordinary
 **Save** creates a `.draft` document, and **Export DOCX…** creates a separate
 copy. **Save Back to Source** is available only for modified DOCX content that
 DRAFT can replace safely. DRAFT checks the current source before showing an
 overwrite warning. Exact replacement and accepted normalization both require
-confirmation. Unsupported, lossy, missing, or externally changed sources stay
-unavailable and are not overwritten.
+confirmation. A normalized replacement lists the exact supported change before
+you choose **Replace** or **Cancel**. Unsupported, lossy, missing, or externally
+changed sources stay unavailable and are not overwritten.
 
 Use **Save As…** to choose a new `.draft` file while preserving the previous
 file. After it succeeds, later Save operations use the new file. Cancelling or
@@ -45,8 +47,8 @@ current cursor position or to text entered next, depending on the command.
 Choose Arial, Avenir Next, Baskerville, Courier New, Georgia, Helvetica, Menlo,
 Palatino, Times New Roman, Trebuchet MS, or Verdana. Choose a whole point size
 from 8 through 72. The controls show effective values at the caret and a mixed
-state for selections with different formatting. Choose **Use document font**
-or **Use document size** in the relevant control to remove an explicit
+state for selections with different formatting. Choose **Reset to document font**
+or **Reset to document size** in the relevant control to remove an explicit
 override. These choices are saved with the document and included in DOCX
 export.
 

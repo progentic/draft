@@ -78,6 +78,7 @@ mod tests {
             },
             OpenDocumentOutcome::ImportedText {
                 envelope: envelope(),
+                format: crate::documents::persistence::TextImportFormat::Markdown,
             },
             OpenDocumentOutcome::ImportedExternal {
                 envelope: envelope(),
@@ -94,7 +95,11 @@ mod tests {
             serde_json::to_value(responses).expect("responses should serialize"),
             json!([
                 { "status": "opened_draft", "envelope": envelope_value() },
-                { "status": "imported_text", "envelope": envelope_value() },
+                {
+                    "status": "imported_text",
+                    "envelope": envelope_value(),
+                    "format": "markdown"
+                },
                 {
                     "status": "imported_external",
                     "envelope": envelope_value(),

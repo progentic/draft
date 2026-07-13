@@ -12,7 +12,11 @@ import {
   isDocumentRegistryError,
 } from "./documentErrors";
 import { type DocxExportErrorCode, isDocxExportError } from "./docxExport";
-import type { SameFormatSaveDisposition } from "./externalDocument";
+import {
+  type ExternalNormalizationFeature,
+  isExternalNormalizationFeatureList,
+  type SameFormatSaveDisposition,
+} from "./externalDocument";
 
 export type ExternalSaveDecision =
   | "inspect"
@@ -56,6 +60,7 @@ export type SaveExternalDocumentResult =
       documentId: string;
       displayName: string;
       disposition: SameFormatSaveDisposition;
+      normalizations: ExternalNormalizationFeature[];
       recovery: ExternalSaveRecovery;
     }
   | {
@@ -365,15 +370,32 @@ function isEligibilityResponse(value: unknown): value is {
   documentId: string;
   displayName: string;
   disposition: SameFormatSaveDisposition;
+  normalizations: ExternalNormalizationFeature[];
 } {
   return (
     isRecord(value) &&
-    hasExactKeys(value, ["displayName", "disposition", "documentId", "status"]) &&
+    hasExactKeys(value, [
+      "displayName",
+      "disposition",
+      "documentId",
+      "normalizations",
+      "status",
+    ]) &&
     value.status === "eligibility" &&
     isDocumentId(value.documentId) &&
     isDisplayName(value.displayName) &&
-    isSameFormatSaveDisposition(value.disposition)
+    isSameFormatSaveDisposition(value.disposition) &&
+    hasValidNormalizations(value.disposition, value.normalizations)
   );
+}
+
+function hasValidNormalizations(
+  disposition: SameFormatSaveDisposition,
+  value: unknown,
+): value is ExternalNormalizationFeature[] {
+  return disposition === "allowed_after_accepted_normalization"
+    ? isExternalNormalizationFeatureList(value)
+    : Array.isArray(value) && value.length === 0;
 }
 
 function isUnchangedResponse(

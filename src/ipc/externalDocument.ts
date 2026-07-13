@@ -18,6 +18,8 @@ export type ExternalFeature =
   | "unsupported_document_structure"
   | "unsupported_style_inheritance";
 
+export type ExternalNormalizationFeature = "alternate_heading_style_name";
+
 export type ExternalSafetyReason =
   | "archive_entry_count"
   | "archive_entry_size"
@@ -153,6 +155,16 @@ export function isExternalFidelity(value: unknown): value is ExternalFidelity {
     default:
       return false;
   }
+}
+
+export function isExternalNormalizationFeatureList(
+  value: unknown,
+): value is ExternalNormalizationFeature[] {
+  return (
+    Array.isArray(value) &&
+    value.length === 1 &&
+    value[0] === "alternate_heading_style_name"
+  );
 }
 
 function isImportedExternalFidelity(value: unknown): value is ImportedExternalFidelity {

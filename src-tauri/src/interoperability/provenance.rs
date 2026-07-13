@@ -110,6 +110,13 @@ impl ExternalSourceProvenance {
         &self.display_name
     }
 
+    pub(crate) fn normalization_features(&self) -> Vec<super::fidelity::ExternalFeature> {
+        match &self.fidelity {
+            ExternalFidelity::CanonicallyNormalized { features } => features.clone(),
+            _ => Vec::new(),
+        }
+    }
+
     pub(crate) fn save_disposition(
         &self,
         envelope: &DocumentEnvelope,

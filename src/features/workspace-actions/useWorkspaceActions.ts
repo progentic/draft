@@ -28,7 +28,13 @@ export function useWorkspaceActions(
 ): WorkspaceActions {
   const [feedback, setFeedback] = useState("");
   const enabled = useActionAvailability(session, docxExport);
-  const dispatch = useActionDispatcher(session, docxExport, onTogglePanel, enabled);
+  const dispatch = useActionDispatcher(
+    session,
+    docxExport,
+    onTogglePanel,
+    enabled,
+    setFeedback,
+  );
   const dispatchRef = useRef(dispatch);
   dispatchRef.current = dispatch;
 
@@ -71,13 +77,30 @@ function useActionDispatcher(
   docxExport: DocxExportState,
   onTogglePanel: (panel: "references" | "text-review") => void,
   enabled: Record<WorkspaceAction, boolean>,
+  setFeedback: (feedback: string) => void,
 ) {
   return useCallback((action: WorkspaceAction) => {
     if (!enabled[action]) {
+      setFeedback(unavailableActionMessage(action, session, docxExport));
       return;
     }
+    setFeedback("");
     dispatchEnabledAction(action, session, docxExport, onTogglePanel);
-  }, [docxExport, enabled, onTogglePanel, session]);
+  }, [docxExport, enabled, onTogglePanel, session, setFeedback]);
+}
+
+function unavailableActionMessage(
+  action: WorkspaceAction,
+  session: DocumentSession,
+  docxExport: DocxExportState,
+) {
+  if (action === "save_back_to_source" && session.saveBackUnavailableReason) {
+    return session.saveBackUnavailableReason;
+  }
+  if (session.operation !== "ready" || docxExport.disabled) {
+    return "Finish the current document action first.";
+  }
+  return "This document action is not available in the current state.";
 }
 
 function dispatchEnabledAction(

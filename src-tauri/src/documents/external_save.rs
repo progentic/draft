@@ -40,6 +40,7 @@ pub(crate) enum SaveExternalDocumentOutcome {
         document_id: DocumentId,
         display_name: String,
         disposition: SameFormatSaveDisposition,
+        normalizations: Vec<crate::interoperability::fidelity::ExternalFeature>,
     },
     Saved {
         document_id: DocumentId,
@@ -248,8 +249,21 @@ fn eligibility_plan(
             document_id: envelope.document_id(),
             display_name: provenance.display_name().to_owned(),
             disposition,
+            normalizations: eligibility_normalizations(provenance, disposition),
         },
     ))
+}
+
+fn eligibility_normalizations(
+    provenance: &ExternalSourceProvenance,
+    disposition: SameFormatSaveDisposition,
+) -> Vec<crate::interoperability::fidelity::ExternalFeature> {
+    match disposition {
+        SameFormatSaveDisposition::AllowedAfterAcceptedNormalization => {
+            provenance.normalization_features()
+        }
+        _ => Vec::new(),
+    }
 }
 
 fn prepare_write(

@@ -37,19 +37,24 @@ describe("saveExternalDocument", () => {
   );
 
   it.each([
-    ["no_changes", "none"],
-    ["allowed_exact", "none"],
-    ["allowed_after_accepted_normalization", "confirm_normalization"],
-    ["denied_unsupported_source_behavior", "save_as_draft"],
-    ["denied_source_changed", "reopen_source"],
+    ["no_changes", [], "none"],
+    ["allowed_exact", [], "none"],
+    [
+      "allowed_after_accepted_normalization",
+      ["alternate_heading_style_name"],
+      "confirm_normalization",
+    ],
+    ["denied_unsupported_source_behavior", [], "save_as_draft"],
+    ["denied_source_changed", [], "reopen_source"],
   ] as const)(
-    "maps %s eligibility to bounded %s recovery",
-    async (disposition, recovery) => {
+    "maps %s eligibility with typed normalization data",
+    async (disposition, normalizations, recovery) => {
       invokeMock.mockResolvedValue({
         status: "eligibility",
         documentId: DOCUMENT_ID,
         displayName: "paper.docx",
         disposition,
+        normalizations,
       });
 
       await expect(saveExternalDocument(envelope(), "inspect")).resolves.toEqual({
@@ -57,10 +62,34 @@ describe("saveExternalDocument", () => {
         documentId: DOCUMENT_ID,
         displayName: "paper.docx",
         disposition,
+        normalizations,
         recovery,
       });
     },
   );
+
+  it.each([
+    ["allowed_exact", ["alternate_heading_style_name"]],
+    ["allowed_after_accepted_normalization", []],
+    ["allowed_after_accepted_normalization", ["future_normalization"]],
+  ])("rejects a %s eligibility response with unmapped normalization data", async (
+    disposition,
+    normalizations,
+  ) => {
+    invokeMock.mockResolvedValue({
+      status: "eligibility",
+      documentId: DOCUMENT_ID,
+      displayName: "paper.docx",
+      disposition,
+      normalizations,
+    });
+
+    await expect(saveExternalDocument(envelope(), "inspect")).resolves.toEqual({
+      status: "error",
+      error: { type: "invalid-response" },
+      recovery: "reopen_source",
+    });
+  });
 
   it.each([
     ["allowed_exact", "save_exact"],
@@ -215,12 +244,14 @@ describe("saveExternalDocument", () => {
       documentId: DOCUMENT_ID,
       displayName: "/private/paper.docx",
       disposition: "allowed_exact",
+      normalizations: [],
     },
     {
       status: "eligibility",
       documentId: DOCUMENT_ID,
       displayName: "paper.docx",
       disposition: "future_disposition",
+      normalizations: [],
     },
     {
       status: "saved",

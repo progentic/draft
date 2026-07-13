@@ -953,6 +953,7 @@ check_docx_import_contract() {
   require_rust_test oversized_source_fails_before_package_parsing "${policy_path}"
   require_source_pattern 'pub enum ExternalFidelity' "${fidelity_path}"
   require_source_pattern 'pub enum SameFormatSaveDisposition' "${provenance_path}"
+  require_source_pattern 'pub(crate) fn normalization_features(' "${provenance_path}"
   require_source_pattern 'pub(crate) async fn save_external_document(' \
     "${source_write_command}"
   require_source_pattern 'write_document_atomically' "${source_write_path}"
@@ -966,6 +967,12 @@ check_docx_import_contract() {
   require_rust_test normalization_requires_acceptance_and_cancel_never_writes \
     "${source_write_tests}"
   require_rust_test source_change_after_compilation_is_denied_before_replacement \
+    "${source_write_tests}"
+  require_rust_test imported_source_changed_after_confirmation_is_denied_without_mutation \
+    "${source_write_tests}"
+  require_rust_test imported_normalization_names_the_required_transformation \
+    "${source_write_tests}"
+  require_rust_test stale_normalized_source_returns_denial_without_obsolete_normalizations \
     "${source_write_tests}"
   require_rust_test pre_replacement_failure_preserves_source_and_registry \
     "${source_write_tests}"
@@ -981,6 +988,14 @@ check_docx_import_contract() {
     "${source_write_tests}"
   require_rust_test exact_and_normalized_replacements_open_in_macos_text_reader \
     "${source_write_tests}"
+  require_rust_test exact_and_normalized_replacements_render_in_configured_compatible_reader \
+    "${source_write_tests}"
+  require_source_pattern 'normalizations: ExternalNormalizationFeature[]' \
+    "${source_write_client}"
+  require_source_pattern "Alternate heading style names will use DRAFT’s standard heading names." \
+    "${source_write_dialog}"
+  require_source_pattern '            Replace' "${source_write_dialog}"
+  require_source_pattern '            Cancel' "${source_write_dialog}"
   require_source_pattern 'MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024' \
     src-tauri/src/interoperability/docx_import/mod.rs
   require_source_pattern 'MAX_DOCX_IMPORT_XML_BYTES: usize = 8 * 1024 * 1024' \
@@ -1045,18 +1060,30 @@ check_docx_import_contract() {
     "${source_write_hook_tests}"
   require_source_pattern 'blocks stale external sources with bounded recovery' \
     "${source_write_hook_tests}"
+  require_source_pattern 'blocks a source changed after confirmation without accepting saved state' \
+    "${source_write_hook_tests}"
   require_source_pattern 'preserves modified state and offers bounded retry after a safe write failure' \
     "${source_write_hook_tests}"
   require_source_pattern 'blocks retry when the source final state is uncertain' \
     "${source_write_hook_tests}"
   require_source_pattern 'confirms exact Save Back and preserves the external display identity' \
     src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'routes native Save Back through the same exact confirmation workflow' \
+    src/ipc/Phase46Workflows.test.tsx
   require_source_pattern 'cancels normalized Save Back without changing editor state' \
     src/ipc/Phase46Workflows.test.tsx
   require_source_pattern 'rejects an externally changed source without losing current edits' \
     src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'rejects a source changed after confirmation without losing current edits' \
+    src/ipc/Phase46Workflows.test.tsx
   require_source_pattern 'preserves source identity and edits after a replacement write failure' \
     src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'gives toolbar and native Save Back the same stale-source disposition' \
+    src/features/workspace-actions/useWorkspaceActions.test.tsx
+  require_source_pattern 'format: TextImportFormat' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'format: "markdown" | "plain_text"' \
+    src/ipc/documentOpen.ts
 
   require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
   require_source_pattern '| UX-46-011 | UX-1 | Open |' \
@@ -2113,9 +2140,9 @@ check_document_write_boundary() {
 
   # These exact test files write only temporary fixtures. The Python runner's
   # write_all targets piped child stdin, and the DOCX package writer plus its
-  # colocated import fixtures target in-memory ZipWriter instances. None writes
-  # a filesystem path. Production document, intake, job, and export mutation
-  # remain denied by separate source scans.
+  # colocated import and external-save fixtures target in-memory ZipWriter
+  # instances. None writes a filesystem path. Production document, intake,
+  # job, and export mutation remain denied by separate source scans.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
@@ -2124,6 +2151,7 @@ check_document_write_boundary() {
     --glob '!src-tauri/src/references/store_tests.rs' \
     --glob '!src-tauri/src/exports/docx_package.rs' \
     --glob '!src-tauri/src/interoperability/docx_import/tests.rs' \
+    --glob '!src-tauri/src/documents/external_save_tests.rs' \
     --glob '!src-tauri/src/workers/python/runner.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"

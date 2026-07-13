@@ -15,15 +15,22 @@ it("explains normalized replacement and contains keyboard focus", async () => {
       confirmation={{
         displayName: "paper.docx",
         disposition: "allowed_after_accepted_normalization",
+        normalizations: ["alternate_heading_style_name"],
       }}
       onResolve={resolve}
     />,
   );
 
   const dialog = screen.getByRole("alertdialog", { name: "Replace the source DOCX?" });
-  const confirm = within(dialog).getByRole("button", { name: "Accept and replace" });
-  const cancel = within(dialog).getByRole("button", { name: "Keep source" });
-  expect(within(dialog).getByText(/normalize its supported DOCX structure/)).toBeTruthy();
+  const confirm = within(dialog).getByRole("button", { name: "Replace" });
+  const cancel = within(dialog).getByRole("button", { name: "Cancel" });
+  expect(within(dialog).getByText("What will change")).toBeTruthy();
+  expect(
+    within(dialog).getByText(
+      "Alternate heading style names will use DRAFT’s standard heading names.",
+    ),
+  ).toBeTruthy();
+  expect(within(dialog).getByText(/No unsupported source content/)).toBeTruthy();
   expect(document.activeElement).toBe(confirm);
 
   cancel.focus();
@@ -36,12 +43,16 @@ it("explains normalized replacement and contains keyboard focus", async () => {
 it("uses exact-replacement copy without a normalization claim", () => {
   render(
     <SaveBackToSourceDialog
-      confirmation={{ displayName: "paper.docx", disposition: "allowed_exact" }}
+      confirmation={{
+        displayName: "paper.docx",
+        disposition: "allowed_exact",
+        normalizations: [],
+      }}
       onResolve={vi.fn()}
     />,
   );
 
   const dialog = screen.getByRole("alertdialog");
-  expect(within(dialog).getByRole("button", { name: "Replace source" })).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: "Replace" })).toBeTruthy();
   expect(within(dialog).queryByText(/normalize/i)).toBeNull();
 });

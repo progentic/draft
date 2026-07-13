@@ -49,12 +49,13 @@ Malformed, invalid, or duplicate files never replace an existing registry
 entry.
 
 For `.txt` and `.md`, Rust reads at most 8 MiB of UTF-8, creates a new validated
-unsaved envelope, and returns `imported_text`. Every LF-delimited line becomes
-one paragraph; a terminal CR is removed so CRLF input behaves consistently.
-Markdown punctuation remains literal text. The response title contains only
-the source filename. Rust does not register or return the source path, and the
-source bytes are never changed. Invalid UTF-8, oversized input, unreadable
-files, and unsupported extensions fail before registration or persistence.
+unsaved envelope, and returns `imported_text` with the closed `plain_text` or
+`markdown` format. Every LF-delimited line becomes one paragraph; a terminal
+CR is removed so CRLF input behaves consistently. Markdown punctuation remains
+literal text. The response title contains only the source filename. Rust does
+not register or return the source path, and the source bytes are never changed.
+Invalid UTF-8, oversized input, unreadable files, and unsupported extensions
+fail before registration or persistence.
 
 For `.docx`, Rust validates a bounded ZIP/XML package and converts only the
 accepted paragraph subset. Validation, fidelity classification, and canonical

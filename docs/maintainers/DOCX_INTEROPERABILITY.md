@@ -35,9 +35,11 @@ DOCX content and explicitly accepted canonical normalization. Rust alone keeps
 the source path and fingerprints, rechecks source identity immediately before
 replacement, and restores the original bytes if post-replacement durability or
 registry commit fails. The visible **Save Back to Source** workflow first asks
-Rust for a non-mutating eligibility result, shows an overwrite warning, and
-requires confirmation before replacement. It is separate from native `.draft`
-Save and derived-copy DOCX export.
+Rust for a non-mutating eligibility result, names every known canonical
+transformation, and requires explicit Replace or Cancel confirmation before
+replacement. A stale source is denied again immediately before the atomic
+write. This path is separate from native `.draft` Save and derived-copy DOCX
+export.
 
 ## Trade-offs
 
@@ -50,8 +52,10 @@ Save and derived-copy DOCX export.
   source, and an externally changed source deny replacement.
 - ZIP parts are read conservatively under the XML-part bound. Large embedded
   binary parts are therefore rejected rather than retained opaquely.
-- Local macOS reader-open evidence covers exact and accepted-normalized output;
-  packaged workflow and broader fidelity evidence remain pending.
+- Local macOS text extraction and configured LibreOffice conversion reopen
+  exact and accepted-normalized replacements mechanically. The failed
+  `a60f877` packaged session did not establish complete compatible-reader or
+  human fidelity evidence, so the release gate remains open.
 
 ## Technical Contract
 
@@ -168,7 +172,9 @@ editor generation cannot accept a stale eligibility result.
 
 - A malformed package returns `malformed_package`.
 - A package that exceeds safety limits returns `unsafe_package` with one closed
-  safety reason.
+  safety reason. User copy identifies package, XML, or document-size limits and
+  suggests reducing large embedded content without exposing internal package
+  details.
 - A valid feature that cannot enter the canonical model returns
   `unsupported_external_feature`.
 - A value that would require undisclosed approximation returns

@@ -205,7 +205,11 @@ describe("Phase 46 visible workflows", () => {
     const user = userEvent.setup();
     const saveRequests: Record<string, unknown>[] = [];
     installDefaultCommands({
-      openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
+      openDocument: async () => ({
+        status: "imported_text",
+        envelope: importedEnvelope(),
+        format: "markdown",
+      }),
       saveDocument: async (args) => {
         saveRequests.push(args);
         return {
@@ -220,7 +224,9 @@ describe("Phase 46 visible workflows", () => {
     const editor = screen.getByRole("textbox", { name: "Document editor" });
 
     await user.click(screen.getByRole("button", { name: "Open…" }));
-    expect(await screen.findByText("Text imported. Save as a DRAFT document to keep your work.")).toBeTruthy();
+    expect(await screen.findByText(
+      "Markdown imported as literal editable text. DRAFT does not parse or preview Markdown. Save as a DRAFT document to keep your work.",
+    )).toBeTruthy();
     expect(screen.getByText("Imported, unsaved")).toBeTruthy();
     expect(screen.getByText("notes.md")).toBeTruthy();
     expect(editor.textContent).toContain("# Literal Markdown");
@@ -238,7 +244,11 @@ describe("Phase 46 visible workflows", () => {
   it("keeps an imported session unsaved when its first Save is cancelled", async () => {
     const user = userEvent.setup();
     installDefaultCommands({
-      openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
+      openDocument: async () => ({
+        status: "imported_text",
+        envelope: importedEnvelope(),
+        format: "plain_text",
+      }),
       saveDocument: async () => ({ status: "cancelled" }),
     });
     render(<App />);
@@ -314,6 +324,7 @@ describe("Phase 46 visible workflows", () => {
               documentId: IMPORTED_ID,
               displayName: "paper.docx",
               disposition: "allowed_exact",
+              normalizations: [],
             }
           : {
               status: "saved",
@@ -334,11 +345,57 @@ describe("Phase 46 visible workflows", () => {
       name: "Replace the source DOCX?",
     });
     expect(within(dialog).getByText(/replace paper\.docx/)).toBeTruthy();
-    await user.click(within(dialog).getByRole("button", { name: "Replace source" }));
+    await user.click(within(dialog).getByRole("button", { name: "Replace" }));
 
     expect(await screen.findByText("Saved back to paper.docx.")).toBeTruthy();
     expect(screen.getByText("Source unchanged")).toBeTruthy();
     expect(screen.getByText("paper.docx")).toBeTruthy();
+    expect(decisions).toEqual(["inspect", "save_exact"]);
+  });
+
+  it("routes native Save Back through the same exact confirmation workflow", async () => {
+    const user = userEvent.setup();
+    const decisions: string[] = [];
+    let nativeAction: ((action: string) => void) | undefined;
+    listenToNativeMenuActionsMock.mockImplementation(async (onAction) => {
+      nativeAction = onAction;
+      return vi.fn();
+    });
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: externalSummary(),
+      }),
+      externalSave: async (args) => {
+        const request = args.request as { decision: string };
+        decisions.push(request.decision);
+        return request.decision === "inspect"
+          ? {
+              status: "eligibility",
+              documentId: IMPORTED_ID,
+              displayName: "paper.docx",
+              disposition: "allowed_exact",
+              normalizations: [],
+            }
+          : {
+              status: "saved",
+              documentId: IMPORTED_ID,
+              displayName: "paper.docx",
+              bytesWritten: 2048,
+              disposition: "allowed_exact",
+            };
+      },
+    });
+    render(<App />);
+    await waitFor(() => expect(nativeAction).toBeTypeOf("function"));
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    await user.type(screen.getByRole("textbox", { name: "Document editor" }), " revised");
+
+    act(() => nativeAction?.("save_back_to_source"));
+    await user.click(await screen.findByRole("button", { name: "Replace" }));
+
+    expect(await screen.findByText("Saved back to paper.docx.")).toBeTruthy();
     expect(decisions).toEqual(["inspect", "save_exact"]);
   });
 
@@ -366,6 +423,7 @@ describe("Phase 46 visible workflows", () => {
               documentId: IMPORTED_ID,
               displayName: "paper.docx",
               disposition: "allowed_after_accepted_normalization",
+              normalizations: ["alternate_heading_style_name"],
             }
           : { status: "cancelled", documentId: IMPORTED_ID };
       },
@@ -377,8 +435,8 @@ describe("Phase 46 visible workflows", () => {
     await clickWorkspaceAction(user, "Save Back to Source");
     const dialog = await screen.findByRole("alertdialog");
 
-    expect(within(dialog).getByText(/Some source formatting may change/)).toBeTruthy();
-    await user.click(within(dialog).getByRole("button", { name: "Keep source" }));
+    expect(within(dialog).getByText("What will change")).toBeTruthy();
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
 
     expect(await screen.findByText("Save Back cancelled. The source was not changed.")).toBeTruthy();
     expect(screen.getByText("Source modified")).toBeTruthy();
@@ -399,6 +457,7 @@ describe("Phase 46 visible workflows", () => {
         documentId: IMPORTED_ID,
         displayName: "paper.docx",
         disposition: "denied_source_changed",
+        normalizations: [],
       }),
     });
     render(<App />);
@@ -406,6 +465,46 @@ describe("Phase 46 visible workflows", () => {
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     await user.type(editor, " revised");
     await clickWorkspaceAction(user, "Save Back to Source");
+
+    expect(await screen.findByText(
+      "The source changed outside DRAFT. Reopen it before saving back.",
+    )).toBeTruthy();
+    expect(screen.getByText("Source modified")).toBeTruthy();
+    expect(screen.getByText("paper.docx")).toBeTruthy();
+    expect(editor.textContent).toContain("revised");
+  });
+
+  it("rejects a source changed after confirmation without losing current edits", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: externalSummary(),
+      }),
+      externalSave: async (args) => {
+        const request = args.request as { decision: string };
+        return request.decision === "inspect"
+          ? {
+              status: "eligibility",
+              documentId: IMPORTED_ID,
+              displayName: "paper.docx",
+              disposition: "allowed_exact",
+              normalizations: [],
+            }
+          : {
+              status: "denied",
+              documentId: IMPORTED_ID,
+              disposition: "denied_source_changed",
+            };
+      },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.type(editor, " revised");
+    await clickWorkspaceAction(user, "Save Back to Source");
+    await user.click(await screen.findByRole("button", { name: "Replace" }));
 
     expect(await screen.findByText(
       "The source changed outside DRAFT. Reopen it before saving back.",
@@ -431,6 +530,7 @@ describe("Phase 46 visible workflows", () => {
             documentId: IMPORTED_ID,
             displayName: "paper.docx",
             disposition: "allowed_exact",
+            normalizations: [],
           };
         }
         throw { code: "write_failed", cause: { code: "replace_target" } };
@@ -441,7 +541,7 @@ describe("Phase 46 visible workflows", () => {
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     await user.type(editor, " revised");
     await clickWorkspaceAction(user, "Save Back to Source");
-    await user.click(await screen.findByRole("button", { name: "Replace source" }));
+    await user.click(await screen.findByRole("button", { name: "Replace" }));
 
     expect(await screen.findByText(
       "DRAFT could not replace the source. The original was preserved. Try again.",
@@ -488,7 +588,7 @@ describe("Phase 46 visible workflows", () => {
     [
       "unsafe_package",
       { classification: "unsafe", reason: "archive_path" },
-      "That DOCX file exceeds DRAFT’s safety limits. The original was not changed.",
+      "That DOCX exceeds DRAFT’s supported package, XML, or document-size limits. The original was not changed. Try a smaller document or remove large embedded content.",
     ],
     [
       "unsupported_external_feature",
@@ -577,7 +677,11 @@ describe("Phase 46 visible workflows", () => {
   it("rejects a non-DRAFT first-save target without changing import state", async () => {
     const user = userEvent.setup();
     installDefaultCommands({
-      openDocument: async () => ({ status: "imported_text", envelope: importedEnvelope() }),
+      openDocument: async () => ({
+        status: "imported_text",
+        envelope: importedEnvelope(),
+        format: "plain_text",
+      }),
       saveDocument: async () => {
         throw { code: "invalid_target" };
       },
