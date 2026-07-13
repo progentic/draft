@@ -55,8 +55,9 @@ deliberately smaller than the full system described in this architecture:
   The internal analysis and Python-helper boundaries use registrations while
   their caller awaits completion, but no product worker starts from a Tauri
   command, so no cancellation control is displayed.
-- Rust owns the version 1 document envelope, UUID identity generation and
-  parsing, root-shape validation, typed failures, and Serde round trips. The
+- Rust owns the current version 2 document envelope, version 1 load migration,
+  UUID identity generation and parsing, root-shape validation, typed failures,
+  and Serde round trips. The
   typed create command accepts no identity input; open/save/close commands carry
   the validated envelope or Rust-issued identity.
 - Rust owns a separate version 1 reference record with UUID identity,
@@ -826,8 +827,8 @@ Relevant invariant: `INV-13` in `INVARIANTS.md`.
 These must be resolved before granular contract docs become binding:
 
 - Reference-record schema: fields, provenance, resolution states, reliability scoring inputs, and source merge behavior.
-- Document-envelope evolution: fields and migrations beyond the implemented
-  version 1 minimum.
+- Document-envelope evolution beyond the explicit version 1 to version 2
+  paragraph-format migration.
 - AI context-window assembly policy: token budget, truncation strategy, source prioritization, and user-visible disclosure.
 - Formatting contract beyond the Phase 31 consistency checks: exact APA, MLA,
   Chicago, heading, rendering, and export rules.
@@ -840,10 +841,17 @@ These must be resolved before granular contract docs become binding:
 
 Accepted ADR-004 defines one strict paragraph model shared by the editor, Rust
 validation, document persistence, migration, and supported format mappings.
-Phase 47 owns the model and interoperability work. Phase 48 may expose controls
-only after that capability and its behavioral evidence exist.
+Phase 47 now implements the model foundation: current envelopes use schema
+version 2, persisted version 1 documents migrate in memory without source
+mutation, TypeScript mirrors the Rust validator, and DOCX export emits the
+accepted paragraph properties.
 
-The current version 1 envelope still has no paragraph-style schema and no
-paragraph migration exists. Acceptance authorizes Phase 47 implementation; it
-does not claim that the model, migration, controls, fidelity evidence, or
-proposed `INV-17` enforcement already exists.
+Direct envelope parsing remains current-schema-only. Only the persisted-load
+boundary accepts version 1 and returns canonical version 2 state. The first
+successful explicit save writes version 2; migration never invents an all-
+default `paragraphStyle` object because absence is the canonical default.
+
+This implementation does not add paragraph controls, external-format import,
+same-format save, fidelity classification, or release evidence. Proposed
+`INV-17`, `UX-46-024`, `RC-07`, and `GATE-47` remain open until the complete
+behavioral and human evidence exists.

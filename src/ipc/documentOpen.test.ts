@@ -43,7 +43,7 @@ describe("openDocument", () => {
   it("rejects an invalid loaded envelope", async () => {
     invokeMock.mockResolvedValue({
       status: "opened_draft",
-      envelope: { ...envelope(), schema_version: 2 },
+      envelope: { ...envelope(), schema_version: 3 },
     });
 
     await expect(openDocument()).resolves.toEqual({
@@ -55,7 +55,7 @@ describe("openDocument", () => {
   it("preserves typed unsupported-version failures", async () => {
     const error = {
       code: "invalid_envelope",
-      cause: { code: "unsupported_schema_version", found: 2 },
+      cause: { code: "unsupported_schema_version", found: 3 },
     };
     invokeMock.mockRejectedValue(error);
 
@@ -89,7 +89,7 @@ describe("openDocument", () => {
 
 function envelope() {
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: DOCUMENT_ID,
     title: "Opened document",
     document: { type: "doc", content: [] },

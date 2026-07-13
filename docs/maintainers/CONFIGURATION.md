@@ -56,7 +56,7 @@ implementation choices that can change without altering one of those contracts.
 
 | Symbol | Current setting | Source | Meaning |
 | :--- | :--- | :--- | :--- |
-| `DOCUMENT_ENVELOPE_SCHEMA_VERSION` | 1 | `documents/envelope.rs` | Accepted document envelope schema. |
+| `DOCUMENT_ENVELOPE_SCHEMA_VERSION` | 2 | `documents/envelope.rs` | Current document envelope schema; persisted version 1 loads migrate in memory. |
 | `CITATION_NODE_SCHEMA_VERSION` | 1 | Rust and TypeScript citation modules | Accepted citation attrs schema. |
 | `REFERENCE_RECORD_SCHEMA_VERSION` | 1 | `references/record.rs` | Accepted reference payload schema. |
 | `REFERENCE_STORE_SCHEMA_VERSION` | 1 | `references/store.rs` | SQLite reference-store schema. |
@@ -72,10 +72,10 @@ one strict `pdf_import_jobs` table with one record per candidate identity,
 closed states, one `intake_validated` checkpoint, attempt count, typed failure,
 durable cancellation intent, and a hashed claim token. Both stores initialize
 schema version 1 from an empty database and reject unknown future versions.
-Document, citation, and reference payload version 1 is the first released
-baseline, so no older known payload migration exists. Phase 43 requires lower
-and future payloads to fail without mutation. The policy and requirements for a
-later explicit transition are documented in `DATA_MIGRATION.md`.
+Document envelope version 1 is the only known legacy payload and migrates in
+memory to version 2. Citation and reference payloads remain at version 1 with
+no older known migration. Lower unsupported and future payloads fail without
+mutation. The transition policy is documented in `DATA_MIGRATION.md`.
 
 ## Secret Storage
 
@@ -175,6 +175,10 @@ period. It cannot detect an unreported same-size in-place modification.
 | Document body font size | 13 points | `fontControlState.ts`, `styles.css` | Effective editor size for unmarked body text. Heading defaults are 24, 18, and 14 points for levels 1, 2, and 3 or later. |
 | `MIN_FONT_SIZE_POINTS` | 8 points | Rust and TypeScript text-format modules | Smallest accepted text size. |
 | `MAX_FONT_SIZE_POINTS` | 72 points | Rust and TypeScript text-format modules | Largest accepted text size. Sizes are whole points in one-point increments and export as DOCX half-points. |
+| `PARAGRAPH_STYLE_SCHEMA_VERSION` | 1 | Rust and TypeScript paragraph-format modules | Complete paragraph-style object version nested inside document envelope v2. |
+| Paragraph line spacing | 100 through 300 hundredths, increment 5 | Rust and TypeScript paragraph-format modules | Automatic line spacing; DOCX uses 240 units per single line. |
+| Paragraph spacing and left/right indent | 0 through 2,880 twips | Rust and TypeScript paragraph-format modules | Closed before/after and indentation range. |
+| Paragraph first-line/hanging indent | 0 through 1,440 twips | Rust and TypeScript paragraph-format modules | One mutually exclusive special indent; `none` requires zero. |
 | `MAX_DOCX_SOURCE_BYTES` | 8 MiB | `exports/docx.rs` | Serialized source-document bound. |
 | `MAX_DOCX_NODES` | 100,000 | `exports/docx.rs` | Structural object count bound. |
 | `MAX_DOCX_NESTING_DEPTH` | 16 | `exports/docx.rs` | Recursive parser depth bound. |

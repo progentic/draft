@@ -102,7 +102,7 @@ mod tests {
 
     fn envelope() -> DocumentEnvelope {
         DocumentEnvelope::from_json_value(json!({
-            "schema_version": 1,
+            "schema_version": crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION,
             "document_id": DOCUMENT_ID,
             "title": "Document",
             "document": { "type": "doc", "content": [] }

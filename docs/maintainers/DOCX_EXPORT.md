@@ -31,6 +31,13 @@ size accepts whole points from 8 through 72 and converts
 deterministically to DOCX half-points in `w:sz` and `w:szCs`. Unsupported or
 malformed values fail; the compiler never substitutes a family or size.
 
+Phase 47 adds optional canonical paragraph data for paragraphs and headings.
+Alignment maps to `w:jc`; automatic line spacing and space before/after map to
+`w:spacing`; left/right and first-line or hanging indentation map to `w:ind`.
+All explicit values are emitted deterministically. A block without
+`paragraphStyle` emits no default paragraph override. DOCX import and
+same-format save remain unimplemented and are not implied by this export map.
+
 Empty paragraphs and headings, Unicode text, source order, paragraph boundaries,
 heading levels, hard breaks, and supported marks are preserved. XML-invalid
 control characters fail before package construction.
@@ -99,7 +106,8 @@ unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 
 Focused Rust tests cover stable safe entries, archive reopening,
 deterministic bytes, XML parsing, Unicode, headings, hard breaks, supported
-marks, every family mapping, mixed family and size run properties, empty
+marks, every family mapping, mixed family and size run properties, paragraph
+property mapping, default-by-absence, empty
 blocks, unknown and malformed content, citation rejection, source
 and output limits, target validation, real create/replace behavior, source
 preservation, every atomic failure stage, durability uncertainty, bounded errors,
@@ -120,7 +128,7 @@ package that reopens with the final text and leaves the DRAFT source unchanged.
 
 The strict subset does not support arbitrary fonts or sizes, citations, bibliographies, lists, tables,
 links, images, equations, notes, comments, tracked changes, headers, footers,
-page numbers, templates, layout controls, or complete APA/MLA/Chicago rendering.
+page numbers, templates, unsupported paragraph rules, layout controls, or complete APA/MLA/Chicago rendering.
 Unsupported content fails the whole export. The visible Phase 46 flow is
 documented in `PHASE46_WORKFLOWS.md`.
 

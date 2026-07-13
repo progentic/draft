@@ -99,7 +99,7 @@ mod tests {
             OpenDocumentError::InvalidTextEncoding,
             OpenDocumentError::TextTooLarge,
             OpenDocumentError::InvalidEnvelope {
-                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
+                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 3 },
             },
             OpenDocumentError::Registry {
                 cause: DocumentRegistryError::AlreadyOpen,
@@ -121,7 +121,7 @@ mod tests {
                 { "code": "text_too_large" },
                 {
                     "code": "invalid_envelope",
-                    "cause": { "code": "unsupported_schema_version", "found": 2 }
+                    "cause": { "code": "unsupported_schema_version", "found": 3 }
                 },
                 {
                     "code": "registry",
@@ -141,7 +141,7 @@ mod tests {
 
     fn envelope_value() -> serde_json::Value {
         json!({
-            "schema_version": 1,
+            "schema_version": crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION,
             "document_id": DOCUMENT_ID,
             "title": "Opened document",
             "document": { "type": "doc", "content": [] }

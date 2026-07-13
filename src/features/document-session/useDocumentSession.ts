@@ -1,4 +1,5 @@
 import type { Editor, JSONContent } from "@tiptap/react";
+import { omitUnsetParagraphStyles } from "../../documents/paragraphFormatting";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { closeDocument } from "../../ipc/documentClose";
@@ -408,9 +409,9 @@ function currentSnapshot(
   if (!editor || !identity) {
     return null;
   }
-  const document = editor.getJSON();
+  const document = omitUnsetParagraphStyles(editor.getJSON());
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: identity.documentId,
     title: documentTitle(document, identity.title),
     document: document as DocumentEnvelopeSnapshot["document"],

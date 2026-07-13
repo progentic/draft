@@ -59,12 +59,15 @@ Apple Silicon target.
 - Font formatting is limited to Arial, Avenir Next, Baskerville, Courier New,
   Georgia, Helvetica, Menlo, Palatino, Times New Roman, Trebuchet MS, and
   Verdana at whole point sizes from 8 through 72.
+- Paragraph alignment, spacing, and indentation controls are not currently
+  available. The underlying file and DOCX-export model does not make those
+  controls a finished user workflow.
 
 ## Export
 
 - DOCX export supports paragraphs, headings, text, hard breaks, bold, italic,
-  underline, and the bounded font-family and font-size marks within documented
-  resource limits.
+  underline, bounded font-family and font-size marks, and validated paragraph
+  properties within documented resource limits.
 - Unsupported content fails instead of being silently omitted.
 - Citation nodes are not currently included in DOCX output.
 - PDF export is currently unavailable. Its rendering policy and implementation

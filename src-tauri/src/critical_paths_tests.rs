@@ -198,7 +198,7 @@ fn validated_envelope(value: Value) -> DocumentEnvelope {
 
 fn document_snapshot(title: &str, content: Vec<Value>) -> Value {
     json!({
-        "schema_version": 1,
+        "schema_version": crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION,
         "document_id": DOCUMENT_ID,
         "title": title,
         "document": { "type": "doc", "content": content }

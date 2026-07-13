@@ -114,6 +114,51 @@ fn mixed_font_runs_keep_distinct_docx_properties() {
 }
 
 #[test]
+fn paragraph_styles_emit_deterministic_docx_properties() {
+    let blocks = vec![
+        styled_paragraph(
+            paragraph_style("justify", 115, 120, 240, 360, 180, "hanging", 720),
+            "Styled paragraph",
+        ),
+        json!({
+            "type": "heading",
+            "attrs": {
+                "level": 2,
+                "paragraphStyle": paragraph_style("center", 150, 0, 0, 0, 0, "first_line", 240)
+            },
+            "content": [{ "type": "text", "text": "Styled heading" }]
+        }),
+    ];
+    let artifact = compile_docx(&envelope(document(blocks))).unwrap();
+    let mut archive = open_archive(&artifact);
+    let xml = read_part(&mut archive, "word/document.xml");
+
+    assert!(xml.contains("<w:jc w:val=\"both\"/>"));
+    assert!(xml.contains(
+        "<w:spacing w:lineRule=\"auto\" w:line=\"276\" w:before=\"120\" w:after=\"240\"/>"
+    ));
+    assert!(xml.contains("<w:ind w:left=\"360\" w:right=\"180\" w:hanging=\"720\"/>"));
+    assert!(xml.contains("<w:pStyle w:val=\"Heading2\"/><w:jc w:val=\"center\"/>"));
+    assert!(xml.contains("<w:ind w:left=\"0\" w:right=\"0\" w:firstLine=\"240\"/>"));
+}
+
+#[test]
+fn absent_paragraph_style_emits_no_default_override() {
+    let artifact = compile_docx(&envelope(document(vec![paragraph(vec![json!({
+        "type": "text",
+        "text": "Defaults"
+    })])])))
+    .unwrap();
+    let mut archive = open_archive(&artifact);
+    let xml = read_part(&mut archive, "word/document.xml");
+
+    assert!(!xml.contains("<w:pPr>"));
+    assert!(!xml.contains("<w:jc"));
+    assert!(!xml.contains("<w:spacing"));
+    assert!(!xml.contains("<w:ind"));
+}
+
+#[test]
 fn every_supported_font_family_emits_explicit_docx_run_properties() {
     let definitions = supported_font_definitions();
     let runs = definitions
@@ -424,7 +469,7 @@ fn rich_envelope() -> DocumentEnvelope {
 
 fn envelope(document: Value) -> DocumentEnvelope {
     DocumentEnvelope::from_json_value(json!({
-        "schema_version": 1,
+        "schema_version": crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION,
         "document_id": DOCUMENT_ID,
         "title": "DOCX export test",
         "document": document
@@ -438,6 +483,37 @@ fn document(content: Vec<Value>) -> Value {
 
 fn paragraph(content: Vec<Value>) -> Value {
     json!({ "type": "paragraph", "content": content })
+}
+
+fn styled_paragraph(style: Value, text: &str) -> Value {
+    json!({
+        "type": "paragraph",
+        "attrs": { "paragraphStyle": style },
+        "content": [{ "type": "text", "text": text }]
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn paragraph_style(
+    alignment: &str,
+    line_spacing: u16,
+    before: u16,
+    after: u16,
+    left: u16,
+    right: u16,
+    special_kind: &str,
+    special_twips: u16,
+) -> Value {
+    json!({
+        "schemaVersion": 1,
+        "alignment": alignment,
+        "lineSpacingHundredths": line_spacing,
+        "spaceBeforeTwips": before,
+        "spaceAfterTwips": after,
+        "leftIndentTwips": left,
+        "rightIndentTwips": right,
+        "specialIndent": { "kind": special_kind, "twips": special_twips }
+    })
 }
 
 fn open_archive(artifact: &DocxArtifact) -> ZipArchive<Cursor<&[u8]>> {

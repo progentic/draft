@@ -5,18 +5,20 @@ import { isDocumentEnvelopeError, isDocumentEnvelopeSnapshot } from "./documentE
 const DOCUMENT_ID = "00000000-0000-4000-8000-000000000001";
 
 describe("document envelope mirror", () => {
-  it("accepts the implemented version 1 shape", () => {
+  it("accepts the implemented version 2 shape", () => {
     expect(isDocumentEnvelopeSnapshot(envelope())).toBe(true);
   });
 
   it.each([
-    { ...envelope(), schema_version: 2 },
+    { ...envelope(), schema_version: 3 },
     { ...envelope(), document_id: "not-a-uuid" },
     { ...envelope(), title: " " },
     { ...envelope(), document: { type: "paragraph", content: [] } },
     { ...envelope(), document: documentWithCitation({ schema_version: 2 }) },
     { ...envelope(), document: documentWithFont("fontFamily", { family: "injected" }) },
     { ...envelope(), document: documentWithFont("fontSize", { points: 7 }) },
+    { ...envelope(), document: documentWithParagraphStyle({ ...paragraphStyle(), alignment: "wide" }) },
+    { ...envelope(), document: documentWithParagraphStyle({ ...paragraphStyle(), extra: true }) },
     { ...envelope(), document: documentWithMarks([null]) },
     { ...envelope(), document: documentWithMarks(["fontFamily"]) },
     { ...envelope(), document: documentWithMarks([1]) },
@@ -29,7 +31,7 @@ describe("document envelope mirror", () => {
   });
 
   it("recognizes structured unsupported-version failures", () => {
-    expect(isDocumentEnvelopeError({ code: "unsupported_schema_version", found: 2 })).toBe(true);
+    expect(isDocumentEnvelopeError({ code: "unsupported_schema_version", found: 3 })).toBe(true);
     expect(isDocumentEnvelopeError({ code: "unsupported_schema_version" })).toBe(false);
   });
 
@@ -62,11 +64,31 @@ describe("document envelope mirror", () => {
       cause: { code: "unknown" },
     })).toBe(false);
   });
+
+  it("recognizes structured paragraph and migration failures", () => {
+    expect(isDocumentEnvelopeError({
+      code: "invalid_paragraph_style",
+      path: "document.content[0].attrs.paragraphStyle",
+      cause: { code: "invalid_line_spacing" },
+    })).toBe(true);
+    expect(isDocumentEnvelopeError({
+      code: "migration_failed",
+      from: 1,
+      to: 2,
+      cause: { code: "paragraph_style_in_legacy_envelope" },
+    })).toBe(true);
+    expect(isDocumentEnvelopeError({
+      code: "migration_failed",
+      from: 1,
+      to: 2,
+      cause: { code: "unknown" },
+    })).toBe(false);
+  });
 });
 
 function envelope() {
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: DOCUMENT_ID,
     title: "Document",
     document: { type: "doc", content: [] },
@@ -97,5 +119,25 @@ function documentWithCitation(attrs: Record<string, unknown>) {
         attrs: { citekey: "smith2025", render_style: "apa7", ...attrs },
       }],
     }],
+  };
+}
+
+function documentWithParagraphStyle(paragraphStyle: Record<string, unknown>) {
+  return {
+    type: "doc",
+    content: [{ type: "paragraph", attrs: { paragraphStyle } }],
+  };
+}
+
+function paragraphStyle() {
+  return {
+    schemaVersion: 1,
+    alignment: "left",
+    lineSpacingHundredths: 100,
+    spaceBeforeTwips: 0,
+    spaceAfterTwips: 0,
+    leftIndentTwips: 0,
+    rightIndentTwips: 0,
+    specialIndent: { kind: "none", twips: 0 },
   };
 }

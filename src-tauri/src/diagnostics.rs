@@ -218,7 +218,7 @@ mod tests {
     fn expected_contract_versions() -> serde_json::Value {
         json!([
             { "name": "citation_node", "version": 1 },
-            { "name": "document_envelope", "version": 1 },
+            { "name": "document_envelope", "version": 2 },
             { "name": "pdf_import_job_store", "version": 1 },
             { "name": "python_helper_protocol", "version": 1 },
             { "name": "reference_record", "version": 1 },

@@ -6,6 +6,8 @@ use quick_xml::{
 };
 use zip::{CompressionMethod, ZipWriter, write::SimpleFileOptions};
 
+use crate::documents::paragraph_format::{ParagraphStyle, SpecialIndentKind};
+
 use super::{
     docx::DocxExportError,
     docx_model::{DocxBlock, DocxDocument, DocxInline, TextMarks},
@@ -188,31 +190,97 @@ fn build_document_xml(document: &DocxDocument) -> Result<Vec<u8>, DocxExportErro
 
 fn write_block(writer: &mut XmlWriter, block: &DocxBlock) -> Result<(), DocxExportError> {
     match block {
-        DocxBlock::Paragraph(content) => write_paragraph(writer, None, content),
-        DocxBlock::Heading { level, content } => write_paragraph(writer, Some(*level), content),
+        DocxBlock::Paragraph { style, content } => write_paragraph(writer, None, *style, content),
+        DocxBlock::Heading {
+            level,
+            style,
+            content,
+        } => write_paragraph(writer, Some(*level), *style, content),
     }
 }
 
 fn write_paragraph(
     writer: &mut XmlWriter,
     heading_level: Option<u8>,
+    style: Option<ParagraphStyle>,
     content: &[DocxInline],
 ) -> Result<(), DocxExportError> {
     start(writer, "w:p", &[])?;
-    if let Some(level) = heading_level {
-        write_heading_properties(writer, level)?;
-    }
+    write_paragraph_properties(writer, heading_level, style)?;
     for inline in content {
         write_inline(writer, inline)?;
     }
     end(writer, "w:p")
 }
 
-fn write_heading_properties(writer: &mut XmlWriter, level: u8) -> Result<(), DocxExportError> {
-    let style = heading_style(level)?;
+fn write_paragraph_properties(
+    writer: &mut XmlWriter,
+    heading_level: Option<u8>,
+    style: Option<ParagraphStyle>,
+) -> Result<(), DocxExportError> {
+    if heading_level.is_none() && style.is_none() {
+        return Ok(());
+    }
     start(writer, "w:pPr", &[])?;
-    empty(writer, "w:pStyle", &[("w:val", style)])?;
+    write_heading_style(writer, heading_level)?;
+    if let Some(style) = style {
+        write_paragraph_style(writer, style)?;
+    }
     end(writer, "w:pPr")
+}
+
+fn write_heading_style(
+    writer: &mut XmlWriter,
+    heading_level: Option<u8>,
+) -> Result<(), DocxExportError> {
+    let Some(level) = heading_level else {
+        return Ok(());
+    };
+    empty(writer, "w:pStyle", &[("w:val", heading_style(level)?)])
+}
+
+fn write_paragraph_style(
+    writer: &mut XmlWriter,
+    style: ParagraphStyle,
+) -> Result<(), DocxExportError> {
+    empty(writer, "w:jc", &[("w:val", style.alignment().docx_value())])?;
+    write_paragraph_spacing(writer, style)?;
+    write_paragraph_indentation(writer, style)
+}
+
+fn write_paragraph_spacing(
+    writer: &mut XmlWriter,
+    style: ParagraphStyle,
+) -> Result<(), DocxExportError> {
+    let line = style.line_spacing_docx_units().to_string();
+    let before = style.space_before_twips().to_string();
+    let after = style.space_after_twips().to_string();
+    empty(
+        writer,
+        "w:spacing",
+        &[
+            ("w:lineRule", "auto"),
+            ("w:line", line.as_str()),
+            ("w:before", before.as_str()),
+            ("w:after", after.as_str()),
+        ],
+    )
+}
+
+fn write_paragraph_indentation(
+    writer: &mut XmlWriter,
+    style: ParagraphStyle,
+) -> Result<(), DocxExportError> {
+    let left = style.left_indent_twips().to_string();
+    let right = style.right_indent_twips().to_string();
+    let special = style.special_indent().twips().to_string();
+    let mut attributes = vec![("w:left", left.as_str()), ("w:right", right.as_str())];
+    match style.special_indent().kind() {
+        SpecialIndentKind::None => {}
+        SpecialIndentKind::FirstLine => attributes.push(("w:firstLine", special.as_str())),
+        SpecialIndentKind::Hanging => attributes.push(("w:hanging", special.as_str())),
+    }
+    empty(writer, "w:ind", &attributes)
 }
 
 fn heading_style(level: u8) -> Result<&'static str, DocxExportError> {

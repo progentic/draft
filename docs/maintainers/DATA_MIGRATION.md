@@ -2,16 +2,15 @@
 
 ## Status
 
-This is the implemented Phase 43 migration baseline. It records how persisted
-document and reference data are versioned, rejected, and eventually migrated.
-It does not define a legacy transform because DRAFT has no released schema
-older than version 1.
+This guide records the Phase 43 baseline and the Phase 47 document-envelope
+transition. DRAFT now has one named transform: document envelope version 1 to
+version 2. Reference data still has no transformation step.
 
 ## Current Baseline
 
 | Persisted surface | Current version | Phase 43 behavior |
 | :--- | :--- | :--- |
-| Document envelope | 1 | Version 1 validates; lower, malformed, missing, and future versions fail before registry insertion or source writes. |
+| Document envelope | 2 | Persisted version 1 migrates in memory to version 2; direct parsing and saves accept only version 2; lower and future versions fail before registry insertion or writes. |
 | Citation attrs inside documents | 1 | Version 1 validates; lower, malformed, missing, and future versions make the containing envelope fail closed. |
 | Reference-record payload | 1 | Version 1 validates; lower, malformed, missing, and future versions fail before a record is returned. |
 | Reference-store schema | 1 | SQLite version 0 initializes an empty store transactionally; version 1 is verified; every other version fails closed. |
@@ -30,13 +29,29 @@ Persisted input is untrusted. A read must identify the declared version and
 dispatch only to the exact current validator or a named migration step.
 Unknown older versions are not guessed. Future versions are never downgraded.
 
-The current version 1 baseline has no migration step:
+The document load boundary now has one migration step:
 
-- document open reads and validates without modifying source bytes;
+- document open reads version 1, rejects legacy paragraph-style fields, changes
+  only the detached envelope version, and validates the complete version 2 value;
+- migration adds no explicit all-default paragraph style;
+- opening alone does not modify source bytes;
+- the first successful explicit save writes version 2 atomically;
 - failed document open creates no live registry handle;
 - reference reads validate the stored JSON and its indexed identity;
 - failed reference reads do not update, delete, or normalize the row; and
 - typed errors contain version numbers and categories, not source content.
+
+## Implemented Document Step
+
+`documents/migration.rs::migrate_v1_to_v2` accepts one detached JSON value. It
+rejects `paragraphStyle` in legacy input because version 1 never owned that
+field. It then changes only `schema_version` to `2`; the current validator owns
+all destination validation. Running the step repeatedly against the same
+unchanged version 1 value produces the same version 2 value.
+
+`DocumentEnvelope::from_json_value` remains current-only. Only
+`from_persisted_json_value`, called by the document loader, may dispatch the
+legacy step. Save, create, text import, and export never emit version 1.
 
 ## Future Migration Rule
 
@@ -58,13 +73,15 @@ rendering, analysis, formatting, save, or export.
 
 ## Explicit Exclusions
 
-Phase 43 adds no automatic repair, backup manager, downgrade path, startup
+The migration adds no automatic repair, backup manager, downgrade path, startup
 rewrite, migration command, frontend control, release import workflow, or
 reference-library UI. No user-facing migration workflow exists.
 
 ## Verification
 
-Focused Rust tests prove that document versions 0 and 2 leave source bytes and
+Focused Rust tests prove version 1 in-memory migration, source-byte preservation,
+first-save version 2 output, idempotence, rejected legacy paragraph data, and
+current-only direct parsing. Document versions 0 and 3 leave source bytes and
 the registry unchanged, citation versions 0 and 2 fail validation, and stored
 reference payload versions 0 and 2 leave the SQLite row unchanged. Existing
 store tests prove transactional empty-store initialization, conflicting-schema

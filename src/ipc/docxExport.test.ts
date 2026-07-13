@@ -10,7 +10,7 @@ import { exportDocument } from "./docxExport";
 import type { DocumentEnvelopeSnapshot } from "./documentEnvelope";
 
 const SNAPSHOT: DocumentEnvelopeSnapshot = {
-  schema_version: 1,
+  schema_version: 2,
   document_id: "00000000-0000-4000-8000-000000000001",
   title: "Exported document",
   document: { type: "doc", content: [] },
@@ -62,7 +62,7 @@ describe("exportDocument", () => {
   it("preserves bounded command failures without their details", async () => {
     invokeMock.mockRejectedValue({
       code: "invalid_envelope",
-      cause: { code: "unsupported_schema_version", found: 2 },
+      cause: { code: "unsupported_schema_version", found: 3 },
     });
     await expect(exportDocument(SNAPSHOT)).resolves.toEqual({
       status: "error",

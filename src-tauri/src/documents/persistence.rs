@@ -237,7 +237,7 @@ fn map_read_error(error: io::Error) -> OpenDocumentError {
 
 fn deserialize_envelope(contents: &[u8]) -> Result<DocumentEnvelope, OpenDocumentError> {
     let value = serde_json::from_slice(contents).map_err(|_| OpenDocumentError::MalformedJson)?;
-    DocumentEnvelope::from_json_value(value)
+    DocumentEnvelope::from_persisted_json_value(value)
         .map_err(|cause| OpenDocumentError::InvalidEnvelope { cause })
 }
 
@@ -407,6 +407,7 @@ mod tests {
 
     use super::*;
     use crate::citations::node::CitationNodeError;
+    use crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION;
     use crate::documents::test_support::TestDocumentPath;
     use serde_json::json;
 
@@ -512,6 +513,55 @@ mod tests {
         );
         assert_eq!(fs::read(target.path()).unwrap(), source);
         assert_eq!(directory_entries(target.path()), source_directory);
+    }
+
+    #[test]
+    fn legacy_document_migrates_in_memory_and_first_save_writes_version_two() {
+        let target = TestDocumentPath::new("legacy-version");
+        let mut legacy = envelope_value("Legacy");
+        legacy["schema_version"] = json!(1);
+        let source = serde_json::to_vec_pretty(&legacy).unwrap();
+        target.write(&source);
+        let registry = DocumentRegistry::new();
+
+        let opened = open_document(&registry, Some(target.path().to_owned())).unwrap();
+        let envelope = opened_draft_envelope(opened);
+
+        assert_eq!(envelope.schema_version(), DOCUMENT_ENVELOPE_SCHEMA_VERSION);
+        assert_eq!(fs::read(target.path()).unwrap(), source);
+        save_document(
+            &registry,
+            serde_json::to_value(&envelope).unwrap(),
+            no_path_selection,
+        )
+        .unwrap();
+        assert_eq!(read_json(target.path())["schema_version"], json!(2));
+    }
+
+    #[test]
+    fn rejected_legacy_paragraph_data_preserves_source_and_registry() {
+        let target = TestDocumentPath::new("invalid-legacy-paragraph-style");
+        let existing = validated_envelope(envelope_value("Existing"));
+        let existing_id = existing.document_id();
+        let registry = DocumentRegistry::new();
+        registry.open(existing.clone()).unwrap();
+        let mut legacy = envelope_value_for(SECOND_DOCUMENT_ID, "Legacy invalid");
+        legacy["schema_version"] = json!(1);
+        legacy["document"]["content"][0]["attrs"] = json!({ "paragraphStyle": {} });
+        let source = serde_json::to_vec_pretty(&legacy).unwrap();
+        target.write(&source);
+
+        assert!(matches!(
+            open_document(&registry, Some(target.path().to_owned())),
+            Err(OpenDocumentError::InvalidEnvelope {
+                cause: DocumentEnvelopeError::MigrationFailed {
+                    cause: crate::documents::migration::DocumentMigrationError::ParagraphStyleInLegacyEnvelope,
+                    ..
+                }
+            })
+        ));
+        assert_eq!(fs::read(target.path()).unwrap(), source);
+        assert_eq!(registry.close(existing_id), Ok(existing));
     }
 
     #[test]
@@ -628,7 +678,7 @@ mod tests {
 
     #[test]
     fn unsupported_document_versions_fail_without_mutation() {
-        for version in [0, 2] {
+        for version in [0, 3] {
             let target = TestDocumentPath::new(&format!("unsupported-version-{version}"));
             let existing_target = TestDocumentPath::new(&format!("existing-version-{version}"));
             let existing = envelope_value_for(SECOND_DOCUMENT_ID, "Existing");
@@ -753,13 +803,29 @@ mod tests {
     fn save_target_preflight_rejects_invalid_snapshot() {
         let registry = DocumentRegistry::new();
         let mut snapshot = envelope_value("Invalid");
-        snapshot["schema_version"] = json!(2);
+        snapshot["schema_version"] = json!(3);
 
         assert_eq!(
             save_requires_target(&registry, &snapshot),
             Err(SaveDocumentError::InvalidEnvelope {
-                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
+                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 3 },
             }),
+        );
+    }
+
+    #[test]
+    fn save_rejects_legacy_snapshot_before_path_selection() {
+        let registry = DocumentRegistry::new();
+        let mut snapshot = envelope_value("Legacy save");
+        snapshot["schema_version"] = json!(1);
+
+        assert_eq!(
+            save_document(&registry, snapshot, || panic!(
+                "path selection must not run"
+            )),
+            Err(SaveDocumentError::InvalidEnvelope {
+                cause: DocumentEnvelopeError::UnsupportedSchemaVersion { found: 1 },
+            })
         );
     }
 
@@ -1162,7 +1228,7 @@ mod tests {
 
     fn envelope_value_for(document_id: &str, title: &str) -> Value {
         json!({
-            "schema_version": 1,
+            "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
             "document_id": document_id,
             "title": title,
             "document": {
@@ -1208,6 +1274,14 @@ mod tests {
             OpenDocumentOutcome::ImportedText { envelope } => envelope,
             OpenDocumentOutcome::OpenedDraft { .. } => panic!("text source must import"),
             OpenDocumentOutcome::Cancelled => panic!("explicit text source must not cancel"),
+        }
+    }
+
+    fn opened_draft_envelope(outcome: OpenDocumentOutcome) -> DocumentEnvelope {
+        match outcome {
+            OpenDocumentOutcome::OpenedDraft { envelope } => envelope,
+            OpenDocumentOutcome::ImportedText { .. } => panic!("DRAFT source must open natively"),
+            OpenDocumentOutcome::Cancelled => panic!("explicit DRAFT source must not cancel"),
         }
     }
 

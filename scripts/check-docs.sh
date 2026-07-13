@@ -108,6 +108,7 @@ check_required_documents() {
     docs/maintainers/FORMATTING_UX.md
     docs/maintainers/NETWORK_CLIENT.md
     docs/maintainers/OFFLINE_MODE.md
+    docs/maintainers/PARAGRAPH_FORMATTING.md
     docs/maintainers/PDF_IMPORT.md
     docs/maintainers/PACKAGING.md
     docs/maintainers/PERFORMANCE_MEASUREMENT.md
@@ -261,7 +262,7 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-021 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-022 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-023 | UX-2 | Closed |'
-  require_document_text "${ledger}" '| UX-46-024 | UX-1 | Open - governance blocked |'
+  require_document_text "${ledger}" '| UX-46-024 | UX-1 | Open - implementation and evidence pending |'
   require_document_text "${ledger}" '## Phase 48 Compact Chrome Retest Candidate'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
     'the complete eight-step workflow did not pass'
@@ -430,7 +431,8 @@ require_adr_003_coverage_areas() {
 check_data_migration_documentation() {
   local migration_doc='docs/maintainers/DATA_MIGRATION.md'
 
-  require_document_text "${migration_doc}" 'DRAFT has no released schema'
+  require_document_text "${migration_doc}" 'document envelope version 1 to'
+  require_document_text "${migration_doc}" 'migrate_v1_to_v2'
   require_document_text "${migration_doc}" 'Future versions are never downgraded.'
   require_document_text "${migration_doc}" \
     'preserve document source bytes until an atomic replacement succeeds'
@@ -439,6 +441,8 @@ check_data_migration_documentation() {
   require_document_text docs/maintainers/REFERENCE_STORE.md 'DATA_MIGRATION.md'
   require_document_text docs/maintainers/DOCUMENTATION_COVERAGE.md \
     'Data migration baseline'
+  require_document_text docs/maintainers/PARAGRAPH_FORMATTING.md \
+    'no object is written for defaults'
   printf 'PASS Phase 43 data migration documentation\n'
 }
 
@@ -834,6 +838,7 @@ check_configuration_backlinks() {
     METADATA_LOOKUP.md
     NETWORK_CLIENT.md
     OFFLINE_MODE.md
+    PARAGRAPH_FORMATTING.md
     PACKAGING.md
     PDF_IMPORT.md
     PYTHON_HELPERS.md

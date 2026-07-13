@@ -413,8 +413,8 @@ bash scripts/verify.sh
   8 through 72.
 - Paragraph alignment, line spacing, spacing before and after paragraphs, and
   indentation controls are not implemented. The paragraph-formatting finding
-  remains governance-blocked and must not enter product code without an accepted
-  contract.
+  remains implementation- and evidence-blocked and must not become an active
+  control until the accepted contract is fully implemented and tested.
 - DOCX export rejects citation nodes and other unsupported content.
 - The native File menu, compact document controls, bottom status bar, and
   tracked purple icon chain are implemented. Exact artifact `75373ffb` passed

@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 
 import { CitationNode } from "./CitationNode";
 import { FontFamilyMark, FontSizeMark } from "./TextFormattingMarks";
+import { ParagraphFormatting } from "./ParagraphFormatting";
 
 interface DraftEditorProps {
   editor: Editor | null;
@@ -43,6 +44,7 @@ export function useDraftEditor() {
       }),
       FontFamilyMark,
       FontSizeMark,
+      ParagraphFormatting,
       CitationNode,
     ],
   });
