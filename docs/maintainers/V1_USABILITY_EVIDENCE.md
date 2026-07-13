@@ -156,6 +156,37 @@ through `UX-46-024`, `RC-08`, `GATE-48`, and every other release row remain
 open. The package hash and icon comparison are mechanical evidence only and
 cannot close a visible icon finding.
 
+## Phase 48 Compact Chrome Retest Candidate
+
+- Implementation commit: `1358e41e452a877b958b4e54ff6a9d93d2db00ba`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `75373ffbb2a0b8aedd995ace95a4387f403a2ab38fbb6b457143ce976ce6cb37`
+- Mechanical result: the arm64 package built successfully, the embedded helper
+  probe passed, `Info.plist` names `icon.icns`, and the embedded icon matches the
+  tracked generated asset byte-for-byte.
+- Rendered-browser result: 1200 by 800 and 760 by 560 viewports had no page
+  overflow, clipped controls, or overlap between workspace bars. The menu stayed
+  inside the viewport, skipped disabled actions, and retained visible focus.
+- Human result: pending.
+
+This artifact contains the compact New action, icon-only Open, Save, and Close
+controls, one labeled overflow menu for secondary actions, and a bottom status
+bar for document, operation, recovery, and connectivity state. Automated and
+rendered-browser evidence does not prove the packaged interaction. Direct human
+testing must still confirm:
+
+- toolbar, overflow, native-menu, and shortcut parity;
+- disabled-action behavior during busy states;
+- overflow keyboard order, dismissal, focus restoration, and tooltips;
+- document, connectivity, operation, and recovery state in the bottom bar;
+- Save As rebinding and cancellation;
+- Finder, Dock, application-switcher, and in-window purple identity; and
+- behavior after clearing stale macOS icon caches.
+
+Findings `UX-46-021` through `UX-46-024`, `RC-08`, `GATE-48`, and every other
+release row remain open. The paragraph-formatting finding remains blocked by
+governance and has no product implementation in this artifact.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid

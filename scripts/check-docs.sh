@@ -189,6 +189,7 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-022 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-023 | UX-2 | Open |'
   require_document_text "${ledger}" '| UX-46-024 | UX-1 | Open - governance blocked |'
+  require_document_text "${ledger}" '## Phase 48 Compact Chrome Retest Candidate'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
     'the complete eight-step workflow did not pass'
   require_document_text docs/maintainers/CONFIGURATION.md \
