@@ -41,6 +41,7 @@ main() {
   check_ai_orchestration_contract
   check_v1_analysis_decision_guard
   check_adr_003_accepted_guard
+  check_adr_004_proposal_guard
   check_document_registry_contract
   check_document_file_contract
   check_critical_path_contract
@@ -1462,6 +1463,26 @@ check_adr_003_accepted_guard() {
     '\b(?:path|sourcePath|targetPath|filePath)\b' \
     src/ipc/nativeMenu.ts src/features/workspace-actions/useWorkspaceActions.ts
   printf 'PASS ADR-003 accepted interoperability and implemented desktop-workflow guard\n'
+}
+
+check_adr_004_proposal_guard() {
+  local adr='docs/adr/004-govern-paragraph-formatting.md'
+  local draft='docs/drafts/PARAGRAPH_FORMATTING.md'
+
+  require_file "${adr}"
+  require_file "${draft}"
+  require_source_pattern 'Status: Proposed' "${adr}"
+  require_source_pattern 'status: Proposed' "${draft}"
+  require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
+  assert_no_matches 'ADR-004 premature invariant acceptance' \
+    '\| \x60INV-17\x60 \| Accepted \|' docs/INVARIANTS.md
+  assert_no_matches 'ADR-004 paragraph model before acceptance' \
+    '\b(?:ParagraphStyle|paragraphStyle|lineSpacingHundredths|spaceBeforeTwips|spaceAfterTwips|leftIndentTwips|rightIndentTwips|specialIndent)\b' \
+    src-tauri/src src
+  assert_no_matches 'ADR-004 paragraph commands before acceptance' \
+    '\b(?:setParagraphAlignment|setLineSpacing|setParagraphSpacing|setParagraphIndent|resetParagraphFormatting|paragraph_formatting)\b' \
+    src-tauri/src src
+  printf 'PASS ADR-004 proposed paragraph-formatting guard\n'
 }
 
 require_citation_sources() {
