@@ -836,15 +836,14 @@ These must be resolved before granular contract docs become binding:
 - Network client interface: queue structure, backoff parameters, retry policy, and per-service limits.
 - Watched-folder debounce window and stable-size threshold.
 
-### 15.1 Proposed Paragraph-Formatting Boundary (Non-binding)
+### 15.1 Paragraph-Formatting Boundary
 
-ADR-004 proposes one strict paragraph model shared by the editor, Rust
+Accepted ADR-004 defines one strict paragraph model shared by the editor, Rust
 validation, document persistence, migration, and supported format mappings.
-The proposal assigns the model and interoperability work to Phase 47. Phase 48
-may expose controls only after that capability exists.
+Phase 47 owns the model and interoperability work. Phase 48 may expose controls
+only after that capability and its behavioral evidence exist.
 
-This proposal is not current architecture while ADR-004 remains Proposed. The
-accepted version 1 envelope has no paragraph-style schema, no paragraph
-migration exists, and no paragraph control may rely on the proposed values.
-The accepted Roadmap, PhaseMap, and interoperability contract remain current
-repository truth during review.
+The current version 1 envelope still has no paragraph-style schema and no
+paragraph migration exists. Acceptance authorizes Phase 47 implementation; it
+does not claim that the model, migration, controls, fidelity evidence, or
+proposed `INV-17` enforcement already exists.
