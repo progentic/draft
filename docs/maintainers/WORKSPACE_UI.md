@@ -13,9 +13,10 @@ storage, helper execution, and export.
 | Layer | Surface | Responsibility |
 | :--- | :--- | :--- |
 | Shell | `DraftWorkspace` | Owns outline visibility, one active workflow panel, and workspace composition. |
-| Header | `WorkspaceHeader` | Exposes the application heading, current document title and lifecycle status. |
-| Document actions | `WorkspaceCommandBar` | Exposes labeled lifecycle, reference, review, export, and close commands. |
+| Header | `WorkspaceHeader` | Exposes the application heading and current document title. |
+| Document actions | `WorkspaceCommandBar` | Keeps New visible, presents common document actions as named icon controls, and places secondary actions in an overflow menu. |
 | Shared actions | `useWorkspaceActions` | Routes toolbar and validated native-menu actions through one availability policy. |
+| Status | `WorkspaceStatusBar` | Presents document, connectivity, operation, and recovery state below the writing surface. |
 | Document session | `useDocumentSession`, `UnsavedChangesDialog` | Coordinates explicit snapshots, Rust-owned commands, dirty state, and recovery choices. |
 | Outline | `DocumentOutline` | Derives headings from the current Tiptap state and moves the selection. |
 | Editor | `DraftEditor`, `useDraftEditor` | Owns the transient Tiptap instance and initial document. |
@@ -104,9 +105,21 @@ No path, content, or document identity enters the menu state. Invalid events or
 state-update failures leave the visible toolbar available with bounded recovery
 copy. See `NATIVE_DESKTOP_WORKFLOW.md` for the complete contract.
 
+The command bar keeps New visible with a short label. Open, Save, and Close are
+icon-only controls with accessible names and tooltips. Save As, Export DOCX,
+References, and Text checks are in the More document actions menu. The menu
+skips disabled actions during keyboard navigation, supports Arrow, Home, End,
+and Escape, and returns focus to its trigger. Every item still uses the shared
+dispatcher; the compact layout adds no second command path.
+
+The header is reserved for DRAFT identity and the current document name. A
+bottom status bar presents the document lifecycle state, current background
+operation, bounded recovery message, and connectivity control. These values are
+transient presentation state and create no new persistence or network authority.
+
 ## Connectivity Control
 
-The header contains one binary session toggle. `Work offline` represents the
+The bottom status bar contains one binary session toggle. `Work offline` represents the
 online state; `Go online` represents offline and uses `aria-pressed="true"`.
 The control remains available when the document inspector is hidden at narrow
 widths. Pending changes disable repeat activation. Failed changes retain the

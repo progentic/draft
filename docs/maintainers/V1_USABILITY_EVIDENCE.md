@@ -135,15 +135,15 @@ Phase 48 findings `UX-46-020` and `UX-46-021` remain confirmed failures.
 - Mechanical result: the arm64 application package built successfully,
   `Info.plist` names `icon.icns`, and the embedded icon is byte-for-byte
   identical to the tracked generated asset.
-- Human result: pending.
+- Human result: partial; manual review confirmed a usable native File menu and
+  closed `UX-46-020`. The command-bar, status-placement, and visible-icon
+  findings remain open.
 
 Automated tests and structural checks cover the File menu contract,
-state-aware shared dispatcher, Save As authority, and icon chain. They do not
-prove the following behavior in a direct packaged session:
+state-aware shared dispatcher, Save As authority, and icon chain. Manual review
+confirmed that the native File menu provides a usable document workflow. It
+did not complete the following packaged checks:
 
-- File menu order and separators;
-- standard shortcuts;
-- New, Open, Close, Save, Save As, and Export from the native menu;
 - toolbar and native-menu parity;
 - disabled-action behavior during busy states;
 - Save As rebinding and Save As cancellation;
@@ -151,9 +151,10 @@ prove the following behavior in a direct packaged session:
 - the in-window purple identity; or
 - behavior after clearing stale macOS icon caches.
 
-Findings `UX-46-020` and `UX-46-021`, `RC-08`, `GATE-48`, and every other
-release row remain open. The package hash and icon comparison are mechanical
-evidence only and cannot close either finding.
+Finding `UX-46-020` is closed by direct manual review. Findings `UX-46-021`
+through `UX-46-024`, `RC-08`, `GATE-48`, and every other release row remain
+open. The package hash and icon comparison are mechanical evidence only and
+cannot close a visible icon finding.
 
 ### Replacement Artifact Product-Boundary Review
 
@@ -222,7 +223,10 @@ No untested task is counted as passed.
 | UX-46-017 | UX-1 | Open | Manual review confirmed that the visible menu icon remains stale and toolbar grouping does not consistently separate document lifecycle commands from research and analysis commands. | Phase 48 must replace the stale icon, align labels and icons, remove conflicting command locations, and validate the resulting hierarchy in the packaged app. |
 | UX-46-018 | UX-1 | Closed | An earlier package presented Open during Save and did not show the selected filename. Direct validation of artifact `3b4e9960` confirmed Save works as expected with the corrected typed result and visible filename transition. | Closed for the specific save-panel and filename defect; complete packaged recovery evidence remains required by the open RC rows. |
 | UX-46-019 | UX-1 | Closed | Artifact `8870dcc4` displayed the effective current font family and size during direct packaged retest. | Closed for the specific false-default control state; the complete eight-step workflow and release rows remain open. |
-| UX-46-020 | UX-1 | Open | Artifact `8870dcc4` exposed only Close Window in the native macOS File menu. | Phase 48 must add New Document (`Command-N`), Open (`Command-O`), Close (`Command-W`), Save (`Command-S`), Save As (`Shift-Command-S`), and Export DOCX with accepted separators through one shared state-aware dispatcher. |
+| UX-46-020 | UX-1 | Closed | Artifact `8870dcc4` exposed only Close Window in the native macOS File menu. Direct manual review of artifact `b9ebc25e` confirmed that the native File menu now provides a usable document workflow. | Closed for the native File-menu hierarchy. Other toolbar, state, icon, and complete-workflow evidence remains open. |
 | UX-46-021 | UX-1 | Open | Artifact `8870dcc4` still used the older green D identity in the application while the packaged macOS icon chain was not proven to use the required purple `DRAFT_Logo.png` consistently. | Phase 48 must regenerate all macOS icon sizes and `.icns` from the canonical source, update Tauri bundle resources and in-app branding, then validate Finder, Dock, bundle resources, and clean-install behavior after clearing stale icon caches. |
+| UX-46-022 | UX-1 | Open | Manual review of artifact `b9ebc25e` found that fully labeled New Document, Open, Save, Close, Export, and secondary actions create visual noise above the writing surface. | Phase 48 must keep a compact New action, use accessible icon-only common document actions, move secondary actions into a labeled overflow menu, and preserve shortcuts, focus order, state-sensitive enablement, tooltips, and the shared dispatcher. |
+| UX-46-023 | UX-2 | Open | Manual review of artifact `b9ebc25e` found that document state and connectivity consume primary header space. | Phase 48 must move document, connectivity, background-operation, count, and concise recovery status into a bottom status bar while keeping the header focused on document identity and writing actions. |
+| UX-46-024 | UX-1 | Open - governance blocked | Manual review found that the editor lacks the paragraph controls required for alignment, line and paragraph spacing, and indentation. | Do not implement in PR #39. A separate governed proposal must define the persistent paragraph model, validation, Tiptap commands, mixed-selection and reset behavior, DOCX mapping and lossiness, compatibility and migration, enforcement, and manual evidence before product implementation begins. |
 
 `RC-01` through `RC-04` and `GATE-46` remain open.

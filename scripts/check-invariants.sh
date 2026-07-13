@@ -865,7 +865,7 @@ check_docx_export_authority() {
     case "${frontend_path}" in
       # Phase 48 permits the closed action identifier only in its typed event,
       # shared dispatcher, visible command, and colocated tests.
-      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/features/workspace-actions/useWorkspaceActions.ts) ;;
+      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/components/WorkspaceCommandBar.test.tsx|src/features/workspace-actions/useWorkspaceActions.ts) ;;
       *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
     esac
   done < <(rg --files src)
@@ -1440,11 +1440,24 @@ check_adr_003_accepted_guard() {
     src/features/workspace-actions/useWorkspaceActions.ts
   require_source_pattern 'setNativeMenuState' \
     src/features/workspace-actions/useWorkspaceActions.ts
-  require_source_pattern 'actions.dispatch("save_document_as")' \
+  require_source_pattern 'action="save_document_as"' \
     src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'props.actions.dispatch(props.action)' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'aria-label="More document actions"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern '<WorkspaceStatusBar' src/app/DraftWorkspace.tsx
+  require_source_pattern 'className="workspace-status-bar"' \
+    src/components/WorkspaceStatusBar.tsx
   assert_no_matches 'ADR-003 duplicate toolbar document authority' \
     '\b(?:saveDocument|openDocument|closeDocument|exportDocument|DocumentSession)\b' \
     src/components/WorkspaceCommandBar.tsx
+  assert_no_matches 'ADR-003 primary-header status regression' \
+    '\b(?:ConnectivityModeControl|connectivityState|documentStatus)\b' \
+    src/components/WorkspaceHeader.tsx
+  assert_no_matches 'unapproved paragraph-formatting model before governance' \
+    '\b(?:ParagraphFormatting|paragraphSpacing|lineSpacing|spacingBefore|spacingAfter|firstLineIndent|hangingIndent)\b' \
+    src src-tauri/src
   assert_no_matches 'ADR-003 frontend native-menu path authority' \
     '\b(?:path|sourcePath|targetPath|filePath)\b' \
     src/ipc/nativeMenu.ts src/features/workspace-actions/useWorkspaceActions.ts

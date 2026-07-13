@@ -78,6 +78,20 @@ describe("DRAFT workspace shell", () => {
     expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
   });
 
+  it("keeps document and connectivity state in the bottom status bar", async () => {
+    render(<App />);
+    await screen.findByText("Not saved");
+
+    const header = document.querySelector<HTMLElement>(".workspace-header")!;
+    const status = screen.getByLabelText("Workspace status");
+
+    expect(within(header).queryByText("Not saved")).toBeNull();
+    expect(within(header).queryByText("Online")).toBeNull();
+    expect(within(status).getByText("Not saved")).toBeTruthy();
+    expect(within(status).getByText("Online")).toBeTruthy();
+    expect(within(status).getByText("Ready")).toBeTruthy();
+  });
+
   it("places the workspace title before panel headings", async () => {
     render(<App />);
     await screen.findByText("Not saved");

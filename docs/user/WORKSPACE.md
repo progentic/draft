@@ -2,10 +2,12 @@
 
 ## Create And Save Documents
 
-Use either the File menu or document action bar to choose **New Document**,
-**Open…**, **Close**, **Save**, **Save As…**, or **Export DOCX…**. Both surfaces
-run the same actions. DRAFT shows the current document name and a visible state
-such as Not saved, Unsaved changes, Saving, or Saved.
+Use either the File menu or document action bar for document commands. The bar
+keeps **New**, **Open…**, **Save**, and **Close** close to the writing surface.
+Choose **More document actions** for **Save As…**, **Export DOCX…**,
+**References**, and **Text checks**. These surfaces run the same actions. DRAFT
+shows the current document name in the header and states such as Not saved,
+Unsaved changes, Saving, or Saved in the bottom status bar.
 
 New, Open, and Close protect edited text. When changes have not been saved,
 DRAFT asks whether to save and continue, discard the changes, or keep editing.
@@ -94,7 +96,7 @@ implementation work.
 
 ## Work Offline
 
-Choose **Online** in the header to work offline for the current session. DRAFT
+Choose **Online** in the bottom status bar to work offline for the current session. DRAFT
 blocks new metadata requests and research links before external work begins.
 Editing, formatting review, manual references, local text checks, saving, and
 DOCX export remain local.
@@ -113,6 +115,8 @@ Press Tab to reach the document actions and formatting toolbar. In the
 formatting toolbar, use Left Arrow and Right Arrow to move, Home for the first
 enabled control, and End for the last. Disabled controls are skipped.
 
-Panels and operations announce pending, completed, empty, and failed states.
+The bottom status bar reports document, connectivity, background-operation, and
+concise recovery state. Panels and operations announce pending, completed,
+empty, and failed states.
 `Core v<version>` means the desktop interface reached the Rust runtime. A
 browser preview has no desktop core and reports it as unavailable.

@@ -40,6 +40,13 @@ The first Phase 48 increment covers the File menu. Other accepted desktop menu
 groups must be added only when their shipped actions can use the same
 dispatcher and state rules.
 
+The visible command bar stays intentionally compact. New remains a short
+icon-and-text action, Open, Save, and Close use familiar icons with accessible
+names, and Save As, Export DOCX, References, and Text checks live in one labeled
+overflow menu. Document, connectivity, operation, and recovery state appear in
+the bottom status bar instead of competing with the document name in the
+header.
+
 ## Technical Contract
 
 The File menu order is:
@@ -82,8 +89,11 @@ enabled and every document-dependent action disabled until the frontend sends
 current state.
 
 The shared dispatcher also groups the existing References and Text checks
-toolbar actions separately from document lifecycle and export actions. Those
-panel actions are not added to the native File menu.
+actions separately from document lifecycle and export actions. Those panel
+actions are available from the overflow menu and are not added to the native
+File menu. The overflow menu supports disabled-state skipping, Arrow, Home,
+End, and Escape behavior, while every icon-only action retains an accessible
+name and tooltip.
 
 ## Failure Modes
 
@@ -103,7 +113,7 @@ Rust tests pin menu order, labels, shortcuts, identifiers, initial state, typed
 command serialization, Save As source preservation, target rebinding, and
 cancellation. Frontend tests validate event payloads, state responses, shared
 dispatch, stale-action rejection, busy-state behavior, visible label parity,
-and Save versus Save As requests.
+overflow keyboard behavior, status placement, and Save versus Save As requests.
 
 `scripts/check-invariants.sh` enforces the menu files, action set, shared
 dispatcher, path-free frontend boundary, and absence of direct toolbar document

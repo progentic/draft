@@ -184,8 +184,11 @@ check_v1_usability_documentation() {
   require_document_text "${ledger}" '| UX-46-017 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-018 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-019 | UX-1 | Closed |'
-  require_document_text "${ledger}" '| UX-46-020 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-020 | UX-1 | Closed |'
   require_document_text "${ledger}" '| UX-46-021 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-022 | UX-1 | Open |'
+  require_document_text "${ledger}" '| UX-46-023 | UX-2 | Open |'
+  require_document_text "${ledger}" '| UX-46-024 | UX-1 | Open - governance blocked |'
   require_document_text docs/maintainers/RELEASE_CANDIDATE.md \
     'the complete eight-step workflow did not pass'
   require_document_text docs/maintainers/CONFIGURATION.md \
@@ -265,6 +268,10 @@ check_adr_003_accepted_state() {
   require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
     '## Technical Contract'
   require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md 'RC-08'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    'The visible command bar stays intentionally compact.'
+  require_document_text docs/maintainers/WORKSPACE_UI.md \
+    "| Status | \`WorkspaceStatusBar\` |"
   require_document_text docs/wiki/Workspace.md '## File Menu Shortcuts'
   require_document_text docs/user/WORKSPACE.md 'Save As…'
   require_adr_003_coverage_areas

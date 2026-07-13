@@ -2,11 +2,11 @@
 
 ## Create And Save A Document
 
-The File menu and document action bar contain the same **New Document**,
-**Open…**, **Close**, **Save**, **Save As…**, and **Export DOCX…** actions. The
-action bar also contains **References** and **Text checks**. The header shows the
-document name and whether it is not saved, has unsaved changes, is saving, or
-is saved.
+The File menu and document action bar use the same document commands. The bar
+keeps **New**, **Open…**, **Save**, and **Close** visible. Choose **More document
+actions** for **Save As…**, **Export DOCX…**, **References**, and **Text checks**.
+The header shows the document name. The bottom status bar shows whether it is
+not saved, has unsaved changes, is saving, or is saved.
 
 When edited text would be replaced or closed, choose **Save and continue**,
 **Discard changes**, or **Keep editing**. DRAFT does not autosave and cannot
@@ -92,7 +92,7 @@ export remains unavailable pending its separate review and implementation path.
 
 ## Work Offline
 
-Choose **Online** in the header to work offline for the current session. New
+Choose **Online** in the bottom status bar to work offline for the current session. New
 metadata requests and research links are blocked before external work begins.
 Local editing, review, references, saving, and export remain available.
 
@@ -110,6 +110,8 @@ network indicator.
 
 Actions that cannot run in the current document state are disabled. While a
 document or export operation is pending, competing actions remain unavailable.
+The bottom status bar also reports connectivity, background-operation, and
+concise recovery state.
 
 See [Troubleshooting](Troubleshooting) for message-specific recovery and
 [Current limitations](Current-Limitations) for the complete current boundary.

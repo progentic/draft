@@ -5,6 +5,7 @@ import { DocumentInspector } from "../components/DocumentInspector";
 import { DocumentOutline } from "../components/DocumentOutline";
 import { WorkspaceHeader } from "../components/WorkspaceHeader";
 import { WorkspaceCommandBar } from "../components/WorkspaceCommandBar";
+import { WorkspaceStatusBar } from "../components/WorkspaceStatusBar";
 import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
 import { EditorToolbar } from "../editor/EditorToolbar";
 import { useConnectivityMode } from "../features/connectivity/useConnectivityMode";
@@ -37,19 +38,14 @@ export function DraftWorkspace() {
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
       <WorkspaceHeader
-        connectivityState={connectivity.state}
-        documentStatus={documentSession.statusLabel}
         documentTitle={documentSession.title}
         isOutlineOpen={isOutlineOpen}
-        onRefreshConnectivity={() => void connectivity.refresh()}
-        onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}
         onToggleOutline={() => setIsOutlineOpen((isOpen) => !isOpen)}
       />
       <WorkspaceCommandBar
         actions={workspaceActions}
         activePanel={activePanel === "references" || activePanel === "text-review" ? activePanel : null}
         exportLabel={docxExport.label}
-        feedback={workspaceActions.feedback || docxExport.feedback || documentSession.feedback}
       />
       <WorkspaceBody
         activePanel={activePanel}
@@ -58,6 +54,15 @@ export function DraftWorkspace() {
         runtimeStatus={runtimeStatus}
         onClosePanel={() => setActivePanel(null)}
         onToggleFormattingReview={() => togglePanel("formatting")}
+      />
+      <WorkspaceStatusBar
+        connectivityState={connectivity.state}
+        documentStatus={documentSession.statusLabel}
+        exportPending={docxExport.disabled}
+        feedback={workspaceActions.feedback || docxExport.feedback || documentSession.feedback}
+        operation={documentSession.operation}
+        onRefreshConnectivity={() => void connectivity.refresh()}
+        onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}
       />
       <UnsavedChangesDialog
         action={documentSession.pendingAction}
