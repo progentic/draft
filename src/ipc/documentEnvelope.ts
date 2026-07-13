@@ -8,9 +8,14 @@ import {
   isTextFormatError,
   type TextFormatError,
 } from "../documents/textFormatting";
+import {
+  hasValidParagraphStyles,
+  isParagraphStyleError,
+  type ParagraphStyleError,
+} from "../documents/paragraphFormatting";
 
 export interface DocumentEnvelopeSnapshot {
-  schema_version: 1;
+  schema_version: 2;
   document_id: string;
   title: string;
   document: {
@@ -34,7 +39,14 @@ export type DocumentEnvelopeError =
   | { code: "invalid_document_root" }
   | { code: "invalid_document_content" }
   | { code: "invalid_citation_node"; path: string; cause: CitationNodeError }
-  | { code: "invalid_text_format"; path: string; cause: TextFormatError };
+  | { code: "invalid_text_format"; path: string; cause: TextFormatError }
+  | { code: "invalid_paragraph_style"; path: string; cause: ParagraphStyleError }
+  | {
+      code: "migration_failed";
+      from: number;
+      to: number;
+      cause: { code: "invalid_legacy_envelope" | "paragraph_style_in_legacy_envelope" };
+    };
 
 const ENVELOPE_FIELDS = ["schema_version", "document_id", "title", "document"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -44,13 +56,14 @@ export function isDocumentEnvelopeSnapshot(value: unknown): value is DocumentEnv
   return (
     isRecord(value) &&
     hasExactFields(value, ENVELOPE_FIELDS) &&
-    value.schema_version === 1 &&
+    value.schema_version === 2 &&
     isDocumentId(value.document_id) &&
     typeof value.title === "string" &&
     value.title.trim().length > 0 &&
     isDocumentRoot(value.document) &&
     hasValidCitationNodes(value.document) &&
-    hasValidTextFormatting(value.document)
+    hasValidTextFormatting(value.document) &&
+    hasValidParagraphStyles(value.document)
   );
 }
 
@@ -97,9 +110,29 @@ function hasValidEnvelopeErrorFields(value: Record<string, unknown>): boolean {
         typeof value.path === "string" &&
         isTextFormatError(value.cause)
       );
+    case "invalid_paragraph_style":
+      return (
+        hasExactFields(value, ["code", "path", "cause"]) &&
+        typeof value.path === "string" &&
+        isParagraphStyleError(value.cause)
+      );
+    case "migration_failed":
+      return hasValidMigrationFailure(value);
     default:
       return hasExactFields(value, ["code"]) && isFieldlessEnvelopeErrorCode(value.code);
   }
+}
+
+function hasValidMigrationFailure(value: Record<string, unknown>): boolean {
+  return (
+    hasExactFields(value, ["code", "from", "to", "cause"]) &&
+    Number.isSafeInteger(value.from) &&
+    Number.isSafeInteger(value.to) &&
+    isRecord(value.cause) &&
+    hasExactFields(value.cause, ["code"]) &&
+    (value.cause.code === "invalid_legacy_envelope" ||
+      value.cause.code === "paragraph_style_in_legacy_envelope")
+  );
 }
 
 function isFieldlessEnvelopeErrorCode(value: unknown): boolean {

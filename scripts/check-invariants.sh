@@ -1456,9 +1456,6 @@ check_adr_003_accepted_guard() {
   assert_no_matches 'ADR-003 primary-header status regression' \
     '\b(?:ConnectivityModeControl|connectivityState|documentStatus)\b' \
     src/components/WorkspaceHeader.tsx
-  assert_no_matches 'unapproved paragraph-formatting model before governance' \
-    '\b(?:ParagraphFormatting|paragraphSpacing|lineSpacing|spacingBefore|spacingAfter|firstLineIndent|hangingIndent)\b' \
-    src src-tauri/src
   assert_no_matches 'ADR-003 frontend native-menu path authority' \
     '\b(?:path|sourcePath|targetPath|filePath)\b' \
     src/ipc/nativeMenu.ts src/features/workspace-actions/useWorkspaceActions.ts
@@ -1477,12 +1474,53 @@ check_adr_004_accepted_guard() {
   require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
   assert_no_matches 'ADR-004 premature invariant acceptance' \
     '\| \x60INV-17\x60 \| Accepted \|' docs/INVARIANTS.md
-  assert_no_matches 'ADR-004 paragraph model before Phase 47' \
-    '\b(?:ParagraphStyle|paragraphStyle|lineSpacingHundredths|spaceBeforeTwips|spaceAfterTwips|leftIndentTwips|rightIndentTwips|specialIndent)\b' \
-    src-tauri/src src
+  require_file src-tauri/src/documents/paragraph_format.rs
+  require_file src-tauri/src/documents/migration.rs
+  require_file src/documents/paragraphFormatting.ts
+  require_file src/editor/ParagraphFormatting.ts
+  require_source_pattern 'pub const DOCUMENT_ENVELOPE_SCHEMA_VERSION: u64 = 2;' \
+    src-tauri/src/documents/envelope.rs
+  require_source_pattern 'pub(crate) fn from_persisted_json_value' \
+    src-tauri/src/documents/envelope.rs
+  require_source_pattern 'migrate_v1_to_v2' src-tauri/src/documents/migration.rs
+  require_source_pattern 'DocumentEnvelope::from_persisted_json_value' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'validate_document_paragraph_styles' \
+    src-tauri/src/documents/envelope.rs
+  require_source_pattern 'pub(crate) const MIN_LINE_SPACING_HUNDREDTHS: u64 = 100;' \
+    src-tauri/src/documents/paragraph_format.rs
+  require_source_pattern 'pub(crate) const MAX_LINE_SPACING_HUNDREDTHS: u64 = 300;' \
+    src-tauri/src/documents/paragraph_format.rs
+  require_source_pattern 'pub(crate) const LINE_SPACING_INCREMENT: u64 = 5;' \
+    src-tauri/src/documents/paragraph_format.rs
+  require_source_pattern 'pub(crate) const MAX_PARAGRAPH_SPACING_TWIPS: u64 = 2_880;' \
+    src-tauri/src/documents/paragraph_format.rs
+  require_source_pattern 'pub(crate) const MAX_SPECIAL_INDENT_TWIPS: u64 = 1_440;' \
+    src-tauri/src/documents/paragraph_format.rs
+  require_source_pattern 'export const MIN_LINE_SPACING_HUNDREDTHS = 100;' \
+    src/documents/paragraphFormatting.ts
+  require_source_pattern 'export const MAX_LINE_SPACING_HUNDREDTHS = 300;' \
+    src/documents/paragraphFormatting.ts
+  require_source_pattern 'export const LINE_SPACING_INCREMENT = 5;' \
+    src/documents/paragraphFormatting.ts
+  require_source_pattern 'export const MAX_PARAGRAPH_SPACING_TWIPS = 2_880;' \
+    src/documents/paragraphFormatting.ts
+  require_source_pattern 'export const MAX_SPECIAL_INDENT_TWIPS = 1_440;' \
+    src/documents/paragraphFormatting.ts
+  require_source_pattern 'hasValidParagraphStyles' src/ipc/documentEnvelope.ts
+  require_source_pattern 'ParagraphFormatting' src/editor/DraftEditor.tsx
+  require_source_pattern 'write_paragraph_style' src-tauri/src/exports/docx_package.rs
+  require_source_pattern 'legacy_document_migrates_in_memory_and_first_save_writes_version_two' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'paragraph_styles_emit_deterministic_docx_properties' \
+    src-tauri/src/exports/docx_tests.rs
+  require_source_pattern 'every_required_field_and_nested_field_is_enforced' \
+    src-tauri/src/documents/paragraph_format.rs
+  require_source_pattern 'ignores arbitrary pasted CSS and malformed DRAFT attributes' \
+    src/editor/ParagraphFormatting.test.ts
   assert_no_matches 'ADR-004 paragraph controls before Phase 47' \
     '\b(?:setParagraphAlignment|setLineSpacing|setParagraphSpacing|setParagraphIndent|resetParagraphFormatting|paragraph_formatting)\b' \
-    src-tauri/src src
+    src/components src/features src/app
   printf 'PASS ADR-004 accepted decision and proposed invariant guard\n'
 }
 
@@ -1512,7 +1550,7 @@ require_citation_schema_version() {
 
 require_envelope_schema_version() {
   local source_path="$1"
-  local declaration='pub const DOCUMENT_ENVELOPE_SCHEMA_VERSION: u64 = 1;'
+  local declaration='pub const DOCUMENT_ENVELOPE_SCHEMA_VERSION: u64 = 2;'
 
   if ! rg --quiet --fixed-strings "${declaration}" "${source_path}"; then
     printf 'FAILED Phase 11 schema version declaration\n' >&2

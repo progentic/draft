@@ -5,6 +5,10 @@ use serde_json::{Map, Value};
 use uuid::Uuid;
 
 use crate::citations::node::{CitationNodeError, validate_document_citations};
+use crate::documents::migration::{
+    DocumentMigrationError, LEGACY_DOCUMENT_ENVELOPE_SCHEMA_VERSION, migrate_v1_to_v2,
+};
+use crate::documents::paragraph_format::{ParagraphStyleError, validate_document_paragraph_styles};
 use crate::documents::text_format::{TextFormatError, validate_document_text_formats};
 
 const SCHEMA_VERSION_FIELD: &str = "schema_version";
@@ -24,9 +28,9 @@ const ENVELOPE_FIELDS: [&str; 4] = [
 /// Current document-envelope schema accepted by the Rust core.
 ///
 /// A different version must fail validation until an explicit migration owns it.
-pub const DOCUMENT_ENVELOPE_SCHEMA_VERSION: u64 = 1;
+pub const DOCUMENT_ENVELOPE_SCHEMA_VERSION: u64 = 2;
 
-/// Validated version 1 document envelope with no filesystem lifecycle.
+/// Validated current-version document envelope with no filesystem lifecycle.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct DocumentEnvelope {
     schema_version: u64,
@@ -68,6 +72,15 @@ pub enum DocumentEnvelopeError {
         path: String,
         cause: TextFormatError,
     },
+    InvalidParagraphStyle {
+        path: String,
+        cause: ParagraphStyleError,
+    },
+    MigrationFailed {
+        from: u64,
+        to: u64,
+        cause: DocumentMigrationError,
+    },
 }
 
 impl DocumentEnvelope {
@@ -95,6 +108,15 @@ impl DocumentEnvelope {
             title: parse_title(take_title(&mut fields)?)?,
             document: parse_document(take_document(&mut fields)?)?,
         })
+    }
+
+    /// Migrates one supported persisted envelope before current-schema validation.
+    pub(crate) fn from_persisted_json_value(value: Value) -> Result<Self, DocumentEnvelopeError> {
+        match persisted_schema_version(&value)? {
+            DOCUMENT_ENVELOPE_SCHEMA_VERSION => Self::from_json_value(value),
+            LEGACY_DOCUMENT_ENVELOPE_SCHEMA_VERSION => migrate_legacy_envelope(value),
+            found => Err(DocumentEnvelopeError::UnsupportedSchemaVersion { found }),
+        }
     }
 
     /// Returns the validated schema version.
@@ -159,8 +181,30 @@ impl DocumentEnvelopeError {
             Self::InvalidDocumentContent => "document content must be an array",
             Self::InvalidCitationNode { .. } => "document contains an invalid citation node",
             Self::InvalidTextFormat { .. } => "document contains invalid text formatting",
+            Self::InvalidParagraphStyle { .. } => "document contains invalid paragraph formatting",
+            Self::MigrationFailed { .. } => "document migration failed",
         }
     }
+}
+
+fn persisted_schema_version(value: &Value) -> Result<u64, DocumentEnvelopeError> {
+    value
+        .as_object()
+        .ok_or(DocumentEnvelopeError::InvalidEnvelopeObject)?
+        .get(SCHEMA_VERSION_FIELD)
+        .ok_or(DocumentEnvelopeError::MissingSchemaVersion)?
+        .as_u64()
+        .ok_or(DocumentEnvelopeError::InvalidSchemaVersion)
+}
+
+fn migrate_legacy_envelope(value: Value) -> Result<DocumentEnvelope, DocumentEnvelopeError> {
+    let migrated =
+        migrate_v1_to_v2(value).map_err(|cause| DocumentEnvelopeError::MigrationFailed {
+            from: LEGACY_DOCUMENT_ENVELOPE_SCHEMA_VERSION,
+            to: DOCUMENT_ENVELOPE_SCHEMA_VERSION,
+            cause,
+        })?;
+    DocumentEnvelope::from_json_value(migrated)
 }
 
 fn envelope_fields(value: Value) -> Result<Map<String, Value>, DocumentEnvelopeError> {
@@ -266,6 +310,12 @@ fn parse_document(value: Value) -> Result<Value, DocumentEnvelopeError> {
     })?;
     validate_document_text_formats(&value).map_err(|error| {
         DocumentEnvelopeError::InvalidTextFormat {
+            path: error.path,
+            cause: error.cause,
+        }
+    })?;
+    validate_document_paragraph_styles(&value).map_err(|error| {
+        DocumentEnvelopeError::InvalidParagraphStyle {
             path: error.path,
             cause: error.cause,
         }
@@ -380,7 +430,7 @@ mod tests {
 
     #[test]
     fn unsupported_schema_versions_fail() {
-        for version in [0, 2] {
+        for version in [0, 1, 3] {
             let mut value = minimal_envelope();
             value[SCHEMA_VERSION_FIELD] = json!(version);
 
@@ -517,10 +567,41 @@ mod tests {
     }
 
     #[test]
+    fn invalid_nested_paragraph_style_fails_with_path() {
+        let mut value = minimal_envelope();
+        value[DOCUMENT_FIELD] = json!({
+            "type": "doc",
+            "content": [{
+                "type": "paragraph",
+                "attrs": {
+                    "paragraphStyle": {
+                        "schemaVersion": 1,
+                        "alignment": "left",
+                        "lineSpacingHundredths": 101,
+                        "spaceBeforeTwips": 0,
+                        "spaceAfterTwips": 0,
+                        "leftIndentTwips": 0,
+                        "rightIndentTwips": 0,
+                        "specialIndent": { "kind": "none", "twips": 0 }
+                    }
+                }
+            }]
+        });
+
+        assert_eq!(
+            DocumentEnvelope::from_json_value(value),
+            Err(DocumentEnvelopeError::InvalidParagraphStyle {
+                path: "document.content[0].attrs.paragraphStyle".to_owned(),
+                cause: ParagraphStyleError::InvalidLineSpacing,
+            })
+        );
+    }
+
+    #[test]
     fn envelope_failure_shape_is_stable() {
         let errors = [
             DocumentEnvelopeError::MissingSchemaVersion,
-            DocumentEnvelopeError::UnsupportedSchemaVersion { found: 2 },
+            DocumentEnvelopeError::UnsupportedSchemaVersion { found: 3 },
             DocumentEnvelopeError::UnknownEnvelopeField {
                 field: "references".to_owned(),
             },
@@ -533,13 +614,22 @@ mod tests {
                 path: "document.content[0].marks[0]".to_owned(),
                 cause: TextFormatError::InvalidFontSize,
             },
+            DocumentEnvelopeError::InvalidParagraphStyle {
+                path: "document.content[0].attrs.paragraphStyle".to_owned(),
+                cause: ParagraphStyleError::InvalidParagraphIndent,
+            },
+            DocumentEnvelopeError::MigrationFailed {
+                from: 1,
+                to: 2,
+                cause: DocumentMigrationError::ParagraphStyleInLegacyEnvelope,
+            },
         ];
 
         assert_eq!(
             serde_json::to_value(errors).expect("errors should serialize"),
             json!([
                 { "code": "missing_schema_version" },
-                { "code": "unsupported_schema_version", "found": 2 },
+                { "code": "unsupported_schema_version", "found": 3 },
                 { "code": "unknown_envelope_field", "field": "references" },
                 { "code": "invalid_document_content" },
                 {
@@ -551,6 +641,17 @@ mod tests {
                     "code": "invalid_text_format",
                     "path": "document.content[0].marks[0]",
                     "cause": { "code": "invalid_font_size" }
+                },
+                {
+                    "code": "invalid_paragraph_style",
+                    "path": "document.content[0].attrs.paragraphStyle",
+                    "cause": { "code": "invalid_paragraph_indent" }
+                },
+                {
+                    "code": "migration_failed",
+                    "from": 1,
+                    "to": 2,
+                    "cause": { "code": "paragraph_style_in_legacy_envelope" }
                 }
             ]),
         );

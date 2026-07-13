@@ -566,7 +566,7 @@ function installDefaultCommands(overrides?: {
 
 function createdEnvelope() {
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: CREATED_ID,
     title: "Untitled document",
     document: {
@@ -578,7 +578,7 @@ function createdEnvelope() {
 
 function importedEnvelope() {
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: IMPORTED_ID,
     title: "notes.md",
     document: {
@@ -605,7 +605,7 @@ function selectText(node: ChildNode | null | undefined, start: number, end: numb
 
 function openedEnvelope() {
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: OPENED_ID,
     title: "Reopened research notes",
     document: {

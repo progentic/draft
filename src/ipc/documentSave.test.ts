@@ -137,7 +137,7 @@ describe("saveDocument", () => {
 
 function envelope(): DocumentEnvelopeSnapshot {
   return {
-    schema_version: 1,
+    schema_version: 2,
     document_id: DOCUMENT_ID,
     title: "Saved document",
     document: { type: "doc", content: [] },

@@ -58,7 +58,10 @@ mod tests {
         let value = serde_json::to_value(response).unwrap();
 
         assert_eq!(value["status"], "created");
-        assert_eq!(value["envelope"]["schema_version"], 1);
+        assert_eq!(
+            value["envelope"]["schema_version"],
+            crate::documents::envelope::DOCUMENT_ENVELOPE_SCHEMA_VERSION
+        );
         assert_eq!(value["envelope"]["title"], "Untitled document");
     }
 

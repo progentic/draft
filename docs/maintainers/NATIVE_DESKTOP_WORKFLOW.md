@@ -125,7 +125,8 @@ Apple Silicon executable. Direct review of exact artifact `75373ffb` passed the
 Finder, Dock, application-switcher, native-menu, window-branding, dispatcher,
 Save As, disabled-state, narrow-window, and keyboard checklist. This validates
 the bounded Phase 48 implementation, not a final UI design. `RC-08`, `GATE-48`,
-and governance-blocked paragraph formatting remain open.
+and paragraph controls plus their packaged evidence remain open under the
+accepted ADR-004 contract.
 
 ## Related Documents
 

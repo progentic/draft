@@ -38,7 +38,7 @@ For `.draft` and `.json`, Rust:
 
 1. Reads the selected bytes.
 2. Parses JSON.
-3. Validates the version 1 envelope through `DocumentEnvelope`.
+3. Migrates persisted version 1 input when required, then validates the current version 2 envelope through `DocumentEnvelope`.
 4. Rejects unsupported schema versions explicitly.
 5. Registers the envelope and source path as one live handle.
 6. Returns the validated envelope or a cancellation response.
@@ -108,6 +108,17 @@ Unknown top-level envelope fields remain invalid, so save cannot add reference
 records, embedded citation metadata, analysis output, or export state.
 Canonical font-family and whole-point font-size marks are validated nested
 document content, not new top-level envelope fields.
+
+Phase 47 makes document envelope version 2 current. A persisted version 1 file
+passes through the separate migration boundary and enters the registry as
+canonical version 2 state without changing source bytes. Direct snapshots sent
+to Save must already be version 2. The first successful save of a migrated
+document atomically writes version 2; opening or failed saving never rewrites
+the legacy source.
+
+Canonical paragraph data is optional nested block state. Rust validates it
+before path selection or writing. Absence means document defaults; migration
+does not fabricate a complete default object.
 
 ## Atomic Replacement
 
@@ -188,6 +199,8 @@ target, display name, and dirty state unchanged.
 `documentClose.ts` are the frontend lifecycle wrappers.
 `src/ipc/documentEnvelope.ts` mirrors the Rust envelope for response validation
 and request typing. Rust remains the identity and validation authority.
+`src/documents/paragraphFormatting.ts` mirrors only the accepted paragraph
+shape and bounds for early feedback.
 
 No frontend source imports `@tauri-apps/plugin-dialog`,
 `@tauri-apps/plugin-fs`, Node filesystem APIs, or another direct file surface.

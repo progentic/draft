@@ -7,7 +7,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 import { createUnsavedDocument } from "./documentCreate";
 
 const ENVELOPE = {
-  schema_version: 1,
+  schema_version: 2,
   document_id: "00000000-0000-4000-8000-000000000001",
   title: "Untitled document",
   document: { type: "doc", content: [] },

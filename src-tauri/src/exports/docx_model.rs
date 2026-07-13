@@ -2,6 +2,7 @@ use std::io::{self, Write};
 
 use serde_json::{Map, Value};
 
+use crate::documents::paragraph_format::{ParagraphStyle, parse_paragraph_style_attrs};
 use crate::documents::text_format::{
     FontFamily, FontSizePoints, parse_font_family_attrs, parse_font_size_attrs,
 };
@@ -11,9 +12,10 @@ use super::docx::{
 };
 
 const ROOT_FIELDS: [&str; 2] = ["type", "content"];
-const PARAGRAPH_FIELDS: [&str; 2] = ["type", "content"];
+const PARAGRAPH_FIELDS: [&str; 3] = ["type", "attrs", "content"];
 const HEADING_FIELDS: [&str; 3] = ["type", "attrs", "content"];
-const HEADING_ATTR_FIELDS: [&str; 1] = ["level"];
+const PARAGRAPH_ATTR_FIELDS: [&str; 1] = ["paragraphStyle"];
+const HEADING_ATTR_FIELDS: [&str; 2] = ["level", "paragraphStyle"];
 const TEXT_FIELDS: [&str; 3] = ["type", "text", "marks"];
 const HARD_BREAK_FIELDS: [&str; 1] = ["type"];
 const MARK_FIELDS: [&str; 1] = ["type"];
@@ -24,8 +26,15 @@ pub(super) struct DocxDocument {
 }
 
 pub(super) enum DocxBlock {
-    Paragraph(Vec<DocxInline>),
-    Heading { level: u8, content: Vec<DocxInline> },
+    Paragraph {
+        style: Option<ParagraphStyle>,
+        content: Vec<DocxInline>,
+    },
+    Heading {
+        level: u8,
+        style: Option<ParagraphStyle>,
+        content: Vec<DocxInline>,
+    },
 }
 
 pub(super) enum DocxInline {
@@ -101,9 +110,10 @@ fn parse_paragraph(
     path: &DocxContentPath,
 ) -> Result<DocxBlock, DocxExportError> {
     require_exact_fields(fields, &PARAGRAPH_FIELDS, path)?;
-    Ok(DocxBlock::Paragraph(parse_optional_inline_content(
-        fields, path,
-    )?))
+    Ok(DocxBlock::Paragraph {
+        style: parse_block_style(fields, &PARAGRAPH_ATTR_FIELDS, path)?,
+        content: parse_optional_inline_content(fields, path)?,
+    })
 }
 
 fn parse_heading(
@@ -112,8 +122,26 @@ fn parse_heading(
 ) -> Result<DocxBlock, DocxExportError> {
     require_exact_fields(fields, &HEADING_FIELDS, path)?;
     let level = parse_heading_level(fields, path)?;
+    let style = parse_block_style(fields, &HEADING_ATTR_FIELDS, path)?;
     let content = parse_optional_inline_content(fields, path)?;
-    Ok(DocxBlock::Heading { level, content })
+    Ok(DocxBlock::Heading {
+        level,
+        style,
+        content,
+    })
+}
+
+fn parse_block_style(
+    fields: &Map<String, Value>,
+    allowed_attrs: &[&str],
+    path: &DocxContentPath,
+) -> Result<Option<ParagraphStyle>, DocxExportError> {
+    let Some(attrs) = fields.get("attrs") else {
+        return Ok(None);
+    };
+    let attr_fields = attrs.as_object().ok_or_else(|| invalid_structure(path))?;
+    require_exact_fields(attr_fields, allowed_attrs, path)?;
+    parse_paragraph_style_attrs(Some(attrs)).map_err(|_| invalid_structure(path))
 }
 
 fn parse_heading_level(

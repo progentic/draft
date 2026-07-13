@@ -59,7 +59,9 @@ Tiptap node kinds remain opaque document data.
 `DocumentEnvelope::from_json_value` runs this scan after root validation. Open
 therefore rejects an invalid citation before registry insertion; save rejects
 one before path selection, serialization, registry mutation, or disk writes.
-The document envelope remains schema version 1 and gains no citation fields.
+The citation attrs remain schema version 1 and add no top-level document
+fields. The containing document envelope is now version 2 under its separate
+migration contract.
 
 ## Resolution Boundary
 

@@ -188,9 +188,9 @@ This pass closes findings `UX-46-021`, `UX-46-022`, and `UX-46-023` for the
 tested Phase 48 implementation. It is not approval of the final UI design; the
 broader v3 workspace target, paragraph formatting, research tools, sharing, and
 later visual refinement remain outside this evidence. Finding `UX-46-024`
-remains open and governance-blocked under ADR-004, with no paragraph-formatting
-product implementation in this artifact. `RC-08`, `GATE-48`, and every other RC
-and GATE row remain open.
+remains open. This historical artifact predates ADR-004's accepted Phase 47
+model implementation and contains no paragraph controls. `RC-08`, `GATE-48`,
+and every other RC and GATE row remain open.
 
 ### Replacement Artifact Product-Boundary Review
 
@@ -263,7 +263,7 @@ No untested task is counted as passed.
 | UX-46-021 | UX-1 | Closed | Exact artifact `75373ffb` passed direct review of the purple identity in the application, Finder, Dock, and application switcher after the canonical icon chain passed mechanical comparison. | Closed for the Phase 48 identity defect. This does not approve a final UI design or final release package. |
 | UX-46-022 | UX-1 | Closed | Exact artifact `75373ffb` passed direct review of the compact top bar, icon-only common actions, overflow behavior, shortcuts, focus, state-sensitive enablement, shared dispatch, and narrow-window behavior. | Closed for the over-labeled Phase 48 command-bar defect. The documented v3 workspace remains a later design target. |
 | UX-46-023 | UX-2 | Closed | Exact artifact `75373ffb` kept document, connectivity, operation, and recovery state in the bottom status bar during direct packaged review. | Closed for the Phase 48 header-status placement defect. Later status-bar refinements remain subject to the v3 target and release validation. |
-| UX-46-024 | UX-1 | Open - governance blocked | Manual review found that the editor lacks the paragraph controls required for alignment, line and paragraph spacing, and indentation. | Do not implement in PR #39. A separate governed proposal must define the persistent paragraph model, validation, Tiptap commands, mixed-selection and reset behavior, DOCX mapping and lossiness, compatibility and migration, enforcement, and manual evidence before product implementation begins. |
+| UX-46-024 | UX-1 | Open - implementation and evidence pending | Manual review found that the editor lacks the paragraph controls required for alignment, line and paragraph spacing, and indentation. ADR-004 is accepted, and Phase 47 implements the canonical data, migration, persistence, editor-preservation, and DOCX-export foundation. | Keep the finding open until commands, mixed-selection and reset behavior, external-format fidelity, visible controls, accessibility, and packaged manual evidence satisfy the accepted contract. The model foundation alone does not close the finding. |
 
 Every RC and GATE row remains open. Closing these three bounded findings does not
 close a release blocker or roadmap gate.
