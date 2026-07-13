@@ -1,5 +1,5 @@
 ---
-status: Proposed
+status: Accepted
 adr: ADR-004
 upholds: [INV-03, INV-04, INV-09, INV-17, INV-UX-01, INV-UX-06]
 owners: [core, frontend, release]
@@ -7,15 +7,16 @@ owners: [core, frontend, release]
 
 # Paragraph Formatting
 
-This contract is Proposed and non-binding. It defines the behavior ADR-004
-would authorize if the architecture decision is accepted. No product code may
-rely on it while the proposal remains open.
+This accepted contract defines the paragraph-formatting behavior authorized by
+ADR-004. Phase 47 may implement the underlying model, migration, persistence,
+and format mappings. Paragraph controls remain blocked until that capability
+and its behavioral evidence exist.
 
-The draft may reference proposed `INV-17`, but no accepted contract or product
-implementation may claim to uphold that invariant yet. Accepting ADR-004 would
-authorize the architecture and contract direction; it would not by itself
-prove `INV-17` enforcement or make the invariant Accepted. A separate governed
-status change requires implemented enforcement and evidence.
+This contract references proposed `INV-17`, but no product implementation may
+claim to uphold that invariant yet. ADR-004 acceptance authorizes the
+architecture and contract direction; it does not by itself prove `INV-17`
+enforcement or make the invariant Accepted. A separate governed status change
+requires implemented enforcement and evidence.
 
 ## Purpose
 

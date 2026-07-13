@@ -101,22 +101,22 @@ claim implementation, user documentation, or release evidence.
 | `ADR003-COV-REALIGNMENT` | Mandatory plain-language, maintainer-onboarding, terminology, cross-link, and fifth-phase drift realignment | Preserved Phase 50. |
 | `ADR003-COV-GATE-REMAP` | Remapped security, final candidate, and release phases | Phases 51, 52, and 53 plus the accepted gate chain. |
 
-## ADR-004 Proposed Coverage
+## ADR-004 Accepted Coverage
 
-These identifiers cover the non-binding paragraph-formatting proposal. They do
-not claim implementation, accepted policy, user documentation, or release
-evidence.
+These identifiers cover the accepted paragraph-formatting decision and
+contract. They do not claim implementation, accepted `INV-17` enforcement,
+user documentation, or release evidence.
 
-| Identifier | Proposed area | Owning proposal surface |
+| Identifier | Accepted area | Owning accepted surface |
 | :--- | :--- | :--- |
-| `ADR004-COV-MODEL` | Supported paragraph properties and canonical bounds | ADR-004 decision and draft contract values. |
-| `ADR004-COV-SERIALIZATION` | Strict block serialization and defaults | Draft contract serialized shape. |
-| `ADR004-COV-EDITOR` | Tiptap command, focus, undo, and paste semantics | Draft contract editor semantics. |
-| `ADR004-COV-MIXED` | Collapsed, ranged, multi-block, and mixed selections | Draft contract editor semantics and tests. |
-| `ADR004-COV-DOCX` | DOCX property mapping, fidelity, and lossiness | Draft contract DOCX mapping. |
-| `ADR004-COV-MIGRATION` | Version 1 to version 2 migration and non-mutation | Draft contract migration and compatibility. |
-| `ADR004-COV-FAILURE` | Validation and typed failure behavior | Draft contract validation and failure modes. |
-| `ADR004-COV-EVIDENCE` | Automated and packaged acceptance evidence | ADR-004 enforcement and draft contract tests. |
+| `ADR004-COV-MODEL` | Supported paragraph properties and canonical bounds | ADR-004 decision and accepted contract values. |
+| `ADR004-COV-SERIALIZATION` | Strict block serialization and defaults | Accepted contract serialized shape. |
+| `ADR004-COV-EDITOR` | Tiptap command, focus, undo, and paste semantics | Accepted contract editor semantics. |
+| `ADR004-COV-MIXED` | Collapsed, ranged, multi-block, and mixed selections | Accepted contract editor semantics and tests. |
+| `ADR004-COV-DOCX` | DOCX property mapping, fidelity, and lossiness | Accepted contract DOCX mapping. |
+| `ADR004-COV-MIGRATION` | Version 1 to version 2 migration and non-mutation | Accepted contract migration and compatibility. |
+| `ADR004-COV-FAILURE` | Validation and typed failure behavior | Accepted contract validation and failure modes. |
+| `ADR004-COV-EVIDENCE` | Automated and packaged acceptance evidence | ADR-004 enforcement and accepted contract tests. |
 
 ## Detected Drift And Resolution
 

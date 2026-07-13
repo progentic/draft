@@ -1,8 +1,9 @@
 # ADR-004: Govern Paragraph Formatting
 
 Date: 2026-07-13
-Status: Proposed
+Status: Accepted
 Deciders: @progentic
+Accepted through: PR #40
 
 ## Context
 
@@ -44,14 +45,14 @@ The following alternatives were considered:
 
 ## Decision
 
-If accepted, DRAFT will use one strict paragraph-formatting model shared by the
+DRAFT will use one strict paragraph-formatting model shared by the
 document envelope, Tiptap commands, Rust validation, persistence, migration,
 and supported document-format mappings.
 
 Phase 47 will own the data model and interoperability implementation. Phase 48
 may expose paragraph controls only after the Phase 47 boundary exists and its
 behavioral evidence passes. This decision does not renumber either phase or
-authorize implementation while this ADR is Proposed.
+authorize paragraph controls before the underlying capability is proven.
 
 The proposed v1 property set is:
 
@@ -66,8 +67,8 @@ The proposed v1 property set is:
 Paragraph formatting is block state for paragraphs, headings, and paragraph
 content inside supported list structures. It is not an inline mark. The
 canonical values, bounds, command semantics, DOCX mapping, migration behavior,
-and evidence requirements are specified in the non-binding draft contract at
-`docs/drafts/PARAGRAPH_FORMATTING.md`.
+and evidence requirements are specified in the accepted contract at
+`docs/contracts/PARAGRAPH_FORMATTING.md`.
 
 No arbitrary CSS, HTML style, font substitution, or unknown paragraph
 attribute may enter the persistent model. Unsupported values fail before
@@ -107,25 +108,25 @@ maintainer documentation, user limitations, and release-gate enforcement.
 
 ## Enforcement
 
-While this ADR is Proposed, repository checks require:
+Following acceptance, repository checks require:
 
-- ADR-004 and its draft contract to remain explicitly non-binding;
+- ADR-004 and its promoted contract to remain explicitly Accepted;
 - `INV-17` to remain Proposed;
-- accepted Roadmap, PhaseMap, and contracts to remain unchanged;
 - all current release rows to remain open; and
-- paragraph-model identifiers, commands, controls, serialization, migration,
-  and DOCX implementation to remain absent from product source.
+- paragraph controls to remain absent until Phase 47 supplies the model and
+  behavioral evidence.
 
-If accepted, the proposal guard must be replaced by Phase 47 behavioral tests
+Phase 47 must replace the acceptance-record absence guard with behavioral tests
 covering strict validation, migration non-mutation, selection semantics,
 save/reopen, DOCX fidelity, source preservation, typed failures, and bounded
 resource use. Phase 48 must then add keyboard, focus, accessible-name,
 mixed-state, reset, and packaged interaction evidence before its paragraph
 controls can close.
 
-The normal architecture review requires the `architecture` label, a required
-self-review, green local and hosted verification, and the full 24-hour cooling
-period measured from Pull Request creation. Merge is the acceptance event.
+PR #40 merged the decision after required self-review, green local and hosted
+verification, and a recorded one-time owner override of the remaining cooling
+period. The override did not amend `GOVERNANCE.md` or accept proposed
+`INV-17`; merge remained the acceptance event.
 
 ## Links
 
@@ -133,4 +134,4 @@ period measured from Pull Request creation. Merge is the acceptance event.
 - `INVARIANTS.md` `INV-03`, `INV-04`, `INV-09`, and proposed `INV-17`
 - ADR-003
 - `docs/contracts/V1_INTEROPERABILITY_AND_DESKTOP_WORKFLOWS.md`
-- `docs/drafts/PARAGRAPH_FORMATTING.md`
+- `docs/contracts/PARAGRAPH_FORMATTING.md`

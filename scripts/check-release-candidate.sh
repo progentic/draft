@@ -20,7 +20,7 @@ main() {
   check_phase45_release_rule
   check_v1_usability_acceptance
   check_adr_003_accepted_gate
-  check_adr_004_proposal_gate
+  check_adr_004_accepted_gate
 
   printf 'INFO Phase 52 remains blocked by RC-01 through RC-08 and GATE-46 through GATE-51.\n'
   printf 'Release-candidate hardening baseline passed.\n'
@@ -116,8 +116,9 @@ check_adr_003_accepted_gate() {
   fi
 }
 
-check_adr_004_proposal_gate() {
+check_adr_004_accepted_gate() {
   local adr='docs/adr/004-govern-paragraph-formatting.md'
+  local contract='docs/contracts/PARAGRAPH_FORMATTING.md'
   local release='docs/maintainers/RELEASE_CANDIDATE.md'
   local open_rows=(
     RC-01 RC-02 RC-03 RC-04 RC-05 RC-06 RC-07 RC-08
@@ -125,17 +126,19 @@ check_adr_004_proposal_gate() {
   )
   local row
 
-  require_literal 'Status: Proposed' "${adr}"
+  require_literal 'Status: Accepted' "${adr}"
+  require_literal 'Accepted through: PR #40' "${adr}"
+  require_literal 'status: Accepted' "${contract}"
   require_literal "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
   for row in "${open_rows[@]}"; do
     require_literal "| ${row} |" "${release}"
     if rg --quiet --fixed-strings "| ${row} |" "${release}" && \
       rg --quiet --regexp "^\\| ${row} \\| [^|]+ \\| Closed \\|" "${release}"; then
-      printf 'ADR-004 proposal cannot close release row: %s\n' "${row}" >&2
+      printf 'ADR-004 acceptance cannot close release row: %s\n' "${row}" >&2
       return 1
     fi
   done
-  printf 'PASS ADR-004 proposed release-gate posture\n'
+  printf 'PASS ADR-004 accepted decision and open release-gate posture\n'
 }
 
 require_gate_usability_row() {
