@@ -77,7 +77,7 @@ No invariant may be marked `Accepted` unless it has both local and GitHub Action
 | `INV-14` | Accepted | Model-generated output remains explicitly classified as generated analysis. It must not be tagged, persisted, or promoted as verified source evidence. | `ARCHITECTURE.md` §3.2 | Phase 27 preserves typed `UserDocument` and `VerifiedSourceEvidence` context blocks, classifies every stream event as `GeneratedAnalysis`, reports evidence IDs only as context scope, and rejects unbounded input or output. Tests cover provenance, serialization, cancellation, and failures; scans deny provider, secret, network, persistence, mutation, Tauri-start, frontend, Python, and spawn authority. | The `verify` job runs the same Phase 27 tests and source-boundary scans through `scripts/verify.sh`. |
 | `INV-15` | Accepted | Text-analysis output is review-only. A helper finding cannot mutate source text, carry an automatic replacement, or become durable without a separate Rust-owned user-action path. | `ARCHITECTURE.md` §3.4 and §11 | Phase 29 accepts only five closed finding codes and validated UTF-8 byte ranges, maps all review wording in Rust, and exposes immutable results with no source copy, replacement, score, apply, persistence, command, event, or frontend path. Rust/Python tests cover heuristics, limits, offsets, explanations, and false-positive guards; scans deny mutation and authority expansion. | The `verify` job runs the same Phase 29 Rust/Python tests and text-analysis boundary scans through `scripts/verify.sh`. |
 | `INV-16` | Accepted | Formatting findings are review-only consistency signals. A supported style identifier does not claim complete conformance, and no finding changes content without an explicit current-target user action. | `ARCHITECTURE.md` §3.3 and §11 | Phase 31 validates a bounded immutable snapshot and returns content-free indexed findings. Phase 34 adds a typed command, closed actions, generation invalidation, and exact-node guards. Citation findings remain inspect-only; heading apply requires user input. Tests and scans deny persistence, filesystem, export, PDF, Python, network, worker, and automatic mutation authority. | The `verify` job runs the Rust domain/command tests, frontend IPC/generation/target/interaction tests, and formatting-boundary scans through `scripts/verify.sh`. |
-| `INV-17` | Proposed | Paragraph formatting uses one strict canonical model across editor behavior, Rust validation, persistence, migration, and supported format mappings. Unsupported values and undisclosed lossy saves fail before mutation. | Accepted ADR-004 and `ARCHITECTURE.md` §15.1 | Phase 47 implements strict Rust and TypeScript values, current-only v2 parsing, detached v1 migration, persistence non-mutation, editor JSON preservation, deterministic DOCX properties, bounded DOCX paragraph import, closed fidelity classes, Rust-owned source provenance, and exact or consented-normalization source replacement with rollback. Unsupported save-back remains denied, and no-edit/cancel/failure tests preserve source bytes. Controls, complete format coverage, compatible-reader comparison, and packaged evidence remain absent. | The `verify` job requires the model, importer, fidelity/provenance types, resource limits, named non-mutation and rollback tests, path-free DTO validation, schema v2, and the migration boundary. It denies paragraph controls and visible source-write consumption, keeps the invariant Proposed, and cannot substitute structural checks for external-format and human evidence. |
+| `INV-17` | Proposed | Paragraph formatting uses one strict canonical model across editor behavior, Rust validation, persistence, migration, and supported format mappings. Unsupported values and undisclosed lossy saves fail before mutation. | Accepted ADR-004 and `ARCHITECTURE.md` §15.1 | Phase 47 implements strict Rust and TypeScript values, current-only v2 parsing, detached v1 migration, persistence non-mutation, editor JSON preservation, deterministic DOCX properties, bounded DOCX paragraph import, closed fidelity classes, Rust-owned source provenance, and exact or consented-normalization source replacement with rollback. Unsupported save-back remains denied, and no-edit/cancel/failure tests preserve source bytes. The visible workflow keeps `.draft` Save, DOCX export, and confirmed Save Back distinct. Controls, complete format coverage, and packaged evidence remain absent. | The `verify` job requires the model, importer, fidelity/provenance types, resource limits, named non-mutation and rollback tests, path-free DTO validation, one exact visible source-write consumer, schema v2, and the migration boundary. It denies paragraph controls and additional source-write authority, keeps the invariant Proposed, and cannot substitute structural checks or local compatible-reader checks for complete external-format and human evidence. |
 | `INV-UX-01` | Accepted | Every enabled visible control invokes an implemented user workflow. Controls for unavailable capabilities do not appear active. | `ARCHITECTURE.md` §4.1 and §5.1 | Interaction tests and the v1 usability gate require implemented control outcomes and explicit unavailable states before workflow closure. | The `verify` job runs the same interaction tests and conditional release-evidence checks. |
 | `INV-UX-02` | Accepted | User-facing text does not expose internal command, schema, provider, registry, job, IPC, or persistence terminology. | `ARCHITECTURE.md` §4.1 and §12 | Phase 49 inventories every visible string; prohibited implementation wording remains a release finding until corrected or removed. | The `verify` job requires the accepted contracts and blocks gate closure without the visible-language evidence ledger. |
 | `INV-UX-03` | Accepted | Long-running or fallible visible operations expose deterministic pending, success, and failure states. | `ARCHITECTURE.md` §5.2, §5.3, and §12 | Operation interaction tests and perceived-performance evidence must prove visible state transitions without duplicate activation. | The `verify` job runs interaction tests and blocks Phase 49 closure without the required state and timing evidence. |
@@ -456,9 +456,11 @@ replacement, writes through `write_document_atomically`, commits the new
 fingerprint only after replacement, and restores the prior complete bytes if
 durability or registry commit fails. Cancellation, denied lossiness, source
 change, compilation failure, and pre-replacement write failure do not mutate
-the source or registry. The typed frontend client receives no path or
-fingerprint and is not yet wired to a visible workflow. `INV-17`, `RC-07`, and
-`GATE-47` remain open.
+the source or registry. The path-free visible workflow requests typed
+eligibility, requires source-replacement confirmation, and preserves source
+identity after success. Local macOS reader checks open exact and accepted-
+normalized output, while packaged human evidence remains pending. `INV-17`,
+`RC-07`, and `GATE-47` remain open.
 
 ---
 
@@ -847,10 +849,12 @@ mutation.
 
 This invariant remains Proposed. Phase 47 implements the canonical values,
 validation, version 1 to version 2 migration, editor JSON preservation,
-persistence behavior, and DOCX property mapping. It does not yet implement
-paragraph commands, mixed-selection behavior, reset behavior, external-format
-imports, lossiness handling, or packaged controls. Those remaining behaviors
-and evidence are required before a governed change may mark `INV-17` Accepted.
+persistence behavior, DOCX property mapping, bounded DOCX import, closed
+lossiness handling, and confirmed same-format replacement. It does not yet
+implement paragraph commands, mixed-selection behavior, reset behavior,
+complete external-format coverage, or packaged controls. Those remaining
+behaviors and evidence are required before a governed change may mark `INV-17`
+Accepted.
 
 Minimum current verification:
 

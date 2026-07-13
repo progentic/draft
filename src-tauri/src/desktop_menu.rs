@@ -13,7 +13,7 @@ struct FileMenuSpec {
     starts_group: bool,
 }
 
-const FILE_MENU_SPECS: [FileMenuSpec; 6] = [
+const FILE_MENU_SPECS: [FileMenuSpec; 7] = [
     file_item(
         NativeMenuEvent::NewDocument,
         "New Document",
@@ -32,6 +32,11 @@ const FILE_MENU_SPECS: [FileMenuSpec; 6] = [
         NativeMenuEvent::SaveDocumentAs,
         "Save As…",
         "CmdOrCtrl+Shift+S",
+        false,
+    ),
+    file_item_without_shortcut(
+        NativeMenuEvent::SaveBackToSource,
+        "Save Back to Source",
         false,
     ),
     file_item(
@@ -56,6 +61,19 @@ const fn file_item(
     }
 }
 
+const fn file_item_without_shortcut(
+    action: NativeMenuEvent,
+    label: &'static str,
+    starts_group: bool,
+) -> FileMenuSpec {
+    FileMenuSpec {
+        action,
+        label,
+        accelerator: None,
+        starts_group,
+    }
+}
+
 pub(crate) struct NativeMenuItems {
     entries: Vec<(NativeMenuEvent, MenuItem<Wry>)>,
 }
@@ -67,6 +85,7 @@ pub(crate) struct NativeMenuAvailability {
     pub(crate) can_close: bool,
     pub(crate) can_save: bool,
     pub(crate) can_save_as: bool,
+    pub(crate) can_save_back: bool,
     pub(crate) can_export: bool,
 }
 
@@ -132,6 +151,7 @@ impl NativeMenuAvailability {
             NativeMenuEvent::CloseDocument => self.can_close,
             NativeMenuEvent::SaveDocument => self.can_save,
             NativeMenuEvent::SaveDocumentAs => self.can_save_as,
+            NativeMenuEvent::SaveBackToSource => self.can_save_back,
             NativeMenuEvent::ExportDocx => self.can_export,
         }
     }
@@ -191,6 +211,7 @@ fn action_id(action: NativeMenuEvent) -> &'static str {
         NativeMenuEvent::CloseDocument => "file.close_document",
         NativeMenuEvent::SaveDocument => "file.save_document",
         NativeMenuEvent::SaveDocumentAs => "file.save_document_as",
+        NativeMenuEvent::SaveBackToSource => "file.save_back_to_source",
         NativeMenuEvent::ExportDocx => "file.export_docx",
     }
 }
@@ -242,6 +263,12 @@ mod tests {
                     false
                 ),
                 (
+                    "file.save_back_to_source",
+                    "Save Back to Source",
+                    None,
+                    false
+                ),
+                (
                     "file.export_docx",
                     "Export DOCX…",
                     Some("CmdOrCtrl+Shift+E"),
@@ -280,6 +307,7 @@ mod tests {
             can_close: true,
             can_save: false,
             can_save_as: true,
+            can_save_back: false,
             can_export: false,
         };
 
@@ -288,6 +316,7 @@ mod tests {
         assert!(request.enabled(NativeMenuEvent::CloseDocument));
         assert!(!request.enabled(NativeMenuEvent::SaveDocument));
         assert!(request.enabled(NativeMenuEvent::SaveDocumentAs));
+        assert!(!request.enabled(NativeMenuEvent::SaveBackToSource));
         assert!(!request.enabled(NativeMenuEvent::ExportDocx));
     }
 }

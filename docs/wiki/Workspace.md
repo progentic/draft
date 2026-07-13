@@ -3,9 +3,10 @@
 ## Create And Save A Document
 
 Use the compact document controls at the top of the workspace for common
-actions. Additional commands, including Save As, export, References, and Text
-checks, are available from the **More** (`…`) menu. The same document actions
-are also available from the macOS **File** menu.
+actions. Additional commands, including Save As, Save Back to Source when
+available, export, References, and Text checks, are available from the **More**
+(`…`) menu. The same document actions are also available from the macOS
+**File** menu.
 
 DRAFT shows the document name near the top of the workspace. Save state,
 import state, connectivity, active operations, and concise feedback appear in
@@ -18,14 +19,18 @@ changes explicitly.
 
 **New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
 document, imports a UTF-8 `.txt` or `.md` file as editable text, or reads the
-supported paragraph subset from a `.docx` file. Imported content shows its
-source filename and `Imported, unsaved`; the filename does not become a save
-location. The first Save asks for a new `.draft` destination, and the original
-text, Markdown, or DOCX file remains unchanged. After Save succeeds, the header
-shows the selected `.draft` filename. Later saves reuse that target without
-reopening the dialog. Markdown syntax is kept as literal text. DOCX import
-reports when valid content requires source preservation or cannot be represented
-safely.
+supported paragraph subset from a `.docx` file. Text and Markdown imports show
+their source filename and `Imported, unsaved`; the filename does not become a
+save location. Their first Save asks for a new `.draft` destination. After Save
+succeeds, the header shows the selected `.draft` filename and later saves reuse
+that target. Markdown syntax is kept as literal text.
+
+An opened DOCX remains associated with its Rust-owned source identity. Ordinary
+**Save** creates a `.draft` document, and **Export DOCX…** creates a separate
+copy. **Save Back to Source** appears only for a DOCX source. It checks whether
+the current content and source can be replaced safely, shows an overwrite or
+normalization warning, and requires confirmation. Unsupported, lossy, missing,
+or externally changed sources remain unavailable.
 
 **Save As…** chooses a new `.draft` target while preserving the previous file.
 After it succeeds, later Save operations use the new target. Cancellation or a
@@ -118,6 +123,7 @@ network indicator.
 - Command-W: Close
 - Command-S: Save
 - Shift-Command-S: Save As
+- Save Back to Source: no shortcut
 - Shift-Command-E: Export DOCX
 
 Actions that cannot run in the current document state are disabled. While a

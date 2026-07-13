@@ -129,6 +129,7 @@ describe("Phase 46 visible workflows", () => {
       canClose: true,
       canSave: true,
       canSaveAs: true,
+      canSaveBack: false,
       canExport: true,
     }));
   });
@@ -249,7 +250,7 @@ describe("Phase 46 visible workflows", () => {
     expect(screen.getByText("notes.md")).toBeTruthy();
   });
 
-  it("treats a path-free DOCX import as registered but unsaved", async () => {
+  it("keeps path-free DOCX source identity separate from DRAFT Save", async () => {
     const user = userEvent.setup();
     const saveRequests: Record<string, unknown>[] = [];
     installDefaultCommands({
@@ -273,11 +274,11 @@ describe("Phase 46 visible workflows", () => {
     await user.click(screen.getByRole("button", { name: "Open…" }));
     expect(
       await screen.findByText(
-        "DOCX imported. Save as a DRAFT document to keep edits; the original stays unchanged.",
+        "DOCX opened. Save creates a DRAFT document; Save Back to Source replaces the DOCX only after confirmation.",
       ),
     ).toBeTruthy();
     expect(screen.getByText("paper.docx")).toBeTruthy();
-    expect(screen.getByText("Imported, unsaved")).toBeTruthy();
+    expect(screen.getByText("Source unchanged")).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Paper.draft")).toBeTruthy();
@@ -293,6 +294,161 @@ describe("Phase 46 visible workflows", () => {
       "save_document",
       "close_document",
     ]);
+  });
+
+  it("confirms exact Save Back and preserves the external display identity", async () => {
+    const user = userEvent.setup();
+    const decisions: string[] = [];
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: externalSummary(),
+      }),
+      externalSave: async (args) => {
+        const request = args.request as { decision: string };
+        decisions.push(request.decision);
+        return request.decision === "inspect"
+          ? {
+              status: "eligibility",
+              documentId: IMPORTED_ID,
+              displayName: "paper.docx",
+              disposition: "allowed_exact",
+            }
+          : {
+              status: "saved",
+              documentId: IMPORTED_ID,
+              displayName: "paper.docx",
+              bytesWritten: 2048,
+              disposition: "allowed_exact",
+            };
+      },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    await user.type(screen.getByRole("textbox", { name: "Document editor" }), " revised");
+
+    expect(screen.getByText("Source modified")).toBeTruthy();
+    await clickWorkspaceAction(user, "Save Back to Source");
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "Replace the source DOCX?",
+    });
+    expect(within(dialog).getByText(/replace paper\.docx/)).toBeTruthy();
+    await user.click(within(dialog).getByRole("button", { name: "Replace source" }));
+
+    expect(await screen.findByText("Saved back to paper.docx.")).toBeTruthy();
+    expect(screen.getByText("Source unchanged")).toBeTruthy();
+    expect(screen.getByText("paper.docx")).toBeTruthy();
+    expect(decisions).toEqual(["inspect", "save_exact"]);
+  });
+
+  it("cancels normalized Save Back without changing editor state", async () => {
+    const user = userEvent.setup();
+    const decisions: string[] = [];
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: {
+          ...externalSummary(),
+          fidelity: {
+            classification: "canonically_normalized",
+            features: ["alternate_heading_style_name"],
+          },
+        },
+      }),
+      externalSave: async (args) => {
+        const request = args.request as { decision: string };
+        decisions.push(request.decision);
+        return request.decision === "inspect"
+          ? {
+              status: "eligibility",
+              documentId: IMPORTED_ID,
+              displayName: "paper.docx",
+              disposition: "allowed_after_accepted_normalization",
+            }
+          : { status: "cancelled", documentId: IMPORTED_ID };
+      },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.type(editor, " revised");
+    await clickWorkspaceAction(user, "Save Back to Source");
+    const dialog = await screen.findByRole("alertdialog");
+
+    expect(within(dialog).getByText(/Some source formatting may change/)).toBeTruthy();
+    await user.click(within(dialog).getByRole("button", { name: "Keep source" }));
+
+    expect(await screen.findByText("Save Back cancelled. The source was not changed.")).toBeTruthy();
+    expect(screen.getByText("Source modified")).toBeTruthy();
+    expect(editor.textContent).toContain("revised");
+    expect(decisions).toEqual(["inspect", "cancel"]);
+  });
+
+  it("rejects an externally changed source without losing current edits", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: externalSummary(),
+      }),
+      externalSave: async () => ({
+        status: "eligibility",
+        documentId: IMPORTED_ID,
+        displayName: "paper.docx",
+        disposition: "denied_source_changed",
+      }),
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.type(editor, " revised");
+    await clickWorkspaceAction(user, "Save Back to Source");
+
+    expect(await screen.findByText(
+      "The source changed outside DRAFT. Reopen it before saving back.",
+    )).toBeTruthy();
+    expect(screen.getByText("Source modified")).toBeTruthy();
+    expect(screen.getByText("paper.docx")).toBeTruthy();
+    expect(editor.textContent).toContain("revised");
+  });
+
+  it("preserves source identity and edits after a replacement write failure", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: externalSummary(),
+      }),
+      externalSave: async (args) => {
+        const request = args.request as { decision: string };
+        if (request.decision === "inspect") {
+          return {
+            status: "eligibility",
+            documentId: IMPORTED_ID,
+            displayName: "paper.docx",
+            disposition: "allowed_exact",
+          };
+        }
+        throw { code: "write_failed", cause: { code: "replace_target" } };
+      },
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    await user.type(editor, " revised");
+    await clickWorkspaceAction(user, "Save Back to Source");
+    await user.click(await screen.findByRole("button", { name: "Replace source" }));
+
+    expect(await screen.findByText(
+      "DRAFT could not replace the source. The original was preserved. Try again.",
+    )).toBeTruthy();
+    expect(screen.getByText("Source modified")).toBeTruthy();
+    expect(screen.getByText("paper.docx")).toBeTruthy();
+    expect(editor.textContent).toContain("revised");
   });
 
   it("discloses unsupported DOCX behavior without exposing source authority", async () => {
@@ -623,6 +779,7 @@ function installDefaultCommands(overrides?: {
   analysis?: () => Promise<unknown>;
   createDocument?: () => Promise<unknown>;
   exportDocument?: () => Promise<unknown>;
+  externalSave?: (args: Record<string, unknown>) => Promise<unknown>;
   openDocument?: () => Promise<unknown>;
   saveDocument?: (args: Record<string, unknown>) => Promise<unknown>;
 }) {
@@ -669,6 +826,9 @@ function installDefaultCommands(overrides?: {
       return overrides?.exportDocument
         ? overrides.exportDocument()
         : { status: "exported", bytesWritten: 2048 };
+    }
+    if (command === "save_external_document" && overrides?.externalSave) {
+      return overrides.externalSave(args);
     }
     throw new Error(`Unexpected command: ${command}`);
   });

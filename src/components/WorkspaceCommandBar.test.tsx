@@ -69,6 +69,24 @@ it("skips disabled overflow actions and exposes active panel state", async () =>
   expect(references.getAttribute("aria-checked")).toBe("true");
 });
 
+it("shows source replacement only for external documents with a bounded reason", async () => {
+  const user = userEvent.setup();
+  const actions = workspaceActions({ save_back_to_source: false });
+  actions.sourceSave = {
+    visible: true,
+    unavailableReason: "The source has no changes to save back.",
+  };
+  renderCommandBar(actions);
+
+  await user.click(screen.getByRole("button", { name: "More document actions" }));
+  const sourceSave = screen.getByRole("menuitem", {
+    name: /Save Back to Source\. Unavailable: The source has no changes/,
+  }) as HTMLButtonElement;
+
+  expect(sourceSave.disabled).toBe(true);
+  expect(sourceSave.title).toBe("The source has no changes to save back.");
+});
+
 function renderCommandBar(
   actions = workspaceActions(),
   activePanel: "references" | "text-review" | null = null,
@@ -93,11 +111,13 @@ function workspaceActions(
       close_document: true,
       save_document: true,
       save_document_as: true,
+      save_back_to_source: false,
       export_docx: true,
       open_references: true,
       run_text_checks: true,
       ...patch,
     },
     feedback: "",
+    sourceSave: { unavailableReason: "", visible: false },
   };
 }

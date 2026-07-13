@@ -295,7 +295,7 @@ check_v1_usability_documentation() {
   require_document_text docs/wiki/Current-Limitations.md \
     'whole point sizes from 8 through 72'
   require_document_text docs/wiki/Current-Limitations.md \
-    "Same-format DOCX save and round-trip fidelity are not currently supported."
+    "Complete same-format DOCX round-trip fidelity is not currently supported."
 }
 
 check_adr_003_accepted_state() {
@@ -960,14 +960,16 @@ check_docx_interoperability_documentation() {
   require_document_text "${guide}" "\`ExternalFidelity\` has stable ordered variants"
   require_document_text "${guide}" "\`SameFormatSaveDisposition\` distinguishes"
   require_document_text "${guide}" 'source path, source SHA-256, imported'
-  require_document_text "${guide}" 'same-format writer has no visible consumer'
+  require_document_text "${guide}" 'Packaged human validation'
   require_document_text "${guide}" 'restores the original bytes'
   require_document_text docs/maintainers/COMMAND_BOUNDARY.md 'save_external_document'
   require_document_text docs/maintainers/FRONTEND_COMMAND_CLIENT.md 'externalDocumentSave.ts'
   require_document_text "${limits}" 'MAX_DOCX_IMPORT_COMPRESSION_RATIO'
   require_document_text docs/wiki/Workspace.md "supported paragraph subset from a \`.docx\` file"
   require_document_text docs/wiki/Troubleshooting.md 'A source-preservation notice means'
-  require_document_text docs/wiki/Current-Limitations.md 'Same-format DOCX save and round-trip fidelity are not currently supported.'
+  require_document_text docs/wiki/Current-Limitations.md 'Complete same-format DOCX round-trip fidelity is not currently supported.'
+  require_document_text docs/wiki/Workspace.md '**Save Back to Source** appears only for a DOCX source.'
+  require_document_text docs/wiki/Troubleshooting.md '**Save Back to Source** always shows a confirmation'
   require_document_text "${ledger}" '| UX-46-011 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-014 | UX-1 | Open |'
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'

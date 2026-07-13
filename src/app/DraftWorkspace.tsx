@@ -11,6 +11,7 @@ import { EditorToolbar } from "../editor/EditorToolbar";
 import { useConnectivityMode } from "../features/connectivity/useConnectivityMode";
 import { UnsavedChangesDialog } from "../features/document-session/UnsavedChangesDialog";
 import { useDocumentSession } from "../features/document-session/useDocumentSession";
+import { SaveBackToSourceDialog } from "../features/external-source-save/SaveBackToSourceDialog";
 import { useDocxExport } from "../features/docx-export/useDocxExport";
 import { FormattingReviewPanel } from "../features/formatting-review/FormattingReviewPanel";
 import { ReferenceLibraryPanel } from "../features/references/ReferenceLibraryPanel";
@@ -67,6 +68,10 @@ export function DraftWorkspace() {
       <UnsavedChangesDialog
         action={documentSession.pendingAction}
         onResolve={documentSession.resolvePendingAction}
+      />
+      <SaveBackToSourceDialog
+        confirmation={documentSession.saveBackConfirmation}
+        onResolve={documentSession.resolveSaveBack}
       />
     </main>
   );

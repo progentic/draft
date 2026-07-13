@@ -198,8 +198,10 @@ Open success is also explicit: `opened_draft` means Rust retained a native
 save target; `imported_text` means the returned envelope has no registration or
 target; `imported_external` means Rust retained source provenance but granted
 no native `.draft` save target; `cancelled` means no session state changed. An
-independent, currently unwired same-format DOCX command may use the external
-registration only when its closed fidelity and fingerprint rules allow it.
+independent same-format DOCX command may use the external registration only
+when its closed fidelity and fingerprint rules allow it. The visible Save Back
+workflow requests typed eligibility and explicit confirmation; it never turns
+the external source into a native `.draft` target.
 
 Save requests include a closed mode: `save` or `save_as`. Normal Save reuses an
 existing Rust-owned target and selects a target only for a new or imported

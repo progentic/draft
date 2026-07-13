@@ -3,9 +3,10 @@
 ## Create And Save Documents
 
 Use the compact document controls at the top of the workspace for common
-actions. Additional commands, including Save As, export, References, and Text
-checks, are available from the **More** (`…`) menu. The same document actions
-are also available from the macOS **File** menu.
+actions. Additional commands, including Save As, Save Back to Source when
+available, export, References, and Text checks, are available from the **More**
+(`…`) menu. The same document actions are also available from the macOS
+**File** menu.
 
 DRAFT shows the current document name near the top of the workspace. Save
 state, import state, connectivity, active operations, and concise feedback
@@ -17,11 +18,18 @@ crash recovery, so save important work explicitly.
 
 **New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
 document, imports a UTF-8 `.txt` or `.md` file as editable text, or reads the
-supported paragraph subset from a `.docx` file. An import is shown as imported
-and unsaved; its filename is for orientation only. The first Save asks for a new
-`.draft` destination and never overwrites the imported source. Markdown
-punctuation remains literal text rather than a preview. A DOCX notice identifies
-content that requires source preservation or cannot be represented safely.
+supported paragraph subset from a `.docx` file. Text and Markdown imports are
+shown as imported and unsaved; their filename is for orientation only. Their
+first Save asks for a new `.draft` destination. Markdown punctuation remains
+literal text rather than a preview.
+
+An opened DOCX remains associated with its Rust-owned source identity. Ordinary
+**Save** creates a `.draft` document, and **Export DOCX…** creates a separate
+copy. **Save Back to Source** is available only for modified DOCX content that
+DRAFT can replace safely. DRAFT checks the current source before showing an
+overwrite warning. Exact replacement and accepted normalization both require
+confirmation. Unsupported, lossy, missing, or externally changed sources stay
+unavailable and are not overwritten.
 
 Use **Save As…** to choose a new `.draft` file while preserving the previous
 file. After it succeeds, later Save operations use the new file. Cancelling or
@@ -115,8 +123,8 @@ the operating system has a connection and does not retry or queue requests.
 
 The File menu uses Command-N for New Document, Command-O for Open, Command-W
 for Close, Command-S for Save, Shift-Command-S for Save As, and Shift-Command-E
-for Export DOCX. Unavailable actions are disabled while another document or
-export operation is pending.
+for Export DOCX. Save Back to Source has no shortcut. Unavailable actions are
+disabled while another document or export operation is pending.
 
 Press Tab to move through the document controls, formatting controls, editor,
 panels, and bottom status bar. Icon-only controls expose accessible names and

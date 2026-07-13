@@ -34,8 +34,10 @@ A separate same-format source-write command now exists for exact supported
 DOCX content and explicitly accepted canonical normalization. Rust alone keeps
 the source path and fingerprints, rechecks source identity immediately before
 replacement, and restores the original bytes if post-replacement durability or
-registry commit fails. Its strict frontend client is not wired to a visible
-control, so the capability is implemented but not yet exposed.
+registry commit fails. The visible **Save Back to Source** workflow first asks
+Rust for a non-mutating eligibility result, shows an overwrite warning, and
+requires confirmation before replacement. It is separate from native `.draft`
+Save and derived-copy DOCX export.
 
 ## Trade-offs
 
@@ -48,7 +50,8 @@ control, so the capability is implemented but not yet exposed.
   source, and an externally changed source deny replacement.
 - ZIP parts are read conservatively under the XML-part bound. Large embedded
   binary parts are therefore rejected rather than retained opaquely.
-- Human compatible-reader and packaged-workflow evidence remains pending.
+- Local macOS reader-open evidence covers exact and accepted-normalized output;
+  packaged workflow and broader fidelity evidence remain pending.
 
 ## Technical Contract
 
@@ -116,6 +119,13 @@ failure with preserved source; a failed rollback is a distinct uncertain-state
 failure. Cancellation and every pre-replacement failure leave source bytes and
 registry state unchanged.
 
+The closed `inspect` decision performs the same current-source and
+representability checks without writing. The visible workflow permits only
+`allowed_exact` and `allowed_after_accepted_normalization` to reach a
+confirmation. Missing, externally changed, unsupported, lossy, read-only, and
+uncertain sources remain unavailable. Successful replacement retains the
+external source identity and basename display name.
+
 ### Resource limits
 
 | Limit | Value |
@@ -143,13 +153,16 @@ unknown entities, and exceeded limits fail before registry mutation.
 | Low | `interoperability::docx_import::package` | Validates ZIP, parts, relationships, content types, and XML bounds. |
 | Low | `interoperability::docx_import::document` | Maps the accepted XML subset into canonical Tiptap JSON. |
 | Presentation | `src/ipc/externalDocument.ts` | Validates the path-free DTO and rejects unknown or unstable variants. |
+| Presentation | `src/ipc/externalDocumentSave.ts` | Validates eligibility, save, cancellation, denial, and bounded recovery outcomes. |
+| Presentation | `useExternalSourceSave` | Coordinates inspection, confirmation, cancellation, and replacement without owning a path. |
+| Presentation | `SaveBackToSourceDialog` | Presents overwrite and normalization warnings with keyboard-contained confirmation. |
 
 The Open command returns `imported_external`, distinct from `opened_draft`,
 `imported_text`, and `cancelled`. React tracks Rust registration separately
-from native DRAFT persistence, so an imported DOCX closes its live handle while
-still requiring a new `.draft` target on first Save. The document dispatcher
-keeps Open single-flight: competing lifecycle actions remain disabled until the
-typed response resolves, so no later operation can make that response stale.
+from native DRAFT persistence. Ordinary Save creates a `.draft` target, Export
+DOCX creates a separate copy, and Save Back retains external registration. The
+document dispatcher keeps these actions single-flight so a later operation or
+editor generation cannot accept a stale eligibility result.
 
 ## Failure Modes
 
@@ -184,14 +197,17 @@ deduplication, duplicate-source rejection, cancelled and failed Save
 preservation, import-to-new-`.draft`, and export-to-new-DOCX separation.
 Source-write tests cover exact replacement, normalization consent, source
 changes before replacement, compilation and write failure, durability and
-registry rollback, rollback failure, and fingerprint refresh. TypeScript tests
-cover every fidelity and source-write outcome, unknown variants, path-bearing
-DTO rejection, and exhaustive path-free recovery. Existing atomic-export tests
-continue to prove target promotion and partial-output cleanup.
+registry rollback, rollback failure, fingerprint refresh, and non-mutating
+eligibility. A macOS-only reader check opens both exact and accepted-normalized
+replacements through `textutil`. TypeScript tests cover every fidelity and
+source-write outcome, unknown variants, path-bearing DTO rejection, exhaustive
+path-free recovery, stale generations, confirmation, cancellation, and visible
+dispatcher parity. Existing atomic-export tests continue to prove target
+promotion and partial-output cleanup.
 
-These are mechanical results. The same-format writer has no visible consumer,
-and compatible-reader comparison, packaged human validation, complete format
-coverage, `RC-07`, and `GATE-47` remain open.
+These are mechanical and local reader-open results. Packaged human validation
+of confirmation, cancellation, failure, and recovery; broader compatible-reader
+comparison; complete format coverage; `RC-07`; and `GATE-47` remain open.
 
 ## Related Documents
 

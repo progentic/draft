@@ -8,15 +8,29 @@ import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
 import { openDocument } from "../../ipc/documentOpen";
 import { saveDocument } from "../../ipc/documentSave";
 import type { SaveDocumentMode } from "../../ipc/documentSave";
+import type { ExternalDocumentSummary } from "../../ipc/externalDocument";
+import {
+  useExternalSourceSave,
+  type ExternalSourceSaveConfirmation,
+} from "../external-source-save/useExternalSourceSave";
 
 export type PendingDocumentAction = "close" | "new" | "open";
-export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "saving";
+export type DocumentOperation =
+  | "checking_source"
+  | "closing"
+  | "confirming_source_save"
+  | "creating"
+  | "opening"
+  | "ready"
+  | "saving"
+  | "saving_source";
 
 type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft";
 
 interface DocumentIdentity {
   displayName: string;
   documentId: string;
+  external: ExternalDocumentSummary | null;
   origin: DocumentOrigin;
   persisted: boolean;
   registered: boolean;
@@ -28,6 +42,7 @@ export interface DocumentSession {
   canExport: boolean;
   canSave: boolean;
   canSaveAs: boolean;
+  canSaveBack: boolean;
   documentId: string | null;
   feedback: string;
   operation: DocumentOperation;
@@ -35,9 +50,14 @@ export interface DocumentSession {
   requestClose: () => void;
   requestNew: () => void;
   requestOpen: () => void;
+  requestSaveBack: () => void;
   resolvePendingAction: (decision: "cancel" | "discard" | "save") => void;
+  resolveSaveBack: (decision: "cancel" | "confirm") => void;
   save: () => Promise<boolean>;
   saveAs: () => Promise<boolean>;
+  saveBackConfirmation: ExternalSourceSaveConfirmation | null;
+  saveBackUnavailableReason: string;
+  saveBackVisible: boolean;
   snapshot: () => DocumentEnvelopeSnapshot | null;
   statusLabel: string;
   title: string;
@@ -50,11 +70,15 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
   const identityRef = useRef(identity);
   const initializationStarted = useRef(false);
   const [dirty, setDirty] = useState(false);
+  const [revision, setRevision] = useState(0);
   const [operation, setOperation] = useState<DocumentOperation>("creating");
   const [feedback, setFeedback] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingDocumentAction | null>(null);
 
-  useEffect(() => subscribeToDocumentUpdates(editor, setDirty, setIdentity), [editor]);
+  useEffect(
+    () => subscribeToDocumentUpdates(editor, setDirty, setIdentity, setRevision),
+    [editor],
+  );
   useEffect(() => {
     if (editor && !initializationStarted.current) {
       initializationStarted.current = true;
@@ -92,6 +116,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     const savedIdentity = {
       displayName: result.displayName,
       documentId: result.documentId,
+      external: null,
       origin: "opened_draft" as const,
       persisted: true,
       registered: true,
@@ -105,6 +130,27 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
   }, [snapshot]);
   const save = useCallback(() => persist("save"), [persist]);
   const saveAs = useCallback(() => persist("save_as"), [persist]);
+  const markExternalSaved = useCallback((documentId: string, displayName: string) => {
+    const current = identityRef.current;
+    if (!current?.external || current.documentId !== documentId) return;
+    const savedIdentity = {
+      ...current,
+      displayName,
+    };
+    identityRef.current = savedIdentity;
+    setIdentity(savedIdentity);
+    setDirty(false);
+  }, []);
+  const sourceSave = useExternalSourceSave({
+    external: identity?.external ?? null,
+    modified: identity?.origin === "imported_external" && dirty,
+    operation,
+    revision,
+    snapshot,
+    onFeedback: setFeedback,
+    onOperation: setOperation,
+    onSaved: markExternalSaved,
+  });
 
   const executeAction = useCallback(
     async (action: PendingDocumentAction) => {
@@ -168,6 +214,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       canExport: identity !== null && operation === "ready",
       canSave: identity !== null && operation === "ready",
       canSaveAs: identity !== null && operation === "ready",
+      canSaveBack: sourceSave.enabled,
       documentId: identity?.documentId ?? null,
       feedback,
       operation,
@@ -175,14 +222,19 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       requestClose: () => request("close"),
       requestNew: () => request("new"),
       requestOpen: () => request("open"),
+      requestSaveBack: sourceSave.request,
       resolvePendingAction,
+      resolveSaveBack: sourceSave.resolve,
       save,
       saveAs,
+      saveBackConfirmation: sourceSave.confirmation,
+      saveBackUnavailableReason: sourceSave.unavailableReason,
+      saveBackVisible: sourceSave.visible,
       snapshot,
       statusLabel: documentStatus(identity, dirty, operation),
       title: identity?.displayName ?? "No document open",
     }),
-    [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, saveAs, snapshot],
+    [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, saveAs, snapshot, sourceSave],
   );
 }
 
@@ -202,12 +254,14 @@ function subscribeToDocumentUpdates(
   editor: Editor | null,
   setDirty: (dirty: boolean) => void,
   setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setRevision: React.Dispatch<React.SetStateAction<number>>,
 ) {
   if (!editor) {
     return;
   }
   const handleUpdate = () => {
     setDirty(true);
+    setRevision((revision) => revision + 1);
     setIdentity((identity) =>
       identity
         ? { ...identity, title: documentTitle(editor.getJSON(), identity.title) }
@@ -255,12 +309,13 @@ async function openIntoSession(
         ? result.external.displayName
         : result.envelope.title,
     documentId: result.envelope.document_id,
+    external: result.status === "imported_external" ? result.external : null,
     origin: result.status,
     persisted,
     registered,
     title: result.envelope.title,
   });
-  setDirty(!persisted);
+  setDirty(result.status === "imported_text");
   setOperation("ready");
   setFeedback(openSuccessMessage(result));
 }
@@ -290,7 +345,7 @@ function openSuccessMessage(result: Extract<
   }
   return result.external.fidelity.classification === "unsupported_preservable"
     ? "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged."
-    : "DOCX imported. Save as a DRAFT document to keep edits; the original stays unchanged.";
+    : "DOCX opened. Save creates a DRAFT document; Save Back to Source replaces the DOCX only after confirmation.";
 }
 
 async function initializeDocumentSession(
@@ -388,6 +443,7 @@ function loadCreatedDocument(
   setIdentity({
     displayName: envelope.title,
     documentId: envelope.document_id,
+    external: null,
     origin: "new",
     persisted: false,
     registered: false,
@@ -457,6 +513,15 @@ function documentStatus(
   operation: DocumentOperation,
 ) {
   if (operation !== "ready") {
+    if (operation === "checking_source") {
+      return "Checking source";
+    }
+    if (operation === "confirming_source_save") {
+      return "Waiting for confirmation";
+    }
+    if (operation === "saving_source") {
+      return "Saving to source";
+    }
     if (operation === "saving") {
       return "Saving";
     }
@@ -468,10 +533,10 @@ function documentStatus(
   if (!identity) {
     return "No document open";
   }
-  if (
-    (identity.origin === "imported_text" || identity.origin === "imported_external") &&
-    !identity.persisted
-  ) {
+  if (identity.origin === "imported_external") {
+    return dirty ? "Source modified" : "Source unchanged";
+  }
+  if (identity.origin === "imported_text" && !identity.persisted) {
     return "Imported, unsaved";
   }
   if (dirty) {

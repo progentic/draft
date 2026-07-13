@@ -18,12 +18,15 @@ Apple Silicon target.
   features outside that subset are disclosed as requiring source preservation;
   malformed, unsafe, unsupported, or lossy input fails without changing the
   source file.
-- Imported text, Markdown, and DOCX content become unsaved DRAFT documents.
-  They cannot be saved back to the source format. First Save requires a new
-  `.draft` target, Export creates a separate DOCX copy, and the original source
-  remains unchanged.
+- Imported text and Markdown become unsaved DRAFT documents and cannot be saved
+  back to the source format. First Save requires a new `.draft` target.
+- A supported DOCX source can be replaced only when DRAFT reports an exact or
+  accepted-normalized disposition and the user confirms the warning. Lossy,
+  uncertain, unsupported, missing, or externally changed sources are not
+  replaced. Save creates a `.draft` document, while Export creates a separate
+  DOCX copy.
 - RTF, OpenDocument (`.odt`), and legacy Word (`.doc`) import are unavailable.
-  Same-format DOCX save and round-trip fidelity are not currently supported.
+  Complete same-format DOCX round-trip fidelity is not currently supported.
 - The visible workspace manages one current document at a time.
 
 ## Desktop Interface

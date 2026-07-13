@@ -213,20 +213,30 @@ absolute or relative paths, raw XML, source bytes, and extra fields make the
 entire response invalid. Nested DOCX command failures retain their typed
 malformed, unsafe, unsupported, and lossy distinctions without raw details.
 
-`externalDocumentSave.ts` adds the currently unwired same-format writer client.
-It sends one current envelope and one closed decision without a path or
-fingerprint. Strict response validation preserves saved, unchanged,
-confirmation-required, denied, cancelled, invalid-response, and transport
-outcomes. Every denial and typed error maps exhaustively to one bounded recovery
-category: confirm known normalization, Save As `.draft`, reopen the source,
-retry, or no available recovery. The wrapper strips nested compiler details to
-stable codes and is not imported by any component, hook, or session state.
+`externalDocumentSave.ts` owns the same-format writer client. It sends one
+current envelope and one closed inspect, exact-save, normalization-acceptance,
+or cancellation decision without a path or fingerprint. Strict response
+validation preserves eligibility, saved, unchanged, confirmation-required,
+denied, cancelled, invalid-response, and transport outcomes. Every denial and
+typed error maps exhaustively to one bounded recovery category: confirm known
+normalization, Save As `.draft`, reopen the source, retry, or no available
+recovery. The wrapper strips nested compiler details to stable codes.
+An invalid response or transport failure cannot prove whether replacement
+finished, so it requires reopening the source rather than offering immediate
+retry.
+
+`useExternalSourceSave` is the only production consumer. It rejects stale
+editor generations, exposes only exact or accepted-normalization confirmation,
+and preserves modified state after cancellation or failure. The confirmation
+dialog and shared workspace dispatcher never receive source paths,
+fingerprints, XML, or package bytes.
 
 ## Native menu wrappers
 
 `nativeMenu.ts` owns both Phase 48 native boundaries. It validates the closed
-six-action `draft://native-menu-action` event before feature code receives it,
-and it sends the path-free six-boolean request for `set_native_menu_state`.
+seven-action `draft://native-menu-action` event before feature code receives
+it, and it sends the path-free seven-boolean request for
+`set_native_menu_state`.
 Malformed events, malformed responses, the closed `menu_update_failed` error,
 and unknown transport failures remain distinct.
 

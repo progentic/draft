@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+use std::process::Command;
 use std::{cell::Cell, fs};
 
 use serde_json::json;
@@ -14,6 +16,59 @@ use crate::{
 
 const DOCUMENT_ID: &str = "00000000-0000-4000-8000-000000000001";
 const ORIGINAL_SOURCE: &[u8] = b"original external source";
+
+#[test]
+fn eligibility_inspection_never_writes_or_mutates_registry() {
+    let source = docx_source("external-inspection");
+    let original = envelope("Original", "Original text");
+    let edited = envelope("Edited", "Replacement text");
+    let registry = registered_external(&source, &original, ExternalFidelity::Exact);
+    let writes = Cell::new(0);
+
+    let outcome = save_external_document_with_writer(
+        &registry,
+        snapshot(&edited),
+        ExternalSaveDecision::Inspect,
+        |_, _| {
+            writes.set(writes.get() + 1);
+            Ok(())
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        outcome,
+        SaveExternalDocumentOutcome::Eligibility {
+            document_id: edited.document_id(),
+            display_name: source_file_name(&source),
+            disposition: SameFormatSaveDisposition::AllowedExact,
+        }
+    );
+    assert_eq!(writes.get(), 0);
+    assert_source(&source, ORIGINAL_SOURCE);
+    assert_eq!(registry.close(original.document_id()), Ok(original));
+}
+
+#[test]
+fn eligibility_rejects_unrepresentable_content_without_writing() {
+    let source = docx_source("external-inspection-compilation");
+    let original = envelope("Original", "Original text");
+    let invalid = envelope_with_citation();
+    let registry = registered_external(&source, &original, ExternalFidelity::Exact);
+
+    let error =
+        save_external_document(&registry, snapshot(&invalid), ExternalSaveDecision::Inspect)
+            .unwrap_err();
+
+    assert!(matches!(
+        error,
+        SaveExternalDocumentError::Compilation {
+            cause: DocxExportError::UnsupportedCitation { .. }
+        }
+    ));
+    assert_source(&source, ORIGINAL_SOURCE);
+    assert_eq!(registry.close(original.document_id()), Ok(original));
+}
 
 #[test]
 fn unchanged_exact_source_performs_no_write() {
@@ -73,6 +128,40 @@ fn exact_save_replaces_source_and_refreshes_provenance() {
         SameFormatSaveDisposition::NoChanges
     );
     assert_eq!(reopened.envelope.document(), edited.document());
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn exact_and_normalized_replacements_open_in_macos_text_reader() {
+    for (label, fidelity, decision) in [
+        (
+            "external-reader-exact",
+            ExternalFidelity::Exact,
+            ExternalSaveDecision::SaveExact,
+        ),
+        (
+            "external-reader-normalized",
+            ExternalFidelity::CanonicallyNormalized {
+                features: vec![ExternalFeature::AlternateHeadingStyleName],
+            },
+            ExternalSaveDecision::AcceptNormalization,
+        ),
+    ] {
+        let source = docx_source(label);
+        let original = envelope("Original", "Original text");
+        let edited = envelope("Edited", "Replacement text");
+        let registry = registered_external(&source, &original, fidelity);
+
+        save_external_document(&registry, snapshot(&edited), decision).unwrap();
+        let output = Command::new("/usr/bin/textutil")
+            .args(["-convert", "txt", "-stdout"])
+            .arg(source.path())
+            .output()
+            .expect("macOS text reader should launch");
+
+        assert!(output.status.success());
+        assert!(String::from_utf8_lossy(&output.stdout).contains("Replacement text"));
+    }
 }
 
 #[test]

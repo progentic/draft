@@ -85,11 +85,11 @@ and atomic-write behavior are documented in
 
 ## Native menu state command
 
-Phase 48 adds `set_native_menu_state`. It accepts exactly six booleans for New,
-Open, Close, Save, Save As, and DOCX export availability. The request contains
-no path, content, document ID, or arbitrary action name. Rust applies the state
-to the menu items it created and returns `{ "applied": true }` or the closed
-`menu_update_failed` error.
+Phase 48 adds `set_native_menu_state`. It accepts exactly seven booleans for
+New, Open, Close, Save, Save As, Save Back to Source, and DOCX export
+availability. The request contains no path, content, document ID, or arbitrary
+action name. Rust applies the state to the menu items it created and returns
+`{ "applied": true }` or the closed `menu_update_failed` error.
 
 Native selection travels in the other direction as a bounded
 `draft://native-menu-action` event. The event is not trusted until the typed

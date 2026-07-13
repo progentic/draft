@@ -36,9 +36,10 @@ Alignment maps to `w:jc`; automatic line spacing and space before/after map to
 `w:spacing`; left/right and first-line or hanging indentation map to `w:ind`.
 All explicit values are emitted deterministically. A block without
 `paragraphStyle` emits no default paragraph override. The bounded DOCX importer
-uses the inverse mapping for accepted paragraph values, but same-format save
-remains unavailable. Import and export are separate policies; this exporter
-does not authorize overwriting an imported DOCX. See
+uses the inverse mapping for accepted paragraph values. Import and export are
+separate policies; this exporter does not authorize overwriting an imported
+DOCX. The independent Save Back workflow applies its own fidelity, source-
+identity, confirmation, and rollback policy. See
 `docs/maintainers/DOCX_INTEROPERABILITY.md`.
 
 Empty paragraphs and headings, Unicode text, source order, paragraph boundaries,

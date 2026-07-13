@@ -56,9 +56,9 @@ If a document cannot be opened, choose a valid DRAFT document, a UTF-8 `.txt`
 or `.md` file no larger than 8 MiB, or a `.docx` file within the documented
 package limits. Other extensions, invalid UTF-8, malformed DRAFT versions, and
 invalid DOCX packages fail without changing that file. Imported content is
-unsaved; choose **Save** to select a new `.draft` destination. DRAFT never
-overwrites the imported source. DRAFT has no autosave or crash recovery, so
-discarded unsaved changes cannot be restored.
+not a native DRAFT document; choose **Save** to select a new `.draft`
+destination. DRAFT has no autosave or crash recovery, so discarded unsaved
+changes cannot be restored.
 
 If a DOCX message says the file is malformed or unsafe, keep the original file
 unchanged and open a trusted, valid copy. If DRAFT reports an unsupported or
@@ -66,6 +66,13 @@ lossy feature, preserve the original and edit through a supported format rather
 than assuming DRAFT can round-trip it. A source-preservation notice means DRAFT
 opened the supported content but cannot safely save changes back to that DOCX.
 Save to `.draft` or export a separate DOCX copy instead.
+
+**Save Back to Source** always shows a confirmation before replacing a DOCX.
+Choose **Keep source** to cancel without accepting saved state. If DRAFT says
+the source changed or is missing, reopen the source before trying again. If it
+says replacement is unavailable, use **Save As…** for a `.draft` document or
+export a new DOCX. If DRAFT cannot confirm the source's final state, reopen it
+before continuing; no message exposes a path, fingerprint, or document XML.
 
 If DRAFT cannot close a saved document, keep it open and retry **Close** before
 switching documents.

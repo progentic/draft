@@ -20,11 +20,11 @@ been drawn.
 
 The native macOS menu bar is the complete command hierarchy. The target top
 level is File, Edit, View, Insert, Format, Tools, Citations, and Help. The target
-File menu contains New Document, Open…, Recent, Save, Save As…, Export, and Close
-Window in conventional groups. The current Phase 48 implementation guarantees
-only the accepted File actions documented under Native File Actions; Recent and
-additional menu groups remain unavailable until real commands and state rules
-exist.
+File menu contains New Document, Open…, Recent, Save, Save As…, conditional Save
+Back to Source, Export, and Close Window in conventional groups. The current
+implementation guarantees only the accepted File actions documented under
+Native File Actions; Recent and additional menu groups remain unavailable until
+real commands and state rules exist.
 
 The target window title is centered and follows `<document title> — DRAFT`, with
 `Untitled Document — DRAFT` for a new unsaved document. The title is presentation
@@ -235,18 +235,20 @@ Pasted HTML styling is not a font-authority path. The marks parse only
 `data-draft-font-family` and `data-draft-font-size`, then revalidate the
 canonical value before rendering.
 
-The document session stores one explicit origin: `new`, `imported_text`, or
-`opened_draft`. New and imported sessions both lack a path, but the latter
-keeps the source filename as display metadata only. The bottom status bar shows
-the imported and unsaved state. No path enters React, and only successful Save
-changes either origin to native persisted DRAFT state.
+The document session stores one explicit origin: `new`, `imported_text`,
+`imported_external`, or `opened_draft`. New and text-import sessions lack Rust
+registration. An external DOCX has Rust-owned source registration but no native
+`.draft` target. No path enters React. Save changes any non-native origin to
+persisted DRAFT state, while confirmed Save Back retains the external origin
+and basename display identity.
 
 ## Native File Actions
 
 The native File menu and visible command bar use the same action identifiers
 and `useWorkspaceActions` dispatcher. Their labels are New Document, Open…,
-Close, Save, Save As…, and Export DOCX…. The File menu uses Command-N,
-Command-O, Command-W, Command-S, Shift-Command-S, and Shift-Command-E.
+Close, Save, Save As…, Save Back to Source, and Export DOCX…. The File menu uses
+Command-N, Command-O, Command-W, Command-S, Shift-Command-S, and
+Shift-Command-E; Save Back has no shortcut.
 
 The dispatcher derives availability from the current document operation and
 DOCX export state. It checks availability again when a native event arrives, so
@@ -254,17 +256,18 @@ an event emitted before a state update cannot begin a stale operation. While a
 save, open, close, create, or export operation is pending, competing document
 and workflow-panel actions remain unavailable.
 
-Rust owns native menu objects and receives a bounded six-boolean state request.
+Rust owns native menu objects and receives a bounded seven-boolean state request.
 No path, content, or document identity enters the menu state. Invalid events or
 state-update failures leave the visible toolbar available with bounded recovery
 copy. See `NATIVE_DESKTOP_WORKFLOW.md` for the complete contract.
 
 The command bar keeps New visible with a short label. Open, Save, and Close are
-icon-only controls with accessible names and tooltips. Save As, Export DOCX,
-References, and Text checks are in the More document actions menu. The menu
-skips disabled actions during keyboard navigation, supports Arrow, Home, End,
-and Escape, and returns focus to its trigger. Every item still uses the shared
-dispatcher; the compact layout adds no second command path.
+icon-only controls with accessible names and tooltips. Save As, conditional Save
+Back to Source, Export DOCX, References, and Text checks are in the More
+document actions menu. The menu skips disabled actions during keyboard
+navigation, supports Arrow, Home, End, and Escape, and returns focus to its
+trigger. Every item still uses the shared dispatcher; the compact layout adds
+no second command path.
 
 The header is reserved for DRAFT identity and the current document name. A
 bottom status bar presents the document lifecycle state, current background

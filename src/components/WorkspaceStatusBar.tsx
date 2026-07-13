@@ -68,5 +68,8 @@ function operationLabel(operation: DocumentOperation, exportPending: boolean) {
   if (operation === "creating") return "Creating";
   if (operation === "opening") return "Opening";
   if (operation === "saving") return "Saving";
+  if (operation === "checking_source") return "Checking source";
+  if (operation === "confirming_source_save") return "Waiting for confirmation";
+  if (operation === "saving_source") return "Saving to source";
   return "Closing";
 }

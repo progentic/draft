@@ -718,8 +718,9 @@ Phase 47 now adds a bounded Rust-owned DOCX reader and external-source
 registration. ZIP/XML validation and paragraph conversion complete before a
 live handle is registered. Rust retains the path and fingerprints; React
 receives only a basename, format, closed fidelity result, and same-format save
-disposition. Imported DOCX content has no native save target. First Save writes
-a new `.draft` file, and export writes a separate DOCX copy.
+disposition. Imported DOCX content has no native save target. Save writes a new
+`.draft` file, Export DOCX writes a separate copy, and Save Back to Source is a
+separate confirmed source-replacement operation.
 
 The Phase 47 source-write boundary is a third, separate Rust command. It can
 replace an exact supported-subset DOCX, or a canonically normalized DOCX after
@@ -729,9 +730,12 @@ uses the shared atomic writer, and updates provenance only after replacement
 success. Durability or registry failure triggers atomic restoration of the
 original bytes; failed restoration returns a typed uncertain-state error.
 React receives only closed dispositions, basename display data, and bounded
-recovery categories. No component currently invokes this command, so visible
-same-format Save, complete format coverage, compatible-reader comparison, and
-packaged human fidelity evidence remain absent.
+recovery categories. A single frontend-owned workflow requests non-mutating
+eligibility, shows the closed overwrite or normalization warning, and
+dispatches confirmed replacement through the shared native-menu and toolbar
+action path. Stale, missing, unsupported, or uncertain sources remain
+unavailable with bounded recovery. Complete format coverage and packaged human
+fidelity evidence remain absent.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 
@@ -877,8 +881,10 @@ fingerprints remain in the registry; the frontend receives a path-free typed
 summary. Opening, closing, cancellation, failed import, and failed Save leave
 the original bytes unchanged.
 
-This implementation does not add paragraph controls or same-format overwrite.
-Imported DOCX work saves to a new `.draft` target, and DOCX export remains a
-separate derived-copy operation. Proposed `INV-17`, `UX-46-024`, `RC-07`, and
-`GATE-47` remain open until controls, broader interoperability, compatible-
-reader comparison, packaged workflow, and human evidence exist.
+This implementation does not add paragraph controls. Imported DOCX work can be
+saved as a new `.draft` target, exported as a separate DOCX copy, or written
+back only through the confirmed bounded source-replacement path. Proposed
+`INV-17`, `UX-46-024`, `RC-07`, and `GATE-47` remain open until controls,
+broader interoperability, packaged workflow, and complete human evidence
+exist. Local macOS reader evidence covers exact and accepted-normalized
+replacement only; it is not phase-closure evidence.

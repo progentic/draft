@@ -898,6 +898,10 @@ check_docx_import_contract() {
   local source_write_command='src-tauri/src/commands/external_document_save.rs'
   local source_write_client='src/ipc/externalDocumentSave.ts'
   local source_write_client_tests='src/ipc/externalDocumentSave.test.ts'
+  local source_write_hook='src/features/external-source-save/useExternalSourceSave.ts'
+  local source_write_hook_tests='src/features/external-source-save/useExternalSourceSave.test.tsx'
+  local source_write_dialog='src/features/external-source-save/SaveBackToSourceDialog.tsx'
+  local source_write_dialog_tests='src/features/external-source-save/SaveBackToSourceDialog.test.tsx'
   local package_path='src-tauri/src/interoperability/docx_import/package.rs'
   local document_path='src-tauri/src/interoperability/docx_import/document.rs'
   local test_path='src-tauri/src/interoperability/docx_import/tests.rs'
@@ -930,6 +934,10 @@ check_docx_import_contract() {
   require_file "${source_write_command}"
   require_file "${source_write_client}"
   require_file "${source_write_client_tests}"
+  require_file "${source_write_hook}"
+  require_file "${source_write_hook_tests}"
+  require_file "${source_write_dialog}"
+  require_file "${source_write_dialog_tests}"
   require_file "${package_path}"
   require_file "${document_path}"
   require_file "${test_path}"
@@ -967,6 +975,12 @@ check_docx_import_contract() {
     "${source_write_tests}"
   require_rust_test registry_commit_failure_rolls_back_source \
     "${source_write_tests}"
+  require_rust_test eligibility_inspection_never_writes_or_mutates_registry \
+    "${source_write_tests}"
+  require_rust_test eligibility_rejects_unrepresentable_content_without_writing \
+    "${source_write_tests}"
+  require_rust_test exact_and_normalized_replacements_open_in_macos_text_reader \
+    "${source_write_tests}"
   require_source_pattern 'MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024' \
     src-tauri/src/interoperability/docx_import/mod.rs
   require_source_pattern 'MAX_DOCX_IMPORT_XML_BYTES: usize = 8 * 1024 * 1024' \
@@ -985,7 +999,7 @@ check_docx_import_contract() {
     src/ipc/externalDocument.test.ts
   require_source_pattern 'returns path-free DOCX fidelity from the Rust import boundary' \
     src/ipc/documentOpen.test.ts
-  require_source_pattern 'treats a path-free DOCX import as registered but unsaved' \
+  require_source_pattern 'keeps path-free DOCX source identity separate from DRAFT Save' \
     src/ipc/Phase46Workflows.test.tsx
   require_source_pattern 'discloses unsupported DOCX behavior without exposing source authority' \
     src/ipc/Phase46Workflows.test.tsx
@@ -1000,15 +1014,49 @@ check_docx_import_contract() {
     src/ipc/externalDocument.ts "${source_write_client}"
   assert_no_matches "frontend external source path or fingerprint input" \
     '\bsourcePath\b|\bsourceFingerprint\b|\btargetPath\b|\babsolutePath\b' \
-    "${source_write_client}" "${source_write_client_tests}"
+    "${source_write_client}" "${source_write_client_tests}" \
+    "${source_write_hook}" "${source_write_hook_tests}" \
+    "${source_write_dialog}" "${source_write_dialog_tests}"
   assert_no_matches "frontend same-format save decision authority" \
     '\bsameFormatSave\b|\ballowed_exact\b|\ballowed_after_accepted_normalization\b|\bdenied_(?:unsupported_source_behavior|read_only|missing_provenance|fidelity_unknown|writer_unavailable|source_missing|source_changed)\b' \
     --glob '!**/*.test.ts' --glob '!**/*.test.tsx' \
     --glob '!src/ipc/externalDocument.ts' \
-    --glob '!src/ipc/externalDocumentSave.ts' src
-  assert_no_matches "visible external source-write consumer before workflow evidence" \
+    --glob '!src/ipc/externalDocumentSave.ts' \
+    --glob '!src/features/external-source-save/useExternalSourceSave.ts' \
+    --glob '!src/features/external-source-save/SaveBackToSourceDialog.tsx' src
+  assert_no_matches "external source-write client outside its owned workflow" \
     'externalDocumentSave|saveExternalDocument' \
+    --glob '!src/features/external-source-save/useExternalSourceSave.ts' \
+    --glob '!src/features/external-source-save/useExternalSourceSave.test.tsx' \
     src/app src/components src/features src/editor
+  require_source_pattern 'saveExternalDocument(snapshot, "inspect")' \
+    "${source_write_hook}"
+  require_source_pattern 'result.status !== "cancelled"' "${source_write_hook}"
+  require_source_pattern 'action="save_back_to_source"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'save_back_to_source: session.requestSaveBack' \
+    src/features/workspace-actions/useWorkspaceActions.ts
+  require_source_pattern '<SaveBackToSourceDialog' src/app/DraftWorkspace.tsx
+  require_source_pattern 'inspects and confirms exact replacement without exposing a path' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'requires explicit acceptance for normalized replacement' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'cancels through the typed boundary without accepting saved state' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'blocks stale external sources with bounded recovery' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'preserves modified state and offers bounded retry after a safe write failure' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'blocks retry when the source final state is uncertain' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'confirms exact Save Back and preserves the external display identity' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'cancels normalized Save Back without changing editor state' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'rejects an externally changed source without losing current edits' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'preserves source identity and edits after a replacement write failure' \
+    src/ipc/Phase46Workflows.test.tsx
 
   require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
   require_source_pattern '| UX-46-011 | UX-1 | Open |' \
@@ -1301,13 +1349,15 @@ check_external_browser_handoff_contract() {
   require_source_pattern 'https://doi.org' "${domain_path}"
   require_source_pattern 'https://scholar.google.com/scholar' "${domain_path}"
   require_source_pattern 'const COMMAND_NAME = "open_external_access"' "${frontend_path}"
-  # Phase 28 owns one direct Python process launch under the worker boundary;
-  # it is not a browser launch path and remains governed by its own scans.
+  # Phase 28 owns one direct Python worker launch. The exact Phase 47 test path
+  # invokes macOS textutil only to prove generated DOCX packages can be opened.
+  # Neither exclusion grants production browser or process authority.
   assert_no_matches "Phase 23 alternate Rust browser launch" \
     'tauri_plugin_opener::open_url|\bopen::(?:that|with)|\bwebbrowser::|Command::new' \
     --glob '!system_browser.rs' \
     --glob '!**/workers/python/runner.rs' \
-    --glob '!**/workers/python/runner_tests.rs' src-tauri/src
+    --glob '!**/workers/python/runner_tests.rs' \
+    --glob '!**/documents/external_save_tests.rs' src-tauri/src
   assert_no_matches "Phase 23 frontend opener authority" \
     '@tauri-apps/plugin-opener|\bwindow\.open\s*\(|target\s*=\s*[\x22\x27]_blank' src
   assert_no_matches "Phase 23 opener plugin registration" \
@@ -1583,6 +1633,7 @@ check_adr_003_accepted_guard() {
   require_source_pattern 'file.close_document' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.save_document' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.save_document_as' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.save_back_to_source' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.export_docx' src-tauri/src/desktop_menu.rs
   require_source_pattern 'commands::native_menu::set_native_menu_state' src-tauri/src/lib.rs
   require_source_pattern 'listenToNativeMenuActions' \
@@ -1590,6 +1641,8 @@ check_adr_003_accepted_guard() {
   require_source_pattern 'setNativeMenuState' \
     src/features/workspace-actions/useWorkspaceActions.ts
   require_source_pattern 'action="save_document_as"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'action="save_back_to_source"' \
     src/components/WorkspaceCommandBar.tsx
   require_source_pattern 'props.actions.dispatch(props.action)' \
     src/components/WorkspaceCommandBar.tsx

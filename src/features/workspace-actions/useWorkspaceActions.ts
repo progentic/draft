@@ -15,6 +15,10 @@ export interface WorkspaceActions {
   dispatch: (action: WorkspaceAction) => void;
   enabled: Record<WorkspaceAction, boolean>;
   feedback: string;
+  sourceSave: {
+    unavailableReason: string;
+    visible: boolean;
+  };
 }
 
 export function useWorkspaceActions(
@@ -31,7 +35,15 @@ export function useWorkspaceActions(
   useNativeMenuListener(dispatchRef, setFeedback);
   useNativeMenuState(enabled, setFeedback);
 
-  return { dispatch, enabled, feedback };
+  return {
+    dispatch,
+    enabled,
+    feedback,
+    sourceSave: {
+      unavailableReason: session.saveBackUnavailableReason,
+      visible: session.saveBackVisible,
+    },
+  };
 }
 
 function useActionAvailability(
@@ -46,6 +58,7 @@ function useActionAvailability(
       close_document: ready && session.canClose,
       save_document: ready && session.canSave,
       save_document_as: ready && session.canSaveAs,
+      save_back_to_source: ready && session.canSaveBack,
       export_docx: ready && session.canExport,
       open_references: ready,
       run_text_checks: ready,
@@ -79,6 +92,7 @@ function dispatchEnabledAction(
     close_document: session.requestClose,
     save_document: () => void session.save(),
     save_document_as: () => void session.saveAs(),
+    save_back_to_source: session.requestSaveBack,
     export_docx: docxExport.run,
     open_references: () => onTogglePanel("references"),
     run_text_checks: () => onTogglePanel("text-review"),
@@ -126,6 +140,7 @@ function useNativeMenuState(
     canClose: enabled.close_document,
     canSave: enabled.save_document,
     canSaveAs: enabled.save_document_as,
+    canSaveBack: enabled.save_back_to_source,
     canExport: enabled.export_docx,
   }), [enabled]);
 

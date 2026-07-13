@@ -35,9 +35,12 @@ describe("workspace action dispatcher", () => {
 
     act(() => result.current.dispatch("save_document"));
     act(() => nativeAction?.("save_document"));
+    act(() => result.current.dispatch("save_back_to_source"));
+    act(() => nativeAction?.("save_back_to_source"));
     act(() => result.current.dispatch("open_references"));
 
     expect(session.save).toHaveBeenCalledTimes(2);
+    expect(session.requestSaveBack).toHaveBeenCalledTimes(2);
     expect(togglePanel).toHaveBeenCalledWith("references");
   });
 
@@ -58,6 +61,7 @@ describe("workspace action dispatcher", () => {
       canClose: true,
       canSave: true,
       canSaveAs: true,
+      canSaveBack: true,
       canExport: true,
     }));
 
@@ -68,6 +72,7 @@ describe("workspace action dispatcher", () => {
       canClose: false,
       canSave: false,
       canSaveAs: false,
+      canSaveBack: false,
       canExport: false,
     }));
     act(() => nativeAction?.("save_document"));
@@ -103,15 +108,15 @@ describe("workspace action dispatcher", () => {
   it.each([
     [
       "no document",
-      { canClose: false, canExport: false, canSave: false, canSaveAs: false },
+      { canClose: false, canExport: false, canSave: false, canSaveAs: false, canSaveBack: false },
       false,
-      { canNew: true, canOpen: true, canClose: false, canSave: false, canSaveAs: false, canExport: false },
+      { canNew: true, canOpen: true, canClose: false, canSave: false, canSaveAs: false, canSaveBack: false, canExport: false },
     ],
     [
       "export pending",
       {},
       true,
-      { canNew: false, canOpen: false, canClose: false, canSave: false, canSaveAs: false, canExport: false },
+      { canNew: false, canOpen: false, canClose: false, canSave: false, canSaveAs: false, canSaveBack: false, canExport: false },
     ],
   ] as const)("applies the %s native state", async (_name, sessionPatch, exporting, expected) => {
     renderHook(() => useWorkspaceActions(
@@ -130,6 +135,7 @@ function documentSession(): DocumentSession {
     canExport: true,
     canSave: true,
     canSaveAs: true,
+    canSaveBack: true,
     documentId: "00000000-0000-4000-8000-000000000001",
     feedback: "",
     operation: "ready",
@@ -137,9 +143,14 @@ function documentSession(): DocumentSession {
     requestClose: vi.fn(),
     requestNew: vi.fn(),
     requestOpen: vi.fn(),
+    requestSaveBack: vi.fn(),
     resolvePendingAction: vi.fn(),
+    resolveSaveBack: vi.fn(),
     save: vi.fn().mockResolvedValue(true),
     saveAs: vi.fn().mockResolvedValue(true),
+    saveBackConfirmation: null,
+    saveBackUnavailableReason: "",
+    saveBackVisible: true,
     snapshot: vi.fn(),
     statusLabel: "Saved",
     title: "Research.draft",
