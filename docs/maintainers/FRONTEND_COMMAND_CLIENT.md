@@ -213,6 +213,15 @@ absolute or relative paths, raw XML, source bytes, and extra fields make the
 entire response invalid. Nested DOCX command failures retain their typed
 malformed, unsafe, unsupported, and lossy distinctions without raw details.
 
+`externalDocumentSave.ts` adds the currently unwired same-format writer client.
+It sends one current envelope and one closed decision without a path or
+fingerprint. Strict response validation preserves saved, unchanged,
+confirmation-required, denied, cancelled, invalid-response, and transport
+outcomes. Every denial and typed error maps exhaustively to one bounded recovery
+category: confirm known normalization, Save As `.draft`, reopen the source,
+retry, or no available recovery. The wrapper strips nested compiler details to
+stable codes and is not imported by any component, hook, or session state.
+
 ## Native menu wrappers
 
 `nativeMenu.ts` owns both Phase 48 native boundaries. It validates the closed

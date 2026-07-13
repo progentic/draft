@@ -719,9 +719,19 @@ registration. ZIP/XML validation and paragraph conversion complete before a
 live handle is registered. Rust retains the path and fingerprints; React
 receives only a basename, format, closed fidelity result, and same-format save
 disposition. Imported DOCX content has no native save target. First Save writes
-a new `.draft` file, export writes a separate DOCX copy, and the original DOCX
-is never overwritten by the current workflow. Same-format DOCX writing,
-complete format coverage, and human fidelity evidence remain absent.
+a new `.draft` file, and export writes a separate DOCX copy.
+
+The Phase 47 source-write boundary is a third, separate Rust command. It can
+replace an exact supported-subset DOCX, or a canonically normalized DOCX after
+explicit acceptance, only while the current source still matches its imported
+fingerprint. Rust compiles the complete replacement, rechecks source identity,
+uses the shared atomic writer, and updates provenance only after replacement
+success. Durability or registry failure triggers atomic restoration of the
+original bytes; failed restoration returns a typed uncertain-state error.
+React receives only closed dispositions, basename display data, and bounded
+recovery categories. No component currently invokes this command, so visible
+same-format Save, complete format coverage, compatible-reader comparison, and
+packaged human fidelity evidence remain absent.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 

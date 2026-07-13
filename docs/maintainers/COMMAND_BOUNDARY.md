@@ -193,6 +193,16 @@ Malformed, unsafe, unsupported, and lossy packages return distinct nested
 typed failures. No DOCX package, relationship, XML, path, or fingerprint crosses
 the command boundary. See `docs/maintainers/DOCX_INTEROPERABILITY.md`.
 
+Phase 47 also adds the separate `save_external_document` command. It accepts
+one current envelope and one closed decision: exact save, accepted canonical
+normalization, or cancellation. Rust obtains the external source only from the
+registry, checks its fingerprint before and after compilation, and returns a
+saved, unchanged, confirmation-required, denied, or cancelled outcome. Errors
+distinguish invalid input, registry/read/compilation/write failures, successful
+rollback, and failed rollback. Responses contain no source path, fingerprint,
+package bytes, or operating-system detail. The strict frontend wrapper exists
+for contract validation but no component or hook invokes it yet.
+
 ## Ownership layers
 
 | Layer | Item | Responsibility |
@@ -215,6 +225,7 @@ the command boundary. See `docs/maintainers/DOCX_INTEROPERABILITY.md`.
 | Mid | `list_references` | Returns bounded summaries from the managed reference store. |
 | Mid | `run_text_analysis` | Validates one snapshot and delegates to the fixed packaged local helper. |
 | Mid | `export_document` | Selects a DOCX target in Rust and delegates atomic export. |
+| Mid | `save_external_document` | Applies the closed same-format policy to one Rust-owned external source. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |
 | Low | `validated_version` | Normalizes and rejects an empty package version. |

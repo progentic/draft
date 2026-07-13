@@ -960,7 +960,10 @@ check_docx_interoperability_documentation() {
   require_document_text "${guide}" "\`ExternalFidelity\` has stable ordered variants"
   require_document_text "${guide}" "\`SameFormatSaveDisposition\` distinguishes"
   require_document_text "${guide}" 'source path, source SHA-256, imported'
-  require_document_text "${guide}" 'same-format writer evidence'
+  require_document_text "${guide}" 'same-format writer has no visible consumer'
+  require_document_text "${guide}" 'restores the original bytes'
+  require_document_text docs/maintainers/COMMAND_BOUNDARY.md 'save_external_document'
+  require_document_text docs/maintainers/FRONTEND_COMMAND_CLIENT.md 'externalDocumentSave.ts'
   require_document_text "${limits}" 'MAX_DOCX_IMPORT_COMPRESSION_RATIO'
   require_document_text docs/wiki/Workspace.md "supported paragraph subset from a \`.docx\` file"
   require_document_text docs/wiki/Troubleshooting.md 'A source-preservation notice means'

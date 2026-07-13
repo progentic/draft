@@ -82,7 +82,6 @@ mod tests {
             OpenDocumentOutcome::ImportedExternal {
                 envelope: envelope(),
                 external: ExternalDocumentSummary::imported_docx(
-                    "paper.docx".to_owned(),
                     &test_provenance(),
                     &envelope(),
                     b"source",
@@ -172,6 +171,7 @@ mod tests {
     fn test_provenance() -> crate::interoperability::provenance::ExternalSourceProvenance {
         crate::interoperability::provenance::ExternalSourceProvenance::imported_docx(
             std::path::PathBuf::from("paper.docx"),
+            "paper.docx".to_owned(),
             b"source",
             &envelope(),
             ExternalFidelity::Exact,

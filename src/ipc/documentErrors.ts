@@ -6,7 +6,12 @@ import {
 import { isExternalFidelity, type ExternalFidelity } from "./externalDocument";
 
 export type DocumentRegistryError = {
-  code: "already_open" | "not_open" | "source_path_in_use" | "registry_unavailable";
+  code:
+    | "already_open"
+    | "not_open"
+    | "external_source_unavailable"
+    | "source_path_in_use"
+    | "registry_unavailable";
 };
 
 export type AtomicDocumentWriteError = {
@@ -172,11 +177,15 @@ function isWriteFailure(
   value: Record<string, unknown>,
 ): value is { code: "write_failed"; cause: AtomicDocumentWriteError } {
   return (
-    value.code === "write_failed" && hasCodeAndCause(value) && isAtomicWriteError(value.cause)
+    value.code === "write_failed" &&
+    hasCodeAndCause(value) &&
+    isAtomicDocumentWriteError(value.cause)
   );
 }
 
-function isAtomicWriteError(value: unknown): value is AtomicDocumentWriteError {
+export function isAtomicDocumentWriteError(
+  value: unknown,
+): value is AtomicDocumentWriteError {
   return (
     isRecord(value) &&
     hasOnlyCode(value) &&
@@ -202,15 +211,20 @@ function isInvalidEnvelopeError(
 function isRegistryCommandError(
   value: Record<string, unknown>,
 ): value is { code: "registry"; cause: DocumentRegistryError } {
-  return value.code === "registry" && hasCodeAndCause(value) && isRegistryError(value.cause);
+  return (
+    value.code === "registry" &&
+    hasCodeAndCause(value) &&
+    isDocumentRegistryError(value.cause)
+  );
 }
 
-function isRegistryError(value: unknown): value is DocumentRegistryError {
+export function isDocumentRegistryError(value: unknown): value is DocumentRegistryError {
   return (
     isRecord(value) &&
     hasOnlyCode(value) &&
     (value.code === "already_open" ||
       value.code === "not_open" ||
+      value.code === "external_source_unavailable" ||
       value.code === "source_path_in_use" ||
       value.code === "registry_unavailable")
   );

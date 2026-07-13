@@ -3,6 +3,7 @@
 pub(crate) mod atomic_write;
 pub(crate) mod dialog;
 pub mod envelope;
+pub(crate) mod external_save;
 pub(crate) mod migration;
 pub(crate) mod paragraph_format;
 pub(crate) mod persistence;
