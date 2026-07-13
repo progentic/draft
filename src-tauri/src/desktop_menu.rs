@@ -152,9 +152,8 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
         .minimize()
         .fullscreen()
         .build()?;
-    let mut builder = MenuBuilder::new(app);
     #[cfg(target_os = "macos")]
-    {
+    let builder = {
         let application = SubmenuBuilder::new(app, "DRAFT")
             .about(None)
             .separator()
@@ -164,8 +163,10 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
             .separator()
             .quit()
             .build()?;
-        builder = builder.item(&application);
-    }
+        MenuBuilder::new(app).item(&application)
+    };
+    #[cfg(not(target_os = "macos"))]
+    let builder = MenuBuilder::new(app);
     builder.item(&file).item(&edit).item(&window).build()
 }
 
