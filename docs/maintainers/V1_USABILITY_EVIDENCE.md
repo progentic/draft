@@ -269,6 +269,27 @@ busy-state denial, exact and normalized compatible-reader inspection, Markdown
 disclosure, DOCX safety recovery, reset-label review, and `.draft` double-click
 handling. No row may close from mechanical evidence alone.
 
+### Phase 47 Build-Identity And Document-Association Retest Candidate
+
+- Implementation commit: `000642c0bdf46e06eeae237107ec6409ffb848e4`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `86b4d389270b76cfbbbdbc476eed2f513c8d69bda5f27fa6a6974a28d90118aa`
+- Package result: construction and mechanical packaging checks passed.
+- Human result: pending.
+
+The package embeds the full implementation commit, and the running workspace
+is expected to show short commit `000642c0` with profile `release`. Its
+`Info.plist` owns `.draft` as `com.progentic.draft.document` with Editor role,
+Owner rank, and `icon.icns`. The packaged and tracked icon hashes both equal
+`fd07d079de1dd38bdc84eb222ab8ee90d856d488aad7f0550860c8a369b94236`.
+These checks establish artifact provenance and bundle registration only. They
+do not prove visible build identity, DOCX outcomes, Launch Services behavior,
+or double-click opening.
+
+Manual review must still run the complete gate against this exact executable.
+No prior artifact evidence transfers to this candidate, and this mechanical
+record closes no finding, invariant, RC row, or roadmap gate.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid
@@ -352,10 +373,10 @@ No untested task is counted as passed.
 | UX-47-006 | UX-2 | Open - correction pending package | Rust now returns a closed Markdown import format and the visible notice says Markdown remains literal text without parsing or preview. | Retest the notice and source preservation in the replacement package without adding parsing behavior. |
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
-| UX-47-009 | UX-1 | Open - correction pending package | Artifact `cb363385` displayed only product version `0.1.0`, which did not let the reviewer distinguish the package from another internal build. | Embed the exact Git commit and build profile, show a short build identifier beside SemVer, and fail packaging when executable metadata does not match the clean checkout being validated. |
-| UX-47-010 | UX-0 | Open - correction pending package | Selecting a DOCX produced no visible completion, cancellation, unsupported, safety, malformed-input, or failure disposition during manual review. | Keep DOCX intake Rust-owned and present every pending and terminal result in one visible, accessible operation notice without paths or package details. |
-| UX-47-011 | UX-0 | Open - correction pending package | DOCX export produced no visible completion or error disposition during manual review. | Present pending, exported, cancelled, unsupported-content, invalid-package, and write-failure outcomes through the same visible operation notice, then retest atomic output and source preservation. |
-| UX-47-012 | UX-1 | Open - correction pending package | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Register the owned DRAFT document type and purple icon, keep paths in Rust, route macOS open requests through the typed lifecycle, and prove double-click opening in the replacement package. |
+| UX-47-009 | UX-1 | Open - manual retest pending | Artifact `cb363385` displayed only product version `0.1.0`, which did not let the reviewer distinguish the package from another internal build. | Replacement artifact `86b4d389` mechanically embeds commit `000642c0`; confirm the visible version, short commit, and release profile in the running package. |
+| UX-47-010 | UX-0 | Open - manual retest pending | Selecting a DOCX produced no visible completion, cancellation, unsupported, safety, malformed-input, or failure disposition during manual review. | Replacement tests enforce one visible pending and terminal notice; retest successful, cancelled, unsupported, safety-limit, malformed, and failed DOCX intake without path or package detail. |
+| UX-47-011 | UX-0 | Open - manual retest pending | DOCX export produced no visible completion or error disposition during manual review. | Replacement tests enforce pending, exported, cancelled, unsupported-content, invalid-package, and write-failure outcomes; retest atomic output and source preservation. |
+| UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `86b4d389` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 
 Every RC and GATE row remains open. The failed Phase 47 package closes no
 finding, release blocker, or roadmap gate.

@@ -1158,13 +1158,13 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'com.progentic.draft.document' src-tauri/tauri.conf.json
   require_source_pattern 'com.progentic.draft.document' src-tauri/Info.plist
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
-  require_source_pattern '| UX-47-009 | UX-1 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-009 | UX-1 | Open - manual retest pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Open - manual retest pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-011 | UX-0 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-011 | UX-0 | Open - manual retest pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-012 | UX-1 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-012 | UX-1 | Open - manual retest pending |' \
     "${ledger}"
   require_source_pattern '| RC-07 | Release blocker | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md

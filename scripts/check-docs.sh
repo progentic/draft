@@ -1114,13 +1114,13 @@ check_phase_47_manual_correction_documentation() {
   require_document_text docs/wiki/Troubleshooting.md \
     '## A DRAFT File Opens In Another Application'
   require_document_text "${ledger}" \
-    '| UX-47-009 | UX-1 | Open - correction pending package |'
+    '| UX-47-009 | UX-1 | Open - manual retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-010 | UX-0 | Open - correction pending package |'
+    '| UX-47-010 | UX-0 | Open - manual retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-011 | UX-0 | Open - correction pending package |'
+    '| UX-47-011 | UX-0 | Open - manual retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-012 | UX-1 | Open - correction pending package |'
+    '| UX-47-012 | UX-1 | Open - manual retest pending |'
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'
   require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
 }
