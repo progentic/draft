@@ -46,16 +46,11 @@ impl ApplicationOpenQueue {
 }
 
 pub(crate) fn handle_run_event(app: &AppHandle, event: RunEvent) {
-    #[cfg(target_os = "macos")]
     if let RunEvent::Opened { urls } = event {
         queue_open_request(app, urls);
     }
-
-    #[cfg(not(target_os = "macos"))]
-    let _ = (app, event);
 }
 
-#[cfg(target_os = "macos")]
 fn queue_open_request(app: &AppHandle, urls: Vec<Url>) {
     let event = match app.state::<ApplicationOpenQueue>().enqueue(urls) {
         Ok(()) => ApplicationOpenEvent::Available,
