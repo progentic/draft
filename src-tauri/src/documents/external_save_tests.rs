@@ -7,6 +7,7 @@ use std::{
 };
 
 use serde_json::json;
+#[cfg(target_os = "macos")]
 use sha2::{Digest, Sha256};
 use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
 
