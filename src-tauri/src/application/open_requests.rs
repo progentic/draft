@@ -46,9 +46,23 @@ impl ApplicationOpenQueue {
 }
 
 pub(crate) fn handle_run_event(app: &AppHandle, event: RunEvent) {
-    if let RunEvent::Opened { urls } = event {
+    if let Some(urls) = opened_urls(event) {
         queue_open_request(app, urls);
     }
+}
+
+#[cfg(target_os = "macos")]
+fn opened_urls(event: RunEvent) -> Option<Vec<Url>> {
+    match event {
+        RunEvent::Opened { urls } => Some(urls),
+        _ => None,
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn opened_urls(event: RunEvent) -> Option<Vec<Url>> {
+    let _ = event;
+    None
 }
 
 fn queue_open_request(app: &AppHandle, urls: Vec<Url>) {
