@@ -7,6 +7,9 @@ const useRuntimeStatusMock = vi.hoisted(() => vi.fn());
 const useConnectivityModeMock = vi.hoisted(() => vi.fn());
 const listenToNativeMenuActionsMock = vi.hoisted(() => vi.fn());
 const setNativeMenuStateMock = vi.hoisted(() => vi.fn());
+const listenToApplicationOpenRequestsMock = vi.hoisted(() => vi.fn());
+const takeApplicationOpenRequestMock = vi.hoisted(() => vi.fn());
+let applicationOpenAvailable: (() => void) | undefined;
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 vi.mock("../features/runtime-status/useRuntimeStatus", () => ({
@@ -19,6 +22,11 @@ vi.mock("./nativeMenu", () => ({
   listenToNativeMenuActions: listenToNativeMenuActionsMock,
   setNativeMenuState: setNativeMenuStateMock,
 }));
+vi.mock("./applicationOpen", () => ({
+  dismissApplicationOpenRequest: vi.fn(async () => true),
+  listenToApplicationOpenRequests: listenToApplicationOpenRequestsMock,
+  takeApplicationOpenRequest: takeApplicationOpenRequestMock,
+}));
 
 import { App } from "../App";
 import { FINDING_POLICIES } from "./textAnalysis";
@@ -29,9 +37,15 @@ const IMPORTED_ID = "00000000-0000-4000-8000-000000000003";
 
 describe("Phase 46 visible workflows", () => {
   beforeEach(() => {
+    applicationOpenAvailable = undefined;
     installLayoutStubs();
     invokeMock.mockReset();
-    useRuntimeStatusMock.mockReturnValue({ phase: "ready", version: "0.1.0" });
+    useRuntimeStatusMock.mockReturnValue({
+      buildCommit: "0123456789abcdef0123456789abcdef01234567",
+      buildProfile: "release",
+      phase: "ready",
+      version: "0.1.0",
+    });
     useConnectivityModeMock.mockReturnValue({
       state: { phase: "ready", mode: "online" },
       refresh: vi.fn(),
@@ -41,6 +55,15 @@ describe("Phase 46 visible workflows", () => {
     listenToNativeMenuActionsMock.mockResolvedValue(vi.fn());
     setNativeMenuStateMock.mockReset();
     setNativeMenuStateMock.mockResolvedValue({ status: "applied" });
+    listenToApplicationOpenRequestsMock.mockReset();
+    listenToApplicationOpenRequestsMock.mockImplementation(
+      async (onAvailable: () => void) => {
+        applicationOpenAvailable = onAvailable;
+        return vi.fn();
+      },
+    );
+    takeApplicationOpenRequestMock.mockReset();
+    takeApplicationOpenRequestMock.mockResolvedValue({ status: "none" });
     installDefaultCommands();
   });
 
@@ -722,6 +745,39 @@ describe("Phase 46 visible workflows", () => {
     expect(editor.querySelector("strong")?.textContent).toBe("rsiste");
   });
 
+  it("opens a queued macOS DRAFT document through the path-free session boundary", async () => {
+    render(<App />);
+    await waitFor(() => expect(takeApplicationOpenRequestMock).toHaveBeenCalledOnce());
+    takeApplicationOpenRequestMock.mockResolvedValueOnce({
+      status: "open",
+      result: { status: "opened_draft", envelope: openedEnvelope() },
+    });
+    act(() => applicationOpenAvailable?.());
+
+    expect(await screen.findByText("DRAFT document opened.")).toBeTruthy();
+    expect(screen.getByText("Saved")).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
+      "Persisted evidence",
+    );
+    expect(takeApplicationOpenRequestMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a pending state before a selected DOCX resolves", async () => {
+    const pending = deferred<unknown>();
+    installDefaultCommands({ openDocument: () => pending.promise });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+    const notice = screen.getByText("Opening document…").closest(
+      "[data-operation-state]",
+    );
+    expect(notice?.getAttribute("data-operation-state")).toBe("pending");
+
+    await act(async () => pending.resolve({ status: "cancelled" }));
+    expect(await screen.findByText("Open cancelled.")).toBeTruthy();
+  });
+
   it("preserves the open document when a typed Open failure is presented", async () => {
     const user = userEvent.setup();
     let opens = 0;
@@ -859,8 +915,39 @@ describe("Phase 46 visible workflows", () => {
     render(<App />);
     await clickWorkspaceAction(user, "Export DOCX…");
 
-    expect(await screen.findByText("DOCX export complete. Your DRAFT document was not changed.")).toBeTruthy();
+    const result = await screen.findByText(
+      "DOCX export complete. Your DRAFT document was not changed.",
+    );
+    expect(result.closest("[data-operation-state]")?.getAttribute("data-operation-state"))
+      .toBe("settled");
     expect(commandNames()).toEqual(["create_document", "export_document"]);
+  });
+
+  it.each([
+    [
+      "unsupported_document_content",
+      "Some document content is not supported in DOCX export. Remove that content and try again.",
+    ],
+    [
+      "write_failed",
+      "DRAFT could not write the DOCX file. Your DRAFT document was not changed. Choose another location and try again.",
+    ],
+    [
+      "package_construction_failed",
+      "DRAFT could not create a valid DOCX package. Your DRAFT document was not changed.",
+    ],
+  ] as const)("presents the typed %s DOCX export failure", async (code, message) => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      exportDocument: () => Promise.reject({ code: "export", cause: { code } }),
+    });
+    render(<App />);
+
+    await clickWorkspaceAction(user, "Export DOCX…");
+
+    const notice = await screen.findByText(message);
+    expect(notice.closest("[data-operation-state]")?.getAttribute("data-operation-state"))
+      .toBe("settled");
   });
 
   it("prevents overlapping document actions while DOCX export is pending", async () => {
@@ -870,7 +957,12 @@ describe("Phase 46 visible workflows", () => {
     render(<App />);
 
     await clickWorkspaceAction(user, "Export DOCX…");
-    expect(screen.getByText("Preparing DOCX export.")).toBeTruthy();
+    expect(
+      screen
+        .getByText("Preparing DOCX export.")
+        .closest("[data-operation-state]")
+        ?.getAttribute("data-operation-state"),
+    ).toBe("pending");
     await assertDocumentActionsDisabled(user, "Exporting DOCX");
     expect(commandNames()).toEqual(["create_document", "export_document"]);
 

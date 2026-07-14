@@ -313,10 +313,11 @@ or status bar.
 | State | Visible message | User guidance |
 | :--- | :--- | :--- |
 | Checking | `Connecting to core` | Wait for desktop startup. |
-| Ready | `Core v<version>` | No action required. |
+| Ready | `Core v<version> · build <commit> · <profile>` | Confirm the short commit against the package under manual review. |
 | Transport unavailable | `Core unavailable` | Use the desktop app or restart it. Browser preview has no Rust core. |
 | Invalid payload or response | `Core status invalid` | Restart DRAFT; report the version if it repeats. |
 | `invalid_application_version` | `DRAFT received an unsupported application version.` | Install a matching DRAFT build. |
+| `invalid_build_metadata` | `DRAFT could not verify this application build.` | Replace it with one complete package and report the visible build identity. |
 | `event_delivery_failed` | `DRAFT could not deliver the core status event.` | Restart DRAFT; report the failure if it repeats. |
 | Unknown command code | `DRAFT could not read the core status.` | Restart DRAFT and report the version and message. |
 
@@ -333,6 +334,11 @@ known variants remain exhaustive.
 Phase 46 feature copy remains owned by each bounded visible workflow. Messages
 contain no raw path, source text, helper output, database detail, or internal
 error name. See `PHASE46_WORKFLOWS.md`.
+
+Phase 47 uses one conditional operation notice below the document command bar
+for Open and DOCX Export pending and terminal outcomes. The notice is absent
+when no result exists; compact document, connectivity, and active-operation
+state remains in the bottom status bar.
 
 ## Formatting Review State
 

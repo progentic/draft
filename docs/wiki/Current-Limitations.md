@@ -10,6 +10,9 @@ Apple Silicon target.
 - There is no autosave, crash recovery, version history, or cloud sync.
 - DRAFT opens and saves its version 2 document format. It migrates valid version
   1 DRAFT documents in memory and writes version 2 only after an explicit save.
+- `.draft` is structured JSON, not plain prose. The macOS bundle declares DRAFT
+  as the owner of that document type and supplies its icon, but double-click and
+  Launch Services behavior still require replacement-package validation.
 - DRAFT imports UTF-8 `.txt` and `.md` files as literal editable text, but it
   does not parse or preview Markdown. Unsupported or malformed input fails
   without changing the source file.

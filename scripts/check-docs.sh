@@ -33,6 +33,7 @@ main() {
   check_error_ux_documentation
   check_critical_path_documentation
   check_packaging_documentation
+  check_phase_47_manual_correction_documentation
   check_data_migration_documentation
   check_release_candidate_documentation
   check_v1_analysis_decision_state
@@ -689,6 +690,9 @@ check_coverage_symbols() {
     'src-tauri/src/lib.rs|run'
     'src/app/DraftWorkspace.tsx|DraftWorkspace'
     'src-tauri/src/commands/runtime_status.rs|get_runtime_status'
+    'src-tauri/src/commands/application_open.rs|open_application_document'
+    'src/ipc/applicationOpen.ts|takeApplicationOpenRequest'
+    'src/components/WorkspaceOperationNotice.tsx|WorkspaceOperationNotice'
     'src-tauri/src/workers/cancellation.rs|WorkerCancellationRegistry'
     'src-tauri/src/documents/envelope.rs|DocumentEnvelope'
     'src-tauri/src/documents/registry.rs|DocumentRegistry'
@@ -1060,7 +1064,8 @@ check_critical_path_documentation() {
   require_document_text "${guide}" "\`UnsupportedCitation\`"
   require_document_text "${guide}" 'package reopens'
   require_document_text "${guide}" 'adds no application command'
-  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 46'
+  require_document_text docs/ARCHITECTURE.md \
+    'implemented application through the current Phase 47 checkpoint'
   require_document_text docs/user/WORKSPACE.md '## Export DOCX'
 }
 
@@ -1074,12 +1079,50 @@ check_packaging_documentation() {
   require_document_text "${guide}" 'CFBundleIdentifier = com.progentic.draft'
   require_document_text "${guide}" 'assets/DRAFT_Logo.png'
   require_document_text "${guide}" 'ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043'
+  require_document_text "${guide}" 'com.progentic.draft.document'
+  require_document_text "${guide}" 'DRAFT_BUILD_COMMIT'
   require_document_text "${guide}" 'It does not produce a signed installer'
   require_document_text "${configuration}" "| Bundle activation | \`true\` |"
   require_document_text "${configuration}" "| Bundle targets | \`app\` only |"
   require_document_text "${configuration}" '| Canonical icon source |'
   require_document_text docs/wiki/Current-Limitations.md 'a published download'
   require_document_text README.md 'Versioned downloads will be published on the'
+}
+
+check_phase_47_manual_correction_documentation() {
+  local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_document_text docs/maintainers/COMMAND_BOUNDARY.md \
+    '## macOS application-open command'
+  require_document_text docs/maintainers/COMMAND_BOUNDARY.md \
+    '"buildCommit": "0123456789abcdef0123456789abcdef01234567"'
+  require_document_text docs/maintainers/FRONTEND_COMMAND_CLIENT.md \
+    "\`applicationOpen.ts\` owns the path-free macOS application-open boundary."
+  require_document_text docs/maintainers/DOCUMENT_SAVE_LOAD.md \
+    "The macOS package registers \`.draft\` as \`com.progentic.draft.document\`."
+  require_document_text docs/maintainers/CONFIGURATION.md \
+    '| Package build identity |'
+  require_document_text docs/maintainers/ERROR_MESSAGES.md \
+    "\`invalid_build_metadata\`"
+  require_document_text docs/user/WORKSPACE.md \
+    "A \`.draft\` file is DRAFT's structured editable source"
+  require_document_text docs/wiki/Workspace.md \
+    'temporary notice below the document controls'
+  require_document_text docs/wiki/Troubleshooting.md \
+    '## Application Build Could Not Be Verified'
+  require_document_text docs/wiki/Troubleshooting.md \
+    '## A DRAFT File Opens In Another Application'
+  require_document_text "${ledger}" \
+    '| UX-47-009 | UX-1 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-010 | UX-0 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-011 | UX-0 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-012 | UX-1 | Open - correction pending package |'
+  require_document_text "${release}" '| RC-07 | Release blocker | Open |'
+  require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
 }
 
 check_readme_scope() {

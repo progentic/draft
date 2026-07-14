@@ -48,6 +48,14 @@ For `.draft` and `.json`, Rust:
 Malformed, invalid, or duplicate files never replace an existing registry
 entry.
 
+The macOS package registers `.draft` as `com.progentic.draft.document`. When
+Finder or another desktop surface asks DRAFT to open one file, the Rust run
+loop places its file URL in a private queue and emits only a path-free
+availability event. React applies the existing unsaved-work policy, then asks
+Rust to open or dismiss that queued request. Rust converts and consumes the
+path and reuses the same validation, migration, registration, and typed outcome
+as the native Open dialog. Multiple URLs and non-file URLs fail closed.
+
 For `.txt` and `.md`, Rust reads at most 8 MiB of UTF-8, creates a new validated
 unsaved envelope, and returns `imported_text` with the closed `plain_text` or
 `markdown` format. Every LF-delimited line becomes one paragraph; a terminal
@@ -215,7 +223,9 @@ target, display name, and dirty state unchanged.
 ## Frontend Boundary
 
 `src/ipc/documentCreate.ts`, `documentOpen.ts`, `documentSave.ts`, and
-`documentClose.ts` are the frontend lifecycle wrappers.
+`documentClose.ts` are the frontend lifecycle wrappers. `applicationOpen.ts`
+adds only a path-free request signal and closed open/dismiss decision for macOS
+document activation.
 `src/ipc/documentEnvelope.ts` mirrors the Rust envelope for response validation
 and request typing. Rust remains the identity and validation authority.
 `src/documents/paragraphFormatting.ts` mirrors only the accepted paragraph

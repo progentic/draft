@@ -17,6 +17,10 @@ Phase 48 adds a second finite event for native File menu selections. It carries
 one closed action and starts no work until the frontend validates and dispatches
 it through current application state.
 
+Phase 47 adds a third finite event for macOS document activation. It announces
+only that a Rust-owned request is queued. The file URL never enters the event
+payload or frontend state.
+
 ## Runtime status event
 
 The stable event name is:
@@ -29,6 +33,8 @@ The only accepted payload is:
 
 ```json
 {
+  "buildCommit": "0123456789abcdef0123456789abcdef01234567",
+  "buildProfile": "release",
   "type": "ready",
   "version": "0.1.0"
 }
@@ -51,12 +57,24 @@ command-specific error:
 
 The stable event name is `draft://native-menu-action`. Its payload contains
 exactly one `action` field with one of: `new_document`, `open_document`,
-`close_document`, `save_document`, `save_document_as`, or `export_docx`.
+`close_document`, `save_document`, `save_document_as`,
+`save_back_to_source`, or `export_docx`.
 
 Rust creates the native item and emits the selected closed action. The frontend
 validates the payload as unknown input, rejects extra fields, and passes valid
 actions to `useWorkspaceActions`. The dispatcher checks live availability
 before invoking the same document or export operation used by the toolbar.
+
+## macOS application-open event
+
+The stable event name is `draft://application-open`. Its payload is exactly
+`{ "type": "available" }` or `{ "type": "queue_unavailable" }`. It carries no
+URL, path, filename, content, or document identity.
+
+The Rust run loop queues one macOS file URL before emitting `available`. React
+validates the event, applies current busy and unsaved-work policy, and invokes
+the path-free `open_application_document` command with `open` or `dismiss`.
+Rust alone consumes and converts the queued URL.
 
 ## Lifecycle
 
@@ -84,6 +102,7 @@ component remounts.
 | Mid | `listenToRuntimeStatus` | Validates unknown payloads and exposes the typed event. |
 | Low | `emit_runtime_status` | Calls the raw Tauri Rust emitter. |
 | Low | `emit_native_menu_action` | Emits one selected closed File action to the main window. |
+| Low | `emit_application_open_event` | Announces path-free queued application-open state. |
 | Low | `listenToEvent` | Calls the raw Tauri TypeScript listener and extracts unknown payload data. |
 
 Raw TypeScript event APIs are isolated in `src/ipc/eventClient.ts`. Raw Rust
@@ -114,6 +133,8 @@ producer, and the WebView can only register or remove listeners.
 - Rust event delivery failure is observable as `event_delivery_failed`.
 - Invalid native menu payloads leave the toolbar available and show bounded
   recovery guidance.
+- Invalid application-open payloads preserve the current document and direct
+  the user to the visible Open action.
 
 ## Cancellation boundary
 
@@ -132,8 +153,9 @@ They have no stable `draft://` event name, Tauri emitter, registered command,
 WebView capability, frontend listener, or visible analysis workflow.
 
 The Python helper runner returns one terminal Rust result and emits no progress
-event. Runtime status and native File actions are the only implemented
-Rust-to-frontend Tauri events at this checkpoint.
+event. Runtime status, native File actions, and path-free macOS application-open
+availability are the only implemented Rust-to-frontend Tauri events at this
+checkpoint.
 
 ## Enforcement
 

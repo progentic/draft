@@ -96,14 +96,15 @@ validated event drives the ready-state transition. `useRuntimeStatus` exposes
 one of three transient states:
 
 - `checking`
-- `ready` with the Rust application version
+- `ready` with the Rust application version, build commit, and build profile
 - `unavailable` with the complete bounded client or event error
 
-The document inspector displays `Connecting to core`, `Core v<version>`, or a
-bounded unavailable label. Invalid application metadata and event-delivery
-failure remain distinct through the session state so the interface can explain
-the actual failure. This state is not persisted and does not make the frontend
-authoritative for runtime metadata.
+The document inspector displays `Connecting to core`, the product version plus
+short build commit and profile, or a bounded unavailable label. Invalid version,
+invalid build metadata, and event-delivery failure remain distinct through the
+session state so the interface can explain the actual failure. This state is
+not persisted and does not make the frontend authoritative for runtime
+metadata.
 
 A standalone Vite browser does not have a Tauri runtime and therefore reports
 the core as unavailable. The desktop application resolves the registered Rust
@@ -229,6 +230,17 @@ strips nested compiler details to stable codes.
 An invalid response or transport failure cannot prove whether replacement
 finished, so it requires reopening the source rather than offering immediate
 retry.
+
+`applicationOpen.ts` owns the path-free macOS application-open boundary. Its
+event validator accepts only `available` or `queue_unavailable`; its command
+sends only `open` or `dismiss`. A successful open reuses the normal
+`OpenDocumentResult` validator. The wrapper rejects extra fields and never
+receives the queued file URL, path, fingerprint, or raw source bytes.
+
+`useDocumentSession` drains the queue only when the current lifecycle is ready.
+Unsaved content uses the existing save/discard/keep-editing decision before the
+queued request is consumed. Open pending, success, cancellation, and failure
+copy appears in the conditional workspace operation notice.
 
 `useExternalSourceSave` is the only production consumer. It rejects stale
 editor generations, exposes only exact or accepted-normalization confirmation,

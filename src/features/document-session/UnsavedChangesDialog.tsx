@@ -81,7 +81,7 @@ function containFocus(event: React.KeyboardEvent, dialog: HTMLElement | null) {
 }
 
 function dialogMessage(action: PendingDocumentAction) {
-  if (action === "open") {
+  if (action === "open" || action === "open_requested") {
     return "You are about to open another document.";
   }
   if (action === "new") {

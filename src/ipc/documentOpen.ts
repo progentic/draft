@@ -43,13 +43,13 @@ const COMMAND_ARGUMENTS: OpenDocumentArguments = { request: {} };
 export async function openDocument(): Promise<OpenDocumentResult> {
   try {
     const response = await invokeCommand<unknown>(COMMAND_NAME, COMMAND_ARGUMENTS);
-    return resultFromResponse(response);
+    return openDocumentResultFromResponse(response);
   } catch (error: unknown) {
     return { status: "error", error: clientErrorFrom(error) };
   }
 }
 
-function resultFromResponse(response: unknown): OpenDocumentResult {
+export function openDocumentResultFromResponse(response: unknown): OpenDocumentResult {
   if (isCancelledResponse(response)) {
     return { status: "cancelled" };
   }

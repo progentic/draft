@@ -34,6 +34,19 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "fileAssociations": [
+      {
+        "ext": ["draft"],
+        "name": "DRAFT Document",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/vnd.progentic.draft+json",
+        "exportedType": {
+          "identifier": "com.progentic.draft.document",
+          "conformsTo": ["public.json", "public.data"]
+        }
+      }
+    ],
     "resources": {
       "../python/draft_helpers": "python/draft_helpers"
     }

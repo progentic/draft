@@ -1,11 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type ReadyHandler = (event: { type: "ready"; version: string }) => void;
+type ReadyHandler = (event: typeof READY_EVENT) => void;
 type ErrorHandler = (error: { type: "invalid-payload" }) => void;
 
 const getRuntimeStatusMock = vi.hoisted(() => vi.fn());
 const listenToRuntimeStatusMock = vi.hoisted(() => vi.fn());
 const stopMock = vi.hoisted(() => vi.fn());
+const READY_EVENT = {
+  type: "ready" as const,
+  buildCommit: "0123456789abcdef0123456789abcdef01234567",
+  buildProfile: "release" as const,
+  version: "0.1.0",
+};
+const READY_RESULT = {
+  status: "ready" as const,
+  buildCommit: READY_EVENT.buildCommit,
+  buildProfile: READY_EVENT.buildProfile,
+  version: READY_EVENT.version,
+};
 
 vi.mock("../../ipc/runtimeStatus", () => ({
   getRuntimeStatus: getRuntimeStatusMock,
@@ -30,20 +42,27 @@ describe("startRuntimeStatusSession", () => {
     listenToRuntimeStatusMock.mockImplementation(
       async (onEvent: ReadyHandler, _onError: ErrorHandler) => {
         callOrder.push("listen");
-        onEvent({ type: "ready", version: "0.1.0" });
+        onEvent(READY_EVENT);
         return stopMock;
       },
     );
     getRuntimeStatusMock.mockImplementation(async () => {
       callOrder.push("command");
-      return { status: "ready", version: "0.1.0" };
+      return READY_RESULT;
     });
 
     const stop = await startRuntimeStatusSession((state) => states.push(state));
     stop();
 
     expect(callOrder).toEqual(["listen", "command"]);
-    expect(states).toEqual([{ phase: "ready", version: "0.1.0" }]);
+    expect(states).toEqual([
+      {
+        phase: "ready",
+        buildCommit: READY_EVENT.buildCommit,
+        buildProfile: "release",
+        version: "0.1.0",
+      },
+    ]);
     expect(stopMock).toHaveBeenCalledOnce();
   });
 
@@ -55,7 +74,7 @@ describe("startRuntimeStatusSession", () => {
         return stopMock;
       },
     );
-    getRuntimeStatusMock.mockResolvedValue({ status: "ready", version: "0.1.0" });
+    getRuntimeStatusMock.mockResolvedValue(READY_RESULT);
 
     await startRuntimeStatusSession((state) => states.push(state));
 
@@ -64,7 +83,11 @@ describe("startRuntimeStatusSession", () => {
     ]);
   });
 
-  it.each(["invalid_application_version", "event_delivery_failed"] as const)(
+  it.each([
+    "event_delivery_failed",
+    "invalid_application_version",
+    "invalid_build_metadata",
+  ] as const)(
     "preserves the %s command failure after listener setup",
     async (code) => {
       const states: unknown[] = [];

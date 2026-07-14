@@ -24,7 +24,7 @@ mod critical_paths_tests;
 /// Starts the DRAFT desktop runtime.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .on_menu_event(desktop_menu::handle_event)
         .setup(|app| {
@@ -36,8 +36,10 @@ pub fn run() {
             Ok(())
         })
         .manage(documents::registry::DocumentRegistry::new())
+        .manage(application::open_requests::ApplicationOpenQueue::default())
         .manage(workers::cancellation::WorkerCancellationRegistry::new())
         .invoke_handler(tauri::generate_handler![
+            commands::application_open::open_application_document,
             commands::citation_resolution::resolve_citation,
             commands::connectivity::get_connectivity_mode,
             commands::connectivity::set_connectivity_mode,
@@ -57,6 +59,7 @@ pub fn run() {
             commands::text_analysis::run_text_analysis,
             commands::worker_cancellation::cancel_worker
         ])
-        .run(tauri::generate_context!())
-        .expect("failed to start the DRAFT desktop runtime");
+        .build(tauri::generate_context!())
+        .expect("failed to build the DRAFT desktop runtime");
+    app.run(application::open_requests::handle_run_event);
 }

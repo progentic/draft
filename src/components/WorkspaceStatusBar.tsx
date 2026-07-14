@@ -9,7 +9,6 @@ interface WorkspaceStatusBarProps {
   connectivityState: ConnectivityModeState;
   documentStatus: string;
   exportPending: boolean;
-  feedback: string;
   operation: DocumentOperation;
   onRefreshConnectivity: () => void;
   onSetConnectivityMode: (mode: ConnectivityMode) => void;
@@ -22,14 +21,7 @@ export function WorkspaceStatusBar(props: WorkspaceStatusBarProps) {
     <footer className="workspace-status-bar" aria-label="Workspace status">
       <StatusItem icon={FileCheck2} label={props.documentStatus} name="Document state" />
       {showOperation ? <OperationStatus label={operation} /> : null}
-      <div
-        className="workspace-status-bar__feedback"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {props.feedback}
-      </div>
+      <span className="workspace-status-bar__spacer" aria-hidden="true" />
       <ConnectivityModeControl
         state={props.connectivityState}
         onRefresh={props.onRefreshConnectivity}

@@ -28,6 +28,7 @@ main() {
   check_formatting_contract
   check_docx_export_contract
   check_docx_import_contract
+  check_phase_47_manual_gate_corrections
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -1095,6 +1096,83 @@ check_docx_import_contract() {
   require_source_pattern '| GATE-47 | Roadmap gate | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md
   printf 'PASS Phase 47 bounded DOCX import and fidelity contract\n'
+}
+
+check_phase_47_manual_gate_corrections() {
+  local runtime='src-tauri/src/application/runtime_status.rs'
+  local application_queue='src-tauri/src/application/open_requests.rs'
+  local application_command='src-tauri/src/commands/application_open.rs'
+  local application_client='src/ipc/applicationOpen.ts'
+  local operation_notice='src/components/WorkspaceOperationNotice.tsx'
+  local workflow_tests='src/ipc/Phase46Workflows.test.tsx'
+  local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
+
+  require_file "${runtime}"
+  require_file "${application_queue}"
+  require_file "${application_command}"
+  require_file "${application_client}"
+  require_file "${operation_notice}"
+  require_file src-tauri/Info.plist
+
+  require_rust_test packaged_build_identity_requires_a_full_lowercase_commit \
+    "${runtime}"
+  require_rust_test build_profile_is_closed "${runtime}"
+  require_rust_test one_file_url_is_queued_without_exposing_it \
+    "${application_queue}"
+  require_rust_test multiple_or_non_file_urls_fail_closed \
+    "${application_queue}"
+  require_rust_test dismissal_consumes_one_request_without_opening_it \
+    "${application_command}"
+
+  require_source_pattern 'DRAFT_BUILD_COMMIT' src-tauri/build.rs
+  require_source_pattern 'require_clean_worktree' scripts/package-macos.sh
+  require_source_pattern 'require_embedded_build_identity' scripts/package-macos.sh
+  require_source_pattern 'buildCommit: string' src/ipc/runtimeStatus.ts
+  require_source_pattern 'buildProfile: "debug" | "release"' \
+    src/ipc/runtimeStatus.ts
+  require_source_pattern 'status.buildCommit.slice(0, 8)' \
+    src/components/DocumentInspector.tsx
+  require_source_pattern 'status.buildProfile' src/components/DocumentInspector.tsx
+
+  require_source_pattern 'const COMMAND_NAME = "open_application_document"' \
+    "${application_client}"
+  require_source_pattern 'const EVENT_NAME = "draft://application-open"' \
+    "${application_client}"
+  require_source_pattern 'opens one queued document without sending a path' \
+    src/ipc/applicationOpen.test.ts
+  require_source_pattern 'opens a queued macOS DRAFT document through the path-free session boundary' \
+    "${workflow_tests}"
+  assert_no_matches 'frontend macOS application-open path authority' \
+    '\b(?:sourcePath|targetPath|absolutePath|PathBuf|fileUrl)\b|file://' \
+    "${application_client}" src/features/document-session/useDocumentSession.ts
+
+  require_source_pattern 'role="status"' "${operation_notice}"
+  require_source_pattern 'aria-live="polite"' "${operation_notice}"
+  require_source_pattern 'shows a pending state before a selected DOCX resolves' \
+    "${workflow_tests}"
+  require_source_pattern 'exports DOCX with visible completion and source-safety feedback' \
+    "${workflow_tests}"
+  require_source_pattern 'presents the typed %s DOCX export failure' \
+    "${workflow_tests}"
+
+  require_source_pattern 'com.progentic.draft.document' src-tauri/tauri.conf.json
+  require_source_pattern 'com.progentic.draft.document' src-tauri/Info.plist
+  require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
+  require_source_pattern '| UX-47-009 | UX-1 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-010 | UX-0 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-011 | UX-0 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-012 | UX-1 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| RC-07 | Release blocker | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_source_pattern '| GATE-47 | Roadmap gate | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
+
+  printf 'PASS Phase 47 failed-package correction boundaries\n'
 }
 
 check_document_envelope_contract() {

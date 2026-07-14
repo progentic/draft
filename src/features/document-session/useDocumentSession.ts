@@ -4,6 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { closeDocument } from "../../ipc/documentClose";
 import { createUnsavedDocument } from "../../ipc/documentCreate";
+import {
+  dismissApplicationOpenRequest,
+  listenToApplicationOpenRequests,
+  takeApplicationOpenRequest,
+  type ApplicationOpenClientError,
+} from "../../ipc/applicationOpen";
 import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
 import { openDocument } from "../../ipc/documentOpen";
 import { saveDocument } from "../../ipc/documentSave";
@@ -14,7 +20,7 @@ import {
   type ExternalSourceSaveConfirmation,
 } from "../external-source-save/useExternalSourceSave";
 
-export type PendingDocumentAction = "close" | "new" | "open";
+export type PendingDocumentAction = "close" | "new" | "open" | "open_requested";
 export type DocumentOperation =
   | "checking_source"
   | "closing"
@@ -74,6 +80,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
   const [operation, setOperation] = useState<DocumentOperation>("creating");
   const [feedback, setFeedback] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingDocumentAction | null>(null);
+  const [applicationOpenPending, setApplicationOpenPending] = useState(false);
 
   useEffect(
     () => subscribeToDocumentUpdates(editor, setDirty, setIdentity, setRevision),
@@ -94,6 +101,10 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
   useEffect(() => {
     identityRef.current = identity;
   }, [identity]);
+  useEffect(
+    () => attachApplicationOpenListener(setApplicationOpenPending, setFeedback),
+    [],
+  );
 
   const snapshot = useCallback(
     () => currentSnapshot(editor, identity),
@@ -176,6 +187,17 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
         );
         return;
       }
+      if (action === "open_requested") {
+        await openRequestedIntoSession(
+          editor,
+          identityRef.current,
+          setIdentity,
+          setDirty,
+          setOperation,
+          setFeedback,
+        );
+        return;
+      }
       const closed = await closeCurrent(identityRef.current, setOperation, setFeedback);
       if (!closed) {
         return;
@@ -200,13 +222,37 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     (decision: "cancel" | "discard" | "save") => {
       const action = pendingAction;
       setPendingAction(null);
-      if (!action || decision === "cancel") {
+      if (!action) {
         return;
       }
-      void continuePendingAction(action, decision, save, executeAction);
+      if (decision === "cancel") {
+        if (action === "open_requested") {
+          void dismissApplicationOpenRequest().then((dismissed) => {
+            setFeedback(
+              dismissed
+                ? "Requested document open cancelled."
+                : "DRAFT could not cancel the requested document. Finish editing, then use Open.",
+            );
+          });
+        }
+        return;
+      }
+      void continuePendingAction(action, decision, save, executeAction).then((completed) => {
+        if (!completed && action === "open_requested") {
+          setApplicationOpenPending(true);
+        }
+      });
     },
     [executeAction, pendingAction, save],
   );
+
+  useEffect(() => {
+    if (!applicationOpenPending || operation !== "ready" || pendingAction) {
+      return;
+    }
+    setApplicationOpenPending(false);
+    request("open_requested");
+  }, [applicationOpenPending, operation, pendingAction, request]);
 
   return useMemo(
     () => ({
@@ -245,9 +291,10 @@ async function continuePendingAction(
   execute: (action: PendingDocumentAction) => Promise<void>,
 ) {
   if (decision === "save" && !(await save())) {
-    return;
+    return false;
   }
   await execute(action);
+  return true;
 }
 
 function subscribeToDocumentUpdates(
@@ -286,7 +333,63 @@ async function openIntoSession(
     return;
   }
   setOperation("opening");
+  setFeedback("Opening document…");
   const result = await openDocument();
+  await applyOpenResult(
+    result,
+    editor,
+    current,
+    setIdentity,
+    setDirty,
+    setOperation,
+    setFeedback,
+  );
+}
+
+async function openRequestedIntoSession(
+  editor: Editor | null,
+  current: DocumentIdentity | null,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  if (!editor) {
+    return;
+  }
+  setOperation("opening");
+  setFeedback("Opening requested DRAFT document…");
+  const request = await takeApplicationOpenRequest();
+  if (request.status === "none") {
+    setOperation("ready");
+    setFeedback("");
+    return;
+  }
+  if (request.status === "error") {
+    setOperation("ready");
+    setFeedback(applicationOpenFailureMessage(request.error));
+    return;
+  }
+  await applyOpenResult(
+    request.result,
+    editor,
+    current,
+    setIdentity,
+    setDirty,
+    setOperation,
+    setFeedback,
+  );
+}
+
+async function applyOpenResult(
+  result: Awaited<ReturnType<typeof openDocument>>,
+  editor: Editor,
+  current: DocumentIdentity | null,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
   if (!isSuccessfulOpen(result)) {
     setOperation("ready");
     setFeedback(openFailureMessage(result));
@@ -318,6 +421,48 @@ async function openIntoSession(
   setDirty(result.status === "imported_text");
   setOperation("ready");
   setFeedback(openSuccessMessage(result));
+}
+
+function attachApplicationOpenListener(
+  setPending: (pending: boolean) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  let disposed = false;
+  let stop: (() => void) | undefined;
+  void listenToApplicationOpenRequests(
+    () => setPending(true),
+    () => setFeedback("DRAFT could not receive the requested document. Use Open instead."),
+  ).then((listener) => {
+    if (disposed) {
+      listener();
+      return;
+    }
+    stop = listener;
+    setPending(true);
+  }).catch(() => {
+    if (!disposed) {
+      setFeedback("DRAFT could not receive documents from macOS. Use Open instead.");
+    }
+  });
+  return () => {
+    disposed = true;
+    stop?.();
+  };
+}
+
+function applicationOpenFailureMessage(error: ApplicationOpenClientError) {
+  if (error.type === "open") {
+    return openCommandFailureMessage(error.error);
+  }
+  if (error.type === "command") {
+    if (error.code === "multiple_files_unsupported") {
+      return "Open one DRAFT document at a time.";
+    }
+    if (error.code === "unsupported_file_location") {
+      return "DRAFT could not use the requested file location. Use Open instead.";
+    }
+  }
+  return "DRAFT could not open the requested document. Use Open to try again.";
 }
 
 function isSuccessfulOpen(

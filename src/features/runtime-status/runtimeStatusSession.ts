@@ -11,7 +11,12 @@ export type RuntimeUnavailableReason =
 
 export type RuntimeConnectionState =
   | { phase: "checking" }
-  | { phase: "ready"; version: string }
+  | {
+      buildCommit: string;
+      buildProfile: "debug" | "release";
+      phase: "ready";
+      version: string;
+    }
   | { phase: "unavailable"; reason: RuntimeUnavailableReason };
 
 type RuntimeStateListener = (state: RuntimeConnectionState) => void;
@@ -36,7 +41,12 @@ export async function startRuntimeStatusSession(
 
 function registerRuntimeStatusListener(onState: RuntimeStateListener) {
   return listenToRuntimeStatus(
-    (event) => onState({ phase: "ready", version: event.version }),
+    (event) => onState({
+      buildCommit: event.buildCommit,
+      buildProfile: event.buildProfile,
+      phase: "ready",
+      version: event.version,
+    }),
     (error) => onState({ phase: "unavailable", reason: error }),
   );
 }

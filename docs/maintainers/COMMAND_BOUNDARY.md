@@ -29,17 +29,22 @@ returns:
 
 ```json
 {
+  "buildCommit": "0123456789abcdef0123456789abcdef01234567",
+  "buildProfile": "release",
   "version": "0.1.0"
 }
 ```
 
-The response version comes from Rust package metadata. The frontend does not
-supply or decide it.
+The response version comes from Rust package metadata. Packaging supplies the
+exact clean-worktree Git commit, and Cargo supplies the closed `debug` or
+`release` profile. A local non-package build uses `development` as its commit
+marker. The frontend does not supply or decide any of these values.
 
 The command-specific error codes are:
 
 ```json
 { "code": "invalid_application_version" }
+{ "code": "invalid_build_metadata" }
 { "code": "event_delivery_failed" }
 ```
 
@@ -48,6 +53,21 @@ event cannot reach current frontend listeners.
 
 No generic string, `anyhow::Error`, `serde_json::Value`, or boxed error crosses
 the IPC boundary.
+
+## macOS application-open command
+
+Phase 47 adds `open_application_document` for `.draft` files delivered by the
+macOS application run loop. The request contains only the closed `open` or
+`dismiss` disposition. It never contains a path. Rust consumes one queued path,
+routes it through the existing document-open implementation, and returns the
+same typed open outcome nested inside `opened`. `none` and `dismissed` are
+successful no-mutation outcomes.
+
+The path-free `draft://application-open` event tells React only that a request
+is available. Typed errors distinguish an unavailable queue, multiple files,
+an unsupported file URL, and the existing bounded document-open causes. The
+frontend can preserve unsaved-work decisions without receiving source-path
+authority.
 
 ## Worker cancellation command
 

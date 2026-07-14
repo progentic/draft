@@ -43,6 +43,10 @@ check_required_sources() {
     scripts/check-packaging.sh
     scripts/check-release-candidate.sh
     scripts/package-macos.sh
+    src/components/WorkspaceOperationNotice.test.tsx
+    src/components/WorkspaceOperationNotice.tsx
+    src/ipc/applicationOpen.test.ts
+    src/ipc/applicationOpen.ts
     src/ipc/eventClient.ts
     src/ipc/client.ts
     src/citations/citationNode.test.ts
@@ -67,7 +71,10 @@ check_required_sources() {
     src/ipc/workerCancellation.test.ts
     src/ipc/workerCancellation.ts
     src-tauri/Cargo.lock
+    src-tauri/Info.plist
     src-tauri/capabilities/main.json
+    src-tauri/src/application/open_requests.rs
+    src-tauri/src/commands/application_open.rs
     src-tauri/src/commands/document_open.rs
     src-tauri/src/commands/citation_resolution.rs
     src-tauri/src/commands/document_save.rs
@@ -92,6 +99,7 @@ check_required_sources() {
     src-tauri/src/citations/resolution.rs
     src-tauri/src/citations/resolution_tests.rs
     src-tauri/src/events/ai_stream.rs
+    src-tauri/src/events/application_open.rs
     src-tauri/src/events/runtime_status.rs
     src-tauri/src/imports/mod.rs
     src-tauri/src/imports/pdf.rs

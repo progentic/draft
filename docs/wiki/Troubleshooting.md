@@ -29,6 +29,13 @@ Install one complete DRAFT build rather than combining files from different
 builds. Restart the application after installation. If the message remains,
 report the build source and version.
 
+## Application Build Could Not Be Verified
+
+`DRAFT could not verify this application build.` means the desktop runtime did
+not contain valid build identity. Replace it with one complete DRAFT package.
+If the message repeats, report the visible version, build commit, and profile.
+Do not use that package as manual validation evidence.
+
 ## Core Status Event Could Not Be Delivered
 
 `DRAFT could not deliver the core status event.` means startup validation ran,
@@ -59,6 +66,11 @@ invalid DOCX packages fail without changing that file. Imported content is
 not a native DRAFT document; choose **Save** to select a new `.draft`
 destination. DRAFT has no autosave or crash recovery, so discarded unsaved
 changes cannot be restored.
+
+Open always reports its pending and final disposition in the temporary notice
+below the document controls. If selecting a DOCX returns to the editor without
+a success, cancellation, limitation, or failure message, record the visible
+build commit and do not treat the operation as successful.
 
 If a DOCX message says the file is malformed or unsafe, keep the original file
 unchanged and open a trusted, valid copy. If DRAFT reports an unsupported or
@@ -151,6 +163,19 @@ Unsupported document content and resource-limit failures require editing the
 document before retrying. Citation nodes are not currently included in DOCX
 output; remove them before export when that message appears. Export failure
 does not change the DRAFT source document.
+
+Export always reports pending and final state in the temporary notice below the
+document controls. A completed export names success; cancellation and every
+typed failure show a separate disposition. If no disposition appears, record
+the visible build commit and preserve the DRAFT source.
+
+## A DRAFT File Opens In Another Application
+
+`.draft` is a structured DRAFT source file, so seeing JSON in a text editor does
+not mean the document serialization is damaged. Install one complete DRAFT
+application bundle, then open the file with DRAFT. The package declares DRAFT
+as the owner of `com.progentic.draft.document`; macOS may need to refresh its
+application registration after an older build is replaced.
 
 Return to [Home](Home).
 ## Native Menu Is Unavailable

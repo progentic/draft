@@ -93,6 +93,11 @@ live under `src-tauri/icons/`; the in-window mark uses the generated 32-pixel
 asset. The package must embed `icon.icns` and declare it through
 `CFBundleIconFile`.
 
+The same package declares `.draft` as the owned `DRAFT Document` type with the
+exported UTI `com.progentic.draft.document`. macOS document activation enters a
+Rust-owned queue and then the normal typed Open lifecycle. Native activation
+never sends a path to the shared frontend dispatcher.
+
 ## Implementation Notes
 
 Native menu events use `draft://native-menu-action`. The typed frontend wrapper

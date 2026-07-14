@@ -81,5 +81,14 @@ function docxFailureMessage(cause: DocxExportErrorCode | undefined) {
   if (cause === "invalid_target") {
     return "Choose a valid DOCX file location and try again.";
   }
+  if (cause === "write_failed" || cause === "durability_uncertain") {
+    return "DRAFT could not write the DOCX file. Your DRAFT document was not changed. Choose another location and try again.";
+  }
+  if (
+    cause === "invalid_document_structure" ||
+    cause === "package_construction_failed"
+  ) {
+    return "DRAFT could not create a valid DOCX package. Your DRAFT document was not changed.";
+  }
   return "DRAFT could not finish the DOCX export. Your DRAFT document was not changed.";
 }

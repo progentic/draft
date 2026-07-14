@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { DocumentInspector } from "../components/DocumentInspector";
 import { DocumentOutline } from "../components/DocumentOutline";
 import { WorkspaceHeader } from "../components/WorkspaceHeader";
+import { WorkspaceOperationNotice } from "../components/WorkspaceOperationNotice";
 import { WorkspaceCommandBar } from "../components/WorkspaceCommandBar";
 import { WorkspaceStatusBar } from "../components/WorkspaceStatusBar";
 import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
@@ -35,6 +36,10 @@ export function DraftWorkspace() {
     setActivePanel((active) => (active === panel ? null : panel));
   }, []);
   const workspaceActions = useWorkspaceActions(documentSession, docxExport, togglePanel);
+  const operationMessage =
+    workspaceActions.feedback || docxExport.feedback || documentSession.feedback;
+  const operationPending =
+    docxExport.disabled || documentSession.operation !== "ready";
 
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
@@ -48,6 +53,10 @@ export function DraftWorkspace() {
         activePanel={activePanel === "references" || activePanel === "text-review" ? activePanel : null}
         exportLabel={docxExport.label}
       />
+      <WorkspaceOperationNotice
+        message={operationMessage}
+        pending={operationPending}
+      />
       <WorkspaceBody
         activePanel={activePanel}
         editor={editor}
@@ -60,7 +69,6 @@ export function DraftWorkspace() {
         connectivityState={connectivity.state}
         documentStatus={documentSession.statusLabel}
         exportPending={docxExport.disabled}
-        feedback={workspaceActions.feedback || docxExport.feedback || documentSession.feedback}
         operation={documentSession.operation}
         onRefreshConnectivity={() => void connectivity.refresh()}
         onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}

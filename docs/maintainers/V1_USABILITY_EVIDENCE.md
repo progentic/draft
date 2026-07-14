@@ -240,7 +240,7 @@ not packaged-human evidence, and close no row.
 - Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
 - Executable SHA-256: `cb36338524e042291fd2e2ac34bf8c09c855e461cb22ede451e2c92584415e83`
 - Package result: construction and mechanical packaging checks passed.
-- Human result: pending.
+- Human result: failed on 2026-07-13.
 
 The configured compatible-reader test used LibreOfficeDev 26.8 in headless
 conversion mode. The exact source SHA-256 was
@@ -253,11 +253,21 @@ differed from their source, and converted to nonempty PDF output. This proves
 bounded package acceptance by the configured reader, not visual fidelity or
 the packaged user workflow.
 
-The replacement package still requires the complete manual gate: normalized
-warning and cancellation, stale-source rejection before replacement, native
-and overflow parity, busy-state denial, exact and normalized compatible-reader
-inspection, Markdown disclosure, DOCX safety recovery, and reset-label review.
-No row may close from the hash or mechanical reader result alone.
+The manual session invalidated this package as a Phase 47 evidence candidate
+before the complete source-save retest could finish. The running app exposed
+only product version `0.1.0`, so a reviewer could not confirm the expected
+build from inside DRAFT. A selected DOCX did not produce a visible open result,
+and DOCX export did not produce visible completion or recovery. Native `.draft`
+files still lacked a DRAFT association and document identity. The executable
+hash remains authoritative historical identity, but this package closes no
+row.
+
+The next package still requires the complete manual gate: visible build
+identity, DOCX open and export disposition, normalized warning and cancellation,
+stale-source rejection before replacement, native and overflow parity,
+busy-state denial, exact and normalized compatible-reader inspection, Markdown
+disclosure, DOCX safety recovery, reset-label review, and `.draft` double-click
+handling. No row may close from mechanical evidence alone.
 
 ### Replacement Artifact Product-Boundary Review
 
@@ -342,6 +352,10 @@ No untested task is counted as passed.
 | UX-47-006 | UX-2 | Open - correction pending package | Rust now returns a closed Markdown import format and the visible notice says Markdown remains literal text without parsing or preview. | Retest the notice and source preservation in the replacement package without adding parsing behavior. |
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
+| UX-47-009 | UX-1 | Open - correction pending package | Artifact `cb363385` displayed only product version `0.1.0`, which did not let the reviewer distinguish the package from another internal build. | Embed the exact Git commit and build profile, show a short build identifier beside SemVer, and fail packaging when executable metadata does not match the clean checkout being validated. |
+| UX-47-010 | UX-0 | Open - correction pending package | Selecting a DOCX produced no visible completion, cancellation, unsupported, safety, malformed-input, or failure disposition during manual review. | Keep DOCX intake Rust-owned and present every pending and terminal result in one visible, accessible operation notice without paths or package details. |
+| UX-47-011 | UX-0 | Open - correction pending package | DOCX export produced no visible completion or error disposition during manual review. | Present pending, exported, cancelled, unsupported-content, invalid-package, and write-failure outcomes through the same visible operation notice, then retest atomic output and source preservation. |
+| UX-47-012 | UX-1 | Open - correction pending package | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Register the owned DRAFT document type and purple icon, keep paths in Rust, route macOS open requests through the typed lifecycle, and prove double-click opening in the replacement package. |
 
 Every RC and GATE row remains open. The failed Phase 47 package closes no
 finding, release blocker, or roadmap gate.

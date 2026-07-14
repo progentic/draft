@@ -12,7 +12,6 @@ it("presents document, operation, connectivity, and recovery state", async () =>
       connectivityState={{ phase: "ready", mode: "online" }}
       documentStatus="Imported, unsaved"
       exportPending
-      feedback="Save as a DRAFT document to keep your work."
       operation="ready"
       onRefreshConnectivity={vi.fn()}
       onSetConnectivityMode={setMode}
@@ -26,8 +25,6 @@ it("presents document, operation, connectivity, and recovery state", async () =>
   expect(within(status).getByLabelText("Background operation").textContent).toContain(
     "Exporting",
   );
-  expect(within(status).getByRole("status").textContent).toContain("Save as a DRAFT");
-
   await user.click(within(status).getByRole("button", { name: "Work offline" }));
   expect(setMode).toHaveBeenCalledWith("offline");
 });

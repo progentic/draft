@@ -9,8 +9,9 @@ available, export, References, and Text checks, are available from the **More**
 **File** menu.
 
 DRAFT shows the current document name near the top of the workspace. Save
-state, import state, connectivity, active operations, and concise feedback
-appear in the status bar at the bottom.
+state, connectivity, and active operations appear in the status bar at the
+bottom. A temporary notice directly below the document controls reports the
+pending, completed, cancelled, or failed result of Open, Save, and Export.
 
 When New, Open, or Close would replace or discard unsaved work, DRAFT asks
 whether to save, discard the changes, or keep editing. There is no autosave or
@@ -23,6 +24,12 @@ shown as imported and unsaved; their filename is for orientation only. Their
 first Save asks for a new `.draft` destination. Markdown punctuation remains
 literal text rather than a preview, and DRAFT states this when the import
 opens. The imported `.txt` or `.md` source is never overwritten.
+
+A `.draft` file is DRAFT's structured editable source, not a plain-text
+document. It stores document identity and formatting alongside the writing.
+The macOS package associates this file type with DRAFT so a double-click uses
+the same safe Open workflow. The interface never displays the file's full
+path.
 
 An opened DOCX remains associated with its Rust-owned source identity. Ordinary
 **Save** creates a `.draft` document, and **Export DOCX…** creates a separate
@@ -137,8 +144,10 @@ last enabled action, and Escape to return focus to **More**.
 In the formatting toolbar, use Left Arrow and Right Arrow to move, Home for the
 first enabled control, and End for the last. Disabled controls are skipped.
 
-The bottom status bar reports document, connectivity, background-operation, and
-concise recovery state. Panels and the bottom status bar announce pending,
-completed, empty, failed, and recovery states.
-`Core v<version>` means the desktop interface reached the Rust runtime. A
-browser preview has no desktop core and reports it as unavailable.
+The bottom status bar reports document, connectivity, and background-operation
+state. Panels and the conditional operation notice announce pending, completed,
+empty, failed, and recovery states. `Core v<version> · build <commit> ·
+<profile>` means the desktop interface reached a specific Rust runtime build.
+The short commit identifies the clean package revision without changing the
+product version. A browser preview has no desktop core and reports it as
+unavailable.

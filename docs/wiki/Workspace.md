@@ -9,8 +9,9 @@ available, export, References, and Text checks, are available from the **More**
 **File** menu.
 
 DRAFT shows the document name near the top of the workspace. Save state,
-import state, connectivity, active operations, and concise feedback appear in
-the status bar at the bottom.
+connectivity, and active operations appear in the status bar at the bottom. A
+temporary notice below the document controls reports the pending, completed,
+cancelled, or failed result of Open, Save, and Export.
 
 When New, Open, or Close would replace or discard unsaved work, choose **Save
 and continue**, **Discard changes**, or **Keep editing**. DRAFT does not
@@ -25,6 +26,11 @@ save location. Their first Save asks for a new `.draft` destination. After Save
 succeeds, the header shows the selected `.draft` filename and later saves reuse
 that target. Markdown syntax is kept as literal text, not parsed or previewed,
 and the original `.txt` or `.md` source is never overwritten.
+
+A `.draft` file is DRAFT's structured editable source rather than plain text.
+It stores document identity and formatting with the writing. The macOS package
+associates `.draft` with DRAFT so a double-click uses the same Open workflow;
+the interface does not receive or display the file's full path.
 
 An opened DOCX remains associated with its Rust-owned source identity. Ordinary
 **Save** creates a `.draft` document, and **Export DOCX…** creates a separate
@@ -139,8 +145,9 @@ last enabled action, and Escape to return focus to **More**.
 
 In the formatting toolbar, use Left Arrow and Right Arrow to move, Home for the
 first enabled control, and End for the last. Disabled controls are skipped.
-Panels and the bottom status bar announce pending, completed, empty, failed,
-and recovery states.
+Panels and the conditional operation notice announce pending, completed,
+empty, failed, and recovery states. The Document panel shows `Core
+v<version> · build <commit> · <profile>` for the exact running desktop build.
 
 See [Troubleshooting](Troubleshooting) for message-specific recovery and
 [Current limitations](Current-Limitations) for the complete current boundary.

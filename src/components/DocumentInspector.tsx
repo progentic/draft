@@ -74,7 +74,13 @@ function runtimeStatusView(status: RuntimeConnectionState) {
   }
 
   if (status.phase === "ready") {
-    return { label: `Core v${status.version}`, modifier: "ready" };
+    const commit = status.buildCommit === "development"
+      ? status.buildCommit
+      : status.buildCommit.slice(0, 8);
+    return {
+      label: `Core v${status.version} · build ${commit} · ${status.buildProfile}`,
+      modifier: "ready",
+    };
   }
 
   return { label: runtimeFailureMessage(status.reason), modifier: "unavailable" };

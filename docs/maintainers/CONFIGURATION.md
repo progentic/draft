@@ -25,7 +25,9 @@ implementation choices that can change without altering one of those contracts.
 | :--- | :--- | :--- | :--- |
 | Product name | `DRAFT` | `src-tauri/tauri.conf.json` | Desktop display and bundle name. |
 | Application version | `0.1.0` | `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `package.json` | Pre-release compatibility line; not evidence of a published release. |
+| Package build identity | Exact 40-character lowercase Git commit plus `release` profile | `src-tauri/build.rs`, `scripts/package-macos.sh` | Distinguishes clean validation packages without changing SemVer or embedding a timestamp. Local non-package builds use `development`. |
 | Bundle identifier | `com.progentic.draft` | `src-tauri/tauri.conf.json` | Platform application identity. |
+| DRAFT document UTI | `com.progentic.draft.document` | `src-tauri/tauri.conf.json`, `src-tauri/Info.plist` | Owned macOS `.draft` document association using the DRAFT icon and Editor role. |
 | Rust toolchain | `1.96.0` | `rust-toolchain.toml`, `src-tauri/Cargo.toml` | Pinned compiler, rustfmt, and clippy baseline. |
 | Node engine | `>=22.12.0` | `package.json` | Supported local runtime floor. GitHub Actions currently verifies Node 24. |
 | npm version | `11.16.0` | `package.json` | Locked package-manager contract. |

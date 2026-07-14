@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 46 is
+The implemented application through the current Phase 47 checkpoint is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document lifecycle,
@@ -49,8 +49,9 @@ deliberately smaller than the full system described in this architecture:
   formatting-review, local text-analysis, DOCX-export, diagnostic, and
   connectivity-mode commands with command-specific contracts.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
-- Rust emits the typed finite `draft://runtime-status` event, and the frontend
-  validates it before React displays connection state.
+- Rust emits typed finite runtime-status, native-menu, and path-free macOS
+  application-open events. The frontend validates each before React displays
+  state or dispatches an existing action.
 - Rust owns a process-local worker cancellation registry and cooperative token.
   The internal analysis and Python-helper boundaries use registrations while
   their caller awaits completion, but no product worker starts from a Tauri
@@ -152,6 +153,10 @@ deliberately smaller than the full system described in this architecture:
   lifecycle operations are serialized, failures before replacement preserve
   prior state, and a post-replacement durability failure advances the registry
   to the complete on-disk snapshot while returning a typed error.
+- Rust also owns macOS document-activation paths. The application run loop
+  queues one `.draft` file URL, emits only path-free availability, and consumes
+  the queued path through the existing typed Open boundary after the frontend
+  applies its unsaved-work decision.
 - Rust distinguishes native DRAFT opens from bounded UTF-8 text imports. A
   `.draft` or compatible legacy `.json` selection is validated and registered
   with its durable path. A `.txt` or `.md` selection creates a new Rust-owned
@@ -163,7 +168,8 @@ deliberately smaller than the full system described in this architecture:
   workflow; citation-bearing DOCX remains an explicit typed rejection.
 - The release toolchain owns one unsigned macOS Apple Silicon `.app` package
   path. A Bash entrypoint builds the configured app target and validates its
-  plist identity, native executable, and tracked icon without signing or
+  plist identity, native executable, tracked icon, `.draft` document
+  association, and exact clean-worktree Git build identity without signing or
   publishing it.
 - React and Tiptap own transient editor, selection, panel, finding, and
   accessibility state. Explicit snapshots cross typed commands for save and
@@ -679,6 +685,9 @@ Save rules:
 - Rust does not read live state out of the frontend. It receives a snapshot.
 - Rust writes using atomic write-then-rename: write temporary file, fsync, then rename over the target path.
 - The on-disk file is always either the prior complete version or the new complete version, never a partial write.
+- Finder activation of a `.draft` file enters the same Rust validation,
+  migration, registry, and typed-result path as Open. React receives no source
+  path from the macOS run event or follow-up command.
 
 Document mutation rules:
 
@@ -744,6 +753,12 @@ Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 ## 12. Error Handling
 
 Every Tauri command has its own error enum. "Something went wrong" is not an acceptable terminal state for any command.
+
+Visible Open and DOCX Export operations use one conditional notice below the
+document command bar. Each attempt exposes pending and exactly one completed,
+cancelled, unsupported, safety-limit, malformed-input, or write-failure
+disposition. The bottom status bar remains reserved for compact document,
+connectivity, and active-operation state.
 
 The frontend needs typed errors so it can distinguish at least:
 

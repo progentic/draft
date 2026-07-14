@@ -1,3 +1,4 @@
+pub(crate) mod application_open;
 pub(crate) mod citation_resolution;
 pub(crate) mod connectivity;
 pub(crate) mod diagnostic_snapshot;

@@ -12,10 +12,12 @@ use crate::events::runtime_status::{
 #[serde(deny_unknown_fields)]
 pub(crate) struct GetRuntimeStatusRequest {}
 
-/// Version information returned by the Rust runtime status command.
+/// Version and build information returned by the Rust runtime status command.
 #[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct GetRuntimeStatusResponse {
+    build_commit: String,
+    build_profile: String,
     version: String,
 }
 
@@ -23,6 +25,7 @@ pub(crate) struct GetRuntimeStatusResponse {
 #[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "code", rename_all = "snake_case")]
 pub(crate) enum GetRuntimeStatusError {
+    InvalidBuildMetadata,
     InvalidApplicationVersion,
     EventDeliveryFailed,
 }
@@ -48,14 +51,21 @@ fn runtime_status_response(
 
 impl GetRuntimeStatusResponse {
     fn runtime_event(&self) -> RuntimeStatusEvent {
-        RuntimeStatusEvent::ready(self.version.clone())
+        RuntimeStatusEvent::ready(
+            self.version.clone(),
+            self.build_commit.clone(),
+            self.build_profile.clone(),
+        )
     }
 }
 
 impl From<RuntimeStatus> for GetRuntimeStatusResponse {
     fn from(status: RuntimeStatus) -> Self {
+        let (version, build_commit, build_profile) = status.into_parts();
         Self {
-            version: status.into_version(),
+            build_commit,
+            build_profile,
+            version,
         }
     }
 }
@@ -63,6 +73,9 @@ impl From<RuntimeStatus> for GetRuntimeStatusResponse {
 impl From<RuntimeStatusError> for GetRuntimeStatusError {
     fn from(error: RuntimeStatusError) -> Self {
         match error {
+            RuntimeStatusError::InvalidBuildCommit | RuntimeStatusError::InvalidBuildProfile => {
+                Self::InvalidBuildMetadata
+            }
             RuntimeStatusError::MissingVersion => Self::InvalidApplicationVersion,
         }
     }
@@ -120,7 +133,11 @@ mod tests {
 
         assert_eq!(
             serde_json::to_value(response).expect("response should serialize"),
-            json!({ "version": env!("CARGO_PKG_VERSION") }),
+            json!({
+                "buildCommit": env!("DRAFT_BUILD_COMMIT"),
+                "buildProfile": env!("DRAFT_BUILD_PROFILE"),
+                "version": env!("CARGO_PKG_VERSION")
+            }),
         );
     }
 
@@ -128,6 +145,7 @@ mod tests {
     fn error_serialization_is_stable() {
         let errors = [
             GetRuntimeStatusError::from(RuntimeStatusError::MissingVersion),
+            GetRuntimeStatusError::from(RuntimeStatusError::InvalidBuildCommit),
             GetRuntimeStatusError::from(EmitRuntimeStatusError::DeliveryFailed),
         ];
 
@@ -135,6 +153,7 @@ mod tests {
             serde_json::to_value(errors).expect("errors should serialize"),
             json!([
                 { "code": "invalid_application_version" },
+                { "code": "invalid_build_metadata" },
                 { "code": "event_delivery_failed" }
             ]),
         );

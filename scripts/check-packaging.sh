@@ -25,6 +25,7 @@ require_packaging_sources() {
     assets/DRAFT_Logo.png
     package.json
     scripts/package-macos.sh
+    src-tauri/Info.plist
     src-tauri/tauri.conf.json
     src-tauri/icons/32x32.png
     src-tauri/icons/128x128.png
@@ -51,6 +52,17 @@ check_structured_configuration() {
       "icons/icon.icns",
       "icons/icon.ico"
     ];
+    const expectedFileAssociations = [{
+      ext: ["draft"],
+      name: "DRAFT Document",
+      role: "Editor",
+      rank: "Owner",
+      mimeType: "application/vnd.progentic.draft+json",
+      exportedType: {
+        identifier: "com.progentic.draft.document",
+        conformsTo: ["public.json", "public.data"]
+      }
+    }];
     const expectedHashes = new Map([
       ["assets/DRAFT_Logo.png", "ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043"],
       ["src-tauri/icons/32x32.png", "111d44f795b2945b61627faf3c2508b8280b9ecd4508abfcb13b3befef4fe98d"],
@@ -64,6 +76,9 @@ check_structured_configuration() {
     }
     if (JSON.stringify(config.bundle.icon) !== JSON.stringify(expectedIcons)) {
       throw new Error("desktop icon paths do not match the package contract");
+    }
+    if (JSON.stringify(config.bundle.fileAssociations) !== JSON.stringify(expectedFileAssociations)) {
+      throw new Error("DRAFT document association does not match the package contract");
     }
     if (manifest.scripts?.["package:macos"] !== "bash scripts/package-macos.sh") {
       throw new Error("package:macos must invoke the owned package script");
@@ -85,6 +100,10 @@ check_package_script_contract() {
     'Darwin'
     'arm64'
     'npm run tauri -- build --bundles app --no-sign'
+    'DRAFT_BUILD_COMMIT'
+    'git rev-parse HEAD'
+    'CFBundleDocumentTypes.0.CFBundleTypeIconFile'
+    'UTExportedTypeDeclarations.0.UTTypeIdentifier'
     'CFBundleIdentifier'
     'CFBundleIconFile'
     'Contents/MacOS/draft'
