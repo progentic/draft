@@ -24,6 +24,11 @@ canonical document model. Every successful import includes a closed fidelity
 result. Unsupported but valid behavior is disclosed and requires retaining the
 untouched source rather than pretending the imported copy is exact.
 
+Internal OPC relationship targets are resolved from the part that owns the
+relationship. A target such as `../customXml/item1.xml` is valid from
+`word/document.xml` because it remains inside the package root. Absolute,
+URI-like, backslash, and root-escaping targets still fail before parsing.
+
 The external source remains registered in Rust, but it never becomes the
 native `.draft` save target. The frontend receives only the source filename,
 format, fidelity class, and a same-format save disposition. Saving the imported
@@ -142,10 +147,16 @@ external source identity and basename display name.
 | XML depth | 64 |
 | Imported canonical nodes | 100,000 |
 
+`DRAFT_DOCX_TRACE` is unset by default. Setting it for a local diagnostic run
+emits path-free stage names, counts, sizes, and closed failure categories to
+stderr. It never emits document text, XML, source names, or filesystem paths.
+
 The outer file read is stream-bounded even if the source grows after metadata
-inspection. ZIP paths must be relative normal components. Symlinks, encrypted entries,
-duplicate central-directory entries, unsafe relationship targets, doctypes,
-unknown entities, and exceeded limits fail before registry mutation.
+inspection. ZIP entry paths must use relative normal components. Internal OPC
+targets are normalized from their owning part and may use parent segments only
+while the resolved target remains inside the package root. Symlinks, encrypted
+entries, duplicate central-directory entries, unsafe relationship targets,
+doctypes, unknown entities, and exceeded limits fail before registry mutation.
 
 ## Implementation Notes
 
@@ -156,6 +167,7 @@ unknown entities, and exceeded limits fail before registry mutation.
 | Mid | `DocumentRegistry::open_imported_external` | Own one live external-source registration without a native save target. |
 | Low | `interoperability::docx_import::package` | Validates ZIP, parts, relationships, content types, and XML bounds. |
 | Low | `interoperability::docx_import::document` | Maps the accepted XML subset into canonical Tiptap JSON. |
+| Low | `docx_trace` | Emits opt-in path-free import and export stage diagnostics for local failure investigation. |
 | Presentation | `src/ipc/externalDocument.ts` | Validates the path-free DTO and rejects unknown or unstable variants. |
 | Presentation | `src/ipc/externalDocumentSave.ts` | Validates eligibility, save, cancellation, denial, and bounded recovery outcomes. |
 | Presentation | `useExternalSourceSave` | Coordinates inspection, confirmation, cancellation, and replacement without owning a path. |
@@ -197,6 +209,17 @@ preservable behavior, content types, relationships, duplicate entries, path
 traversal, package limits, compression ratio, XML depth, and deterministic
 ordering. The canonical stored-package fixture SHA-256 is
 `c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a`.
+
+The independent `word-custom-xml.docx` fixture starts from a blank document
+created by Microsoft Word, contains fixed DRAFT-owned visible text and one
+deterministic custom-XML relationship, and has SHA-256
+`9929f84423e135a5100ab43b8c454a6734d78cfaf41eea1e4274e707c0d1cbe6`.
+It reproduces Word's valid `../customXml/item1.xml` relationship shape without
+using DRAFT's exporter as the import oracle. The production-path regression
+opens that fixture through the registry, exports it atomically, reopens the
+result, compares visible text, and confirms the source bytes remain unchanged.
+LibreOffice independently opens both files and extracts byte-identical visible
+text.
 
 Persistence tests prove no-edit open/close preservation, canonical path-alias
 deduplication, duplicate-source rejection, cancelled and failed Save

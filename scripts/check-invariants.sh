@@ -1158,11 +1158,11 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'com.progentic.draft.document' src-tauri/tauri.conf.json
   require_source_pattern 'com.progentic.draft.document' src-tauri/Info.plist
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
-  require_source_pattern '| UX-47-009 | UX-1 | Open - manual retest pending |' \
+  require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Open - manual retest pending |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Open - P0 correction pending package |' \
     "${ledger}"
-  require_source_pattern '| UX-47-011 | UX-0 | Open - manual retest pending |' \
+  require_source_pattern '| UX-47-011 | UX-0 | Open - P0 correction pending package |' \
     "${ledger}"
   require_source_pattern '| UX-47-012 | UX-1 | Open - manual retest pending |' \
     "${ledger}"

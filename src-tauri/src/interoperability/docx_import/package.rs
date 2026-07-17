@@ -7,6 +7,8 @@ use std::{
 use quick_xml::{Reader, XmlVersion, events::Event};
 use zip::ZipArchive;
 
+use crate::docx_trace;
+
 use super::{
     DocxImportError, ExternalFeature, ExternalSafetyReason, MAX_DOCX_IMPORT_COMPRESSION_RATIO,
     MAX_DOCX_IMPORT_ENTRIES, MAX_DOCX_IMPORT_UNCOMPRESSED_BYTES, MAX_DOCX_IMPORT_XML_BYTES,
@@ -40,6 +42,10 @@ pub(super) struct DocxPackage {
 
 pub(super) fn read_package(bytes: &[u8]) -> Result<DocxPackage, DocxImportError> {
     let declared_entries = declared_entry_count(bytes)?;
+    docx_trace::emit(
+        "zip_entry_count",
+        format_args!("entries={declared_entries}"),
+    );
     require_entry_count(declared_entries)?;
     let mut archive =
         ZipArchive::new(Cursor::new(bytes)).map_err(|_| DocxImportError::malformed())?;
@@ -47,7 +53,12 @@ pub(super) fn read_package(bytes: &[u8]) -> Result<DocxPackage, DocxImportError>
     if archive.len() != declared_entries {
         return Err(unsafe_error(ExternalSafetyReason::DuplicateEntry));
     }
-    let parts = read_parts(&mut archive)?;
+    let (parts, total_size) = read_parts(&mut archive)?;
+    docx_trace::emit(
+        "uncompressed_package_size",
+        format_args!("bytes={total_size}"),
+    );
+    trace_xml_part_sizes(&parts);
     validate_parts(&parts)
 }
 
@@ -104,13 +115,24 @@ fn require_entry_count(entries: usize) -> Result<(), DocxImportError> {
 
 fn read_parts(
     archive: &mut ZipArchive<Cursor<&[u8]>>,
-) -> Result<HashMap<String, Vec<u8>>, DocxImportError> {
+) -> Result<(HashMap<String, Vec<u8>>, u64), DocxImportError> {
     let mut parts = HashMap::new();
     let mut total_size = 0_u64;
     for index in 0..archive.len() {
         read_part(archive, index, &mut total_size, &mut parts)?;
     }
-    Ok(parts)
+    Ok((parts, total_size))
+}
+
+fn trace_xml_part_sizes(parts: &HashMap<String, Vec<u8>>) {
+    for path in KNOWN_PARTS {
+        if let Some(xml) = parts.get(path) {
+            docx_trace::emit(
+                "xml_part_size",
+                format_args!("part={path} bytes={}", xml.len()),
+            );
+        }
+    }
 }
 
 fn read_part(
@@ -368,8 +390,8 @@ fn validate_document_relationships(xml: &[u8]) -> Result<bool, DocxImportError> 
             has_external_relationship = true;
             continue;
         }
-        validate_relationship_target(&relationship.target)?;
-        if relationship.kind == STYLES_RELATIONSHIP && relationship.target != "styles.xml" {
+        let target = resolve_relationship_target(DOCUMENT_PATH, &relationship.target)?;
+        if relationship.kind == STYLES_RELATIONSHIP && target != STYLES_PATH {
             return Err(unsafe_error(ExternalSafetyReason::RelationshipTarget));
         }
     }
@@ -408,20 +430,45 @@ fn require_internal_target(
     relationship: &Relationship,
     expected: &str,
 ) -> Result<(), DocxImportError> {
-    if relationship.external || relationship.target != expected {
-        Err(unsafe_error(ExternalSafetyReason::RelationshipTarget))
-    } else {
-        validate_relationship_target(&relationship.target)
-    }
-}
-
-fn validate_relationship_target(target: &str) -> Result<(), DocxImportError> {
-    let path = Path::new(target);
-    if target.contains('\\') || target.contains(':') || !is_relative_archive_path(path) {
+    if relationship.external || resolve_relationship_target("", &relationship.target)? != expected {
         Err(unsafe_error(ExternalSafetyReason::RelationshipTarget))
     } else {
         Ok(())
     }
+}
+
+fn resolve_relationship_target(source: &str, target: &str) -> Result<String, DocxImportError> {
+    if target.is_empty() || target.contains('\\') || target.contains(':') {
+        return Err(unsafe_error(ExternalSafetyReason::RelationshipTarget));
+    }
+    let mut segments = relationship_base_segments(source);
+    resolve_target_segments(&mut segments, Path::new(target))?;
+    if segments.is_empty() {
+        return Err(unsafe_error(ExternalSafetyReason::RelationshipTarget));
+    }
+    Ok(segments.join("/"))
+}
+
+fn relationship_base_segments(source: &str) -> Vec<String> {
+    source
+        .rsplit_once('/')
+        .map(|(parent, _)| parent.split('/').map(str::to_owned).collect())
+        .unwrap_or_default()
+}
+
+fn resolve_target_segments(
+    segments: &mut Vec<String>,
+    target: &Path,
+) -> Result<(), DocxImportError> {
+    for component in target.components() {
+        match component {
+            Component::Normal(segment) => segments.push(segment.to_string_lossy().into_owned()),
+            Component::CurDir => {}
+            Component::ParentDir if segments.pop().is_some() => {}
+            _ => return Err(unsafe_error(ExternalSafetyReason::RelationshipTarget)),
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug)]

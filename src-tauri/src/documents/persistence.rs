@@ -595,6 +595,27 @@ mod tests {
     }
 
     #[test]
+    fn word_authored_docx_opens_and_exports_through_production_boundaries() {
+        let source = word_docx_fixture();
+        let source_bytes = fs::read(&source).unwrap();
+        let target = TestDocumentPath::with_extension("word-round-trip", "docx");
+        let registry = DocumentRegistry::new();
+
+        let (envelope, _) =
+            imported_external(open_document(&registry, Some(source.clone())).unwrap());
+        export_docx(&envelope, target.path()).unwrap();
+        let exported = import_docx_source(target.path()).unwrap();
+
+        assert_eq!(document_text(envelope.document()), word_fixture_text());
+        assert_eq!(
+            document_text(exported.envelope.document()),
+            word_fixture_text()
+        );
+        assert_eq!(fs::read(source).unwrap(), source_bytes);
+        assert_eq!(registry.source_path(envelope.document_id()), Ok(None));
+    }
+
+    #[test]
     fn duplicate_docx_source_is_rejected_without_mutation() {
         let source = TestDocumentPath::with_extension("docx-duplicate-source", "docx");
         let source_bytes = docx_source_bytes("Imported");
@@ -1477,6 +1498,33 @@ mod tests {
             .unwrap()
             .as_bytes()
             .to_vec()
+    }
+
+    fn word_docx_fixture() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/docx/word-custom-xml.docx")
+    }
+
+    fn word_fixture_text() -> &'static str {
+        "DRAFT DOCX Round Trip\nThis document was created in Microsoft Word for DRAFT interoperability testing.\nThe visible content must survive import and export."
+    }
+
+    fn document_text(document: &Value) -> String {
+        document["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(block_text)
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn block_text(block: &Value) -> String {
+        block["content"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|node| node["text"].as_str())
+            .collect()
     }
 
     fn imported_external(

@@ -50,6 +50,27 @@ fn absent_paragraph_properties_remain_absent() {
 }
 
 #[test]
+fn word_authored_fixture_imports_visible_content() {
+    let bytes = include_bytes!("../../../tests/fixtures/docx/word-custom-xml.docx");
+    let digest = format!("{:x}", Sha256::digest(bytes));
+    let parsed = parse_docx_package(bytes).expect("Word-authored fixture should import");
+
+    assert_eq!(
+        digest,
+        "9929f84423e135a5100ab43b8c454a6734d78cfaf41eea1e4274e707c0d1cbe6"
+    );
+    assert_eq!(
+        document_text(&parsed.document),
+        [
+            "DRAFT DOCX Round Trip",
+            "This document was created in Microsoft Word for DRAFT interoperability testing.",
+            "The visible content must survive import and export.",
+        ]
+        .join("\n")
+    );
+}
+
+#[test]
 fn alternate_heading_name_is_canonically_normalized() {
     let parsed = parse_docx_package(&package(&document_xml(
         r#"<w:pPr><w:pStyle w:val="Heading 2"/></w:pPr><w:r><w:t>Heading</w:t></w:r>"#,
@@ -240,6 +261,12 @@ fn package_and_xml_safety_fail_with_closed_reasons() {
     let unsafe_rels = ROOT_RELS.replace("word/document.xml", "../document.xml");
     let bytes = package_with_overrides(&document_xml(""), Some(&unsafe_rels));
     assert_unsafe(bytes, ExternalSafetyReason::RelationshipTarget);
+
+    let escaping_document_rels = DOCUMENT_RELS.replace("styles.xml", "../../outside.xml");
+    assert_unsafe(
+        package_with_document_relationships(&escaping_document_rels),
+        ExternalSafetyReason::RelationshipTarget,
+    );
 }
 
 #[test]
@@ -370,6 +397,16 @@ fn supported_style() -> Value {
 
 fn paragraph_style(document: &Value) -> &Value {
     &document["content"][0]["attrs"]["paragraphStyle"]
+}
+
+fn document_text(document: &Value) -> String {
+    document["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|block| block["content"][0]["text"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn document_xml(paragraph_content: &str) -> String {

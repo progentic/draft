@@ -337,6 +337,24 @@ stopped after Save caused an unrecoverable beach ball and force-quit. Later
 sessions produced the additional partial and product-boundary findings above.
 No untested task is counted as passed.
 
+### Phase 47 P0 DOCX Workflow Blocker
+
+Artifact `c3b2b54c` displayed the expected `7ec149de` release build identity,
+but the primary DOCX workflow still failed. Opening a normal Word package left
+the editor unusable behind a generic safety-limit message, and Export did not
+produce a usable output or terminal disposition during the same session.
+**DOCX primary workflow is non-functional in the packaged application** remains
+a P0 product blocker.
+
+A Word-authored 12,031-byte fixture reproduced the import failure as the closed
+internal reason `RelationshipTarget`. Word correctly resolves
+`../customXml/item1.xml` from `word/document.xml`; DRAFT incorrectly treated the
+raw target as package-root traversal. The correction resolves targets from
+their owning part while continuing to reject root escape. Production-path
+tests now open the Word fixture, create a canonical document, export atomically,
+reopen the result, preserve the source, and produce visible text that matches
+in LibreOffice. These are correction tests, not packaged-human closure evidence.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
@@ -373,9 +391,9 @@ No untested task is counted as passed.
 | UX-47-006 | UX-2 | Open - correction pending package | Rust now returns a closed Markdown import format and the visible notice says Markdown remains literal text without parsing or preview. | Retest the notice and source preservation in the replacement package without adding parsing behavior. |
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
-| UX-47-009 | UX-1 | Open - manual retest pending | Artifact `cb363385` displayed only product version `0.1.0`, which did not let the reviewer distinguish the package from another internal build. | Replacement artifact `c3b2b54c` mechanically embeds commit `7ec149de`; confirm the visible version, short commit, and release profile in the running package. |
-| UX-47-010 | UX-0 | Open - manual retest pending | Selecting a DOCX produced no visible completion, cancellation, unsupported, safety, malformed-input, or failure disposition during manual review. | Replacement tests enforce one visible pending and terminal notice; retest successful, cancelled, unsupported, safety-limit, malformed, and failed DOCX intake without path or package detail. |
-| UX-47-011 | UX-0 | Open - manual retest pending | DOCX export produced no visible completion or error disposition during manual review. | Replacement tests enforce pending, exported, cancelled, unsupported-content, invalid-package, and write-failure outcomes; retest atomic output and source preservation. |
+| UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
+| UX-47-010 | UX-0 | Open - P0 correction pending package | Artifact `c3b2b54c` rejected an ordinary Word DOCX with the generic safety-limit notice and left the editor blank. A Word-authored fixture reproduced the exact internal cause as `RelationshipTarget`; the parser incorrectly rejected a valid part-relative custom-XML target. | The resolver and production-path round-trip tests are corrected. Rebuild, hash, and manually prove successful, cancelled, unsupported, safety-limit, malformed, and failed DOCX intake with visible terminal states. |
+| UX-47-011 | UX-0 | Open - P0 correction pending package | Artifact `c3b2b54c` did not produce a usable DOCX export or terminal disposition. The corrected production-path test exports the imported Word fixture atomically, reopens it, and matches visible text in LibreOffice. | Rebuild, hash, and manually prove pending, exported, cancelled, unsupported-content, invalid-package, and write-failure outcomes plus source preservation. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 
 Every RC and GATE row remains open. The failed Phase 47 package closes no

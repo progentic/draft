@@ -5,6 +5,7 @@ mod commands;
 mod desktop_menu;
 mod diagnostics;
 pub mod documents;
+mod docx_trace;
 pub mod events;
 pub mod exports;
 pub mod formatting;

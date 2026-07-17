@@ -7,6 +7,7 @@ use crate::{
         dialog::select_export_docx,
         envelope::{DocumentEnvelope, DocumentEnvelopeError},
     },
+    docx_trace,
     exports::docx::{DocxExportError, export_docx},
 };
 
@@ -40,7 +41,9 @@ pub(crate) async fn export_document(
     app_handle: AppHandle,
     request: ExportDocumentRequest,
 ) -> Result<ExportDocumentResponse, ExportDocumentError> {
+    docx_trace::emit("export_command_received", format_args!("status=received"));
     let document = validated_document(request.snapshot)?;
+    docx_trace::emit("export_snapshot_accepted", format_args!("status=accepted"));
     let selected = select_export_docx(&app_handle)
         .await
         .map_err(|_| ExportDocumentError::UnsupportedFileLocation)?;
@@ -61,6 +64,10 @@ fn export_selected(
     };
     let outcome =
         export_docx(document, &target).map_err(|cause| ExportDocumentError::Export { cause })?;
+    docx_trace::emit(
+        "export_result_returned",
+        format_args!("status=exported bytes={}", outcome.bytes_written()),
+    );
     Ok(ExportDocumentResponse::Exported {
         bytes_written: outcome.bytes_written(),
     })
@@ -68,12 +75,15 @@ fn export_selected(
 
 #[cfg(test)]
 mod tests {
-    use std::future::Future;
+    use std::{future::Future, path::PathBuf};
 
     use serde_json::json;
 
     use super::*;
-    use crate::documents::text_format::TextFormatError;
+    use crate::{
+        documents::{test_support::TestDocumentPath, text_format::TextFormatError},
+        interoperability::import_docx_source,
+    };
 
     fn typed_command(
         app_handle: AppHandle,
@@ -152,6 +162,21 @@ mod tests {
                 }
             })
         );
+    }
+
+    #[test]
+    fn word_authored_snapshot_exports_with_a_typed_result() {
+        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/docx/word-custom-xml.docx");
+        let imported = import_docx_source(&source).unwrap();
+        let target = TestDocumentPath::with_extension("command-word-round-trip", "docx");
+        let document =
+            validated_document(serde_json::to_value(imported.envelope).unwrap()).unwrap();
+
+        let response = export_selected(&document, Some(target.path().to_owned())).unwrap();
+
+        assert!(matches!(response, ExportDocumentResponse::Exported { .. }));
+        assert!(import_docx_source(target.path()).is_ok());
     }
 
     fn envelope_value() -> Value {

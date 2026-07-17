@@ -312,6 +312,9 @@ describe("Phase 46 visible workflows", () => {
     ).toBeTruthy();
     expect(screen.getByText("paper.docx")).toBeTruthy();
     expect(screen.getByText("Source unchanged")).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
+      "Imported paper",
+    );
 
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Paper.draft")).toBeTruthy();
