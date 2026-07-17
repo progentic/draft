@@ -381,9 +381,15 @@ source-format fidelity and the overall Phase 47 Open gate fail.
 The correction under review preserves the accepted explicit run and paragraph
 properties, represents page breaks as canonical blocks, re-exports those
 blocks, and proves the typed result renders through the actual workspace Open
-action. This is mechanical correction evidence only. `UX-47-013`, `RC-07`,
-`GATE-47`, and all release gates remain open until a newly built and hashed
-package passes the compatible-reader and human fidelity workflow.
+action. The replacement fidelity candidate was built from exact implementation
+commit `dc1d5d6b65e17ef8f6ebbfbb37ad886f64e1acbf`. Its packaged executable
+SHA-256 is
+`91fe1ba93dc2e1ea08a4096e9c3b863b460d481f2a00ee024f2bf477f78f40cc`.
+Mechanical package validation confirmed the embedded commit identity, Apple
+Silicon executable, helper, icon, and bundle metadata. No human fidelity or
+compatible-reader result has been recorded for this candidate. `UX-47-013`,
+`RC-07`, `GATE-47`, and all release gates remain open until the exact package
+passes the compatible-reader and human fidelity workflow.
 
 ### Findings And Dispositions
 
