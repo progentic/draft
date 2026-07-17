@@ -1,10 +1,10 @@
 use tauri::{
     App, AppHandle, Manager, Runtime, Wry,
-    menu::{
-        AboutMetadata, AboutMetadataBuilder, Menu, MenuBuilder, MenuEvent, MenuItem,
-        MenuItemBuilder, SubmenuBuilder,
-    },
+    menu::{Menu, MenuBuilder, MenuEvent, MenuItem, MenuItemBuilder, SubmenuBuilder},
 };
+
+#[cfg(any(target_os = "macos", test))]
+use tauri::menu::{AboutMetadata, AboutMetadataBuilder};
 
 use crate::events::native_menu::{NativeMenuEvent, emit_native_menu_action};
 
@@ -193,6 +193,7 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
     builder.item(&file).item(&edit).item(&window).build()
 }
 
+#[cfg(any(target_os = "macos", test))]
 fn about_metadata() -> AboutMetadata<'static> {
     AboutMetadataBuilder::new()
         .name(Some("DRAFT"))
@@ -202,6 +203,7 @@ fn about_metadata() -> AboutMetadata<'static> {
         .build()
 }
 
+#[cfg(any(target_os = "macos", test))]
 fn build_identity() -> String {
     format!(
         "{} · {} · {}",
@@ -211,6 +213,7 @@ fn build_identity() -> String {
     )
 }
 
+#[cfg(any(target_os = "macos", test))]
 fn short_build_commit(commit: &str) -> &str {
     commit.get(..8).unwrap_or(commit)
 }
