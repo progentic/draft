@@ -1178,7 +1178,7 @@ check_phase_47_manual_gate_corrections() {
     "${ledger}"
   require_source_pattern '| UX-47-012 | UX-1 | Open - manual retest pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-013 | UX-0 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-013 | UX-0 | Open - packaged fidelity retest pending |' \
     "${ledger}"
   require_source_pattern '| UX-47-014 | UX-1 | Open - packaged retest pending |' \
     "${ledger}"

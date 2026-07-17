@@ -1122,7 +1122,7 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-012 | UX-1 | Open - manual retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-013 | UX-0 | Open - correction pending package |'
+    '| UX-47-013 | UX-0 | Open - packaged fidelity retest pending |'
   require_document_text "${ledger}" \
     '| UX-47-014 | UX-1 | Open - packaged retest pending |'
   require_document_text "${ledger}" \
