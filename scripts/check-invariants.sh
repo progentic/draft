@@ -1180,11 +1180,11 @@ check_phase_47_manual_gate_corrections() {
     "${ledger}"
   require_source_pattern '| UX-47-013 | UX-0 | Open - correction pending package |' \
     "${ledger}"
-  require_source_pattern '| UX-47-014 | UX-1 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-014 | UX-1 | Open - packaged retest pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-015 | UX-1 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-015 | UX-1 | Open - packaged retest pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-016 | UX-1 | Open - correction pending package |' \
+  require_source_pattern '| UX-47-016 | UX-1 | Open - packaged retest pending |' \
     "${ledger}"
   require_source_pattern '| UX-47-017 | UX-1 | Open - governance and workflow review required |' \
     "${ledger}"

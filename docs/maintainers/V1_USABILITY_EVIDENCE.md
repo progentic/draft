@@ -404,9 +404,19 @@ as separate page surfaces. It does not infer page boundaries from content
 flow, margins, font metrics, or printer geometry. It also moves exact build
 identity to About DRAFT and the bottom-right status bar, synchronizes
 basename-only clean and Unsaved titles with the native window, and lets Rust
-derive bounded `.draft` Save suggestions from the typed document origin. A new
-packaged artifact and executable hash are required before any related finding
-can close.
+derive bounded `.draft` Save suggestions from the typed document origin.
+
+The replacement presentation candidate was built from exact head
+`f7f19c35d8cf8071ee17fbd80a23b2f631635a34`. Its packaged executable SHA-256
+is `1634d6d24642705bb2f20cd01af3d7426da63c63473cf06c86c7c744a5594244`.
+Mechanical validation confirmed the embedded commit identity, Apple Silicon
+executable, deterministic helper, tracked icon, document registration, and
+bundle metadata. Human validation remains pending for explicit page surfaces,
+About and status-bar identity, clean and Unsaved title transitions, Save
+suggestions, cancellation, and post-save identity. This candidate does not
+implement format selection, future sidebar placeholders, spelling, or inferred
+pagination. `UX-47-013` through `UX-47-019`, `RC-07`, `GATE-47`, and all release
+gates remain open.
 
 ### Findings And Dispositions
 
@@ -449,9 +459,9 @@ can close.
 | UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 | UX-47-013 | UX-0 | Open - correction pending package | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Basic Open passed while source fidelity failed. | Preserve accepted direct run and paragraph properties plus canonical page breaks without guessing semantic headings or substituting unsupported fonts. Rebuild, hash, compare source and exported output in Word or LibreOffice, and confirm the original source hash remains unchanged. |
-| UX-47-014 | UX-1 | Open - correction pending package | Artifact `91fe1ba9` retained substantially more source formatting, but rendered an explicit page break as a dashed marker inside one continuous page surface. | Render canonical page-break nodes as distinct page surfaces and retest the exact package. Do not infer pagination from layout, content flow, fonts, margins, or printer geometry. |
-| UX-47-015 | UX-1 | Open - correction pending package | Artifact `91fe1ba9` did not place Unsaved beside the document name and kept build identity in the document inspector. | Show basename plus Unsaved state in both in-window and native titles, place exact build identity in About DRAFT and the bottom-right status bar, and retest the packaged title transitions. |
-| UX-47-016 | UX-1 | Open - correction pending package | Save and Save As did not consistently suggest the current document basename; imported and new sessions could fall back to an unhelpful Untitled name. | Keep target selection in Rust, derive a bounded `.draft` suggestion from typed lifecycle origin and basename, preserve state on cancellation, and return only basename display data after success. |
+| UX-47-014 | UX-1 | Open - packaged retest pending | Artifact `91fe1ba9` retained substantially more source formatting, but rendered an explicit page break as a dashed marker inside one continuous page surface. Candidate `1634d6d2` mechanically contains the explicit page-surface correction. | Retest canonical page-break nodes as distinct page surfaces in the exact package. Do not infer pagination from layout, content flow, fonts, margins, or printer geometry. |
+| UX-47-015 | UX-1 | Open - packaged retest pending | Artifact `91fe1ba9` did not place Unsaved beside the document name and kept build identity in the document inspector. Candidate `1634d6d2` mechanically contains the title, About, and status-bar correction. | Retest basename plus Unsaved state in both in-window and native titles and exact build identity in About DRAFT and the bottom-right status bar. |
+| UX-47-016 | UX-1 | Open - packaged retest pending | Save and Save As did not consistently suggest the current document basename; imported and new sessions could fall back to an unhelpful Untitled name. Candidate `1634d6d2` mechanically contains the Rust-owned suggestion correction. | Retest existing, imported, and new suggestions, state preservation on cancellation, and immediate basename updates after success. |
 | UX-47-017 | UX-1 | Open - governance and workflow review required | Save As cannot yet choose between native `.draft` and Word `.docx`, while Export DOCX remains a separate top-level action. | Define and accept one native format-selection workflow before replacing the current separate Save As and Export actions. Do not merge the two persistence meanings implicitly. |
 | UX-47-018 | UX-2 | Open - future workspace scope | The proposed research and analysis sidebar regions are not present. | Keep unsupported capabilities absent until their commands and contracts exist. A later accepted workspace implementation may use clearly disabled placeholders without implying availability. |
 | UX-47-019 | UX-2 | Open - future governed capability | DRAFT has no spelling highlight, suggestion, or correction workflow. | Define dictionary source, locale, privacy, document-mark, ignore, correction, undo, accessibility, and failure behavior before implementation. |

@@ -1124,11 +1124,11 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-013 | UX-0 | Open - correction pending package |'
   require_document_text "${ledger}" \
-    '| UX-47-014 | UX-1 | Open - correction pending package |'
+    '| UX-47-014 | UX-1 | Open - packaged retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-015 | UX-1 | Open - correction pending package |'
+    '| UX-47-015 | UX-1 | Open - packaged retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-016 | UX-1 | Open - correction pending package |'
+    '| UX-47-016 | UX-1 | Open - packaged retest pending |'
   require_document_text "${ledger}" \
     '| UX-47-017 | UX-1 | Open - governance and workflow review required |'
   require_document_text "${ledger}" \
