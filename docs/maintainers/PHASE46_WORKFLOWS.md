@@ -63,6 +63,12 @@ the registry. The workspace immediately shows the returned filename, while a
 later Save reuses the registered path without reopening a dialog. Cancellation
 or failure preserves the prior display name and unsaved state.
 
+The save request includes only the current basename and the closed lifecycle
+origin previously returned by Rust. Rust derives the native suggestion:
+existing DRAFT basename, imported source stem with `.draft`, or
+`Untitled.draft` for a new document. Native and in-window titles mirror the
+basename plus transient Unsaved state without receiving the selected path.
+
 Open returns one typed origin outcome. `opened_draft` carries a validated
 native envelope whose path remains registered in Rust. `imported_text` carries
 a new unsaved Rust-owned envelope created from a bounded UTF-8 `.txt` or `.md`

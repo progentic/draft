@@ -87,6 +87,12 @@ Missing paragraph properties remain absent. The importer never serializes a
 complete default `paragraphStyle` object. `Heading 1` through `Heading 6` are
 canonicalized to the accepted style identifiers and recorded as normalization.
 
+The editor renders each canonical `pageBreak` as a full-width gap and visible
+page edges between distinct white page surfaces. It does not show punctuation
+or a dashed line as document content. This presentation is exact only for
+explicit page-break nodes: DRAFT does not infer pagination from content flow,
+margins, font metrics, printer geometry, or Word's automatic layout.
+
 Exact and at-least line spacing, list numbering, unsupported inherited styles,
 and unsupported document structures are typed unsupported failures. Borders,
 shading, tab stops, contextual spacing, pagination controls other than page

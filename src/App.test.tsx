@@ -11,6 +11,7 @@ const listenToNativeMenuActionsMock = vi.hoisted(() => vi.fn());
 const setNativeMenuStateMock = vi.hoisted(() => vi.fn());
 const listenToApplicationOpenRequestsMock = vi.hoisted(() => vi.fn());
 const takeApplicationOpenRequestMock = vi.hoisted(() => vi.fn());
+const setWindowTitleMock = vi.hoisted(() => vi.fn());
 
 vi.mock("./ipc/documentCreate", () => ({
   createUnsavedDocument: createUnsavedDocumentMock,
@@ -33,6 +34,10 @@ vi.mock("./ipc/applicationOpen", () => ({
   dismissApplicationOpenRequest: vi.fn(async () => true),
   listenToApplicationOpenRequests: listenToApplicationOpenRequestsMock,
   takeApplicationOpenRequest: takeApplicationOpenRequestMock,
+}));
+
+vi.mock("./ipc/windowTitle", () => ({
+  setWindowTitle: setWindowTitleMock,
 }));
 
 import { App } from "./App";
@@ -79,6 +84,8 @@ describe("DRAFT workspace shell", () => {
     listenToApplicationOpenRequestsMock.mockResolvedValue(vi.fn());
     takeApplicationOpenRequestMock.mockReset();
     takeApplicationOpenRequestMock.mockResolvedValue({ status: "none" });
+    setWindowTitleMock.mockReset();
+    setWindowTitleMock.mockResolvedValue({ status: "applied" });
   });
 
   it("renders the editor, navigation, and session state", async () => {
@@ -90,12 +97,18 @@ describe("DRAFT workspace shell", () => {
     expect(screen.getByRole("toolbar", { name: "Text formatting" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document outline" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document details" })).toBeTruthy();
-    expect(screen.getByText("Untitled document")).toBeTruthy();
+    const header = document.querySelector<HTMLElement>(".workspace-header")!;
+    expect(within(header).getByText("Untitled document")).toBeTruthy();
+    expect(within(header).getByText("Unsaved")).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toBe("");
     expect(screen.getByText("Not saved")).toBeTruthy();
-    expect(
-      await screen.findByText("Core v0.1.0 · build 01234567 · release"),
-    ).toBeTruthy();
+    expect(await screen.findByText("v0.1.0 · 01234567")).toBeTruthy();
+    await waitFor(() => {
+      expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+        displayName: "Untitled document",
+        unsaved: true,
+      });
+    });
   });
 
   it("keeps document and connectivity state in the bottom status bar", async () => {

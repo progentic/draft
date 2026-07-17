@@ -17,9 +17,9 @@ import { useDocxExport } from "../features/docx-export/useDocxExport";
 import { FormattingReviewPanel } from "../features/formatting-review/FormattingReviewPanel";
 import { ReferenceLibraryPanel } from "../features/references/ReferenceLibraryPanel";
 import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
-import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 import { TextAnalysisPanel } from "../features/text-analysis/TextAnalysisPanel";
 import { useWorkspaceActions } from "../features/workspace-actions/useWorkspaceActions";
+import { useWindowTitle } from "../features/window-title/useWindowTitle";
 
 type WorkspacePanel = "formatting" | "references" | "text-review" | null;
 
@@ -31,13 +31,19 @@ export function DraftWorkspace() {
   const docxExport = useDocxExport(documentSession);
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>(null);
+  const windowTitleFeedback = useWindowTitle(
+    documentSession.documentId ? documentSession.title : null,
+    documentSession.unsaved,
+  );
 
   const togglePanel = useCallback((panel: Exclude<WorkspacePanel, null>) => {
     setActivePanel((active) => (active === panel ? null : panel));
   }, []);
   const workspaceActions = useWorkspaceActions(documentSession, docxExport, togglePanel);
-  const operationMessage =
-    workspaceActions.feedback || docxExport.feedback || documentSession.feedback;
+  const operationMessage = workspaceActions.feedback ||
+    docxExport.feedback ||
+    documentSession.feedback ||
+    windowTitleFeedback;
   const operationPending =
     docxExport.disabled || documentSession.operation !== "ready";
 
@@ -46,6 +52,7 @@ export function DraftWorkspace() {
       <WorkspaceHeader
         documentTitle={documentSession.title}
         isOutlineOpen={isOutlineOpen}
+        unsaved={documentSession.unsaved}
         onToggleOutline={() => setIsOutlineOpen((isOpen) => !isOpen)}
       />
       <WorkspaceCommandBar
@@ -61,7 +68,6 @@ export function DraftWorkspace() {
         activePanel={activePanel}
         editor={editor}
         isOutlineOpen={isOutlineOpen}
-        runtimeStatus={runtimeStatus}
         onClosePanel={() => setActivePanel(null)}
         onToggleFormattingReview={() => togglePanel("formatting")}
       />
@@ -70,6 +76,7 @@ export function DraftWorkspace() {
         documentStatus={documentSession.statusLabel}
         exportPending={docxExport.disabled}
         operation={documentSession.operation}
+        runtimeStatus={runtimeStatus}
         onRefreshConnectivity={() => void connectivity.refresh()}
         onSetConnectivityMode={(mode) => void connectivity.setMode(mode)}
       />
@@ -89,7 +96,6 @@ function WorkspaceBody(props: {
   activePanel: WorkspacePanel;
   editor: Editor | null;
   isOutlineOpen: boolean;
-  runtimeStatus: RuntimeConnectionState;
   onClosePanel: () => void;
   onToggleFormattingReview: () => void;
 }) {
@@ -119,7 +125,7 @@ function WorkspaceBody(props: {
         />
         <DraftEditor editor={props.editor} />
       </section>
-      <DocumentInspector editor={props.editor} runtimeStatus={props.runtimeStatus} />
+      <DocumentInspector editor={props.editor} />
     </div>
   );
 }

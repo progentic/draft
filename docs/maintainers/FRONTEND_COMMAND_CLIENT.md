@@ -21,7 +21,8 @@ transport failures out of presentation components.
 | Mid | `getRuntimeStatus` | Owns the command name, request envelope, response validation, and error classification. |
 | Mid | `cancelWorker` | Owns the cancellation command contract and bounded result mapping. |
 | Mid | `openDocument` | Validates Rust-loaded envelopes without receiving a path. |
-| Mid | `saveDocument` | Sends one explicit snapshot and validates save outcomes. |
+| Mid | `saveDocument` | Sends one explicit snapshot plus path-free display/origin metadata and validates save outcomes. |
+| Mid | `setWindowTitle` | Mirrors basename and Unsaved presentation through one strict native-title command. |
 | Mid | `resolveCitation` | Validates resolution responses and typed citation failures. |
 | Mid | `openExternalAccess` | Requests one Rust-validated default-browser handoff. |
 | Mid | `runFormattingReview` | Validates one closed formatting response and typed failures. |
@@ -118,9 +119,11 @@ extends the save error guard with typed atomic-write and durability failures.
 It validates opened envelopes, cancellation, nested domain failures, and
 transport failures.
 
-`saveDocument` sends exactly one typed envelope snapshot. It sends no path and
-does not inspect Tiptap live state. The caller must construct the immutable
-snapshot explicitly. Phase 46 adds `closeDocument` and integrates New, Open,
+`saveDocument` sends exactly one typed envelope snapshot, one basename display
+name, and the closed lifecycle origin previously returned by Rust. It sends no
+path and does not inspect Tiptap live state. Rust uses the extra path-free data
+only to derive a native `.draft` filename suggestion. The caller must construct
+the immutable snapshot explicitly. Phase 46 adds `closeDocument` and integrates New, Open,
 Save, and Close through `useDocumentSession`, including dirty-state decisions
 and registry-handle release. A successful save response carries the document
 ID, a basename-only display name, and a `wasSaveAs` flag. The client rejects
@@ -261,6 +264,12 @@ and unknown transport failures remain distinct.
 same dispatcher, and that dispatcher checks current availability before calling
 the existing document-session or DOCX-export operation. The wrapper exposes no
 filesystem path or native menu object to React.
+
+`windowTitle.ts` owns the separate `set_window_title` client. Its request is
+limited to an optional basename and Unsaved boolean; its strict response and
+closed errors cannot change document identity or persistence. `useWindowTitle`
+mirrors session presentation after new, import, edit, save, close, and reopen
+transitions.
 
 The create client accepts no identity or content input; Rust returns the
 validated blank initial envelope. The Open client receives no path and never

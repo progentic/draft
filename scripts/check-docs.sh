@@ -818,7 +818,7 @@ check_configuration_index() {
     MAX_DOCX_IMPORT_XML_DEPTH
     MAX_DOCX_IMPORT_COMPRESSION_RATIO
     DOCUMENT_EXTENSIONS
-    DEFAULT_DOCUMENT_FILE_NAME
+    DEFAULT_NEW_DOCUMENT_FILE_NAME
   )
   local symbol
 
@@ -1123,10 +1123,36 @@ check_phase_47_manual_correction_documentation() {
     '| UX-47-012 | UX-1 | Open - manual retest pending |'
   require_document_text "${ledger}" \
     '| UX-47-013 | UX-0 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-014 | UX-1 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-015 | UX-1 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-016 | UX-1 | Open - correction pending package |'
+  require_document_text "${ledger}" \
+    '| UX-47-017 | UX-1 | Open - governance and workflow review required |'
+  require_document_text "${ledger}" \
+    '| UX-47-018 | UX-2 | Open - future workspace scope |'
+  require_document_text "${ledger}" \
+    '| UX-47-019 | UX-2 | Open - future governed capability |'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     'direct properties remain in the canonical document'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'does not infer pagination from content flow'
+  require_document_text docs/maintainers/WORKSPACE_UI.md \
+    '## Explicit Page Surfaces'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    'About DRAFT shows the product version'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    'Untitled.draft'
   require_document_text docs/wiki/Workspace.md \
     'DOCX import retains supported explicit font family'
+  require_document_text docs/wiki/Workspace.md \
+    'gap between separate page surfaces'
+  require_document_text docs/wiki/Current-Limitations.md \
+    'Spelling highlights, suggestions, ignore rules, and correction controls'
+  require_document_text docs/wiki/Current-Limitations.md \
+    "Save As currently creates \`.draft\` files."
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'
   require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
 }

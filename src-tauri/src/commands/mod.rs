@@ -14,4 +14,5 @@ pub(crate) mod native_menu;
 pub(crate) mod reference_library;
 pub(crate) mod runtime_status;
 pub(crate) mod text_analysis;
+pub(crate) mod window_title;
 pub(crate) mod worker_cancellation;

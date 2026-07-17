@@ -721,7 +721,10 @@ identity, persistence, import, export, and source-path authority remain in
 Rust. Phase 48 implements the native File menu through Rust-owned menu items,
 typed events, a path-free state command, and the same frontend dispatcher used
 by the visible command bar. Save As selects and retains its replacement target
-in Rust and returns only document identity and basename display data.
+in Rust and returns only document identity and basename display data. Rust also
+derives the native save-panel suggestion from that basename and the closed
+lifecycle origin it originally returned. The suggestion is never path
+authority, and React receives no selected path.
 
 Phase 47 now adds a bounded Rust-owned DOCX reader and external-source
 registration. ZIP/XML validation and paragraph conversion complete before a
@@ -736,6 +739,15 @@ bold, italic, underline, paragraph alignment, spacing, indentation, semantic
 heading styles, and page breaks. Unsupported style, run, pagination, or package
 behavior is disclosed without removing supported properties from the canonical
 copy. DRAFT does not infer semantic headings from visual appearance alone.
+
+Canonical `pageBreak` nodes render as distinct page surfaces in the editor.
+This is explicit-node presentation only. DRAFT does not infer page boundaries
+from content flow, margins, font metrics, or printer geometry.
+
+Native and in-window titles mirror only the basename and transient Unsaved
+state. The typed title command cannot receive a path or mutate persistence.
+Build identity appears in native About metadata and the bottom-right status
+item; the document inspector remains document-specific.
 
 The Phase 47 source-write boundary is a third, separate Rust command. It can
 replace an exact supported-subset DOCX, or a canonically normalized DOCX after

@@ -103,10 +103,11 @@ Successful first Save transitions an imported or new origin to
 
 ## Save Command
 
-`save_document` receives one explicit `snapshot` JSON value. Rust never reaches
-into the WebView or Tiptap instance for live state. The visible frontend client
-serializes the current editor state and places it in the envelope before
-invoking the command.
+`save_document` receives one explicit `snapshot` JSON value plus the
+basename-only display name and closed lifecycle origin previously returned by
+Rust. Rust never reaches into the WebView or Tiptap instance for live state.
+The visible frontend client serializes the current editor state and places it
+in the envelope before invoking the command.
 
 Rust validates the entire snapshot before opening a dialog or writing. A known
 document reuses the source path retained by the registry. An unsaved or new
@@ -119,6 +120,11 @@ A newly selected target must use the `.draft` extension. Rust enforces this
 before writer invocation; the native dialog filter is not treated as the
 authority. Existing compatible `.json` documents may continue saving only to
 their already registered path.
+
+Rust derives the native filename suggestion from the path-free lifecycle data.
+An existing `.draft` keeps its basename, an imported DOCX/TXT/MD basename gains
+the `.draft` extension, and a new document uses `Untitled.draft`. The suggestion
+does not become a save target until the user confirms the native dialog.
 
 A read-only preflight decides whether a target dialog is required. The actual
 save path validates again while holding the existing lifecycle lock, so the

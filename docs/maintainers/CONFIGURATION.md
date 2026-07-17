@@ -52,7 +52,7 @@ implementation choices that can change without altering one of those contracts.
 | Desktop icon paths | `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico` | `src-tauri/tauri.conf.json` | Exact assets embedded by the app package path. |
 | Canonical icon source | `assets/DRAFT_Logo.png`; SHA-256 `ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043` | `scripts/check-packaging.sh` | Sole source artwork for Tauri and in-window icon derivatives. |
 | `DOCUMENT_EXTENSIONS` | `draft`, `json` | `documents/dialog.rs` | Native open-dialog extension filters. |
-| `DEFAULT_DOCUMENT_FILE_NAME` | `Untitled.draft` | `documents/dialog.rs` | Initial native save-dialog name. |
+| `DEFAULT_NEW_DOCUMENT_FILE_NAME` | `Untitled.draft` | `commands/document_save.rs` | Native Save suggestion for a new document; imported and existing documents derive a bounded suggestion from their basename. |
 
 ## Schemas And Persistence
 

@@ -9,6 +9,7 @@ const listenToNativeMenuActionsMock = vi.hoisted(() => vi.fn());
 const setNativeMenuStateMock = vi.hoisted(() => vi.fn());
 const listenToApplicationOpenRequestsMock = vi.hoisted(() => vi.fn());
 const takeApplicationOpenRequestMock = vi.hoisted(() => vi.fn());
+const setWindowTitleMock = vi.hoisted(() => vi.fn());
 let applicationOpenAvailable: (() => void) | undefined;
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
@@ -26,6 +27,9 @@ vi.mock("./applicationOpen", () => ({
   dismissApplicationOpenRequest: vi.fn(async () => true),
   listenToApplicationOpenRequests: listenToApplicationOpenRequestsMock,
   takeApplicationOpenRequest: takeApplicationOpenRequestMock,
+}));
+vi.mock("./windowTitle", () => ({
+  setWindowTitle: setWindowTitleMock,
 }));
 
 import { App } from "../App";
@@ -64,6 +68,8 @@ describe("Phase 46 visible workflows", () => {
     );
     takeApplicationOpenRequestMock.mockReset();
     takeApplicationOpenRequestMock.mockResolvedValue({ status: "none" });
+    setWindowTitleMock.mockReset();
+    setWindowTitleMock.mockResolvedValue({ status: "applied" });
     installDefaultCommands();
   });
 
@@ -75,6 +81,10 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Saved as Research notes.draft.")).toBeTruthy();
     expect(screen.getByText("Research notes.draft")).toBeTruthy();
     expect(screen.getByText("Saved")).toBeTruthy();
+    await waitFor(() => expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+      displayName: "Research notes.draft",
+      unsaved: false,
+    }));
 
     await user.click(screen.getByRole("button", { name: "Close" }));
     expect(await screen.findByText("Document closed.")).toBeTruthy();
@@ -85,6 +95,10 @@ describe("Phase 46 visible workflows", () => {
     expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toContain(
       "Persisted evidence",
     );
+    await waitFor(() => expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+      displayName: "Reopened research notes",
+      unsaved: false,
+    }));
 
     expect(commandNames()).toEqual(["create_document", "save_document", "close_document", "open_document"]);
   });
@@ -259,6 +273,16 @@ describe("Phase 46 visible workflows", () => {
     expect(screen.getByText("Saved")).toBeTruthy();
     expect(screen.getByText("Imported notes.draft")).toBeTruthy();
     expect(saveRequests).toHaveLength(2);
+    expect(saveRequests[0]).toMatchObject({
+      request: { displayName: "notes.md", mode: "save", origin: "imported_text" },
+    });
+    expect(saveRequests[1]).toMatchObject({
+      request: {
+        displayName: "Imported notes.draft",
+        mode: "save",
+        origin: "opened_draft",
+      },
+    });
     expect(Object.keys(saveRequests[0] ?? {})).toEqual(["request"]);
     expect(JSON.stringify(saveRequests)).not.toContain("sourcePath");
     expect(JSON.stringify(saveRequests)).not.toContain("source_path");
@@ -281,6 +305,10 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Save cancelled. Your document remains unsaved.")).toBeTruthy();
     expect(screen.getByText("Imported, unsaved")).toBeTruthy();
     expect(screen.getByText("notes.md")).toBeTruthy();
+    await waitFor(() => expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+      displayName: "notes.md",
+      unsaved: true,
+    }));
   });
 
   it("keeps path-free DOCX source identity separate from DRAFT Save", async () => {
@@ -320,6 +348,9 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Paper.draft")).toBeTruthy();
     expect(screen.getByText("Saved")).toBeTruthy();
     expect(saveRequests).toHaveLength(1);
+    expect(saveRequests[0]).toMatchObject({
+      request: { displayName: "paper.docx", mode: "save", origin: "imported_external" },
+    });
     expect(JSON.stringify(saveRequests)).not.toMatch(/path|xml|sourceBytes/i);
 
     await user.click(screen.getByRole("button", { name: "Close" }));
@@ -702,6 +733,10 @@ describe("Phase 46 visible workflows", () => {
     expect(await screen.findByText("Saved as Research notes.draft.")).toBeTruthy();
     const editor = screen.getByRole("textbox", { name: "Document editor" });
     await user.type(editor, "Unsaved revision");
+    await waitFor(() => expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+      displayName: "Research notes.draft",
+      unsaved: true,
+    }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("DRAFT could not save the document. Your open document has not been replaced.")).toBeTruthy();

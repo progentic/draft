@@ -233,7 +233,7 @@ check_error_presentation_contract() {
     'errorPresentation' \
     --glob '!src/features/error-ux/errorPresentation.ts' \
     --glob '!src/features/error-ux/errorPresentation.test.ts' \
-    --glob '!src/components/DocumentInspector.tsx' \
+    --glob '!src/components/WorkspaceStatusBar.tsx' \
     --glob '!src/features/connectivity/ConnectivityModeControl.tsx' \
     --glob '!src/features/formatting-review/FormattingReviewPanel.tsx' \
     --glob '!src/editor/CitationNode.ts' src
@@ -1131,8 +1131,12 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'buildProfile: "debug" | "release"' \
     src/ipc/runtimeStatus.ts
   require_source_pattern 'status.buildCommit.slice(0, 8)' \
+    src/components/WorkspaceStatusBar.tsx
+  require_source_pattern 'about_metadata()' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'env!("DRAFT_BUILD_PROFILE")' src-tauri/src/desktop_menu.rs
+  assert_no_matches 'build identity stays out of document inspector' \
+    '\b(?:RuntimeConnectionState|runtimeStatus|buildCommit|buildProfile|Core v)\b' \
     src/components/DocumentInspector.tsx
-  require_source_pattern 'status.buildProfile' src/components/DocumentInspector.tsx
 
   require_source_pattern 'const COMMAND_NAME = "open_application_document"' \
     "${application_client}"
@@ -1176,12 +1180,30 @@ check_phase_47_manual_gate_corrections() {
     "${ledger}"
   require_source_pattern '| UX-47-013 | UX-0 | Open - correction pending package |' \
     "${ledger}"
+  require_source_pattern '| UX-47-014 | UX-1 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-015 | UX-1 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-016 | UX-1 | Open - correction pending package |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-017 | UX-1 | Open - governance and workflow review required |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-018 | UX-2 | Open - future workspace scope |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-019 | UX-2 | Open - future governed capability |' \
+    "${ledger}"
   require_file src/editor/PageBreakNode.ts
   require_rust_test supported_direct_run_properties_map_to_exact_canonical_marks \
     src-tauri/src/interoperability/docx_import/tests.rs
   require_rust_test page_break_runs_become_canonical_blocks_and_export_back_to_docx \
     src-tauri/src/interoperability/docx_import/tests.rs
   require_source_pattern 'name: "pageBreak"' src/editor/PageBreakNode.ts
+  require_source_pattern 'background: var(--workspace);' src/styles.css
+  require_source_pattern 'renders explicit page breaks as full page-surface gaps' \
+    tests/frontend/styles.test.ts
+  assert_no_matches 'page-break punctuation presentation regression' \
+    'border-(?:top|bottom):[^;]*dashed|content:[^;]*(?:-{3,}|Page break)' \
+    src/styles.css
   require_source_pattern 'DocxBlock::PageBreak' src-tauri/src/exports/docx_package.rs
   require_source_pattern 'rendered font/paragraph/page-break import' \
     docs/maintainers/DOCX_INTEROPERABILITY.md
@@ -1190,6 +1212,20 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern '| GATE-47 | Roadmap gate | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md
   require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
+  require_file src-tauri/src/commands/window_title.rs
+  require_file src/ipc/windowTitle.ts
+  require_file src/features/window-title/useWindowTitle.ts
+  require_source_pattern 'commands::window_title::set_window_title' src-tauri/src/lib.rs
+  require_source_pattern 'const COMMAND_NAME = "set_window_title"' src/ipc/windowTitle.ts
+  require_source_pattern 'title_contract_is_bounded_and_path_free' \
+    src-tauri/src/commands/window_title.rs
+  require_rust_test native_document_title_formats_are_stable \
+    src-tauri/src/commands/window_title.rs
+  require_source_pattern 'save_dialog_suggestions_preserve_basename_identity' \
+    src-tauri/src/commands/document_save.rs
+  assert_no_matches 'window-title path authority' \
+    '\b(?:sourcePath|targetPath|absolutePath|PathBuf|fileUrl)\b|file://' \
+    src/ipc/windowTitle.ts src/features/window-title/useWindowTitle.ts
 
   printf 'PASS Phase 47 failed-package correction boundaries\n'
 }
@@ -2149,7 +2185,7 @@ check_async_native_dialog_boundary() {
     src-tauri/src/commands/document_open.rs
   require_source_pattern 'pub(crate) async fn save_document(' \
     src-tauri/src/commands/document_save.rs
-  require_source_pattern 'select_save_document(&app_handle)' \
+  require_source_pattern 'select_save_document(&app_handle, &suggested_file_name)' \
     src-tauri/src/commands/document_save.rs
   assert_no_matches 'Save command avoids open dialog selector' \
     'select_open_document' \
@@ -2274,8 +2310,9 @@ check_frontend_document_file_boundary() {
     "${document_identity_paths[@]}"
   require_source_pattern 'DocumentEnvelope::create_initial()' \
     src-tauri/src/commands/document_create.rs
-  require_source_pattern 'type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft"' \
+  require_source_pattern 'type DocumentOrigin = SaveDocumentOrigin;' \
     src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'export type SaveDocumentOrigin =' src/ipc/documentSave.ts
   require_source_pattern 'origin: result.status' \
     src/features/document-session/useDocumentSession.ts
   require_source_pattern 'origin: "opened_draft" as const' \

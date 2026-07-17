@@ -8,9 +8,10 @@ available, export, References, and Text checks, are available from the **More**
 (`…`) menu. The same document actions are also available from the macOS
 **File** menu.
 
-DRAFT shows the document name near the top of the workspace. Save state,
-connectivity, and active operations appear in the status bar at the bottom. A
-temporary notice below the document controls reports the pending, completed,
+DRAFT shows the document name and `Unsaved` state near the top of the
+workspace. Detailed document state, connectivity, active operations, and a
+compact build identity appear in the status bar at the bottom.
+A temporary notice below the document controls reports the pending, completed,
 cancelled, or failed result of Open, Save, and Export.
 
 When New, Open, or Close would replace or discard unsaved work, choose **Save
@@ -45,9 +46,16 @@ italic, underline, paragraph alignment, spacing, indentation, heading styles,
 and page breaks. If the source also contains behavior DRAFT cannot represent,
 the notice explains that those features remain only in the unchanged original.
 
+An explicit page break appears as a gap between separate page surfaces. DRAFT
+does not automatically calculate page boundaries from text flow, margins,
+fonts, or printer settings, so content without an explicit break remains on
+one continuous surface.
+
 **Save As…** chooses a new `.draft` target while preserving the previous file.
 After it succeeds, later Save operations use the new target. Cancellation or a
-failed write leaves the current filename and file unchanged.
+failed write leaves the current filename and file unchanged. The native panel
+suggests the current DRAFT basename, an imported source basename with `.draft`,
+or `Untitled.draft` for a new document.
 
 ## Write And Format
 
@@ -151,8 +159,8 @@ last enabled action, and Escape to return focus to **More**.
 In the formatting toolbar, use Left Arrow and Right Arrow to move, Home for the
 first enabled control, and End for the last. Disabled controls are skipped.
 Panels and the conditional operation notice announce pending, completed,
-empty, failed, and recovery states. The Document panel shows `Core
-v<version> · build <commit> · <profile>` for the exact running desktop build.
+empty, failed, and recovery states. The bottom-right status item shows compact
+`v<version> · <commit>` identity; About DRAFT also shows the build profile.
 
 See [Troubleshooting](Troubleshooting) for message-specific recovery and
 [Current limitations](Current-Limitations) for the complete current boundary.

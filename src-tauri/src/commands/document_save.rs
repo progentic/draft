@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serde_json::Value;
+use std::path::Path;
 use tauri::{AppHandle, State};
 
 use crate::documents::{
@@ -11,12 +12,16 @@ use crate::documents::{
     registry::DocumentRegistry,
 };
 
+const DEFAULT_NEW_DOCUMENT_FILE_NAME: &str = "Untitled.draft";
+
 /// Immutable frontend snapshot submitted for a Rust-owned document save.
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct SaveDocumentRequest {
+    display_name: String,
     snapshot: Value,
     mode: SaveDocumentMode,
+    origin: SaveDocumentOrigin,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -26,6 +31,15 @@ enum SaveDocumentMode {
     SaveAs,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum SaveDocumentOrigin {
+    ImportedExternal,
+    ImportedText,
+    New,
+    OpenedDraft,
+}
+
 /// Saves one explicit validated snapshot through the atomic writer.
 #[tauri::command]
 pub(crate) async fn save_document(
@@ -33,11 +47,12 @@ pub(crate) async fn save_document(
     registry: State<'_, DocumentRegistry>,
     request: SaveDocumentRequest,
 ) -> Result<SaveDocumentOutcome, SaveDocumentError> {
+    let suggested_file_name = suggested_draft_file_name(&request.display_name, request.origin)?;
     let selected = if request.mode == SaveDocumentMode::SaveAs
         || save_requires_target(&registry, &request.snapshot)?
     {
         Some(
-            select_save_document(&app_handle)
+            select_save_document(&app_handle, &suggested_file_name)
                 .await
                 .map_err(|_| SaveDocumentError::UnsupportedFileLocation)?,
         )
@@ -52,6 +67,34 @@ pub(crate) async fn save_document(
             selected_save_target(selected)
         }),
     }
+}
+
+fn suggested_draft_file_name(
+    display_name: &str,
+    origin: SaveDocumentOrigin,
+) -> Result<String, SaveDocumentError> {
+    require_basename(display_name)?;
+    if origin == SaveDocumentOrigin::New {
+        return Ok(DEFAULT_NEW_DOCUMENT_FILE_NAME.to_owned());
+    }
+    let stem = Path::new(display_name)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .map(str::trim)
+        .filter(|stem| !stem.is_empty())
+        .ok_or(SaveDocumentError::InvalidTarget)?;
+    if stem.len() > 240 {
+        return Err(SaveDocumentError::InvalidTarget);
+    }
+    Ok(format!("{stem}.draft"))
+}
+
+fn require_basename(display_name: &str) -> Result<(), SaveDocumentError> {
+    let valid = !display_name.trim().is_empty()
+        && !display_name.contains('/')
+        && !display_name.contains('\\')
+        && !display_name.chars().any(char::is_control);
+    valid.then_some(()).ok_or(SaveDocumentError::InvalidTarget)
 }
 
 fn selected_save_target(
@@ -92,26 +135,59 @@ mod tests {
     #[test]
     fn request_deserialization_is_stable() {
         let request = serde_json::from_value::<SaveDocumentRequest>(json!({
+            "displayName": "Research notes.draft",
             "snapshot": envelope_value(),
-            "mode": "save"
+            "mode": "save",
+            "origin": "opened_draft"
         }))
         .expect("request should deserialize");
         let unknown = serde_json::from_value::<SaveDocumentRequest>(json!({
+            "displayName": "Research notes.draft",
             "snapshot": envelope_value(),
             "mode": "save",
+            "origin": "opened_draft",
             "path": "/tmp/document.draft"
         }));
 
+        assert_eq!(request.display_name, "Research notes.draft");
         assert_eq!(request.snapshot, envelope_value());
         assert_eq!(request.mode, SaveDocumentMode::Save);
         assert!(unknown.is_err());
         assert!(
             serde_json::from_value::<SaveDocumentRequest>(json!({
+                "displayName": "Research notes.draft",
                 "snapshot": envelope_value(),
-                "mode": "replace"
+                "mode": "replace",
+                "origin": "opened_draft"
             }))
             .is_err()
         );
+    }
+
+    #[test]
+    fn save_dialog_suggestions_preserve_basename_identity() {
+        assert_eq!(
+            suggested_draft_file_name("Research notes.draft", SaveDocumentOrigin::OpenedDraft),
+            Ok("Research notes.draft".to_owned())
+        );
+        assert_eq!(
+            suggested_draft_file_name("Imported paper.docx", SaveDocumentOrigin::ImportedExternal),
+            Ok("Imported paper.draft".to_owned())
+        );
+        assert_eq!(
+            suggested_draft_file_name("notes.md", SaveDocumentOrigin::ImportedText),
+            Ok("notes.draft".to_owned())
+        );
+        assert_eq!(
+            suggested_draft_file_name("Untitled document", SaveDocumentOrigin::New),
+            Ok("Untitled.draft".to_owned())
+        );
+        for invalid in ["", "../private.draft", "folder/file.draft", "bad\nname"] {
+            assert_eq!(
+                suggested_draft_file_name(invalid, SaveDocumentOrigin::OpenedDraft),
+                Err(SaveDocumentError::InvalidTarget)
+            );
+        }
     }
 
     #[test]

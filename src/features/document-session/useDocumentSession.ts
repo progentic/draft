@@ -13,7 +13,7 @@ import {
 import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
 import { openDocument } from "../../ipc/documentOpen";
 import { saveDocument } from "../../ipc/documentSave";
-import type { SaveDocumentMode } from "../../ipc/documentSave";
+import type { SaveDocumentMode, SaveDocumentOrigin } from "../../ipc/documentSave";
 import type { ExternalDocumentSummary } from "../../ipc/externalDocument";
 import {
   useExternalSourceSave,
@@ -31,7 +31,7 @@ export type DocumentOperation =
   | "saving"
   | "saving_source";
 
-type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft";
+type DocumentOrigin = SaveDocumentOrigin;
 
 interface DocumentIdentity {
   displayName: string;
@@ -67,6 +67,7 @@ export interface DocumentSession {
   snapshot: () => DocumentEnvelopeSnapshot | null;
   statusLabel: string;
   title: string;
+  unsaved: boolean;
 }
 
 const EMPTY_DOCUMENT: JSONContent = { type: "doc", content: [] };
@@ -113,12 +114,18 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
 
   const persist = useCallback(async (mode: SaveDocumentMode) => {
     const current = snapshot();
-    if (!current) {
+    const currentIdentity = identityRef.current;
+    if (!current || !currentIdentity) {
       setFeedback("Create or open a document before saving.");
       return false;
     }
     setOperation("saving");
-    const result = await saveDocument(current, mode);
+    const result = await saveDocument(
+      current,
+      mode,
+      currentIdentity.displayName,
+      currentIdentity.origin,
+    );
     setOperation("ready");
     if (result.status !== "saved") {
       setFeedback(saveFailureMessage(result));
@@ -279,6 +286,7 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       snapshot,
       statusLabel: documentStatus(identity, dirty, operation),
       title: identity?.displayName ?? "No document open",
+      unsaved: identity !== null && (!identity.persisted || dirty),
     }),
     [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, saveAs, snapshot, sourceSave],
   );

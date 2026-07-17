@@ -91,10 +91,12 @@ The complete lifecycle is documented in
 
 Phase 13 adds `open_document` and `save_document`. `open_document` accepts an
 empty request because Rust owns native file selection. `save_document` accepts
-one untrusted `snapshot` value and a closed `save` or `save_as` mode; Rust
-validates the envelope before registry or filesystem work. Normal Save selects
-a target only when none is registered. Save As always selects a replacement
-target and preserves the prior file.
+one untrusted `snapshot`, a closed `save` or `save_as` mode, a basename display
+name, and the closed lifecycle origin previously returned by Rust. Rust
+validates the envelope and derives the native `.draft` filename suggestion
+before registry or filesystem work. Normal Save selects a target only when none
+is registered. Save As always selects a replacement target and preserves the
+prior file.
 
 Both commands return typed opened/saved/cancelled responses and bounded nested
 errors. Phase 14 adds typed atomic-write stages and a distinct
@@ -102,6 +104,19 @@ errors. Phase 14 adds typed atomic-write stages and a distinct
 fails. The commands expose no path field to the frontend. The full lifecycle
 and atomic-write behavior are documented in
 `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
+
+## Native window-title command
+
+`set_window_title` accepts only an optional basename display name and one
+transient Unsaved boolean. Rust rejects blank, path-like, control-character, or
+oversized names before calling the native window API. It returns only
+`{ "applied": true }`; typed errors distinguish invalid title input from a
+platform update failure.
+
+The command mirrors presentation state. It cannot receive a filesystem path,
+change a save target, register a document, or persist content. Clean,
+modified, imported, and new title formats are pinned in Rust and frontend
+interaction tests.
 
 ## Native menu state command
 
@@ -232,6 +247,7 @@ for contract validation but no component or hook invokes it yet.
 | Mid | `cancel_worker` | Validates the worker ID and maps cancellation outcomes to command DTOs. |
 | Mid | `open_document` | Selects a file in Rust and delegates validated loading. |
 | Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
+| Mid | `set_window_title` | Applies validated basename and Unsaved presentation to the native window. |
 | Mid | `set_native_menu_state` | Applies path-free transient availability to Rust-owned native items. |
 | Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
 | Mid | `open_external_access` | Validates a research destination and delegates one system-browser launch. |

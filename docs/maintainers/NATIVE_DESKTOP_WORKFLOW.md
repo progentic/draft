@@ -28,6 +28,12 @@ the save panel, writes atomically, preserves the prior file, and rebinds the
 registry only after the replacement target is complete. The frontend receives
 the document ID, basename display name, and Save As flag, but no path.
 
+Rust also chooses the save-panel filename suggestion. The typed request carries
+the basename display name and closed lifecycle origin that Rust originally
+returned. Existing DRAFT documents keep their basename, DOCX and text imports
+replace their source extension with `.draft`, and new documents use
+`Untitled.draft`. A suggestion becomes a target only after native confirmation.
+
 Save Back to Source uses the separate typed external-source command. Rust
 inspects current fidelity and source identity before React presents a warning.
 Only a confirmed exact or accepted-normalized replacement can write; ordinary
@@ -51,6 +57,17 @@ names, and Save As, Save Back to Source when applicable, Export DOCX,
 References, and Text checks live in one labeled overflow menu. Document,
 connectivity, operation, and recovery state appear in the bottom status bar
 instead of competing with the document name in the header.
+
+The native window title and in-window header use the same path-free identity.
+A clean saved document shows `name.draft — DRAFT`; a modified or imported
+document includes `— Unsaved —`; and a new document shows
+`Untitled document — Unsaved — DRAFT`. `set_window_title` accepts only a
+validated basename and transient Unsaved boolean. It performs no file or
+registry work.
+
+About DRAFT shows the product version, exact package's short Git commit, and
+closed build profile. The bottom-right status item shows the compact version
+and short commit. The document inspector contains document metrics only.
 
 ## Technical Contract
 
@@ -81,6 +98,10 @@ one exists. Save As always requests a new `.draft` target, preserves the old
 file, and makes the new target authoritative only after a successful atomic
 write. Cancellation and pre-replacement failure leave the current target and
 visible identity unchanged.
+
+Save As does not currently select an output format. A future native workflow
+may combine `.draft` and `.docx` choices only after its persistence, export,
+warning, and cancellation semantics are accepted. Export DOCX remains separate.
 
 Save Back is distinct from both. It is available only for a modified external
 DOCX whose typed source state may be writable. It first runs non-mutating
@@ -120,6 +141,8 @@ name and tooltip.
   platform or path details.
 - A disabled or stale action does nothing when received.
 - Save As cancellation keeps the current filename, dirty state, and Rust target.
+- A failed window-title update leaves document and path authority unchanged and
+  reports bounded recovery guidance.
 - A failed Save As write preserves both the prior file and registry authority.
 - Save Back cancellation and denied eligibility preserve the current editor and
   source identity.
@@ -132,9 +155,10 @@ name and tooltip.
 
 ## Tests
 
-Rust tests pin menu order, labels, shortcuts, identifiers, initial state, typed
-command serialization, Save As source preservation, target rebinding, and
-cancellation. Frontend tests validate event payloads, state responses, shared
+Rust tests pin menu order, About identity, labels, shortcuts, identifiers,
+initial state, typed title and save requests, bounded filename suggestions,
+Save As source preservation, target rebinding, and cancellation. Frontend
+tests validate event payloads, title transitions, state responses, shared
 dispatch, stale-action rejection, busy-state behavior, visible label parity,
 overflow keyboard behavior, status placement, and the distinct Save, Save As,
 Save Back, and Export requests.

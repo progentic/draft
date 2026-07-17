@@ -1,6 +1,9 @@
 use tauri::{
     App, AppHandle, Manager, Runtime, Wry,
-    menu::{Menu, MenuBuilder, MenuEvent, MenuItem, MenuItemBuilder, SubmenuBuilder},
+    menu::{
+        AboutMetadata, AboutMetadataBuilder, Menu, MenuBuilder, MenuEvent, MenuItem,
+        MenuItemBuilder, SubmenuBuilder,
+    },
 };
 
 use crate::events::native_menu::{NativeMenuEvent, emit_native_menu_action};
@@ -175,7 +178,7 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
     #[cfg(target_os = "macos")]
     let builder = {
         let application = SubmenuBuilder::new(app, "DRAFT")
-            .about(None)
+            .about(Some(about_metadata()))
             .separator()
             .hide()
             .hide_others()
@@ -188,6 +191,28 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
     #[cfg(not(target_os = "macos"))]
     let builder = MenuBuilder::new(app);
     builder.item(&file).item(&edit).item(&window).build()
+}
+
+fn about_metadata() -> AboutMetadata<'static> {
+    AboutMetadataBuilder::new()
+        .name(Some("DRAFT"))
+        .version(Some(build_identity()))
+        .copyright(Some("Copyright © 2026 DRAFT contributors · MIT License"))
+        .credits(Some("DRAFT is open source under the MIT License."))
+        .build()
+}
+
+fn build_identity() -> String {
+    format!(
+        "{} · {} · {}",
+        env!("CARGO_PKG_VERSION"),
+        short_build_commit(env!("DRAFT_BUILD_COMMIT")),
+        env!("DRAFT_BUILD_PROFILE")
+    )
+}
+
+fn short_build_commit(commit: &str) -> &str {
+    commit.get(..8).unwrap_or(commit)
 }
 
 fn build_file_menu(
@@ -318,5 +343,26 @@ mod tests {
         assert!(request.enabled(NativeMenuEvent::SaveDocumentAs));
         assert!(!request.enabled(NativeMenuEvent::SaveBackToSource));
         assert!(!request.enabled(NativeMenuEvent::ExportDocx));
+    }
+
+    #[test]
+    fn about_metadata_contains_exact_build_identity() {
+        let metadata = about_metadata();
+        let expected_identity = build_identity();
+        assert_eq!(metadata.name.as_deref(), Some("DRAFT"));
+        assert_eq!(
+            metadata.version.as_deref(),
+            Some(expected_identity.as_str())
+        );
+        assert!(
+            metadata
+                .version
+                .as_deref()
+                .is_some_and(|version| version.contains(env!("DRAFT_BUILD_PROFILE")))
+        );
+        assert_eq!(
+            metadata.credits.as_deref(),
+            Some("DRAFT is open source under the MIT License.")
+        );
     }
 }

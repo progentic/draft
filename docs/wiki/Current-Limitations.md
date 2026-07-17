@@ -75,6 +75,10 @@ Apple Silicon target.
 - Paragraph alignment, spacing, and indentation controls are not currently
   available. The underlying file and DOCX-export model does not make those
   controls a finished user workflow.
+- Spelling highlights, suggestions, ignore rules, and correction controls are
+  not currently available as a DRAFT-owned workflow.
+- Only explicit page-break nodes create separate page surfaces. DRAFT does not
+  automatically paginate from content flow, fonts, margins, or printer geometry.
 
 ## Export
 
@@ -83,6 +87,8 @@ Apple Silicon target.
   properties within documented resource limits.
 - Unsupported content fails instead of being silently omitted.
 - Citation nodes are not currently included in DOCX output.
+- Save As currently creates `.draft` files. DOCX remains a separate Export
+  action while a combined format-selection workflow is under review.
 - PDF export is currently unavailable. Its rendering policy and implementation
   boundary require separate accepted work.
 

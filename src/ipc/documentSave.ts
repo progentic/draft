@@ -7,11 +7,18 @@ import {
 import { isSaveDocumentCommandError, type SaveDocumentCommandError } from "./documentErrors";
 
 export interface SaveDocumentRequest {
+  displayName: string;
   mode: SaveDocumentMode;
+  origin: SaveDocumentOrigin;
   snapshot: DocumentEnvelopeSnapshot;
 }
 
 export type SaveDocumentMode = "save" | "save_as";
+export type SaveDocumentOrigin =
+  | "imported_external"
+  | "imported_text"
+  | "new"
+  | "opened_draft";
 
 export type SaveDocumentClientError =
   | { type: "command"; error: SaveDocumentCommandError }
@@ -33,8 +40,12 @@ const COMMAND_NAME = "save_document";
 export async function saveDocument(
   snapshot: DocumentEnvelopeSnapshot,
   mode: SaveDocumentMode,
+  displayName: string,
+  origin: SaveDocumentOrigin,
 ): Promise<SaveDocumentResult> {
-  const commandArguments: SaveDocumentArguments = { request: { mode, snapshot } };
+  const commandArguments: SaveDocumentArguments = {
+    request: { displayName, mode, origin, snapshot },
+  };
 
   try {
     const response = await invokeCommand<unknown>(COMMAND_NAME, commandArguments);

@@ -15,6 +15,7 @@ main() {
   require_packaging_sources
   check_structured_configuration
   check_package_script_contract
+  check_visible_build_identity_contract
 
   printf 'Packaging contract checks passed.\n'
 }
@@ -26,6 +27,7 @@ require_packaging_sources() {
     package.json
     scripts/package-macos.sh
     src-tauri/Info.plist
+    src-tauri/src/desktop_menu.rs
     src-tauri/tauri.conf.json
     src-tauri/icons/32x32.png
     src-tauri/icons/128x128.png
@@ -108,6 +110,7 @@ check_package_script_contract() {
     'CFBundleIconFile'
     'Contents/MacOS/draft'
     'Contents/Resources/icon.icns'
+    'require_embedded_build_identity'
   )
 
   for marker in "${required_markers[@]}"; do
@@ -116,6 +119,26 @@ check_package_script_contract() {
       return 1
     fi
   done
+}
+
+check_visible_build_identity_contract() {
+  local about='src-tauri/src/desktop_menu.rs'
+  local status='src/components/WorkspaceStatusBar.tsx'
+
+  require_file "${status}"
+  for marker in \
+    '.about(Some(about_metadata()))' \
+    'env!("DRAFT_BUILD_COMMIT")' \
+    'env!("DRAFT_BUILD_PROFILE")'; do
+    if ! rg --quiet --fixed-strings "${marker}" "${about}"; then
+      printf 'Missing native About build marker %s\n' "${marker}" >&2
+      return 1
+    fi
+  done
+  if ! rg --quiet --fixed-strings 'status.buildCommit.slice(0, 8)' "${status}"; then
+    echo 'Bottom status bar must expose the short packaged commit' >&2
+    return 1
+  fi
 }
 
 main "$@"

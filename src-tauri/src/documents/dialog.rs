@@ -8,7 +8,6 @@ const DOCUMENT_FILTER_NAME: &str = "DRAFT document";
 const DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json"];
 const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md", "docx"];
 const TEXT_DOCUMENT_EXTENSIONS: &[&str] = &["txt", "md"];
-const DEFAULT_DOCUMENT_FILE_NAME: &str = "Untitled.draft";
 const DEFAULT_DOCX_FILE_NAME: &str = "Untitled.docx";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -36,12 +35,13 @@ pub(crate) async fn select_open_document(
 
 pub(crate) async fn select_save_document(
     app_handle: &AppHandle,
+    suggested_file_name: &str,
 ) -> Result<Option<PathBuf>, UnsupportedFileLocation> {
     let mut dialog = app_handle
         .dialog()
         .file()
         .set_title("Save DRAFT document")
-        .set_file_name(DEFAULT_DOCUMENT_FILE_NAME)
+        .set_file_name(suggested_file_name)
         .add_filter(DOCUMENT_FILTER_NAME, &["draft"]);
     if let Some(window) = app_handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);

@@ -13,6 +13,12 @@ it("presents document, operation, connectivity, and recovery state", async () =>
       documentStatus="Imported, unsaved"
       exportPending
       operation="ready"
+      runtimeStatus={{
+        buildCommit: "0123456789abcdef0123456789abcdef01234567",
+        buildProfile: "release",
+        phase: "ready",
+        version: "0.1.0",
+      }}
       onRefreshConnectivity={vi.fn()}
       onSetConnectivityMode={setMode}
     />,
@@ -24,6 +30,9 @@ it("presents document, operation, connectivity, and recovery state", async () =>
   );
   expect(within(status).getByLabelText("Background operation").textContent).toContain(
     "Exporting",
+  );
+  expect(within(status).getByLabelText("Application build").textContent).toBe(
+    "v0.1.0 · 01234567",
   );
   await user.click(within(status).getByRole("button", { name: "Work offline" }));
   expect(setMode).toHaveBeenCalledWith("offline");

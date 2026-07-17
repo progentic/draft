@@ -71,9 +71,10 @@ Product SemVer remains governed separately from validation-artifact identity.
 `scripts/package-macos.sh` requires a clean worktree, reads the exact
 40-character Git commit, and supplies it to the Rust build as
 `DRAFT_BUILD_COMMIT`. Cargo also embeds the `release` profile. The running
-workspace shows the product version, short commit, and profile; the complete
-commit remains embedded for mechanical comparison. No timestamp is embedded,
-so this mechanism does not introduce a reproducibility exception.
+workspace's bottom-right status item shows the product version and short
+commit; native About DRAFT also shows the profile. The complete commit remains
+embedded for mechanical comparison. No timestamp is embedded, so this
+mechanism does not introduce a reproducibility exception.
 
 `bundle.active` is `true`, and `bundle.targets` contains only `app`. Other Tauri
 bundle targets are not part of the Phase 42 package contract.

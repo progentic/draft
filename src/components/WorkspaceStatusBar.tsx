@@ -3,6 +3,8 @@ import { Activity, FileCheck2 } from "lucide-react";
 import { ConnectivityModeControl } from "../features/connectivity/ConnectivityModeControl";
 import type { ConnectivityModeState } from "../features/connectivity/useConnectivityMode";
 import type { DocumentOperation } from "../features/document-session/useDocumentSession";
+import { runtimeFailureMessage } from "../features/error-ux/errorPresentation";
+import type { RuntimeConnectionState } from "../features/runtime-status/useRuntimeStatus";
 import type { ConnectivityMode } from "../ipc/connectivityMode";
 
 interface WorkspaceStatusBarProps {
@@ -10,6 +12,7 @@ interface WorkspaceStatusBarProps {
   documentStatus: string;
   exportPending: boolean;
   operation: DocumentOperation;
+  runtimeStatus: RuntimeConnectionState;
   onRefreshConnectivity: () => void;
   onSetConnectivityMode: (mode: ConnectivityMode) => void;
 }
@@ -27,8 +30,34 @@ export function WorkspaceStatusBar(props: WorkspaceStatusBarProps) {
         onRefresh={props.onRefreshConnectivity}
         onSetMode={props.onSetConnectivityMode}
       />
+      <RuntimeIdentity status={props.runtimeStatus} />
     </footer>
   );
+}
+
+function RuntimeIdentity(props: { status: RuntimeConnectionState }) {
+  const label = runtimeIdentityLabel(props.status);
+  return (
+    <div
+      className="workspace-status-bar__build"
+      role="status"
+      aria-label="Application build"
+      aria-live="polite"
+      aria-atomic="true"
+      title={label}
+    >
+      {label}
+    </div>
+  );
+}
+
+function runtimeIdentityLabel(status: RuntimeConnectionState) {
+  if (status.phase === "checking") return "Checking build";
+  if (status.phase === "unavailable") return runtimeFailureMessage(status.reason);
+  const commit = status.buildCommit === "development"
+    ? status.buildCommit
+    : status.buildCommit.slice(0, 8);
+  return `v${status.version} · ${commit}`;
 }
 
 function OperationStatus(props: { label: string }) {

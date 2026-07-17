@@ -196,6 +196,7 @@ function documentSession(): DocumentSession {
     snapshot: vi.fn(),
     statusLabel: "Saved",
     title: "Research.draft",
+    unsaved: false,
   };
 }
 

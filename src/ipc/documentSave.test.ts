@@ -10,6 +10,8 @@ import { saveDocument } from "./documentSave";
 import type { DocumentEnvelopeSnapshot } from "./documentEnvelope";
 
 const DOCUMENT_ID = "00000000-0000-4000-8000-000000000001";
+const DISPLAY_NAME = "Research notes.draft";
+const ORIGIN = "opened_draft" as const;
 
 describe("saveDocument", () => {
   beforeEach(() => {
@@ -25,19 +27,23 @@ describe("saveDocument", () => {
       wasSaveAs: true,
     });
 
-    await expect(saveDocument(snapshot, mode)).resolves.toEqual({
+    await expect(saveDocument(snapshot, mode, DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "saved",
       documentId: DOCUMENT_ID,
       displayName: "Research notes.draft",
       wasSaveAs: true,
     });
-    expect(invokeMock).toHaveBeenCalledWith("save_document", { request: { mode, snapshot } });
+    expect(invokeMock).toHaveBeenCalledWith("save_document", {
+      request: { displayName: DISPLAY_NAME, mode, origin: ORIGIN, snapshot },
+    });
   });
 
   it("preserves user cancellation", async () => {
     invokeMock.mockResolvedValue({ status: "cancelled" });
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({ status: "cancelled" });
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
+      status: "cancelled",
+    });
   });
 
   it("rejects an invalid save response", async () => {
@@ -48,7 +54,7 @@ describe("saveDocument", () => {
       wasSaveAs: true,
     });
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "invalid-response" },
     });
@@ -61,7 +67,7 @@ describe("saveDocument", () => {
   ])("rejects a saved response with %s", async (_description, response) => {
     invokeMock.mockResolvedValue(response);
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "invalid-response" },
     });
@@ -71,7 +77,7 @@ describe("saveDocument", () => {
     const error = { code: "registry", cause: { code: "registry_unavailable" } };
     invokeMock.mockRejectedValue(error);
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "command", error },
     });
@@ -81,7 +87,7 @@ describe("saveDocument", () => {
     const error = { code: "registry", cause: { code: "source_path_in_use" } };
     invokeMock.mockRejectedValue(error);
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "command", error },
     });
@@ -90,7 +96,7 @@ describe("saveDocument", () => {
   it("preserves a typed invalid first-save target", async () => {
     invokeMock.mockRejectedValue({ code: "invalid_target" });
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "command", error: { code: "invalid_target" } },
     });
@@ -100,7 +106,7 @@ describe("saveDocument", () => {
     const error = { code: "write_failed", cause: { code: "replace_target" } };
     invokeMock.mockRejectedValue(error);
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "command", error },
     });
@@ -110,7 +116,7 @@ describe("saveDocument", () => {
     const error = { code: "durability_uncertain" };
     invokeMock.mockRejectedValue(error);
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "command", error },
     });
@@ -119,7 +125,7 @@ describe("saveDocument", () => {
   it("rejects malformed atomic-write failures", async () => {
     invokeMock.mockRejectedValue({ code: "write_failed", cause: { code: "unknown_stage" } });
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "transport" },
     });
@@ -128,7 +134,7 @@ describe("saveDocument", () => {
   it("classifies unknown failures without leaking details", async () => {
     invokeMock.mockRejectedValue(new Error("private filesystem detail"));
 
-    await expect(saveDocument(envelope(), "save")).resolves.toEqual({
+    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "transport" },
     });

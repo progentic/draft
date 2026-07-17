@@ -8,9 +8,10 @@ available, export, References, and Text checks, are available from the **More**
 (`…`) menu. The same document actions are also available from the macOS
 **File** menu.
 
-DRAFT shows the current document name near the top of the workspace. Save
-state, connectivity, and active operations appear in the status bar at the
-bottom. A temporary notice directly below the document controls reports the
+DRAFT shows the current document name and `Unsaved` state near the top of the
+workspace. Detailed document state, connectivity, active operations, and a
+compact build identity appear in the status bar at the bottom. A temporary
+notice directly below the document controls reports the
 pending, completed, cancelled, or failed result of Open, Save, and Export.
 
 When New, Open, or Close would replace or discard unsaved work, DRAFT asks
@@ -45,9 +46,16 @@ italic, underline, paragraph alignment, spacing, indentation, heading styles,
 and page breaks. Source behavior outside that subset stays in the unchanged
 original and is disclosed when the imported copy opens.
 
+An explicit page break appears as a gap between separate page surfaces. DRAFT
+does not automatically calculate page boundaries from text flow, margins,
+fonts, or printer settings, so content without an explicit break remains on
+one continuous surface.
+
 Use **Save As…** to choose a new `.draft` file while preserving the previous
 file. After it succeeds, later Save operations use the new file. Cancelling or
-failing Save As leaves the current filename and file unchanged.
+failing Save As leaves the current filename and file unchanged. The save panel
+suggests the current DRAFT basename, an imported source basename with `.draft`,
+or `Untitled.draft` for a new document.
 
 ## Write And Format
 
@@ -149,10 +157,8 @@ last enabled action, and Escape to return focus to **More**.
 In the formatting toolbar, use Left Arrow and Right Arrow to move, Home for the
 first enabled control, and End for the last. Disabled controls are skipped.
 
-The bottom status bar reports document, connectivity, and background-operation
-state. Panels and the conditional operation notice announce pending, completed,
-empty, failed, and recovery states. `Core v<version> · build <commit> ·
-<profile>` means the desktop interface reached a specific Rust runtime build.
-The short commit identifies the clean package revision without changing the
-product version. A browser preview has no desktop core and reports it as
-unavailable.
+The bottom status bar reports document, connectivity, background-operation,
+and compact `v<version> · <commit>` build state. About DRAFT shows the version,
+short commit, and build profile. The short commit identifies the clean package
+revision without changing the product version. A browser preview has no
+desktop core and reports it as unavailable.

@@ -58,7 +58,8 @@ pub fn run() {
             commands::runtime_status::get_runtime_status,
             commands::native_menu::set_native_menu_state,
             commands::text_analysis::run_text_analysis,
-            commands::worker_cancellation::cancel_worker
+            commands::worker_cancellation::cancel_worker,
+            commands::window_title::set_window_title
         ])
         .build(tauri::generate_context!())
         .expect("failed to build the DRAFT desktop runtime");
