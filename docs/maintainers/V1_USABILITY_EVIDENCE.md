@@ -366,6 +366,14 @@ The correction clears settled export feedback before non-export document
 actions and renders that exact response through the real Open action in the
 workspace test. A replacement packaged Open run remains required.
 
+The replacement candidate was built from exact implementation commit
+`e734cae26068636edb574ff6217837c08ba4e4c0`. Its packaged executable SHA-256 is
+`2dfe312b446051946102ce40a074ac86e468dc074299af34802e90bf0c23d326`.
+Mechanical package validation confirmed the embedded commit identity, Apple
+Silicon executable, helper, icon, and bundle metadata. No packaged DOCX Open
+task has passed on this candidate, so `UX-47-010`, `RC-07`, `GATE-47`, and all
+release gates remain open.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
