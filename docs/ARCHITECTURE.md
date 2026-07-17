@@ -731,6 +731,12 @@ disposition. Imported DOCX content has no native save target. Save writes a new
 `.draft` file, Export DOCX writes a separate copy, and Save Back to Source is a
 separate confirmed source-replacement operation.
 
+The accepted import mapping preserves explicit supported font family and size,
+bold, italic, underline, paragraph alignment, spacing, indentation, semantic
+heading styles, and page breaks. Unsupported style, run, pagination, or package
+behavior is disclosed without removing supported properties from the canonical
+copy. DRAFT does not infer semantic headings from visual appearance alone.
+
 The Phase 47 source-write boundary is a third, separate Rust command. It can
 replace an exact supported-subset DOCX, or a canonically normalized DOCX after
 explicit acceptance, only while the current source still matches its imported

@@ -19,10 +19,11 @@ style-manual claim.
 
 ## Strict Document Subset
 
-The compiler accepts a `doc` root containing ordered `paragraph` and `heading`
-blocks. Headings accept levels 1 through 6. Inline content accepts `text` and
-`hardBreak`; text accepts `bold`, `italic`, `underline`, `fontFamily`, and
-`fontSize` marks.
+The compiler accepts a `doc` root containing ordered `paragraph`, `heading`,
+and canonical `pageBreak` blocks. Headings accept levels 1 through 6. Inline
+content accepts `text` and `hardBreak`; text accepts `bold`, `italic`,
+`underline`, `fontFamily`, and `fontSize` marks. A `pageBreak` emits one
+explicit `w:br w:type="page"` run inside its own paragraph.
 
 Font family accepts only `arial`, `avenir_next`, `baskerville`, `courier_new`,
 `georgia`, `helvetica`, `menlo`, `palatino`, `times_new_roman`, `trebuchet_ms`,
@@ -42,9 +43,9 @@ DOCX. The independent Save Back workflow applies its own fidelity, source-
 identity, confirmation, and rollback policy. See
 `docs/maintainers/DOCX_INTEROPERABILITY.md`.
 
-Empty paragraphs and headings, Unicode text, source order, paragraph boundaries,
-heading levels, hard breaks, and supported marks are preserved. XML-invalid
-control characters fail before package construction.
+Empty paragraphs and headings, Unicode text, source order, paragraph
+boundaries, heading levels, hard and page breaks, and supported marks are
+preserved. XML-invalid control characters fail before package construction.
 
 Unknown fields, nodes, attributes, marks, duplicate marks, and malformed shapes
 fail with a typed structural path containing indexes only. Citation nodes return
@@ -109,7 +110,7 @@ unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 ## Verification
 
 Focused Rust tests cover stable safe entries, archive reopening,
-deterministic bytes, XML parsing, Unicode, headings, hard breaks, supported
+deterministic bytes, XML parsing, Unicode, headings, hard and page breaks, supported
 marks, every family mapping, mixed family and size run properties, paragraph
 property mapping, default-by-absence, empty
 blocks, unknown and malformed content, citation rejection, source

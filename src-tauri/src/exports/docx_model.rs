@@ -18,6 +18,7 @@ const PARAGRAPH_ATTR_FIELDS: [&str; 1] = ["paragraphStyle"];
 const HEADING_ATTR_FIELDS: [&str; 2] = ["level", "paragraphStyle"];
 const TEXT_FIELDS: [&str; 3] = ["type", "text", "marks"];
 const HARD_BREAK_FIELDS: [&str; 1] = ["type"];
+const PAGE_BREAK_FIELDS: [&str; 1] = ["type"];
 const MARK_FIELDS: [&str; 1] = ["type"];
 const FONT_MARK_FIELDS: [&str; 2] = ["type", "attrs"];
 
@@ -35,6 +36,7 @@ pub(super) enum DocxBlock {
         style: Option<ParagraphStyle>,
         content: Vec<DocxInline>,
     },
+    PageBreak,
 }
 
 pub(super) enum DocxInline {
@@ -100,9 +102,18 @@ fn parse_block(value: &Value, path: &DocxContentPath) -> Result<DocxBlock, DocxE
     match node_type(fields, path)? {
         "paragraph" => parse_paragraph(fields, path),
         "heading" => parse_heading(fields, path),
+        "pageBreak" => parse_page_break(fields, path),
         "citation" => Err(unsupported_citation(path)),
         _ => Err(unsupported_content(path)),
     }
+}
+
+fn parse_page_break(
+    fields: &Map<String, Value>,
+    path: &DocxContentPath,
+) -> Result<DocxBlock, DocxExportError> {
+    require_exact_fields(fields, &PAGE_BREAK_FIELDS, path)?;
+    Ok(DocxBlock::PageBreak)
 }
 
 fn parse_paragraph(

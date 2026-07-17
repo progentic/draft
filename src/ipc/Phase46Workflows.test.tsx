@@ -349,7 +349,7 @@ describe("Phase 46 visible workflows", () => {
     await user.click(screen.getByRole("button", { name: "Open…" }));
 
     expect(await screen.findByText(
-      "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged.",
+      "DOCX imported. Supported text and paragraph formatting was retained. Some source features remain only in the original. Save as a DRAFT document to edit a copy.",
     )).toBeTruthy();
     expect(screen.queryByText(
       "DOCX export complete. Your DRAFT document was not changed.",
@@ -362,6 +362,13 @@ describe("Phase 46 visible workflows", () => {
       "This document was created in Microsoft Word for DRAFT interoperability testing.",
     );
     expect(content).toContain("The visible content must survive import and export.");
+    const editor = screen.getByRole("textbox", { name: "Document editor" });
+    const title = editor.querySelector("h2");
+    expect(title?.textContent).toBe("DRAFT DOCX Round Trip");
+    expect(title?.querySelector('[data-draft-font-family="times_new_roman"]')).toBeTruthy();
+    expect(title?.querySelector('[data-draft-font-size="12"]')).toBeTruthy();
+    expect(title?.querySelector("strong")?.textContent).toBe("DRAFT DOCX Round Trip");
+    expect(editor.querySelector("[data-draft-page-break]")).toBeTruthy();
   });
 
   it("confirms exact Save Back and preserves the external display identity", async () => {
@@ -631,7 +638,7 @@ describe("Phase 46 visible workflows", () => {
 
     expect(
       await screen.findByText(
-        "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged.",
+        "DOCX imported. Supported text and paragraph formatting was retained. Some source features remain only in the original. Save as a DRAFT document to edit a copy.",
       ),
     ).toBeTruthy();
     expect(screen.queryByText(/\/Users|word\/document\.xml|same-format/i)).toBeNull();
@@ -1128,9 +1135,31 @@ function wordFixtureOpenResponse() {
         type: "doc",
         content: [
           {
-            type: "paragraph",
-            content: [{ type: "text", text: "DRAFT DOCX Round Trip" }],
+            type: "heading",
+            attrs: {
+              level: 2,
+              paragraphStyle: {
+                schemaVersion: 1,
+                alignment: "center",
+                lineSpacingHundredths: 200,
+                spaceBeforeTwips: 0,
+                spaceAfterTwips: 0,
+                leftIndentTwips: 0,
+                rightIndentTwips: 0,
+                specialIndent: { kind: "none", twips: 0 },
+              },
+            },
+            content: [{
+              type: "text",
+              text: "DRAFT DOCX Round Trip",
+              marks: [
+                { type: "bold" },
+                { type: "fontFamily", attrs: { family: "times_new_roman" } },
+                { type: "fontSize", attrs: { points: 12 } },
+              ],
+            }],
           },
+          { type: "pageBreak" },
           {
             type: "paragraph",
             content: [

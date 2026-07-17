@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { isExternalDocumentSummary, isExternalFidelity } from "./externalDocument";
+import {
+  isExternalDocumentSummary,
+  isExternalFidelity,
+  isExternalNormalizationFeatureList,
+} from "./externalDocument";
 
 describe("external document DTO validation", () => {
   it.each([
@@ -56,6 +60,21 @@ describe("external document DTO validation", () => {
         fidelity: { classification: "lossy", features: [] },
       }),
     ).toBe(false);
+  });
+
+  it("accepts only stable supported normalization lists", () => {
+    expect(isExternalNormalizationFeatureList(["pagination_control"])).toBe(true);
+    expect(isExternalNormalizationFeatureList([
+      "alternate_heading_style_name",
+      "pagination_control",
+    ])).toBe(true);
+    expect(isExternalNormalizationFeatureList([])).toBe(false);
+    expect(isExternalNormalizationFeatureList(["pagination_control", "pagination_control"]))
+      .toBe(false);
+    expect(isExternalNormalizationFeatureList([
+      "pagination_control",
+      "alternate_heading_style_name",
+    ])).toBe(false);
   });
 });
 

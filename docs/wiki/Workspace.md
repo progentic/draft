@@ -40,6 +40,11 @@ normalization warning, lists each known normalization, and requires Replace or
 Cancel confirmation. Unsupported, lossy, missing, or externally changed
 sources remain unavailable.
 
+DOCX import retains supported explicit font family, whole-point size, bold,
+italic, underline, paragraph alignment, spacing, indentation, heading styles,
+and page breaks. If the source also contains behavior DRAFT cannot represent,
+the notice explains that those features remain only in the unchanged original.
+
 **Save As…** chooses a new `.draft` target while preserving the previous file.
 After it succeeds, later Save operations use the new target. Cancellation or a
 failed write leaves the current filename and file unchanged.

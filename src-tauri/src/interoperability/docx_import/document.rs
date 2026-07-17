@@ -10,6 +10,7 @@ use crate::documents::paragraph_format::{
     LINE_SPACING_INCREMENT, MAX_LINE_SPACING_HUNDREDTHS, MAX_PARAGRAPH_SPACING_TWIPS,
     MAX_SPECIAL_INDENT_TWIPS, MIN_LINE_SPACING_HUNDREDTHS, PARAGRAPH_STYLE_SCHEMA_VERSION,
 };
+use crate::documents::text_format::{FontFamily, FontSizePoints};
 
 use super::{DocxImportError, ExternalFeature, ExternalSafetyReason, FidelityAccumulator};
 
@@ -152,7 +153,7 @@ impl<'a> DocumentParser<'a> {
             b"r" => self.start_run(),
             b"br" => self.push_break(element),
             _ if self.in_paragraph_properties() => self.paragraph_property(name, element),
-            _ if self.in_run_properties() => self.run_property(name),
+            _ if self.in_run_properties() => self.run_property(name, element),
             b"sectPr" => self.ignore_unsupported(ExternalFeature::UnsupportedDocumentStructure),
             _ => self.reject_unknown_structure(name),
         }
@@ -184,15 +185,14 @@ impl<'a> DocumentParser<'a> {
     }
 
     fn push_break(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
-        if !is_supported_line_break(element)? {
-            return self.record_unsupported(ExternalFeature::UnsupportedDocumentStructure);
-        }
         self.flush_text_node()?;
-        self.increment_nodes()?;
-        self.current_run()?
-            .content
-            .push(json!({ "type": "hardBreak" }));
-        Ok(())
+        match break_kind(element)? {
+            BreakKind::Line => self.push_run_node(json!({ "type": "hardBreak" })),
+            BreakKind::Page => self.push_run_node(json!({ "type": "pageBreak" })),
+            BreakKind::Column => {
+                self.record_unsupported(ExternalFeature::UnsupportedDocumentStructure)
+            }
+        }
     }
 
     fn finish_text(&mut self) -> Result<(), DocxImportError> {
@@ -214,7 +214,7 @@ impl<'a> DocumentParser<'a> {
             .paragraph
             .take()
             .ok_or_else(DocxImportError::malformed)?;
-        self.blocks.push(paragraph.into_json());
+        self.blocks.extend(paragraph.into_blocks());
         Ok(())
     }
 
@@ -232,7 +232,8 @@ impl<'a> DocumentParser<'a> {
             b"shd" => self.record_unsupported(ExternalFeature::ParagraphShading),
             b"tabs" => self.ignore_unsupported(ExternalFeature::ParagraphTab),
             b"contextualSpacing" => self.record_unsupported(ExternalFeature::ContextualSpacing),
-            b"keepNext" | b"keepLines" | b"pageBreakBefore" | b"widowControl" => {
+            b"pageBreakBefore" => self.apply_page_break_before(element),
+            b"keepNext" | b"keepLines" | b"widowControl" => {
                 self.record_unsupported(ExternalFeature::PaginationControl)
             }
             b"numPr" => Err(unsupported(ExternalFeature::ListIndentation)),
@@ -240,8 +241,19 @@ impl<'a> DocumentParser<'a> {
         }
     }
 
-    fn run_property(&mut self, _name: &[u8]) -> Result<(), DocxImportError> {
-        self.ignore_unsupported(ExternalFeature::RunFormatting)
+    fn run_property(
+        &mut self,
+        name: &[u8],
+        element: &BytesStart<'_>,
+    ) -> Result<(), DocxImportError> {
+        match name {
+            b"rFonts" => self.apply_font_family(element),
+            b"sz" | b"szCs" => self.apply_font_size(name, element),
+            b"b" => self.apply_boolean_mark("b", element, BooleanMark::Bold),
+            b"i" => self.apply_boolean_mark("i", element, BooleanMark::Italic),
+            b"u" => self.apply_underline(element),
+            _ => self.ignore_unsupported(ExternalFeature::RunFormatting),
+        }
     }
 
     fn reject_unknown_structure(&self, name: &[u8]) -> Result<(), DocxImportError> {
@@ -310,6 +322,95 @@ impl<'a> DocumentParser<'a> {
         paragraph.style.apply_indentation(&attributes)
     }
 
+    fn apply_page_break_before(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        self.current_paragraph()?.mark_once("pageBreakBefore")?;
+        if on_off_value(element)? {
+            self.current_paragraph()?.page_break_before = true;
+            self.fidelity
+                .record_normalization(ExternalFeature::PaginationControl);
+        }
+        Ok(())
+    }
+
+    fn apply_font_family(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        self.current_run()?.mark_once("rFonts")?;
+        let values = attributes(element)?;
+        let family = explicit_font_family(&values);
+        if has_unsupported_font_attributes(&values) || family.is_none() {
+            self.fidelity
+                .record_unsupported(ExternalFeature::RunFormatting);
+        }
+        if let Some(family) = family {
+            self.current_run()?.formatting.font_family = Some(family);
+        }
+        Ok(())
+    }
+
+    fn apply_font_size(
+        &mut self,
+        name: &[u8],
+        element: &BytesStart<'_>,
+    ) -> Result<(), DocxImportError> {
+        let property = if name == b"sz" { "sz" } else { "szCs" };
+        self.current_run()?.mark_once(property)?;
+        let half_points = unsigned_integer(&required_value(element)?)?;
+        let size = (half_points % 2 == 0)
+            .then(|| FontSizePoints::from_u64(half_points / 2))
+            .flatten();
+        let Some(size) = size else {
+            self.fidelity
+                .record_unsupported(ExternalFeature::RunFormatting);
+            return Ok(());
+        };
+        if self
+            .current_run()?
+            .formatting
+            .font_size
+            .is_some_and(|current| current != size)
+        {
+            self.fidelity
+                .record_unsupported(ExternalFeature::RunFormatting);
+            return Ok(());
+        }
+        self.current_run()?.formatting.font_size = Some(size);
+        Ok(())
+    }
+
+    fn apply_boolean_mark(
+        &mut self,
+        property: &'static str,
+        element: &BytesStart<'_>,
+        mark: BooleanMark,
+    ) -> Result<(), DocxImportError> {
+        self.current_run()?.mark_once(property)?;
+        let enabled = on_off_value(element)?;
+        let formatting = &mut self.current_run()?.formatting;
+        match mark {
+            BooleanMark::Bold => formatting.bold = enabled,
+            BooleanMark::Italic => formatting.italic = enabled,
+        }
+        Ok(())
+    }
+
+    fn apply_underline(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        self.current_run()?.mark_once("u")?;
+        let values = attributes(element)?;
+        let value = values.get("val").map(String::as_str).unwrap_or("single");
+        if values.len() > usize::from(values.contains_key("val")) {
+            return Err(DocxImportError::malformed());
+        }
+        match value {
+            "single" | "1" | "true" | "on" | "yes" => {
+                self.current_run()?.formatting.underline = true;
+            }
+            "none" | "0" | "false" | "off" | "no" => {}
+            _ => self
+                .fidelity
+                .record_unsupported(ExternalFeature::RunFormatting),
+        }
+        Ok(())
+    }
+
     fn record_unsupported(&mut self, feature: ExternalFeature) -> Result<(), DocxImportError> {
         self.fidelity.record_unsupported(feature);
         Ok(())
@@ -341,6 +442,12 @@ impl<'a> DocumentParser<'a> {
         Ok(())
     }
 
+    fn push_run_node(&mut self, node: Value) -> Result<(), DocxImportError> {
+        self.increment_nodes()?;
+        self.current_run()?.content.push(node);
+        Ok(())
+    }
+
     fn ignore_unsupported(&mut self, feature: ExternalFeature) -> Result<(), DocxImportError> {
         self.record_unsupported(feature)?;
         self.ignored_depth = 1;
@@ -362,6 +469,7 @@ impl<'a> DocumentParser<'a> {
 #[derive(Default)]
 struct ParagraphBuilder {
     heading_level: Option<u8>,
+    page_break_before: bool,
     style: ParagraphStyleBuilder,
     content: Vec<Value>,
     seen: BTreeSet<&'static str>,
@@ -376,7 +484,31 @@ impl ParagraphBuilder {
         }
     }
 
-    fn into_json(self) -> Value {
+    fn into_blocks(self) -> Vec<Value> {
+        let mut blocks = Vec::new();
+        if self.page_break_before {
+            blocks.push(json!({ "type": "pageBreak" }));
+        }
+        let mut segment = Vec::new();
+        let mut saw_inline_page_break = false;
+        for node in &self.content {
+            if node.get("type").and_then(Value::as_str) == Some("pageBreak") {
+                if !segment.is_empty() {
+                    blocks.push(self.block_json(std::mem::take(&mut segment)));
+                }
+                blocks.push(json!({ "type": "pageBreak" }));
+                saw_inline_page_break = true;
+            } else {
+                segment.push(node.clone());
+            }
+        }
+        if !segment.is_empty() || (!saw_inline_page_break && self.content.is_empty()) {
+            blocks.push(self.block_json(segment));
+        }
+        blocks
+    }
+
+    fn block_json(&self, content: Vec<Value>) -> Value {
         let mut fields = serde_json::Map::new();
         fields.insert(
             "type".to_owned(),
@@ -385,8 +517,8 @@ impl ParagraphBuilder {
         if let Some(attrs) = self.attrs() {
             fields.insert("attrs".to_owned(), attrs);
         }
-        if !self.content.is_empty() {
-            fields.insert("content".to_owned(), Value::Array(self.content));
+        if !content.is_empty() {
+            fields.insert("content".to_owned(), Value::Array(content));
         }
         Value::Object(fields)
     }
@@ -415,6 +547,8 @@ impl ParagraphBuilder {
 struct RunBuilder {
     text: String,
     content: Vec<Value>,
+    formatting: RunFormatting,
+    seen: BTreeSet<&'static str>,
 }
 
 impl RunBuilder {
@@ -426,10 +560,66 @@ impl RunBuilder {
         if self.text.is_empty() {
             return;
         }
-        self.content
-            .push(json!({ "type": "text", "text": self.text }));
+        let mut fields = serde_json::Map::new();
+        fields.insert("type".to_owned(), Value::String("text".to_owned()));
+        fields.insert("text".to_owned(), Value::String(self.text.clone()));
+        let marks = self.formatting.marks();
+        if !marks.is_empty() {
+            fields.insert("marks".to_owned(), Value::Array(marks));
+        }
+        self.content.push(Value::Object(fields));
         self.text.clear();
     }
+
+    fn mark_once(&mut self, property: &'static str) -> Result<(), DocxImportError> {
+        if self.seen.insert(property) {
+            Ok(())
+        } else {
+            Err(DocxImportError::malformed())
+        }
+    }
+}
+
+#[derive(Default)]
+struct RunFormatting {
+    bold: bool,
+    font_family: Option<FontFamily>,
+    font_size: Option<FontSizePoints>,
+    italic: bool,
+    underline: bool,
+}
+
+impl RunFormatting {
+    fn marks(&self) -> Vec<Value> {
+        let mut marks = Vec::new();
+        push_enabled_mark(&mut marks, self.bold, "bold");
+        push_enabled_mark(&mut marks, self.italic, "italic");
+        push_enabled_mark(&mut marks, self.underline, "underline");
+        if let Some(family) = self.font_family {
+            marks.push(json!({
+                "type": "fontFamily",
+                "attrs": { "family": family.identifier() }
+            }));
+        }
+        if let Some(size) = self.font_size {
+            marks.push(json!({
+                "type": "fontSize",
+                "attrs": { "points": size.points() }
+            }));
+        }
+        marks
+    }
+}
+
+enum BooleanMark {
+    Bold,
+    Italic,
+}
+
+enum BreakKind {
+    Line,
+    Page,
+    Column,
 }
 
 struct ParagraphStyleBuilder {
@@ -557,12 +747,49 @@ fn required_value(element: &BytesStart<'_>) -> Result<String, DocxImportError> {
         .ok_or_else(DocxImportError::malformed)
 }
 
-fn is_supported_line_break(element: &BytesStart<'_>) -> Result<bool, DocxImportError> {
+fn break_kind(element: &BytesStart<'_>) -> Result<BreakKind, DocxImportError> {
     let values = attributes(element)?;
     match values.get("type").map(String::as_str) {
-        None | Some("textWrapping") if values.len() <= 1 => Ok(true),
-        Some("page" | "column") if values.len() == 1 => Ok(false),
+        None | Some("textWrapping") if values.len() <= 1 => Ok(BreakKind::Line),
+        Some("page") if values.len() == 1 => Ok(BreakKind::Page),
+        Some("column") if values.len() == 1 => Ok(BreakKind::Column),
         _ => Err(DocxImportError::malformed()),
+    }
+}
+
+fn on_off_value(element: &BytesStart<'_>) -> Result<bool, DocxImportError> {
+    let values = attributes(element)?;
+    if values.len() > usize::from(values.contains_key("val")) {
+        return Err(DocxImportError::malformed());
+    }
+    match values.get("val").map(String::as_str) {
+        None | Some("1" | "true" | "on" | "yes") => Ok(true),
+        Some("0" | "false" | "off" | "no") => Ok(false),
+        Some(_) => Err(DocxImportError::malformed()),
+    }
+}
+
+fn explicit_font_family(values: &HashMap<String, String>) -> Option<FontFamily> {
+    let names = ["ascii", "hAnsi", "eastAsia", "cs"]
+        .iter()
+        .filter_map(|name| values.get(*name))
+        .collect::<BTreeSet<_>>();
+    if names.len() != 1 {
+        return None;
+    }
+    FontFamily::from_docx_name(names.first()?)
+}
+
+fn has_unsupported_font_attributes(values: &HashMap<String, String>) -> bool {
+    const EXPLICIT_NAMES: [&str; 4] = ["ascii", "hAnsi", "eastAsia", "cs"];
+    values
+        .keys()
+        .any(|name| !EXPLICIT_NAMES.contains(&name.as_str()))
+}
+
+fn push_enabled_mark(marks: &mut Vec<Value>, enabled: bool, mark_type: &'static str) {
+    if enabled {
+        marks.push(json!({ "type": mark_type }));
     }
 }
 

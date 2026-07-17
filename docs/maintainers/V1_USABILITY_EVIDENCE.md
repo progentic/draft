@@ -343,8 +343,9 @@ Artifact `c3b2b54c` displayed the expected `7ec149de` release build identity,
 but the primary DOCX workflow still failed. Opening a normal Word package left
 the editor unusable behind a generic safety-limit message, and Export did not
 produce a usable output or terminal disposition during the same session.
-**DOCX primary workflow is non-functional in the packaged application** remains
-a P0 product blocker.
+That artifact established the historical P0: **DOCX primary workflow is
+non-functional in the packaged application**. Later artifacts split that
+failure into independently reviewed Open, export, and fidelity outcomes.
 
 A Word-authored 12,031-byte fixture reproduced the import failure as the closed
 internal reason `RelationshipTarget`. Word correctly resolves
@@ -370,9 +371,19 @@ The replacement candidate was built from exact implementation commit
 `e734cae26068636edb574ff6217837c08ba4e4c0`. Its packaged executable SHA-256 is
 `2dfe312b446051946102ce40a074ac86e468dc074299af34802e90bf0c23d326`.
 Mechanical package validation confirmed the embedded commit identity, Apple
-Silicon executable, helper, icon, and bundle metadata. No packaged DOCX Open
-task has passed on this candidate, so `UX-47-010`, `RC-07`, `GATE-47`, and all
-release gates remain open.
+Silicon executable, helper, icon, and bundle metadata. Manual review confirmed
+that DOCX Open now creates a readable imported document, closing only the basic
+Open failure in `UX-47-010`. The same session found that explicit Times New
+Roman 12-point text, bold and italic spans, paragraph appearance, page breaks,
+and source-recognizable academic formatting were flattened. Basic Open passes;
+source-format fidelity and the overall Phase 47 Open gate fail.
+
+The correction under review preserves the accepted explicit run and paragraph
+properties, represents page breaks as canonical blocks, re-exports those
+blocks, and proves the typed result renders through the actual workspace Open
+action. This is mechanical correction evidence only. `UX-47-013`, `RC-07`,
+`GATE-47`, and all release gates remain open until a newly built and hashed
+package passes the compatible-reader and human fidelity workflow.
 
 ### Findings And Dispositions
 
@@ -411,10 +422,11 @@ release gates remain open.
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
 | UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
-| UX-47-010 | UX-0 | Open - packaged Open correction pending | Artifact `c3b2b54c` exposed the relationship-target parser defect. Artifact `8e974736` ran the parser correction but still did not show the imported document; a settled export notice masked later session outcomes. The exact Word fixture returns a valid three-paragraph `imported_external` result through Rust. | Clear stale cross-operation feedback, trace the path-free Open stages, then rebuild, hash, and manually prove successful, cancelled, unsupported, safety-limit, malformed, and failed DOCX intake with visible terminal states. |
+| UX-47-010 | UX-0 | Closed - artifact 2dfe312b | Artifact `c3b2b54c` exposed the relationship-target parser defect. Artifact `8e974736` exposed stale export feedback. Artifact `2dfe312b`, visibly identified as implementation commit `e734cae`, opened the selected DOCX into a readable imported document. | Closed only for basic DOCX Open. Formatting fidelity moved to `UX-47-013`; unsupported, safety-limit, malformed, cancellation, recovery, `RC-07`, and `GATE-47` remain open. |
 | UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
+| UX-47-013 | UX-0 | Open - correction pending package | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Basic Open passed while source fidelity failed. | Preserve accepted direct run and paragraph properties plus canonical page breaks without guessing semantic headings or substituting unsupported fonts. Rebuild, hash, compare source and exported output in Word or LibreOffice, and confirm the original source hash remains unchanged. |
 
-Every RC and GATE row remains open. Closing `UX-47-011` for the exact export
-pass does not close the packaged Open blocker, a release blocker, or a roadmap
+Every RC and GATE row remains open. Closing the isolated Open and export
+failures does not close source-format fidelity, a release blocker, or a roadmap
 gate.

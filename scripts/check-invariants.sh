@@ -911,7 +911,7 @@ check_docx_import_contract() {
     absent_paragraph_properties_remain_absent
     alternate_heading_name_is_canonically_normalized
     valid_unsupported_properties_require_source_preservation
-    nested_unsupported_properties_remain_preservable
+    supported_run_formatting_survives_unrelated_unsupported_properties
     package_semantics_classify_valid_uneditable_behavior
     optional_relationship_and_style_parts_are_not_required
     exact_and_at_least_line_rules_are_unsupported_not_malformed
@@ -1168,12 +1168,23 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
   require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Open - packaged Open correction pending |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Closed - artifact 2dfe312b |' \
     "${ledger}"
   require_source_pattern '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |' \
     "${ledger}"
   require_source_pattern '| UX-47-012 | UX-1 | Open - manual retest pending |' \
     "${ledger}"
+  require_source_pattern '| UX-47-013 | UX-0 | Open - correction pending package |' \
+    "${ledger}"
+  require_file src/editor/PageBreakNode.ts
+  require_rust_test supported_direct_run_properties_map_to_exact_canonical_marks \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test page_break_runs_become_canonical_blocks_and_export_back_to_docx \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_source_pattern 'name: "pageBreak"' src/editor/PageBreakNode.ts
+  require_source_pattern 'DocxBlock::PageBreak' src-tauri/src/exports/docx_package.rs
+  require_source_pattern 'rendered font/paragraph/page-break import' \
+    docs/maintainers/DOCX_INTEROPERABILITY.md
   require_source_pattern '| RC-07 | Release blocker | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md
   require_source_pattern '| GATE-47 | Roadmap gate | Open |' \

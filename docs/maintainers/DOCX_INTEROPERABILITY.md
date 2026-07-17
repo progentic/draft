@@ -49,8 +49,9 @@ export.
 ## Trade-offs
 
 - The importer is deliberately smaller than Microsoft Word's document model.
-- Plain text and the accepted paragraph properties remain editable; unsupported
-  run or package behavior is not reconstructed in DRAFT.
+- Text, accepted run marks, page breaks, and accepted paragraph properties
+  remain editable. Unsupported run, style, or package behavior is disclosed and
+  remains available only in the untouched source.
 - An untouched source reports `no_changes`; edited exact content is eligible
   for the bounded writer, while normalized content requires explicit consent.
 - Unsupported source behavior, missing provenance, unknown fidelity, a missing
@@ -67,7 +68,7 @@ export.
 ### Supported canonical mapping
 
 The importer accepts paragraphs, heading levels 1 through 6, text, hard line
-breaks, and these paragraph properties:
+breaks, canonical page-break blocks, and these directly declared properties:
 
 | DOCX property | Canonical DRAFT value |
 | :--- | :--- |
@@ -76,6 +77,11 @@ breaks, and these paragraph properties:
 | `w:spacing/@w:before` and `@w:after` | 0 through 2,880 twips |
 | `w:ind/@w:left` and `@w:right` | 0 through 2,880 twips |
 | `w:ind/@w:firstLine` or `@w:hanging` | One mutually exclusive value from 0 through 1,440 twips |
+| `w:rFonts` | One matching explicit family from DRAFT's eleven-family allowlist |
+| `w:sz` and `w:szCs` | One matching whole-point size from 8 through 72 |
+| `w:b`, `w:i`, and single `w:u` | Canonical bold, italic, and underline marks |
+| `w:br w:type="page"` | A canonical top-level `pageBreak` block |
+| `w:pageBreakBefore` | A disclosed normalization to a canonical `pageBreak` block |
 
 Missing paragraph properties remain absent. The importer never serializes a
 complete default `paragraphStyle` object. `Heading 1` through `Heading 6` are
@@ -83,10 +89,13 @@ canonicalized to the accepted style identifiers and recorded as normalization.
 
 Exact and at-least line spacing, list numbering, unsupported inherited styles,
 and unsupported document structures are typed unsupported failures. Borders,
-shading, tab stops, contextual spacing, pagination controls, run formatting,
-external relationships, noncanonical styles, and additional package parts are
-classified as unsupported but source-preservable. Values that would require
-rounding or clamping are classified as lossy and rejected.
+shading, tab stops, contextual spacing, pagination controls other than page
+breaks, run properties outside the accepted marks, theme or conflicting font
+declarations, external relationships, noncanonical styles, and additional
+package parts are classified as unsupported but source-preservable. Supported
+direct properties remain in the canonical document even when an unrelated
+source feature requires preservation. Values that would require rounding or
+clamping are classified as lossy and rejected.
 
 ### Fidelity classes
 
@@ -208,9 +217,10 @@ registry identity, or displayed filename.
 
 ## Tests
 
-Rust unit tests cover every accepted paragraph property, absent defaults,
-canonical heading normalization, malformed and unsupported properties, nested
-preservable behavior, content types, relationships, duplicate entries, path
+Rust unit tests cover every accepted paragraph and direct run property, absent
+defaults, canonical heading and page-break normalization, malformed and
+unsupported properties, supported formatting beside unrelated preservable
+behavior, content types, relationships, duplicate entries, path
 traversal, package limits, compression ratio, XML depth, and deterministic
 ordering. The canonical stored-package fixture SHA-256 is
 `c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a`.
@@ -233,10 +243,11 @@ Source-write tests cover exact replacement, normalization consent, source
 changes before replacement, compilation and write failure, durability and
 registry rollback, rollback failure, fingerprint refresh, and non-mutating
 eligibility. A macOS-only reader check opens both exact and accepted-normalized
-replacements through `textutil`. TypeScript tests cover every fidelity and
-source-write outcome, unknown variants, path-bearing DTO rejection, exhaustive
-path-free recovery, stale generations, confirmation, cancellation, and visible
-dispatcher parity. Existing atomic-export tests continue to prove target
+replacements through `textutil`. TypeScript tests cover page-break JSON and
+HTML preservation, every fidelity and source-write outcome, unknown variants,
+path-bearing DTO rejection, exhaustive path-free recovery, stale generations,
+confirmation, cancellation, rendered font/paragraph/page-break import, and
+visible dispatcher parity. Existing atomic-export tests continue to prove target
 promotion and partial-output cleanup.
 
 These are mechanical and local reader-open results. Packaged human validation

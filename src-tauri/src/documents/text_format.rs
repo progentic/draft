@@ -106,6 +106,21 @@ impl FontFamily {
             .map(|definition| definition.docx_name)
             .expect("every font family must have one definition")
     }
+
+    pub(crate) fn from_docx_name(name: &str) -> Option<Self> {
+        FONT_DEFINITIONS
+            .iter()
+            .find(|definition| definition.docx_name.eq_ignore_ascii_case(name))
+            .map(|definition| definition.family)
+    }
+
+    pub(crate) fn identifier(self) -> &'static str {
+        FONT_DEFINITIONS
+            .iter()
+            .find(|definition| definition.family == self)
+            .map(|definition| definition.identifier)
+            .expect("every font family must have one definition")
+    }
 }
 
 impl FontSizePoints {
@@ -119,6 +134,10 @@ impl FontSizePoints {
 
     pub(crate) fn half_points(self) -> u16 {
         u16::from(self.0) * 2
+    }
+
+    pub(crate) fn points(self) -> u8 {
+        self.0
     }
 }
 

@@ -18,7 +18,9 @@ export type ExternalFeature =
   | "unsupported_document_structure"
   | "unsupported_style_inheritance";
 
-export type ExternalNormalizationFeature = "alternate_heading_style_name";
+export type ExternalNormalizationFeature =
+  | "alternate_heading_style_name"
+  | "pagination_control";
 
 export type ExternalSafetyReason =
   | "archive_entry_count"
@@ -160,10 +162,17 @@ export function isExternalFidelity(value: unknown): value is ExternalFidelity {
 export function isExternalNormalizationFeatureList(
   value: unknown,
 ): value is ExternalNormalizationFeature[] {
-  return (
-    Array.isArray(value) &&
-    value.length === 1 &&
-    value[0] === "alternate_heading_style_name"
+  if (!Array.isArray(value) || value.length === 0) {
+    return false;
+  }
+  const allowed: ExternalNormalizationFeature[] = [
+    "alternate_heading_style_name",
+    "pagination_control",
+  ];
+  const positions = value.map((feature) => allowed.indexOf(feature));
+  return positions.every(
+    (position, index) =>
+      position >= 0 && (index === 0 || positions[index - 1] < position),
   );
 }
 

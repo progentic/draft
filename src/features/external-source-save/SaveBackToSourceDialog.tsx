@@ -125,6 +125,8 @@ function normalizationMessage(feature: ExternalNormalizationFeature) {
   switch (feature) {
     case "alternate_heading_style_name":
       return "Alternate heading style names will use DRAFT’s standard heading names.";
+    case "pagination_control":
+      return "Page-break-before formatting will use DRAFT’s standard page break.";
     default:
       return assertNever(feature);
   }

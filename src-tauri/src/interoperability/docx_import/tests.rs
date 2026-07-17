@@ -109,7 +109,7 @@ fn valid_unsupported_properties_require_source_preservation() {
 }
 
 #[test]
-fn nested_unsupported_properties_remain_preservable() {
+fn supported_run_formatting_survives_unrelated_unsupported_properties() {
     let parsed = parse_docx_package(&package(&document_xml(
         r#"<w:pPr><w:pBdr><w:top w:val="single"/></w:pBdr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Text</w:t></w:r>"#,
     )))
@@ -117,13 +117,88 @@ fn nested_unsupported_properties_remain_preservable() {
 
     assert_eq!(parsed.document["content"][0]["content"][0]["text"], "Text");
     assert_eq!(
+        parsed.document["content"][0]["content"][0]["marks"],
+        json!([{ "type": "bold" }])
+    );
+    assert_eq!(
         parsed.fidelity,
         ExternalFidelity::UnsupportedPreservable {
             features: vec![
                 ExternalFeature::ParagraphBorder,
                 ExternalFeature::ParagraphTab,
-                ExternalFeature::RunFormatting,
             ],
+        }
+    );
+}
+
+#[test]
+fn supported_direct_run_properties_map_to_exact_canonical_marks() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/><w:b/><w:i/><w:u w:val="single"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>Formatted</w:t></w:r><w:r><w:rPr><w:b w:val="0"/><w:i w:val="false"/></w:rPr><w:t> plain</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(parsed.fidelity, ExternalFidelity::Exact);
+    assert_eq!(
+        parsed.document["content"][0]["content"],
+        json!([
+            {
+                "type": "text",
+                "text": "Formatted",
+                "marks": [
+                    { "type": "bold" },
+                    { "type": "italic" },
+                    { "type": "underline" },
+                    { "type": "fontFamily", "attrs": { "family": "times_new_roman" } },
+                    { "type": "fontSize", "attrs": { "points": 12 } }
+                ]
+            },
+            { "type": "text", "text": " plain" }
+        ])
+    );
+}
+
+#[test]
+fn page_break_runs_become_canonical_blocks_and_export_back_to_docx() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:r><w:t>Before</w:t><w:br w:type="page"/><w:t>After</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(parsed.fidelity, ExternalFidelity::Exact);
+    assert_eq!(
+        parsed.document["content"],
+        json!([
+            { "type": "paragraph", "content": [{ "type": "text", "text": "Before" }] },
+            { "type": "pageBreak" },
+            { "type": "paragraph", "content": [{ "type": "text", "text": "After" }] }
+        ])
+    );
+
+    let artifact = compile_docx(&envelope_with_document(parsed.document)).unwrap();
+    let reparsed = parse_docx_package(artifact.as_bytes()).unwrap();
+    assert_eq!(reparsed.fidelity, ExternalFidelity::Exact);
+    assert_eq!(
+        reparsed.document["content"][1],
+        json!({ "type": "pageBreak" })
+    );
+}
+
+#[test]
+fn page_break_before_is_a_disclosed_canonical_normalization() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:pPr><w:pageBreakBefore/></w:pPr><w:r><w:t>Next page</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(
+        parsed.document["content"][0],
+        json!({ "type": "pageBreak" })
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::CanonicallyNormalized {
+            features: vec![ExternalFeature::PaginationControl],
         }
     );
 }
@@ -366,18 +441,22 @@ const DOCUMENT_CONTENT_TYPE_FOR_TESTS: &str =
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml";
 
 fn styled_envelope() -> DocumentEnvelope {
+    envelope_with_document(json!({
+        "type": "doc",
+        "content": [{
+            "type": "paragraph",
+            "attrs": { "paragraphStyle": supported_style() },
+            "content": [{ "type": "text", "text": "Round trip" }]
+        }]
+    }))
+}
+
+fn envelope_with_document(document: Value) -> DocumentEnvelope {
     DocumentEnvelope::from_json_value(json!({
         "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
         "document_id": DOCUMENT_ID,
         "title": "Round trip",
-        "document": {
-            "type": "doc",
-            "content": [{
-                "type": "paragraph",
-                "attrs": { "paragraphStyle": supported_style() },
-                "content": [{ "type": "text", "text": "Round trip" }]
-            }]
-        }
+        "document": document
     }))
     .unwrap()
 }

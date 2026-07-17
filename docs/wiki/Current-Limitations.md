@@ -78,7 +78,7 @@ Apple Silicon target.
 
 ## Export
 
-- DOCX export supports paragraphs, headings, text, hard breaks, bold, italic,
+- DOCX export supports paragraphs, headings, text, hard and page breaks, bold, italic,
   underline, bounded font-family and font-size marks, and validated paragraph
   properties within documented resource limits.
 - Unsupported content fails instead of being silently omitted.

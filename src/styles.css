@@ -1211,6 +1211,12 @@ button:focus-visible,
   margin: 0 0 1em;
 }
 
+.draft-editor [data-draft-page-break] {
+  height: 0;
+  margin: 3rem 0;
+  border-top: 1px dashed #aeb6b2;
+}
+
 .draft-editor ul,
 .draft-editor ol {
   padding-left: 1.5em;

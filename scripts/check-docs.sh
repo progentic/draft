@@ -1116,11 +1116,17 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |'
   require_document_text "${ledger}" \
-    '| UX-47-010 | UX-0 | Open - packaged Open correction pending |'
+    '| UX-47-010 | UX-0 | Closed - artifact 2dfe312b |'
   require_document_text "${ledger}" \
     '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |'
   require_document_text "${ledger}" \
     '| UX-47-012 | UX-1 | Open - manual retest pending |'
+  require_document_text "${ledger}" \
+    '| UX-47-013 | UX-0 | Open - correction pending package |'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'direct properties remain in the canonical document'
+  require_document_text docs/wiki/Workspace.md \
+    'DOCX import retains supported explicit font family'
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'
   require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
 }

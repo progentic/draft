@@ -491,7 +491,7 @@ function openSuccessMessage(result: Extract<
       : "Text imported. Save as a DRAFT document to keep your work.";
   }
   return result.external.fidelity.classification === "unsupported_preservable"
-    ? "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged."
+    ? "DOCX imported. Supported text and paragraph formatting was retained. Some source features remain only in the original. Save as a DRAFT document to edit a copy."
     : "DOCX opened. Save creates a DRAFT document; Save Back to Source replaces the DOCX only after confirmation.";
 }
 

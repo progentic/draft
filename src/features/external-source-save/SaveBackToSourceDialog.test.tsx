@@ -56,3 +56,20 @@ it("uses exact-replacement copy without a normalization claim", () => {
   expect(within(dialog).getByRole("button", { name: "Replace" })).toBeTruthy();
   expect(within(dialog).queryByText(/normalize/i)).toBeNull();
 });
+
+it("explains canonical page-break normalization", () => {
+  render(
+    <SaveBackToSourceDialog
+      confirmation={{
+        displayName: "paper.docx",
+        disposition: "allowed_after_accepted_normalization",
+        normalizations: ["pagination_control"],
+      }}
+      onResolve={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByText("Page-break-before formatting will use DRAFT’s standard page break."),
+  ).toBeTruthy();
+});

@@ -40,6 +40,11 @@ confirmation. A normalized replacement lists the exact supported change before
 you choose **Replace** or **Cancel**. Unsupported, lossy, missing, or externally
 changed sources stay unavailable and are not overwritten.
 
+DOCX import retains supported explicit font family, whole-point size, bold,
+italic, underline, paragraph alignment, spacing, indentation, heading styles,
+and page breaks. Source behavior outside that subset stays in the unchanged
+original and is disclosed when the imported copy opens.
+
 Use **Save As…** to choose a new `.draft` file while preserving the previous
 file. After it succeeds, later Save operations use the new file. Cancelling or
 failing Save As leaves the current filename and file unchanged.
