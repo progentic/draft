@@ -1116,9 +1116,9 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |'
   require_document_text "${ledger}" \
-    '| UX-47-010 | UX-0 | Open - P0 correction pending package |'
+    '| UX-47-010 | UX-0 | Open - packaged Open correction pending |'
   require_document_text "${ledger}" \
-    '| UX-47-011 | UX-0 | Open - P0 correction pending package |'
+    '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |'
   require_document_text "${ledger}" \
     '| UX-47-012 | UX-1 | Open - manual retest pending |'
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'

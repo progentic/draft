@@ -874,7 +874,7 @@ check_docx_export_authority() {
     case "${frontend_path}" in
       # Phase 48 permits the closed action identifier only in its typed event,
       # shared dispatcher, visible command, and colocated tests.
-      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/components/WorkspaceCommandBar.test.tsx|src/features/workspace-actions/useWorkspaceActions.ts) ;;
+      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/components/WorkspaceCommandBar.test.tsx|src/features/workspace-actions/useWorkspaceActions.ts|src/features/workspace-actions/useWorkspaceActions.test.tsx) ;;
       *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
     esac
   done < <(rg --files src)
@@ -1148,21 +1148,29 @@ check_phase_47_manual_gate_corrections() {
 
   require_source_pattern 'role="status"' "${operation_notice}"
   require_source_pattern 'aria-live="polite"' "${operation_notice}"
+  require_source_pattern 'clearFeedback: () => void' \
+    src/features/docx-export/useDocxExport.ts
+  require_source_pattern 'docxExport.clearFeedback()' \
+    src/features/workspace-actions/useWorkspaceActions.ts
   require_source_pattern 'shows a pending state before a selected DOCX resolves' \
     "${workflow_tests}"
   require_source_pattern 'exports DOCX with visible completion and source-safety feedback' \
     "${workflow_tests}"
   require_source_pattern 'presents the typed %s DOCX export failure' \
     "${workflow_tests}"
+  require_source_pattern 'opens the Word fixture after clearing a settled export notice' \
+    "${workflow_tests}"
+  require_rust_test word_fixture_reaches_the_typed_open_response \
+    src-tauri/src/commands/document_open.rs
 
   require_source_pattern 'com.progentic.draft.document' src-tauri/tauri.conf.json
   require_source_pattern 'com.progentic.draft.document' src-tauri/Info.plist
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
   require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Open - P0 correction pending package |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Open - packaged Open correction pending |' \
     "${ledger}"
-  require_source_pattern '| UX-47-011 | UX-0 | Open - P0 correction pending package |' \
+  require_source_pattern '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |' \
     "${ledger}"
   require_source_pattern '| UX-47-012 | UX-1 | Open - manual retest pending |' \
     "${ledger}"

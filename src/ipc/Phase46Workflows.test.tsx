@@ -332,6 +332,38 @@ describe("Phase 46 visible workflows", () => {
     ]);
   });
 
+  it("opens the Word fixture after clearing a settled export notice", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => wordFixtureOpenResponse(),
+    });
+    render(<App />);
+
+    await clickWorkspaceAction(user, "Export DOCX…");
+    expect(await screen.findByText(
+      "DOCX export complete. Your DRAFT document was not changed.",
+    )).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(await screen.findByText("Document closed.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+
+    expect(await screen.findByText(
+      "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged.",
+    )).toBeTruthy();
+    expect(screen.queryByText(
+      "DOCX export complete. Your DRAFT document was not changed.",
+    )).toBeNull();
+    expect(screen.getByText("word-custom-xml.docx")).toBeTruthy();
+    expect(screen.getByText("Source unchanged")).toBeTruthy();
+    const content = screen.getByRole("textbox", { name: "Document editor" }).textContent;
+    expect(content).toContain("DRAFT DOCX Round Trip");
+    expect(content).toContain(
+      "This document was created in Microsoft Word for DRAFT interoperability testing.",
+    );
+    expect(content).toContain("The visible content must survive import and export.");
+  });
+
   it("confirms exact Save Back and preserves the external display identity", async () => {
     const user = userEvent.setup();
     const decisions: string[] = [];
@@ -794,6 +826,10 @@ describe("Phase 46 visible workflows", () => {
     });
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Open…" }));
+    await clickWorkspaceAction(user, "Export DOCX…");
+    expect(await screen.findByText(
+      "DOCX export complete. Your DRAFT document was not changed.",
+    )).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Open…" }));
 
     expect(await screen.findByText("That file is no longer available. Choose another document.")).toBeTruthy();
@@ -1078,6 +1114,57 @@ function externalSummary() {
     displayName: "paper.docx",
     fidelity: { classification: "exact" },
     sameFormatSave: "no_changes",
+  };
+}
+
+function wordFixtureOpenResponse() {
+  return {
+    status: "imported_external",
+    envelope: {
+      schema_version: 2,
+      document_id: IMPORTED_ID,
+      title: "word-custom-xml",
+      document: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "DRAFT DOCX Round Trip" }],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: "This document was created in Microsoft Word for DRAFT interoperability testing.",
+              },
+            ],
+          },
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: "The visible content must survive import and export.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    external: {
+      format: "docx",
+      displayName: "word-custom-xml.docx",
+      fidelity: {
+        classification: "unsupported_preservable",
+        features: [
+          "package_part",
+          "unsupported_document_structure",
+          "unsupported_style_inheritance",
+        ],
+      },
+      sameFormatSave: "no_changes",
+    },
   };
 }
 

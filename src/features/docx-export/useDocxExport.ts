@@ -8,6 +8,7 @@ import {
 } from "../../ipc/docxExport";
 
 export interface DocxExportState {
+  clearFeedback: () => void;
   disabled: boolean;
   feedback: string;
   label: string;
@@ -17,6 +18,7 @@ export interface DocxExportState {
 export function useDocxExport(session: DocumentSession): DocxExportState {
   const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const clearFeedback = useCallback(() => setFeedback(""), []);
 
   const run = useCallback(() => {
     const snapshot = session.snapshot();
@@ -28,6 +30,7 @@ export function useDocxExport(session: DocumentSession): DocxExportState {
   }, [session]);
 
   return {
+    clearFeedback,
     disabled: exporting,
     feedback,
     label: exporting ? "Exporting DOCX" : "Export DOCX…",

@@ -44,6 +44,19 @@ describe("workspace action dispatcher", () => {
     expect(togglePanel).toHaveBeenCalledWith("references");
   });
 
+  it("clears settled export feedback before another document action", () => {
+    const session = documentSession();
+    const docxExport = exportState();
+    const { result } = renderHook(() => useWorkspaceActions(session, docxExport, vi.fn()));
+
+    act(() => result.current.dispatch("open_document"));
+    act(() => result.current.dispatch("export_docx"));
+
+    expect(docxExport.clearFeedback).toHaveBeenCalledOnce();
+    expect(session.requestOpen).toHaveBeenCalledOnce();
+    expect(docxExport.run).toHaveBeenCalledOnce();
+  });
+
   it("synchronizes closed state and rejects stale native actions", async () => {
     const session = documentSession();
     let nativeAction: ((action: string) => void) | undefined;
@@ -188,6 +201,7 @@ function documentSession(): DocumentSession {
 
 function exportState(): DocxExportState {
   return {
+    clearFeedback: vi.fn(),
     disabled: false,
     feedback: "",
     label: "Export DOCX…",

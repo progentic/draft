@@ -148,8 +148,10 @@ external source identity and basename display name.
 | Imported canonical nodes | 100,000 |
 
 `DRAFT_DOCX_TRACE` is unset by default. Setting it for a local diagnostic run
-emits path-free stage names, counts, sizes, and closed failure categories to
-stderr. It never emits document text, XML, source names, or filesystem paths.
+emits path-free Open command, dialog-selection, source-classification,
+typed-result, frontend-payload-ready, import, and export stage names plus
+counts, sizes, and closed failure categories to stderr. It never emits document
+text, XML, source names, or filesystem paths.
 
 The outer file read is stream-bounded even if the source grows after metadata
 inspection. ZIP entry paths must use relative normal components. Internal OPC
@@ -167,7 +169,7 @@ doctypes, unknown entities, and exceeded limits fail before registry mutation.
 | Mid | `DocumentRegistry::open_imported_external` | Own one live external-source registration without a native save target. |
 | Low | `interoperability::docx_import::package` | Validates ZIP, parts, relationships, content types, and XML bounds. |
 | Low | `interoperability::docx_import::document` | Maps the accepted XML subset into canonical Tiptap JSON. |
-| Low | `docx_trace` | Emits opt-in path-free import and export stage diagnostics for local failure investigation. |
+| Low | `docx_trace` | Emits opt-in path-free Open, import, and export stage diagnostics for local failure investigation. |
 | Presentation | `src/ipc/externalDocument.ts` | Validates the path-free DTO and rejects unknown or unstable variants. |
 | Presentation | `src/ipc/externalDocumentSave.ts` | Validates eligibility, save, cancellation, denial, and bounded recovery outcomes. |
 | Presentation | `useExternalSourceSave` | Coordinates inspection, confirmation, cancellation, and replacement without owning a path. |
@@ -178,7 +180,10 @@ The Open command returns `imported_external`, distinct from `opened_draft`,
 from native DRAFT persistence. Ordinary Save creates a `.draft` target, Export
 DOCX creates a separate copy, and Save Back retains external registration. The
 document dispatcher keeps these actions single-flight so a later operation or
-editor generation cannot accept a stale eligibility result.
+session result cannot be hidden by settled export feedback. Starting a
+non-export document action clears that feedback before the action reports its
+own pending and terminal state. The editor generation cannot accept a stale
+eligibility result.
 
 ## Failure Modes
 

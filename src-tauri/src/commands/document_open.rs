@@ -1,12 +1,15 @@
 use serde::Deserialize;
 use tauri::{AppHandle, State};
 
-use crate::documents::{
-    dialog::select_open_document,
-    persistence::{
-        OpenDocumentError, OpenDocumentOutcome, open_document as open_selected_document,
+use crate::{
+    documents::{
+        dialog::select_open_document,
+        persistence::{
+            OpenDocumentError, OpenDocumentOutcome, open_document as open_selected_document,
+        },
+        registry::DocumentRegistry,
     },
-    registry::DocumentRegistry,
+    docx_trace,
 };
 
 /// Bounded request for selecting and opening one DRAFT document.
@@ -22,15 +25,40 @@ pub(crate) async fn open_document(
     request: OpenDocumentRequest,
 ) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     let OpenDocumentRequest {} = request;
+    docx_trace::emit("open_command_received", format_args!("status=received"));
     let selected_path = select_open_document(&app_handle)
         .await
         .map_err(|_| OpenDocumentError::UnsupportedFileLocation)?;
-    open_selected_document(&registry, selected_path)
+    docx_trace::emit(
+        "open_dialog_completed",
+        format_args!(
+            "selection={}",
+            if selected_path.is_some() {
+                "selected"
+            } else {
+                "cancelled"
+            }
+        ),
+    );
+    let outcome = open_selected_document(&registry, selected_path);
+    trace_open_outcome(&outcome);
+    outcome
+}
+
+fn trace_open_outcome(outcome: &Result<OpenDocumentOutcome, OpenDocumentError>) {
+    let status = match outcome {
+        Ok(OpenDocumentOutcome::OpenedDraft { .. }) => "opened_draft",
+        Ok(OpenDocumentOutcome::ImportedText { .. }) => "imported_text",
+        Ok(OpenDocumentOutcome::ImportedExternal { .. }) => "imported_external",
+        Ok(OpenDocumentOutcome::Cancelled) => "cancelled",
+        Err(_) => "error",
+    };
+    docx_trace::emit("open_result_returned", format_args!("status={status}"));
 }
 
 #[cfg(test)]
 mod tests {
-    use std::future::Future;
+    use std::{future::Future, path::PathBuf};
 
     use serde_json::json;
 
@@ -112,6 +140,28 @@ mod tests {
                 },
                 { "status": "cancelled" }
             ]),
+        );
+    }
+
+    #[test]
+    fn word_fixture_reaches_the_typed_open_response() {
+        let source = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/docx/word-custom-xml.docx");
+        let outcome = open_selected_document(&DocumentRegistry::new(), Some(source)).unwrap();
+        let response = serde_json::to_value(outcome).unwrap();
+
+        assert_eq!(response["status"], "imported_external");
+        assert_eq!(response["external"]["displayName"], "word-custom-xml.docx");
+        assert_eq!(
+            response["envelope"]["document"]["content"]
+                .as_array()
+                .unwrap()
+                .len(),
+            3
+        );
+        assert_eq!(
+            response["envelope"]["document"]["content"][0]["content"][0]["text"],
+            "DRAFT DOCX Round Trip"
         );
     }
 

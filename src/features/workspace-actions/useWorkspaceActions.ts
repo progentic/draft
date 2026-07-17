@@ -85,6 +85,9 @@ function useActionDispatcher(
       return;
     }
     setFeedback("");
+    if (action !== "export_docx") {
+      docxExport.clearFeedback();
+    }
     dispatchEnabledAction(action, session, docxExport, onTogglePanel);
   }, [docxExport, enabled, onTogglePanel, session, setFeedback]);
 }

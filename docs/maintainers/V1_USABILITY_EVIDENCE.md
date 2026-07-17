@@ -355,6 +355,17 @@ tests now open the Word fixture, create a canonical document, export atomically,
 reopen the result, preserve the source, and produce visible text that matches
 in LibreOffice. These are correction tests, not packaged-human closure evidence.
 
+Replacement artifact `8e974736` ran commit `14363903` in the release profile.
+Manual review confirmed that DOCX export completed with visible success, but
+DOCX Open still did not produce an imported document. The post-close workspace
+showed `No document open` while retaining the settled `DOCX export complete`
+notice. That stale export notice outranked the active document-session outcome
+and made the later Open disposition impossible to observe. The exact Word
+fixture reaches a valid three-paragraph `imported_external` response in Rust.
+The correction clears settled export feedback before non-export document
+actions and renders that exact response through the real Open action in the
+workspace test. A replacement packaged Open run remains required.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
@@ -392,9 +403,10 @@ in LibreOffice. These are correction tests, not packaged-human closure evidence.
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
 | UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
-| UX-47-010 | UX-0 | Open - P0 correction pending package | Artifact `c3b2b54c` rejected an ordinary Word DOCX with the generic safety-limit notice and left the editor blank. A Word-authored fixture reproduced the exact internal cause as `RelationshipTarget`; the parser incorrectly rejected a valid part-relative custom-XML target. | The resolver and production-path round-trip tests are corrected. Rebuild, hash, and manually prove successful, cancelled, unsupported, safety-limit, malformed, and failed DOCX intake with visible terminal states. |
-| UX-47-011 | UX-0 | Open - P0 correction pending package | Artifact `c3b2b54c` did not produce a usable DOCX export or terminal disposition. The corrected production-path test exports the imported Word fixture atomically, reopens it, and matches visible text in LibreOffice. | Rebuild, hash, and manually prove pending, exported, cancelled, unsupported-content, invalid-package, and write-failure outcomes plus source preservation. |
+| UX-47-010 | UX-0 | Open - packaged Open correction pending | Artifact `c3b2b54c` exposed the relationship-target parser defect. Artifact `8e974736` ran the parser correction but still did not show the imported document; a settled export notice masked later session outcomes. The exact Word fixture returns a valid three-paragraph `imported_external` result through Rust. | Clear stale cross-operation feedback, trace the path-free Open stages, then rebuild, hash, and manually prove successful, cancelled, unsupported, safety-limit, malformed, and failed DOCX intake with visible terminal states. |
+| UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 
-Every RC and GATE row remains open. The failed Phase 47 package closes no
-finding, release blocker, or roadmap gate.
+Every RC and GATE row remains open. Closing `UX-47-011` for the exact export
+pass does not close the packaged Open blocker, a release blocker, or a roadmap
+gate.

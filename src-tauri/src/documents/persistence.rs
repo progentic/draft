@@ -12,6 +12,7 @@ use crate::documents::{
     registry::{DocumentRegistry, DocumentRegistryError},
     text_import::{TextImportError, import_text_document},
 };
+use crate::docx_trace;
 use crate::interoperability::provenance::ExternalDocumentSummary;
 use crate::interoperability::{ExternalDocumentImportError, import_docx_source};
 
@@ -104,6 +105,10 @@ pub(crate) fn open_document(
         return Ok(OpenDocumentOutcome::Cancelled);
     };
     let source_kind = classify_open_source(&source_path)?;
+    docx_trace::emit(
+        "open_source_classified",
+        format_args!("kind={}", open_source_kind_name(source_kind)),
+    );
     let _file_operation = lock_file_operation(registry).map_err(map_open_registry_error)?;
     open_source(registry, source_path, source_kind)
 }
@@ -120,6 +125,15 @@ fn open_source(
     }
 }
 
+fn open_source_kind_name(source_kind: OpenSourceKind) -> &'static str {
+    match source_kind {
+        OpenSourceKind::Draft => "draft",
+        OpenSourceKind::Text(TextImportFormat::PlainText) => "plain_text",
+        OpenSourceKind::Text(TextImportFormat::Markdown) => "markdown",
+        OpenSourceKind::Docx => "docx",
+    }
+}
+
 fn import_docx_document(
     registry: &DocumentRegistry,
     source_path: &Path,
@@ -129,6 +143,15 @@ fn import_docx_document(
     registry
         .open_imported_external(imported.envelope.clone(), imported.provenance)
         .map_err(|cause| OpenDocumentError::Registry { cause })?;
+    docx_trace::emit(
+        "frontend_payload_ready",
+        format_args!(
+            "status=imported_external blocks={}",
+            imported.envelope.document()["content"]
+                .as_array()
+                .map_or(0, Vec::len)
+        ),
+    );
     Ok(OpenDocumentOutcome::ImportedExternal {
         envelope: imported.envelope,
         external: imported.summary,

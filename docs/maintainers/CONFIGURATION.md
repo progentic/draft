@@ -191,7 +191,7 @@ period. It cannot detect an unreported same-size in-place modification.
 | `MAX_DOCX_IMPORT_UNCOMPRESSED_BYTES` | 64 MiB | `interoperability/docx_import/mod.rs` | Maximum total declared uncompressed package bytes. |
 | `MAX_DOCX_IMPORT_XML_DEPTH` | 64 | `interoperability/docx_import/mod.rs` | Maximum XML element depth before unsafe rejection. |
 | `MAX_DOCX_IMPORT_COMPRESSION_RATIO` | 100:1 | `interoperability/docx_import/mod.rs` | Maximum accepted per-entry uncompressed-to-compressed ratio. |
-| `DRAFT_DOCX_TRACE` | Unset | `docx_trace.rs` | Opt-in local stderr trace of path-free DOCX stages, counts, sizes, and closed failure categories. No text, XML, or paths are emitted. |
+| `DRAFT_DOCX_TRACE` | Unset | `docx_trace.rs` | Opt-in local stderr trace of path-free Open command, dialog, source-classification, typed-result, import, and export stages plus counts, sizes, and closed failure categories. No text, XML, source names, or paths are emitted. |
 
 DOCX compilation supports paragraphs, headings, text, hard breaks, the closed
 bold, italic, and underline marks, and the canonical font-family and font-size

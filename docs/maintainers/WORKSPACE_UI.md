@@ -254,7 +254,9 @@ The dispatcher derives availability from the current document operation and
 DOCX export state. It checks availability again when a native event arrives, so
 an event emitted before a state update cannot begin a stale operation. While a
 save, open, close, create, or export operation is pending, competing document
-and workflow-panel actions remain unavailable.
+and workflow-panel actions remain unavailable. Starting a non-export document
+action clears settled export feedback so the active operation's pending and
+terminal notice remains authoritative.
 
 Rust owns native menu objects and receives a bounded seven-boolean state request.
 No path, content, or document identity enters the menu state. Invalid events or
