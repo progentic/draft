@@ -436,6 +436,14 @@ menu action are removed. This is implementation evidence only. `UX-47-017`
 remains open until a newly hashed package proves selection, filename handling,
 cancellation, failure recovery, and non-rebinding converted output.
 
+That replacement package was built from exact implementation commit
+`27fe00ac9cd83cb58107a8f978761a311dfdd1d3`. Its Apple Silicon executable
+SHA-256 is
+`fa72b0c71414f135cfba40f6216e50d0efb8f371bc8b8421341cf939c2319898`.
+Mechanical validation confirmed the embedded commit identity, bundle contract,
+tracked icon, and deterministic helper. Human validation is pending. This
+record closes no finding, RC row, or release gate.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
