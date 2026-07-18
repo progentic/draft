@@ -411,12 +411,22 @@ The replacement presentation candidate was built from exact head
 is `1634d6d24642705bb2f20cd01af3d7426da63c63473cf06c86c7c744a5594244`.
 Mechanical validation confirmed the embedded commit identity, Apple Silicon
 executable, deterministic helper, tracked icon, document registration, and
-bundle metadata. Human validation remains pending for explicit page surfaces,
-About and status-bar identity, clean and Unsaved title transitions, Save
-suggestions, cancellation, and post-save identity. This candidate does not
-implement format selection, future sidebar placeholders, spelling, or inferred
-pagination. `UX-47-013` through `UX-47-019`, `RC-07`, `GATE-47`, and all release
-gates remain open.
+bundle metadata. Human review confirmed that imported DOCX page breaks render
+with separate page-surface spacing, the bottom-right build identity is correct,
+and About DRAFT shows the expected version and build edition. That closes only
+the explicit page-surface defect. Clean and Unsaved title transitions, Save
+suggestions, cancellation, post-save identity, and complete fidelity remain
+pending.
+
+The same review confirmed that Save As does not offer `.draft`, `.docx`, and
+`.txt` format choices and that DOCX output remains a separate Export action.
+That is a failed multi-format workflow result, not a failure of the existing
+atomic DOCX exporter. This candidate does not implement format selection,
+future sidebar placeholders, spelling, or inferred pagination. PDF remains
+unavailable under accepted ADR-001 and cannot be added to this workflow without
+its prerequisite rendering policies and a separately accepted implementation
+boundary. `UX-47-013` and `UX-47-015` through `UX-47-019`, `RC-07`, `GATE-47`,
+and all release gates remain open.
 
 ### Findings And Dispositions
 
@@ -459,10 +469,10 @@ gates remain open.
 | UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 | UX-47-013 | UX-0 | Open - packaged fidelity retest pending | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Candidate `1634d6d2` mechanically contains the accepted run, paragraph, and page-break corrections. | Compare the source and exported output from the exact package in Word or LibreOffice and confirm the original source hash remains unchanged without guessed semantic headings or unsupported font substitution. |
-| UX-47-014 | UX-1 | Open - packaged retest pending | Artifact `91fe1ba9` retained substantially more source formatting, but rendered an explicit page break as a dashed marker inside one continuous page surface. Candidate `1634d6d2` mechanically contains the explicit page-surface correction. | Retest canonical page-break nodes as distinct page surfaces in the exact package. Do not infer pagination from layout, content flow, fonts, margins, or printer geometry. |
-| UX-47-015 | UX-1 | Open - packaged retest pending | Artifact `91fe1ba9` did not place Unsaved beside the document name and kept build identity in the document inspector. Candidate `1634d6d2` mechanically contains the title, About, and status-bar correction. | Retest basename plus Unsaved state in both in-window and native titles and exact build identity in About DRAFT and the bottom-right status bar. |
+| UX-47-014 | UX-1 | Closed - artifact 1634d6d2 | Artifact `91fe1ba9` rendered an explicit page break as a dashed marker inside one continuous page surface. Direct review of artifact `1634d6d2` confirmed that imported canonical page breaks now render with visible spacing between distinct page surfaces. | Closed only for explicit canonical page-break presentation. DRAFT still does not infer pagination from layout, content flow, fonts, margins, or printer geometry, and complete DOCX fidelity remains open. |
+| UX-47-015 | UX-1 | Open - partial artifact pass | Artifact `91fe1ba9` did not place Unsaved beside the document name and kept build identity in the document inspector. Direct review of artifact `1634d6d2` confirmed the bottom-right build identity and About DRAFT version/build edition, but did not complete clean and Unsaved title-transition evidence. | Retest basename plus Unsaved state in both in-window and native titles across new, imported, saved, modified, cancelled, and reopened states. |
 | UX-47-016 | UX-1 | Open - packaged retest pending | Save and Save As did not consistently suggest the current document basename; imported and new sessions could fall back to an unhelpful Untitled name. Candidate `1634d6d2` mechanically contains the Rust-owned suggestion correction. | Retest existing, imported, and new suggestions, state preservation on cancellation, and immediate basename updates after success. |
-| UX-47-017 | UX-1 | Open - governance and workflow review required | Save As cannot yet choose between native `.draft` and Word `.docx`, while Export DOCX remains a separate top-level action. | Define and accept one native format-selection workflow before replacing the current separate Save As and Export actions. Do not merge the two persistence meanings implicitly. |
+| UX-47-017 | UX-1 | Open - packaged failure; governance required | Direct review of artifact `1634d6d2` confirmed that Save As has no `.draft`, `.docx`, or `.txt` format selector and that DOCX output remains a separate Export action. | Define and accept one native format-selection workflow before replacing the current Save As and Export actions. Preserve distinct source-authority semantics for `.draft`, converted DOCX, and any future plain-text output. PDF remains excluded by ADR-001 until its rendering prerequisites and a separate implementation boundary are accepted. |
 | UX-47-018 | UX-2 | Open - future workspace scope | The proposed research and analysis sidebar regions are not present. | Keep unsupported capabilities absent until their commands and contracts exist. A later accepted workspace implementation may use clearly disabled placeholders without implying availability. |
 | UX-47-019 | UX-2 | Open - future governed capability | DRAFT has no spelling highlight, suggestion, or correction workflow. | Define dictionary source, locale, privacy, document-mark, ignore, correction, undo, accessibility, and failure behavior before implementation. |
 

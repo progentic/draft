@@ -1124,13 +1124,13 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-013 | UX-0 | Open - packaged fidelity retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-014 | UX-1 | Open - packaged retest pending |'
+    '| UX-47-014 | UX-1 | Closed - artifact 1634d6d2 |'
   require_document_text "${ledger}" \
-    '| UX-47-015 | UX-1 | Open - packaged retest pending |'
+    '| UX-47-015 | UX-1 | Open - partial artifact pass |'
   require_document_text "${ledger}" \
     '| UX-47-016 | UX-1 | Open - packaged retest pending |'
   require_document_text "${ledger}" \
-    '| UX-47-017 | UX-1 | Open - governance and workflow review required |'
+    '| UX-47-017 | UX-1 | Open - packaged failure; governance required |'
   require_document_text "${ledger}" \
     '| UX-47-018 | UX-2 | Open - future workspace scope |'
   require_document_text "${ledger}" \
