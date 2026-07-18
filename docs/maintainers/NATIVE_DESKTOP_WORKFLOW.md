@@ -10,7 +10,7 @@ frontend.
 ## Problem
 
 A toolbar alone does not provide a conventional desktop document workflow.
-Users expect New, Open, Close, Save, Save As, source replacement, and Export in
+Users expect New, Open, Close, Save, Save As, and source replacement in
 the macOS menu bar with familiar shortcuts and accurate disabled states.
 Separate menu and toolbar implementations would eventually behave differently
 and could bypass the Rust-owned document lifecycle.
@@ -23,10 +23,11 @@ workspace action dispatcher used by the toolbar. React sends only transient
 booleans back to Rust so native items reflect current availability. Paths,
 document contents, and persistence decisions never enter that state message.
 
-Save As uses the existing typed save command with `mode: save_as`. Rust opens
-the save panel, writes atomically, preserves the prior file, and rebinds the
-registry only after the replacement target is complete. The frontend receives
-the document ID, basename display name, and Save As flag, but no path.
+Save As uses the existing typed save command with `mode: save_as` and one
+closed DRAFT, Word, or plain-text format. Rust opens a format-constrained save
+panel. DRAFT output writes atomically and rebinds only after success. Word and
+plain-text output are converted copies that preserve document identity and
+dirty state. The frontend receives basename-level result data, but no path.
 
 Rust also chooses the save-panel filename suggestion. The typed request carries
 the basename display name and closed lifecycle origin that Rust originally
@@ -37,7 +38,7 @@ replace their source extension with `.draft`, and new documents use
 Save Back to Source uses the separate typed external-source command. Rust
 inspects current fidelity and source identity before React presents a warning.
 Only a confirmed exact or accepted-normalized replacement can write; ordinary
-Save and Export DOCX retain their existing meanings.
+Save and converted Save As copies retain their existing meanings.
 
 ## Trade-offs
 
@@ -53,7 +54,7 @@ dispatcher and state rules.
 
 The visible command bar stays intentionally compact. New remains a short
 icon-and-text action, Open, Save, and Close use familiar icons with accessible
-names, and Save As, Save Back to Source when applicable, Export DOCX,
+names, and Save As and Save Back to Source when applicable,
 References, and Text checks live in one labeled overflow menu. Document,
 connectivity, operation, and recovery state appear in the bottom status bar
 instead of competing with the document name in the header.
@@ -80,28 +81,23 @@ The File menu order is:
 5. Save - Command-S
 6. Save As… - Shift-Command-S
 7. Save Back to Source - no shortcut
-8. separator
-9. Export DOCX… - Shift-Command-E
 
 `src-tauri/src/desktop_menu.rs` owns menu construction, stable identifiers,
 initial enablement, shortcuts, and typed event emission.
-`set_native_menu_state` accepts exactly seven booleans. It cannot receive a path,
+`set_native_menu_state` accepts exactly six booleans. It cannot receive a path,
 document ID, source text, or arbitrary menu identifier.
 
 `useWorkspaceActions` is the only frontend policy layer that maps File menu and
-toolbar actions to document-session or export operations. It rejects disabled
+toolbar actions to document-session operations. It rejects disabled
 and stale actions before they reach a typed command. `WorkspaceCommandBar`
-contains no direct save, open, close, export, registry, or path authority.
+contains no direct save, open, close, conversion, registry, or path authority.
 
-Save and Save As are distinct requests. Save reuses the Rust-owned target when
-one exists. Save As always requests a new `.draft` target, preserves the old
-file, and makes the new target authoritative only after a successful atomic
-write. Cancellation and pre-replacement failure leave the current target and
-visible identity unchanged.
-
-Save As does not currently select an output format. A future native workflow
-may combine `.draft` and `.docx` choices only after its persistence, export,
-warning, and cancellation semantics are accepted. Export DOCX remains separate.
+Save and Save As are distinct requests. Save reuses the Rust-owned DRAFT target
+when one exists. Save As requests an explicit output format. DRAFT output
+preserves the old file and becomes authoritative only after successful atomic
+replacement. DOCX and plain-text output remain non-authoritative copies and do
+not clear unsaved work. Cancellation and failure leave the current target and
+visible identity unchanged. PDF is absent under ADR-001.
 
 Save Back is distinct from both. It is available only for a modified external
 DOCX whose typed source state may be writable. It first runs non-mutating
@@ -161,7 +157,8 @@ Save As source preservation, target rebinding, and cancellation. Frontend
 tests validate event payloads, title transitions, state responses, shared
 dispatch, stale-action rejection, busy-state behavior, visible label parity,
 overflow keyboard behavior, status placement, and the distinct Save, Save As,
-Save Back, and Export requests.
+and Save Back requests. Save As tests separately cover authoritative DRAFT and
+non-authoritative DOCX/plain-text outcomes.
 
 `scripts/check-invariants.sh` enforces the menu files, action set, shared
 dispatcher, path-free frontend boundary, and absence of direct toolbar document

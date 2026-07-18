@@ -7,11 +7,12 @@ import {
 } from "./documentEnvelope";
 import {
   type AtomicDocumentWriteError,
+  type DocxExportError,
   type DocumentRegistryError,
   isAtomicDocumentWriteError,
+  isDocxExportError,
   isDocumentRegistryError,
 } from "./documentErrors";
-import { type DocxExportErrorCode, isDocxExportError } from "./docxExport";
 import {
   type ExternalNormalizationFeature,
   isExternalNormalizationFeatureList,
@@ -40,7 +41,7 @@ export type ExternalSaveCommandError =
   | { code: "invalid_envelope" }
   | { code: "registry"; cause: DocumentRegistryError["code"] }
   | { code: "source_read"; cause: "read_failed" }
-  | { code: "compilation"; cause: DocxExportErrorCode }
+  | { code: "compilation"; cause: DocxExportError["code"] }
   | { code: "write_failed"; cause: AtomicDocumentWriteError["code"] }
   | { code: "replacement_rolled_back"; cause: ExternalSaveCommitFailureCode }
   | {

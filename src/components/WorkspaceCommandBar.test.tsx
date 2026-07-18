@@ -43,7 +43,7 @@ it("supports overflow keyboard navigation and restores trigger focus", async () 
     within(menu).getByRole("menuitem", { name: "Save As…" }),
   ));
   await user.keyboard("{ArrowDown}");
-  expect(document.activeElement).toBe(within(menu).getByRole("menuitem", { name: "Export DOCX…" }));
+  expect(document.activeElement).toBe(within(menu).getByRole("menuitemcheckbox", { name: "References" }));
   await user.keyboard("{End}");
   expect(document.activeElement).toBe(within(menu).getByRole("menuitemcheckbox", { name: "Text checks" }));
   await user.keyboard("{Escape}");
@@ -64,7 +64,7 @@ it("skips disabled overflow actions and exposes active panel state", async () =>
 
   expect((saveAs as HTMLButtonElement).disabled).toBe(true);
   await waitFor(() => expect(document.activeElement).toBe(
-    within(menu).getByRole("menuitem", { name: "Export DOCX…" }),
+    within(menu).getByRole("menuitemcheckbox", { name: "References" }),
   ));
   expect(references.getAttribute("aria-checked")).toBe("true");
 });
@@ -92,11 +92,7 @@ function renderCommandBar(
   activePanel: "references" | "text-review" | null = null,
 ) {
   return render(
-    <WorkspaceCommandBar
-      actions={actions}
-      activePanel={activePanel}
-      exportLabel="Export DOCX…"
-    />,
+    <WorkspaceCommandBar actions={actions} activePanel={activePanel} />,
   );
 }
 
@@ -112,7 +108,6 @@ function workspaceActions(
       save_document: true,
       save_document_as: true,
       save_back_to_source: false,
-      export_docx: true,
       open_references: true,
       run_text_checks: true,
       ...patch,

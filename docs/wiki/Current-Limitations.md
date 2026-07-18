@@ -87,8 +87,10 @@ Apple Silicon target.
   properties within documented resource limits.
 - Unsupported content fails instead of being silently omitted.
 - Citation nodes are not currently included in DOCX output.
-- Save As currently creates `.draft` files. DOCX remains a separate Export
-  action while a combined format-selection workflow is under review.
+- Save As offers DRAFT, Word, and plain-text output. Only DRAFT output becomes
+  the active authoritative document; Word and text are converted copies that
+  keep the current identity and unsaved state. Packaged validation of this
+  selector remains open.
 - PDF export is currently unavailable. Its rendering policy and implementation
   boundary require separate accepted work.
 

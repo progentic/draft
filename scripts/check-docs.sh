@@ -725,7 +725,9 @@ check_coverage_symbols() {
     'src-tauri/src/commands/document_create.rs|create_document'
     'src-tauri/src/commands/reference_library.rs|add_reference'
     'src-tauri/src/commands/text_analysis.rs|run_text_analysis'
-    'src-tauri/src/commands/docx_export.rs|export_document'
+    'src-tauri/src/commands/document_save.rs|save_document'
+    'src-tauri/src/documents/save_as.rs|SaveAsFormat'
+    'src-tauri/src/exports/plain_text.rs|compile_plain_text'
     'src/features/document-session/useDocumentSession.ts|useDocumentSession'
     'src-tauri/src/desktop_menu.rs|NativeMenuItems'
     'src-tauri/src/commands/native_menu.rs|set_native_menu_state'
@@ -818,7 +820,7 @@ check_configuration_index() {
     MAX_DOCX_IMPORT_XML_DEPTH
     MAX_DOCX_IMPORT_COMPRESSION_RATIO
     DOCUMENT_EXTENSIONS
-    DEFAULT_NEW_DOCUMENT_FILE_NAME
+    DEFAULT_NEW_DOCUMENT_STEM
   )
   local symbol
 
@@ -940,7 +942,7 @@ check_formatting_export_alignment() {
   require_document_text "${command}" 'run_formatting_review'
   require_document_text "${client}" 'runFormattingReview'
   require_document_text "${review}" 'stale result cannot'
-  require_document_text "${docx}" 'frontend wrapper, and visible control'
+  require_document_text "${docx}" 'unified typed Save As command'
   require_document_text "${pdf}" 'PDF export remains mechanically absent'
   require_document_text docs/wiki/Workspace.md 'not certify complete style-manual compliance'
   require_document_text docs/wiki/Current-Limitations.md 'citation-style declarations'
@@ -1066,7 +1068,7 @@ check_critical_path_documentation() {
   require_document_text "${guide}" 'adds no application command'
   require_document_text docs/ARCHITECTURE.md \
     'implemented application through the current Phase 47 checkpoint'
-  require_document_text docs/user/WORKSPACE.md '## Export DOCX'
+  require_document_text docs/user/WORKSPACE.md '## Save As And Converted Copies'
 }
 
 check_packaging_documentation() {
@@ -1152,7 +1154,7 @@ check_phase_47_manual_correction_documentation() {
   require_document_text docs/wiki/Current-Limitations.md \
     'Spelling highlights, suggestions, ignore rules, and correction controls'
   require_document_text docs/wiki/Current-Limitations.md \
-    "Save As currently creates \`.draft\` files."
+    'Save As offers DRAFT, Word, and plain-text output.'
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'
   require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
 }

@@ -219,12 +219,14 @@ workflow requests typed eligibility and explicit confirmation; it never turns
 the external source into a native `.draft` target.
 
 Save requests include a closed mode: `save` or `save_as`. Normal Save reuses an
-existing Rust-owned target and selects a target only for a new or imported
-document. Save As always opens the Rust-owned save panel. A successful Save As
-writes the selected `.draft` file atomically, preserves the old file, rebinds
-the registry to the new target, and returns only the document ID, basename
-display name, and `wasSaveAs: true`. Cancellation or failure leaves the current
-target, display name, and dirty state unchanged.
+existing Rust-owned target and selects a DRAFT target only for a new or imported
+document. Save As requires one closed `draft`, `docx`, or `txt` format before
+Rust opens a format-constrained save panel. A successful DRAFT Save As writes
+atomically, preserves the old file, and rebinds the registry only after the new
+target is complete. DOCX and plain-text Save As compile converted copies and
+return basename-only output data without changing the registry, document
+identity, display title, or dirty state. Cancellation or failure preserves all
+current session state.
 
 ## Frontend Boundary
 
@@ -247,6 +249,7 @@ The save wrapper accepts a snapshot, not a path.
 | :--- | :--- | :--- |
 | High | create/open/save/close commands | Coordinate one typed IPC request. |
 | Mid | persistence `open_document` / `save_document` / `save_document_as` | Enforce validation, registry, and lifecycle policy. |
+| Mid | `SaveAsFormat` / `compile_plain_text` | Enforce the closed output choice and deterministic plain-text conversion. |
 | Mid | `save_external_document` | Enforce same-format eligibility, source identity, atomic replacement, and rollback. |
 | Mid | `DocumentRegistry` | Own one handle, source path, and current snapshot. |
 | Low | dialog helpers / JSON / atomic writer | Perform native API, parsing, and filesystem mechanics. |

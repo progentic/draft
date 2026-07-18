@@ -2,144 +2,132 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const invokeMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: invokeMock,
-}));
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 
-import { saveDocument } from "./documentSave";
+import { saveDocument, saveDocumentAs } from "./documentSave";
 import type { DocumentEnvelopeSnapshot } from "./documentEnvelope";
 
 const DOCUMENT_ID = "00000000-0000-4000-8000-000000000001";
 const DISPLAY_NAME = "Research notes.draft";
 const ORIGIN = "opened_draft" as const;
 
-describe("saveDocument", () => {
+describe("document save IPC", () => {
   beforeEach(() => {
     invokeMock.mockReset();
   });
 
-  it.each(["save", "save_as"] as const)("sends the explicit %s request to Rust", async (mode) => {
-    const snapshot = envelope();
-    invokeMock.mockResolvedValue({
-      status: "saved",
-      documentId: DOCUMENT_ID,
-      displayName: "Research notes.draft",
-      wasSaveAs: true,
-    });
+  it("sends a path-free authoritative Save request", async () => {
+    invokeMock.mockResolvedValue(draftSaved(false));
 
-    await expect(saveDocument(snapshot, mode, DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "saved",
-      documentId: DOCUMENT_ID,
-      displayName: "Research notes.draft",
-      wasSaveAs: true,
-    });
+    await expect(saveDocument(envelope(), DISPLAY_NAME, ORIGIN)).resolves.toEqual(
+      draftSaved(false),
+    );
     expect(invokeMock).toHaveBeenCalledWith("save_document", {
-      request: { displayName: DISPLAY_NAME, mode, origin: ORIGIN, snapshot },
+      request: {
+        displayName: DISPLAY_NAME,
+        mode: "save",
+        origin: ORIGIN,
+        snapshot: envelope(),
+      },
     });
   });
 
-  it("preserves user cancellation", async () => {
+  it.each(["draft", "docx", "txt"] as const)(
+    "sends an explicit %s Save As format without a path",
+    async (format) => {
+      invokeMock.mockResolvedValue(
+        format === "draft" ? draftSaved(true) : converted(format),
+      );
+
+      await saveDocumentAs(envelope(), DISPLAY_NAME, ORIGIN, format);
+
+      expect(invokeMock).toHaveBeenCalledWith("save_document", {
+        request: {
+          displayName: DISPLAY_NAME,
+          format,
+          mode: "save_as",
+          origin: ORIGIN,
+          snapshot: envelope(),
+        },
+      });
+      expect(JSON.stringify(invokeMock.mock.calls)).not.toContain("/private/");
+    },
+  );
+
+  it("preserves converted-output identity semantics", async () => {
+    invokeMock.mockResolvedValue(converted("docx"));
+
+    await expect(
+      saveDocumentAs(envelope(), DISPLAY_NAME, ORIGIN, "docx"),
+    ).resolves.toEqual(converted("docx"));
+  });
+
+  it("preserves cancellation", async () => {
     invokeMock.mockResolvedValue({ status: "cancelled" });
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "cancelled",
-    });
-  });
-
-  it("rejects an invalid save response", async () => {
-    invokeMock.mockResolvedValue({
-      status: "saved",
-      documentId: "not-a-uuid",
-      displayName: "Research notes.draft",
-      wasSaveAs: true,
-    });
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "invalid-response" },
-    });
+    await expect(
+      saveDocumentAs(envelope(), DISPLAY_NAME, ORIGIN, "txt"),
+    ).resolves.toEqual({ status: "cancelled" });
   });
 
   it.each([
-    ["missing display name", { status: "saved", documentId: DOCUMENT_ID, wasSaveAs: true }],
-    ["path-like display name", { status: "saved", documentId: DOCUMENT_ID, displayName: "/private/research.draft", wasSaveAs: true }],
-    ["missing save mode", { status: "saved", documentId: DOCUMENT_ID, displayName: "research.draft" }],
-  ])("rejects a saved response with %s", async (_description, response) => {
+    { ...draftSaved(true), documentId: "not-a-uuid" },
+    { ...draftSaved(true), displayName: "/private/research.draft" },
+    { ...draftSaved(true), authoritativeIdentityChanged: false },
+    { ...converted("docx"), outputFormat: "pdf" },
+    { ...converted("txt"), dirtyStateChanged: true },
+    { ...converted("txt"), path: "/private/output.txt" },
+  ])("rejects malformed or path-bearing responses", async (response) => {
     invokeMock.mockResolvedValue(response);
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "invalid-response" },
-    });
+    await expect(
+      saveDocumentAs(envelope(), DISPLAY_NAME, ORIGIN, "txt"),
+    ).resolves.toEqual({ status: "error", error: { type: "invalid-response" } });
   });
 
-  it("preserves typed registry failures", async () => {
-    const error = { code: "registry", cause: { code: "registry_unavailable" } };
+  it.each([
+    { code: "registry", cause: { code: "registry_unavailable" } },
+    { code: "invalid_target" },
+    { code: "save_as_target", cause: { code: "extension_mismatch" } },
+    { code: "write_failed", cause: { code: "replace_target" } },
+    { code: "durability_uncertain" },
+    { code: "docx_conversion", cause: { code: "unsupported_document_content", path: { indexes: [0] } } },
+    { code: "plain_text_conversion", cause: { code: "output_too_large" } },
+  ])("preserves typed command failure $code", async (error) => {
     invokeMock.mockRejectedValue(error);
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "command", error },
-    });
+    await expect(
+      saveDocumentAs(envelope(), DISPLAY_NAME, ORIGIN, "docx"),
+    ).resolves.toEqual({ status: "error", error: { type: "command", error } });
   });
 
-  it("preserves source-path ownership failures", async () => {
-    const error = { code: "registry", cause: { code: "source_path_in_use" } };
-    invokeMock.mockRejectedValue(error);
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "command", error },
-    });
-  });
-
-  it("preserves a typed invalid first-save target", async () => {
-    invokeMock.mockRejectedValue({ code: "invalid_target" });
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "command", error: { code: "invalid_target" } },
-    });
-  });
-
-  it("preserves typed atomic-write failures", async () => {
-    const error = { code: "write_failed", cause: { code: "replace_target" } };
-    invokeMock.mockRejectedValue(error);
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "command", error },
-    });
-  });
-
-  it("preserves uncertain durability failures", async () => {
-    const error = { code: "durability_uncertain" };
-    invokeMock.mockRejectedValue(error);
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "command", error },
-    });
-  });
-
-  it("rejects malformed atomic-write failures", async () => {
-    invokeMock.mockRejectedValue({ code: "write_failed", cause: { code: "unknown_stage" } });
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
-      status: "error",
-      error: { type: "transport" },
-    });
-  });
-
-  it("classifies unknown failures without leaking details", async () => {
+  it("classifies malformed and unknown failures without leaking details", async () => {
     invokeMock.mockRejectedValue(new Error("private filesystem detail"));
-
-    await expect(saveDocument(envelope(), "save", DISPLAY_NAME, ORIGIN)).resolves.toEqual({
+    await expect(saveDocument(envelope(), DISPLAY_NAME, ORIGIN)).resolves.toEqual({
       status: "error",
       error: { type: "transport" },
     });
   });
 });
+
+function draftSaved(wasSaveAs: boolean) {
+  return {
+    status: "draft_saved",
+    documentId: DOCUMENT_ID,
+    displayName: DISPLAY_NAME,
+    wasSaveAs,
+    authoritativeIdentityChanged: wasSaveAs,
+    dirtyStateCleared: true,
+  } as const;
+}
+
+function converted(format: "docx" | "txt") {
+  return {
+    status: "converted_output",
+    displayName: `Research notes.${format}`,
+    outputFormat: format,
+    bytesWritten: format === "docx" ? 42 : 0,
+    authoritativeIdentityChanged: false,
+    dirtyStateChanged: false,
+  } as const;
+}
 
 function envelope(): DocumentEnvelopeSnapshot {
   return {

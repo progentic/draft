@@ -34,7 +34,6 @@ pub(crate) enum OpenDocumentError {
 #[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "code", rename_all = "snake_case")]
 pub(crate) enum SaveDocumentError {
-    UnsupportedFileLocation,
     InvalidTarget,
     InvalidEnvelope { cause: DocumentEnvelopeError },
     SerializationFailed,

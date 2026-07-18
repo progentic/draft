@@ -3,7 +3,6 @@ import type { Dispatch, KeyboardEvent, RefObject, SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
-  Download,
   FileCheck2,
   FilePlus2,
   FolderOpen,
@@ -22,7 +21,6 @@ import type {
 interface WorkspaceCommandBarProps {
   activePanel: "references" | "text-review" | null;
   actions: WorkspaceActions;
-  exportLabel: string;
 }
 
 export function WorkspaceCommandBar(props: WorkspaceCommandBarProps) {
@@ -127,13 +125,6 @@ function OverflowMenu(
           onClose={props.onClose}
         />
       ) : null}
-      <OverflowItem
-        action="export_docx"
-        actions={props.actions}
-        icon={Download}
-        label={props.exportLabel}
-        onClose={props.onClose}
-      />
       <span className="workspace-overflow__separator" role="separator" />
       <OverflowItem
         action="open_references"

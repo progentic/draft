@@ -203,7 +203,7 @@ so Phase 38 adds no visible diagnostics or support workflow. See
 ## Phase 46 workflow wrappers
 
 Phase 46 adds strict clients for `create_document`, `close_document`, `add_reference`,
-`list_references`, `run_text_analysis`, and `export_document`, and extends the
+`list_references`, and `run_text_analysis`, and extends the
 existing Open client with exact `opened_draft`, `imported_text`, and `cancelled`
 outcomes. `imported_text` includes a closed `plain_text` or `markdown` value so
 the visible workflow can disclose literal Markdown behavior without inferring
@@ -218,6 +218,14 @@ save disposition. Unknown classes, unordered or duplicate feature identifiers,
 absolute or relative paths, raw XML, source bytes, and extra fields make the
 entire response invalid. Nested DOCX command failures retain their typed
 malformed, unsafe, unsupported, and lossy distinctions without raw details.
+
+`documentSave.ts` now owns both ordinary DRAFT Save and the closed Save As
+choice. Its exact format set is `draft`, `docx`, and `txt`. A `draft_saved`
+result may update authoritative identity and clears dirty state only after Rust
+confirms persistence. A `converted_output` result contains a basename, format,
+and byte count while requiring both authority and dirty state to remain
+unchanged. `SaveAsDialog` presents the choice but receives no path and cannot
+add a format. PDF is not part of this boundary.
 
 `externalDocumentSave.ts` owns the same-format writer client. It sends one
 current envelope and one closed inspect, exact-save, normalization-acceptance,
@@ -254,15 +262,15 @@ fingerprints, XML, or package bytes.
 ## Native menu wrappers
 
 `nativeMenu.ts` owns both Phase 48 native boundaries. It validates the closed
-seven-action `draft://native-menu-action` event before feature code receives
-it, and it sends the path-free seven-boolean request for
+six-action `draft://native-menu-action` event before feature code receives it,
+and it sends the path-free six-boolean request for
 `set_native_menu_state`.
 Malformed events, malformed responses, the closed `menu_update_failed` error,
 and unknown transport failures remain distinct.
 
 `useWorkspaceActions` consumes this wrapper. Native and visible actions use the
 same dispatcher, and that dispatcher checks current availability before calling
-the existing document-session or DOCX-export operation. The wrapper exposes no
+the existing document-session operation. The wrapper exposes no
 filesystem path or native menu object to React.
 
 `windowTitle.ts` owns the separate `set_window_title` client. Its request is

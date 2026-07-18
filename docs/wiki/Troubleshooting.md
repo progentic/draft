@@ -154,15 +154,15 @@ run locally.
 An invalid response or unfinished check leaves the document unchanged. Use the
 same **Check document** control to retry.
 
-## DOCX Export Failed
+## Word Save As Failed
 
-If the file location is invalid, choose **Export DOCX** again and select a
-writable `.docx` destination.
+If the file location is invalid, choose **Save As…**, select **Word document**
+again, and choose a writable `.docx` destination.
 
 Unsupported document content and resource-limit failures require editing the
 document before retrying. Citation nodes are not currently included in DOCX
-output; remove them before export when that message appears. Export failure
-does not change the DRAFT source document.
+output; remove them before saving the copy when that message appears. Failure
+does not change the DRAFT source document or active document identity.
 
 Export always reports pending and final state in the temporary notice below the
 document controls. A completed export names success; cancellation and every

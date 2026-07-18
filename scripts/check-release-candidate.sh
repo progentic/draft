@@ -233,7 +233,8 @@ check_live_blocker_evidence() {
   require_literal 'useDocumentSession' src/app/DraftWorkspace.tsx
   require_literal 'ReferenceLibraryPanel' src/app/DraftWorkspace.tsx
   require_literal 'TextAnalysisPanel' src/app/DraftWorkspace.tsx
-  require_literal 'useDocxExport' src/app/DraftWorkspace.tsx
+  require_literal 'SaveAsDialog' src/app/DraftWorkspace.tsx
+  require_literal 'saveDocumentAs' src/features/document-session/useDocumentSession.ts
   require_literal 'five local text checks' docs/wiki/Current-Limitations.md
   require_literal 'Citation nodes are not currently included in DOCX output.' \
     docs/wiki/Current-Limitations.md

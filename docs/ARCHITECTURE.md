@@ -720,19 +720,22 @@ keyboard shortcuts to share one state-aware frontend action dispatcher. File,
 identity, persistence, import, export, and source-path authority remain in
 Rust. Phase 48 implements the native File menu through Rust-owned menu items,
 typed events, a path-free state command, and the same frontend dispatcher used
-by the visible command bar. Save As selects and retains its replacement target
-in Rust and returns only document identity and basename display data. Rust also
-derives the native save-panel suggestion from that basename and the closed
-lifecycle origin it originally returned. The suggestion is never path
-authority, and React receives no selected path.
+  by the visible command bar. Save As presents one closed choice of DRAFT,
+  Word, or plain text, then Rust selects and validates the format-specific
+  target. A DRAFT save rebinds the authoritative document only after atomic
+  persistence. Word and plain-text output are converted copies: they do not
+  rebind the document or clear its dirty state. Rust derives each native-panel
+  suggestion from basename-only display data and the closed lifecycle origin it
+  originally returned. The suggestion is never path authority, and React
+  receives no selected path.
 
 Phase 47 now adds a bounded Rust-owned DOCX reader and external-source
 registration. ZIP/XML validation and paragraph conversion complete before a
 live handle is registered. Rust retains the path and fingerprints; React
 receives only a basename, format, closed fidelity result, and same-format save
-disposition. Imported DOCX content has no native save target. Save writes a new
-`.draft` file, Export DOCX writes a separate copy, and Save Back to Source is a
-separate confirmed source-replacement operation.
+  disposition. Imported DOCX content has no native save target. Save writes a
+  new `.draft` file, Save As can create a separate DOCX or plain-text copy, and
+  Save Back to Source is a separate confirmed source-replacement operation.
 
 The accepted import mapping preserves explicit supported font family and size,
 bold, italic, underline, paragraph alignment, spacing, indentation, semantic

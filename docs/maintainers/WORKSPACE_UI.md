@@ -4,7 +4,7 @@
 
 The frontend exposes one local writing workspace with explicit document
 lifecycle, manual references and citation insertion, formatting review, five
-local text checks, DOCX export, an outline, statistics, and Rust runtime status.
+local text checks, DOCX output through Save As, an outline, statistics, and Rust runtime status.
 Rust remains authoritative for persistence, filesystem dialogs, reference
 storage, helper execution, and export.
 
@@ -146,7 +146,7 @@ can honor; otherwise the disabled visual state is sufficient.
 | Formatting review | `FormattingReviewPanel`, `useFormattingReview` | Runs bounded checks and owns transient review state and explicit actions. |
 | References | `ReferenceLibraryPanel` | Adds bounded manual records and inserts existing citation nodes. |
 | Text checks | `TextAnalysisPanel`, `textAnalysisSnapshot` | Runs five fixed checks, invalidates stale generations, and locates passages. |
-| DOCX export | `useDocxExport` | Presents Rust-owned export and source-safety results. |
+| Save As output | `useDocumentSession`, `SaveAsDialog` | Presents the closed DRAFT, DOCX, or text choice and Rust-owned results. |
 | Inspector | `DocumentInspector` | Derives document word, character, and heading metrics only. |
 | Native title | `useWindowTitle`, `windowTitle.ts`, `set_window_title` | Mirrors validated basename and Unsaved state into the native window without receiving a path. |
 | Runtime session | `useRuntimeStatus`, `startRuntimeStatusSession` | Coordinates the typed command and event wrappers without adding durable state. |
@@ -250,26 +250,25 @@ and basename display identity.
 
 The native File menu and visible command bar use the same action identifiers
 and `useWorkspaceActions` dispatcher. Their labels are New Document, Open…,
-Close, Save, Save As…, Save Back to Source, and Export DOCX…. The File menu uses
-Command-N, Command-O, Command-W, Command-S, Shift-Command-S, and
-Shift-Command-E; Save Back has no shortcut.
+Close, Save, Save As…, and Save Back to Source. The File menu uses Command-N,
+Command-O, Command-W, Command-S, and Shift-Command-S; Save Back has no shortcut.
 
-The dispatcher derives availability from the current document operation and
-DOCX export state. It checks availability again when a native event arrives, so
+The dispatcher derives availability from the current document operation. It
+checks availability again when a native event arrives, so
 an event emitted before a state update cannot begin a stale operation. While a
-save, open, close, create, or export operation is pending, competing document
-and workflow-panel actions remain unavailable. Starting a non-export document
-action clears settled export feedback so the active operation's pending and
-terminal notice remains authoritative.
+save, open, close, create, or conversion operation is pending, competing
+document and workflow-panel actions remain unavailable. Starting a new
+document operation replaces settled feedback so its pending and terminal notice
+remains authoritative.
 
-Rust owns native menu objects and receives a bounded seven-boolean state request.
+Rust owns native menu objects and receives a bounded six-boolean state request.
 No path, content, or document identity enters the menu state. Invalid events or
 state-update failures leave the visible toolbar available with bounded recovery
 copy. See `NATIVE_DESKTOP_WORKFLOW.md` for the complete contract.
 
 The command bar keeps New visible with a short label. Open, Save, and Close are
 icon-only controls with accessible names and tooltips. Save As, conditional Save
-Back to Source, Export DOCX, References, and Text checks are in the More
+Back to Source, References, and Text checks are in the More
 document actions menu. The menu skips disabled actions during keyboard
 navigation, supports Arrow, Home, End, and Escape, and returns focus to its
 trigger. Every item still uses the shared dispatcher; the compact layout adds
@@ -357,7 +356,7 @@ contain no raw path, source text, helper output, database detail, or internal
 error name. See `PHASE46_WORKFLOWS.md`.
 
 Phase 47 uses one conditional operation notice below the document command bar
-for Open and DOCX Export pending and terminal outcomes. The notice is absent
+for Open and Save As pending and terminal outcomes. The notice is absent
 when no result exists; compact document, connectivity, and active-operation
 state remains in the bottom status bar.
 
@@ -445,7 +444,7 @@ bash scripts/verify.sh
   indentation controls are not implemented. The paragraph-formatting finding
   remains implementation- and evidence-blocked and must not become an active
   control until the accepted contract is fully implemented and tested.
-- DOCX export rejects citation nodes and other unsupported content.
+- Word Save As rejects citation nodes and other unsupported content.
 - The native File menu, compact document controls, bottom status bar, and
   tracked purple icon chain are implemented. Exact artifact `75373ffb` passed
   direct review of overflow interaction, menu parity, busy states, Save As,

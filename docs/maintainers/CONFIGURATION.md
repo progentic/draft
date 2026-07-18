@@ -52,7 +52,7 @@ implementation choices that can change without altering one of those contracts.
 | Desktop icon paths | `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico` | `src-tauri/tauri.conf.json` | Exact assets embedded by the app package path. |
 | Canonical icon source | `assets/DRAFT_Logo.png`; SHA-256 `ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043` | `scripts/check-packaging.sh` | Sole source artwork for Tauri and in-window icon derivatives. |
 | `DOCUMENT_EXTENSIONS` | `draft`, `json` | `documents/dialog.rs` | Native open-dialog extension filters. |
-| `DEFAULT_NEW_DOCUMENT_FILE_NAME` | `Untitled.draft` | `commands/document_save.rs` | Native Save suggestion for a new document; imported and existing documents derive a bounded suggestion from their basename. |
+| `DEFAULT_NEW_DOCUMENT_STEM` | `Untitled` | `commands/document_save.rs` | Native Save/Save As suggestion stem for a new document; Rust adds the selected DRAFT, DOCX, or text extension. |
 
 ## Schemas And Persistence
 
@@ -115,6 +115,9 @@ database, Python, or credential-store probe. See
 | `PROVIDER_REQUEST_INTERVAL` | 1 second | `network/client.rs` | Minimum interval per metadata provider. |
 | `MAX_METADATA_RESPONSE_BYTES` | 1 MiB | `network/client.rs` | Maximum retained metadata response. |
 | `MAX_TEXT_IMPORT_BYTES` | 8 MiB | `documents/text_import.rs` | Maximum `.txt` or `.md` source read before a typed rejection. |
+| `MAX_TEXT_OUTPUT_BYTES` | 16 MiB | `exports/plain_text.rs` | Maximum deterministic UTF-8 Save As artifact before filesystem work. |
+| `MAX_TEXT_NODES` | 100,000 | `exports/plain_text.rs` | Maximum structural nodes traversed for one plain-text copy. |
+| `MAX_TEXT_DEPTH` | 64 | `exports/plain_text.rs` | Maximum structural nesting traversed for one plain-text copy. |
 | `MAX_RATE_LIMIT_BACKOFF` | 60 seconds | `network/client.rs` | Maximum bounded HTTP 429 delay. |
 | `STABLE_WRITE_DEBOUNCE` | 1 second | `imports/pdf.rs` | Required quiet period before watched PDF confirmation. |
 | `MAX_EXTERNAL_URL_LENGTH` | 2,048 characters | `research/external_access.rs` | Maximum accepted browser-handoff URL. |

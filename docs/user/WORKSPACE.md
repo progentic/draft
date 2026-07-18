@@ -4,7 +4,7 @@
 
 Use the compact document controls at the top of the workspace for common
 actions. Additional commands, including Save As, Save Back to Source when
-available, export, References, and Text checks, are available from the **More**
+available, References, and Text checks, are available from the **More**
 (`…`) menu. The same document actions are also available from the macOS
 **File** menu.
 
@@ -12,7 +12,7 @@ DRAFT shows the current document name and `Unsaved` state near the top of the
 workspace. Detailed document state, connectivity, active operations, and a
 compact build identity appear in the status bar at the bottom. A temporary
 notice directly below the document controls reports the
-pending, completed, cancelled, or failed result of Open, Save, and Export.
+pending, completed, cancelled, or failed result of Open, Save, and Save As.
 
 When New, Open, or Close would replace or discard unsaved work, DRAFT asks
 whether to save, discard the changes, or keep editing. There is no autosave or
@@ -33,8 +33,9 @@ the same safe Open workflow. The interface never displays the file's full
 path.
 
 An opened DOCX remains associated with its Rust-owned source identity. Ordinary
-**Save** creates a `.draft` document, and **Export DOCX…** creates a separate
-copy. **Save Back to Source** is available only for modified DOCX content that
+**Save** creates a `.draft` document. **Save As…** can create a new DRAFT
+document, a separate Word copy, or a separate plain-text copy. **Save Back to Source**
+is available only for modified DOCX content that
 DRAFT can replace safely. DRAFT checks the current source before showing an
 overwrite warning. Exact replacement and accepted normalization both require
 confirmation. A normalized replacement lists the exact supported change before
@@ -51,11 +52,13 @@ does not automatically calculate page boundaries from text flow, margins,
 fonts, or printer settings, so content without an explicit break remains on
 one continuous surface.
 
-Use **Save As…** to choose a new `.draft` file while preserving the previous
-file. After it succeeds, later Save operations use the new file. Cancelling or
-failing Save As leaves the current filename and file unchanged. The save panel
-suggests the current DRAFT basename, an imported source basename with `.draft`,
-or `Untitled.draft` for a new document.
+Use **Save As…** and choose **DRAFT document**, **Word document**, or **Plain
+text**. A DRAFT result becomes the active document only after the atomic write
+succeeds; later Save operations use it. Word and plain-text results are copies:
+they do not change the active filename or clear unsaved edits. Cancelling or
+failing Save As leaves the current document unchanged. Rust suggests the
+current basename with the selected extension, an imported source basename, or
+a bounded `Untitled` name.
 
 ## Write And Format
 
@@ -117,17 +120,20 @@ Text checks run locally and do not use a provider, credentials, or network
 transmission. They do not generate text, evaluate ideas, or determine author
 intent.
 
-## Export DOCX
+## Save As And Converted Copies
 
-Choose **Export DOCX…**, select a destination in the system dialog, and wait for
-the completion message. Export does not change the DRAFT source document.
+Choose **Save As…**, select **Word document**, and choose a destination. Wait
+for the completion message. The Word copy does not change the DRAFT source or
+the active document identity. Choose **Plain text** for deterministic UTF-8
+text with visible paragraphs, list markers, block quotes, page breaks, and
+citation keys. Formatting is intentionally absent from the text copy.
 
-DOCX export supports the documented basic writing subset, including the eleven
+Word Save As supports the documented basic writing subset, including the eleven
 font families and whole point sizes from 8 through 72. DRAFT does not silently
-discard unsupported content. Export either preserves supported content or
+discard unsupported content. Conversion either preserves supported content or
 reports a clear failure or limitation. Citation nodes are not currently
 included in DOCX output. Documents containing citation nodes must be reviewed
-before export, and DRAFT may reject the export rather than omit them silently.
+before conversion, and DRAFT may reject the copy rather than omit them silently.
 PDF export remains unavailable pending its separate rendering policy and
 implementation work.
 
@@ -136,7 +142,7 @@ implementation work.
 Use the connectivity control in the bottom status bar to switch the current
 session between online and offline modes. DRAFT blocks new metadata requests
 and research links before external work begins. Editing, formatting review,
-manual references, local text checks, saving, and DOCX export remain local.
+manual references, local text checks, saving, and converted copies remain local.
 
 The setting resets to online when DRAFT restarts. It does not indicate whether
 the operating system has a connection and does not retry or queue requests.
@@ -144,9 +150,9 @@ the operating system has a connection and does not retry or queue requests.
 ## Keyboard And Status
 
 The File menu uses Command-N for New Document, Command-O for Open, Command-W
-for Close, Command-S for Save, Shift-Command-S for Save As, and Shift-Command-E
-for Export DOCX. Save Back to Source has no shortcut. Unavailable actions are
-disabled while another document or export operation is pending.
+for Close, Command-S for Save, and Shift-Command-S for Save As. Save Back to
+Source has no shortcut. Unavailable actions are
+disabled while another document or save operation is pending.
 
 Press Tab to move through the document controls, formatting controls, editor,
 panels, and bottom status bar. Icon-only controls expose accessible names and

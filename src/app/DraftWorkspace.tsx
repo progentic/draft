@@ -11,9 +11,9 @@ import { DraftEditor, useDraftEditor } from "../editor/DraftEditor";
 import { EditorToolbar } from "../editor/EditorToolbar";
 import { useConnectivityMode } from "../features/connectivity/useConnectivityMode";
 import { UnsavedChangesDialog } from "../features/document-session/UnsavedChangesDialog";
+import { SaveAsDialog } from "../features/document-session/SaveAsDialog";
 import { useDocumentSession } from "../features/document-session/useDocumentSession";
 import { SaveBackToSourceDialog } from "../features/external-source-save/SaveBackToSourceDialog";
-import { useDocxExport } from "../features/docx-export/useDocxExport";
 import { FormattingReviewPanel } from "../features/formatting-review/FormattingReviewPanel";
 import { ReferenceLibraryPanel } from "../features/references/ReferenceLibraryPanel";
 import { useRuntimeStatus } from "../features/runtime-status/useRuntimeStatus";
@@ -28,7 +28,6 @@ export function DraftWorkspace() {
   const connectivity = useConnectivityMode();
   const runtimeStatus = useRuntimeStatus();
   const documentSession = useDocumentSession(editor);
-  const docxExport = useDocxExport(documentSession);
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>(null);
   const windowTitleFeedback = useWindowTitle(
@@ -39,13 +38,11 @@ export function DraftWorkspace() {
   const togglePanel = useCallback((panel: Exclude<WorkspacePanel, null>) => {
     setActivePanel((active) => (active === panel ? null : panel));
   }, []);
-  const workspaceActions = useWorkspaceActions(documentSession, docxExport, togglePanel);
+  const workspaceActions = useWorkspaceActions(documentSession, togglePanel);
   const operationMessage = workspaceActions.feedback ||
-    docxExport.feedback ||
     documentSession.feedback ||
     windowTitleFeedback;
-  const operationPending =
-    docxExport.disabled || documentSession.operation !== "ready";
+  const operationPending = documentSession.operation !== "ready";
 
   return (
     <main className="workspace-shell" aria-label="DRAFT workspace">
@@ -58,7 +55,6 @@ export function DraftWorkspace() {
       <WorkspaceCommandBar
         actions={workspaceActions}
         activePanel={activePanel === "references" || activePanel === "text-review" ? activePanel : null}
-        exportLabel={docxExport.label}
       />
       <WorkspaceOperationNotice
         message={operationMessage}
@@ -74,7 +70,6 @@ export function DraftWorkspace() {
       <WorkspaceStatusBar
         connectivityState={connectivity.state}
         documentStatus={documentSession.statusLabel}
-        exportPending={docxExport.disabled}
         operation={documentSession.operation}
         runtimeStatus={runtimeStatus}
         onRefreshConnectivity={() => void connectivity.refresh()}
@@ -84,6 +79,7 @@ export function DraftWorkspace() {
         action={documentSession.pendingAction}
         onResolve={documentSession.resolvePendingAction}
       />
+      <SaveAsDialog open={documentSession.saveAsOpen} onResolve={documentSession.resolveSaveAs} />
       <SaveBackToSourceDialog
         confirmation={documentSession.saveBackConfirmation}
         onResolve={documentSession.resolveSaveBack}

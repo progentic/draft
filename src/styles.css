@@ -894,6 +894,32 @@ button:focus-visible,
   gap: 8px;
 }
 
+.save-as-dialog__field {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 0;
+  color: #343b37;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.save-as-dialog__field select {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  color: #252b28;
+  background: #ffffff;
+  border: 1px solid #aeb7b1;
+  border-radius: 5px;
+  font: inherit;
+  font-weight: 500;
+}
+
+.confirmation-dialog .save-as-dialog__note {
+  min-height: 42px;
+  margin-bottom: 16px;
+}
+
 .formatting-review-panel[hidden] {
   display: none;
 }

@@ -27,6 +27,7 @@ main() {
   check_text_analysis_contract
   check_formatting_contract
   check_docx_export_contract
+  check_save_as_format_contract
   check_docx_import_contract
   check_phase_47_manual_gate_corrections
   check_document_envelope_contract
@@ -850,9 +851,7 @@ check_docx_export_authority() {
   local model_path="$1"
   local package_path="$2"
   local command_path
-  local frontend_path
   local command_scan_paths=()
-  local frontend_scan_paths=()
 
   assert_no_matches "Phase 32 persistence or direct filesystem authority" \
     '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
@@ -866,28 +865,64 @@ check_docx_export_authority() {
     'format!\s*\(' "${model_path}" "${package_path}"
   for command_path in src-tauri/src/commands/*.rs; do
     case "${command_path}" in
-      src-tauri/src/commands/docx_export.rs|src-tauri/src/commands/mod.rs) ;;
+      src-tauri/src/commands/document_save.rs|src-tauri/src/commands/mod.rs) ;;
       *) command_scan_paths[${#command_scan_paths[@]}]="${command_path}" ;;
     esac
   done
-  while IFS= read -r frontend_path; do
-    case "${frontend_path}" in
-      # Phase 48 permits the closed action identifier only in its typed event,
-      # shared dispatcher, visible command, and colocated tests.
-      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/components/WorkspaceCommandBar.test.tsx|src/features/workspace-actions/useWorkspaceActions.ts|src/features/workspace-actions/useWorkspaceActions.test.tsx) ;;
-      *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
-    esac
-  done < <(rg --files src)
   assert_no_matches "Phase 46 unowned application or command export authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
     src-tauri/src/application "${command_scan_paths[@]}"
   assert_no_matches "Phase 46 unowned frontend DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
-    "${frontend_scan_paths[@]}"
-  require_source_pattern 'export_docx(document, &target)' src-tauri/src/commands/docx_export.rs
-  require_source_pattern 'export async function exportDocument' src/ipc/docxExport.ts
+    src
+  require_source_pattern 'compile_docx(&document)' src-tauri/src/commands/document_save.rs
+  require_source_pattern 'write_docx_artifact(&artifact, &target)' \
+    src-tauri/src/commands/document_save.rs
+  require_source_pattern 'export function saveDocumentAs' src/ipc/documentSave.ts
   assert_no_matches "Phase 32 Python DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' python
+}
+
+check_save_as_format_contract() {
+  local rust_format='src-tauri/src/documents/save_as.rs'
+  local rust_command='src-tauri/src/commands/document_save.rs'
+  local text_export='src-tauri/src/exports/plain_text.rs'
+  local client='src/ipc/documentSave.ts'
+  local dialog='src/features/document-session/SaveAsDialog.tsx'
+  local workflow_tests='src/ipc/Phase46Workflows.test.tsx'
+
+  require_file "${rust_format}"
+  require_file "${text_export}"
+  require_file "${dialog}"
+  require_file src/features/document-session/SaveAsDialog.test.tsx
+  require_source_pattern 'const OUTPUT_EXTENSIONS: [&str; 3] = ["draft", "docx", "txt"];' \
+    "${rust_format}"
+  require_source_pattern 'for rejected in ["pdf", "md", "DOCX", "", "unknown"]' \
+    "${rust_format}"
+  require_source_pattern 'export const SAVE_AS_FORMATS = ["draft", "docx", "txt"] as const;' \
+    "${client}"
+  require_source_pattern 'SAVE_AS_FORMATS.map' "${dialog}"
+  require_source_pattern 'SaveAsFormat::Draft => save_as_draft' "${rust_command}"
+  require_source_pattern 'SaveAsFormat::Docx => save_as_docx' "${rust_command}"
+  require_source_pattern 'SaveAsFormat::Txt => save_as_text' "${rust_command}"
+  require_source_pattern 'authoritative_identity_changed: false' "${rust_command}"
+  require_source_pattern 'dirty_state_changed: false' "${rust_command}"
+  require_source_pattern 'value.authoritativeIdentityChanged === false' "${client}"
+  require_source_pattern 'value.dirtyStateChanged === false' "${client}"
+  require_rust_test converted_outputs_do_not_rebind_registered_draft "${rust_command}"
+  require_rust_test draft_save_as_rebinds_only_after_atomic_persistence "${rust_command}"
+  require_rust_test plain_text_flattening_is_deterministic_and_visible_only "${text_export}"
+  require_source_pattern 'offers only the three supported formats and excludes PDF' \
+    src/features/document-session/SaveAsDialog.test.tsx
+  require_source_pattern 'creates a DOCX copy through Save As with visible source-safety feedback' \
+    "${workflow_tests}"
+  assert_no_matches 'standalone DOCX command or frontend workflow' \
+    '\b(?:export_document|useDocxExport|exportDocument|file\.export_docx)\b' \
+    src-tauri/src src
+  assert_no_matches 'Save As path authority exposed to React' \
+    '\b(?:sourcePath|targetPath|absolutePath|filePath)\b' \
+    "${client}" "${dialog}"
+  printf 'PASS Phase 47 typed Save As format contract\n'
 }
 
 check_docx_import_contract() {
@@ -1152,13 +1187,13 @@ check_phase_47_manual_gate_corrections() {
 
   require_source_pattern 'role="status"' "${operation_notice}"
   require_source_pattern 'aria-live="polite"' "${operation_notice}"
-  require_source_pattern 'clearFeedback: () => void' \
-    src/features/docx-export/useDocxExport.ts
-  require_source_pattern 'docxExport.clearFeedback()' \
-    src/features/workspace-actions/useWorkspaceActions.ts
+  require_source_pattern '| "choosing_save_format"' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'Preparing a Word copy' \
+    src/features/document-session/useDocumentSession.ts
   require_source_pattern 'shows a pending state before a selected DOCX resolves' \
     "${workflow_tests}"
-  require_source_pattern 'exports DOCX with visible completion and source-safety feedback' \
+  require_source_pattern 'creates a DOCX copy through Save As with visible source-safety feedback' \
     "${workflow_tests}"
   require_source_pattern 'presents the typed %s DOCX export failure' \
     "${workflow_tests}"
@@ -1794,7 +1829,8 @@ check_adr_003_accepted_guard() {
   require_source_pattern 'file.save_document' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.save_document_as' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.save_back_to_source' src-tauri/src/desktop_menu.rs
-  require_source_pattern 'file.export_docx' src-tauri/src/desktop_menu.rs
+  assert_no_matches 'ADR-003 retired standalone DOCX menu action' \
+    'file\.export_docx' src-tauri/src/desktop_menu.rs
   require_source_pattern 'commands::native_menu::set_native_menu_state' src-tauri/src/lib.rs
   require_source_pattern 'listenToNativeMenuActions' \
     src/features/workspace-actions/useWorkspaceActions.ts
@@ -2178,14 +2214,14 @@ check_async_native_dialog_boundary() {
     src-tauri/src
   require_source_pattern 'pub(crate) async fn select_open_document(' "${dialog_path}"
   require_source_pattern 'pub(crate) async fn select_save_document(' "${dialog_path}"
-  require_source_pattern 'pub(crate) async fn select_export_docx(' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn select_save_as_output(' "${dialog_path}"
   require_source_pattern '.pick_file(move |selected|' "${dialog_path}"
   require_source_pattern '.save_file(move |selected|' "${dialog_path}"
   require_source_pattern 'pub(crate) async fn open_document(' \
     src-tauri/src/commands/document_open.rs
   require_source_pattern 'pub(crate) async fn save_document(' \
     src-tauri/src/commands/document_save.rs
-  require_source_pattern 'select_save_document(&app_handle, &suggested_file_name)' \
+  require_source_pattern 'select_save_document(app_handle, &suggested)' \
     src-tauri/src/commands/document_save.rs
   assert_no_matches 'Save command avoids open dialog selector' \
     'select_open_document' \
@@ -2194,10 +2230,12 @@ check_async_native_dialog_boundary() {
     src-tauri/src/documents/persistence.rs
   require_source_pattern 'was_save_as: bool' \
     src-tauri/src/documents/persistence.rs
-  require_source_pattern 'displayName: string; wasSaveAs: boolean' \
+  require_source_pattern 'status: "draft_saved"' \
     src/ipc/documentSave.ts
-  require_source_pattern 'pub(crate) async fn export_document(' \
-    src-tauri/src/commands/docx_export.rs
+  require_source_pattern 'status: "converted_output"' \
+    src/ipc/documentSave.ts
+  require_source_pattern 'authoritativeIdentityChanged: false' \
+    src/ipc/documentSave.ts
   printf 'PASS async Rust-owned native dialog contract\n'
 }
 

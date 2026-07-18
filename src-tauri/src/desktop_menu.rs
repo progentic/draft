@@ -16,7 +16,7 @@ struct FileMenuSpec {
     starts_group: bool,
 }
 
-const FILE_MENU_SPECS: [FileMenuSpec; 7] = [
+const FILE_MENU_SPECS: [FileMenuSpec; 6] = [
     file_item(
         NativeMenuEvent::NewDocument,
         "New Document",
@@ -41,12 +41,6 @@ const FILE_MENU_SPECS: [FileMenuSpec; 7] = [
         NativeMenuEvent::SaveBackToSource,
         "Save Back to Source",
         false,
-    ),
-    file_item(
-        NativeMenuEvent::ExportDocx,
-        "Export DOCX…",
-        "CmdOrCtrl+Shift+E",
-        true,
     ),
 ];
 
@@ -89,7 +83,6 @@ pub(crate) struct NativeMenuAvailability {
     pub(crate) can_save: bool,
     pub(crate) can_save_as: bool,
     pub(crate) can_save_back: bool,
-    pub(crate) can_export: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -155,7 +148,6 @@ impl NativeMenuAvailability {
             NativeMenuEvent::SaveDocument => self.can_save,
             NativeMenuEvent::SaveDocumentAs => self.can_save_as,
             NativeMenuEvent::SaveBackToSource => self.can_save_back,
-            NativeMenuEvent::ExportDocx => self.can_export,
         }
     }
 }
@@ -240,7 +232,6 @@ fn action_id(action: NativeMenuEvent) -> &'static str {
         NativeMenuEvent::SaveDocument => "file.save_document",
         NativeMenuEvent::SaveDocumentAs => "file.save_document_as",
         NativeMenuEvent::SaveBackToSource => "file.save_back_to_source",
-        NativeMenuEvent::ExportDocx => "file.export_docx",
     }
 }
 
@@ -296,12 +287,6 @@ mod tests {
                     None,
                     false
                 ),
-                (
-                    "file.export_docx",
-                    "Export DOCX…",
-                    Some("CmdOrCtrl+Shift+E"),
-                    true
-                ),
             ]
         );
     }
@@ -336,7 +321,6 @@ mod tests {
             can_save: false,
             can_save_as: true,
             can_save_back: false,
-            can_export: false,
         };
 
         assert!(request.enabled(NativeMenuEvent::NewDocument));
@@ -345,7 +329,6 @@ mod tests {
         assert!(!request.enabled(NativeMenuEvent::SaveDocument));
         assert!(request.enabled(NativeMenuEvent::SaveDocumentAs));
         assert!(!request.enabled(NativeMenuEvent::SaveBackToSource));
-        assert!(!request.enabled(NativeMenuEvent::ExportDocx));
     }
 
     #[test]

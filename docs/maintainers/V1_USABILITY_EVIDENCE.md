@@ -428,6 +428,14 @@ its prerequisite rendering policies and a separately accepted implementation
 boundary. `UX-47-013` and `UX-47-015` through `UX-47-019`, `RC-07`, `GATE-47`,
 and all release gates remain open.
 
+The current PR candidate replaces that failed workflow mechanically. One typed
+Save As selector offers exactly DRAFT, Word, and plain text. DRAFT output may
+rebind only after atomic persistence; Word and text are converted copies that
+preserve document identity and dirty state. The standalone DOCX command and
+menu action are removed. This is implementation evidence only. `UX-47-017`
+remains open until a newly hashed package proves selection, filename handling,
+cancellation, failure recovery, and non-rebinding converted output.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
@@ -472,7 +480,7 @@ and all release gates remain open.
 | UX-47-014 | UX-1 | Closed - artifact 1634d6d2 | Artifact `91fe1ba9` rendered an explicit page break as a dashed marker inside one continuous page surface. Direct review of artifact `1634d6d2` confirmed that imported canonical page breaks now render with visible spacing between distinct page surfaces. | Closed only for explicit canonical page-break presentation. DRAFT still does not infer pagination from layout, content flow, fonts, margins, or printer geometry, and complete DOCX fidelity remains open. |
 | UX-47-015 | UX-1 | Open - partial artifact pass | Artifact `91fe1ba9` did not place Unsaved beside the document name and kept build identity in the document inspector. Direct review of artifact `1634d6d2` confirmed the bottom-right build identity and About DRAFT version/build edition, but did not complete clean and Unsaved title-transition evidence. | Retest basename plus Unsaved state in both in-window and native titles across new, imported, saved, modified, cancelled, and reopened states. |
 | UX-47-016 | UX-1 | Open - packaged retest pending | Save and Save As did not consistently suggest the current document basename; imported and new sessions could fall back to an unhelpful Untitled name. Candidate `1634d6d2` mechanically contains the Rust-owned suggestion correction. | Retest existing, imported, and new suggestions, state preservation on cancellation, and immediate basename updates after success. |
-| UX-47-017 | UX-1 | Open - packaged failure; governance required | Direct review of artifact `1634d6d2` confirmed that Save As has no `.draft`, `.docx`, or `.txt` format selector and that DOCX output remains a separate Export action. | Define and accept one native format-selection workflow before replacing the current Save As and Export actions. Preserve distinct source-authority semantics for `.draft`, converted DOCX, and any future plain-text output. PDF remains excluded by ADR-001 until its rendering prerequisites and a separate implementation boundary are accepted. |
+| UX-47-017 | UX-1 | Open - packaged failure; governance required | Direct review of artifact `1634d6d2` confirmed that Save As had no `.draft`, `.docx`, or `.txt` selector. The current PR candidate implements that exact closed selector and retires the standalone DOCX action, but has no replacement-package evidence. | Retest all three choices, cancellation, invalid targets, visible completion, and authority/dirty-state preservation. PDF remains excluded by ADR-001 until its rendering prerequisites and a separate implementation boundary are accepted. |
 | UX-47-018 | UX-2 | Open - future workspace scope | The proposed research and analysis sidebar regions are not present. | Keep unsupported capabilities absent until their commands and contracts exist. A later accepted workspace implementation may use clearly disabled placeholders without implying availability. |
 | UX-47-019 | UX-2 | Open - future governed capability | DRAFT has no spelling highlight, suggestion, or correction workflow. | Define dictionary source, locale, privacy, document-mark, ignore, correction, undo, accessibility, and failure behavior before implementation. |
 

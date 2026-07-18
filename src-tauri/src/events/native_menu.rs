@@ -13,7 +13,6 @@ pub(crate) enum NativeMenuEvent {
     SaveDocument,
     SaveDocumentAs,
     SaveBackToSource,
-    ExportDocx,
 }
 
 pub(crate) fn emit_native_menu_action(app: &AppHandle, event: NativeMenuEvent) {

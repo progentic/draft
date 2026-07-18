@@ -49,7 +49,6 @@ pub fn run() {
             commands::document_close::close_document,
             commands::document_open::open_document,
             commands::document_save::save_document,
-            commands::docx_export::export_document,
             commands::external_access::open_external_access,
             commands::external_document_save::save_external_document,
             commands::formatting_review::run_formatting_review,

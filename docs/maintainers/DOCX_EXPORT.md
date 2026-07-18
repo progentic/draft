@@ -12,10 +12,12 @@ Phase 32 adds a Rust-only DOCX compiler and atomic export service for one
 validated immutable `DocumentEnvelope`. It creates a derived artifact and never
 makes DOCX the source of truth.
 
-Phase 46 adds one typed Tauri command, Rust-owned native export dialog,
-frontend wrapper, and visible control. It adds no export history, persistence,
-worker, Python helper, network call, citation renderer, PDF path, or broad
-style-manual claim.
+Phase 46 first exposed the exporter through a dedicated command. Phase 47 now
+routes DOCX copies through the unified typed Save As command and a
+format-constrained Rust-owned dialog. The former standalone command, hook, and
+menu action are removed. This adds no export history, persistence, worker,
+Python helper, network call, citation renderer, PDF path, or broad style-manual
+claim.
 
 ## Strict Document Subset
 
@@ -97,6 +99,11 @@ Compilation failure leaves a prior target unchanged. Real create/replace tests
 prove that export changes only the `.docx` target while source DRAFT bytes remain
 unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 
+The Save As command validates the current envelope, calls `compile_docx`, and
+uses the owned atomic artifact writer. Its `converted_output` response contains
+only the output basename, format, and byte count. It explicitly reports that
+document authority and dirty state did not change.
+
 ## Abstraction Hierarchy
 
 | Layer | Function or type | Responsibility |
@@ -134,8 +141,8 @@ package that reopens with the final text and leaves the DRAFT source unchanged.
 The strict subset does not support arbitrary fonts or sizes, citations, bibliographies, lists, tables,
 links, images, equations, notes, comments, tracked changes, headers, footers,
 page numbers, templates, unsupported paragraph rules, layout controls, or complete APA/MLA/Chicago rendering.
-Unsupported content fails the whole export. The visible Phase 46 flow is
-documented in `PHASE46_WORKFLOWS.md`.
+Unsupported content fails the whole export. The visible Save As flow is
+documented in `PHASE46_WORKFLOWS.md` and `DOCUMENT_SAVE_LOAD.md`.
 
 ## Configuration Index
 

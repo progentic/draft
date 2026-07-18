@@ -10,7 +10,6 @@ import type { ConnectivityMode } from "../ipc/connectivityMode";
 interface WorkspaceStatusBarProps {
   connectivityState: ConnectivityModeState;
   documentStatus: string;
-  exportPending: boolean;
   operation: DocumentOperation;
   runtimeStatus: RuntimeConnectionState;
   onRefreshConnectivity: () => void;
@@ -18,7 +17,7 @@ interface WorkspaceStatusBarProps {
 }
 
 export function WorkspaceStatusBar(props: WorkspaceStatusBarProps) {
-  const operation = operationLabel(props.operation, props.exportPending);
+  const operation = operationLabel(props.operation);
   const showOperation = operation !== props.documentStatus;
   return (
     <footer className="workspace-status-bar" aria-label="Workspace status">
@@ -83,12 +82,12 @@ function StatusItem(props: {
   );
 }
 
-function operationLabel(operation: DocumentOperation, exportPending: boolean) {
-  if (exportPending) return "Exporting";
+function operationLabel(operation: DocumentOperation) {
   if (operation === "ready") return "Ready";
   if (operation === "creating") return "Creating";
   if (operation === "opening") return "Opening";
   if (operation === "saving") return "Saving";
+  if (operation === "choosing_save_format") return "Choosing format";
   if (operation === "checking_source") return "Checking source";
   if (operation === "confirming_source_save") return "Waiting for confirmation";
   if (operation === "saving_source") return "Saving to source";

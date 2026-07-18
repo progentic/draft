@@ -155,7 +155,7 @@ describe("Phase 46 visible workflows", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.getByText("Saving")).toBeTruthy();
-    await assertDocumentActionsDisabled(user, "Export DOCX…");
+    await assertDocumentActionsDisabled(user);
     expect(commandNames()).toEqual(["create_document", "save_document"]);
 
     await act(async () => pending.resolve({ status: "cancelled" }));
@@ -167,7 +167,6 @@ describe("Phase 46 visible workflows", () => {
       canSave: true,
       canSaveAs: true,
       canSaveBack: false,
-      canExport: true,
     }));
   });
 
@@ -179,7 +178,7 @@ describe("Phase 46 visible workflows", () => {
 
     await user.click(screen.getByRole("button", { name: "Open…" }));
     expect(screen.getByText("Opening")).toBeTruthy();
-    await assertDocumentActionsDisabled(user, "Export DOCX…");
+    await assertDocumentActionsDisabled(user);
     expect(commandNames()).toEqual(["create_document", "open_document"]);
 
     await act(async () => pending.resolve({ status: "cancelled" }));
@@ -192,12 +191,7 @@ describe("Phase 46 visible workflows", () => {
     installDefaultCommands({
       saveDocument: async (args) => {
         savedEnvelope = (args.request as { snapshot: ReturnType<typeof createdEnvelope> }).snapshot;
-        return {
-          status: "saved",
-          documentId: savedEnvelope.document_id,
-          displayName: "Styled notes.draft",
-          wasSaveAs: true,
-        };
+        return draftSavedResponse(savedEnvelope.document_id, "Styled notes.draft", true);
       },
       openDocument: async () => ({ status: "opened_draft", envelope: savedEnvelope }),
     });
@@ -249,12 +243,11 @@ describe("Phase 46 visible workflows", () => {
       }),
       saveDocument: async (args) => {
         saveRequests.push(args);
-        return {
-          status: "saved",
-          documentId: IMPORTED_ID,
-          displayName: "Imported notes.draft",
-          wasSaveAs: saveRequests.length === 1,
-        };
+        return draftSavedResponse(
+          IMPORTED_ID,
+          "Imported notes.draft",
+          saveRequests.length === 1,
+        );
       },
     });
     render(<App />);
@@ -322,12 +315,7 @@ describe("Phase 46 visible workflows", () => {
       }),
       saveDocument: async (args) => {
         saveRequests.push(args);
-        return {
-          status: "saved",
-          documentId: IMPORTED_ID,
-          displayName: "Paper.draft",
-          wasSaveAs: true,
-        };
+        return draftSavedResponse(IMPORTED_ID, "Paper.draft", true);
       },
     });
     render(<App />);
@@ -370,9 +358,9 @@ describe("Phase 46 visible workflows", () => {
     });
     render(<App />);
 
-    await clickWorkspaceAction(user, "Export DOCX…");
+    await chooseSaveAsFormat(user, "docx");
     expect(await screen.findByText(
-      "DOCX export complete. Your DRAFT document was not changed.",
+      "Word copy created as Research notes.docx. Your current DRAFT document was not changed.",
     )).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Close" }));
     expect(await screen.findByText("Document closed.")).toBeTruthy();
@@ -383,7 +371,7 @@ describe("Phase 46 visible workflows", () => {
       "DOCX imported. Supported text and paragraph formatting was retained. Some source features remain only in the original. Save as a DRAFT document to edit a copy.",
     )).toBeTruthy();
     expect(screen.queryByText(
-      "DOCX export complete. Your DRAFT document was not changed.",
+      "Word copy created as Research notes.docx. Your current DRAFT document was not changed.",
     )).toBeNull();
     expect(screen.getByText("word-custom-xml.docx")).toBeTruthy();
     expect(screen.getByText("Source unchanged")).toBeTruthy();
@@ -717,12 +705,7 @@ describe("Phase 46 visible workflows", () => {
     installDefaultCommands({
       saveDocument: async () => {
         if (saves++ === 0) {
-          return {
-            status: "saved",
-            documentId: CREATED_ID,
-            displayName: "Research notes.draft",
-            wasSaveAs: true,
-          };
+          return draftSavedResponse(CREATED_ID, "Research notes.draft", true);
         }
         throw { code: "write_failed", cause: { code: "replace_target" } };
       },
@@ -739,7 +722,9 @@ describe("Phase 46 visible workflows", () => {
     }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("DRAFT could not save the document. Your open document has not been replaced.")).toBeTruthy();
+    expect(await screen.findByText(
+      "DRAFT could not replace the selected file. Your document and prior file remain unchanged.",
+    )).toBeTruthy();
     expect(screen.getByText("Research notes.draft")).toBeTruthy();
     expect(screen.getByText("Unsaved changes")).toBeTruthy();
   });
@@ -754,12 +739,12 @@ describe("Phase 46 visible workflows", () => {
           snapshot: { document_id: string };
         };
         modes.push(request.mode);
-        return {
-          status: "saved",
-          documentId: request.snapshot.document_id,
-          displayName: request.mode === "save_as" ? "Archive.draft" : "Research notes.draft",
-          wasSaveAs: request.mode === "save_as" || modes.length === 1,
-        };
+        const wasSaveAs = request.mode === "save_as" || modes.length === 1;
+        return draftSavedResponse(
+          request.snapshot.document_id,
+          request.mode === "save_as" ? "Archive.draft" : "Research notes.draft",
+          wasSaveAs,
+        );
       },
     });
     render(<App />);
@@ -767,7 +752,7 @@ describe("Phase 46 visible workflows", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText("Research notes.draft");
-    await clickWorkspaceAction(user, "Save As…");
+    await chooseSaveAsFormat(user, "draft");
     await screen.findByText("Archive.draft");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
@@ -868,9 +853,9 @@ describe("Phase 46 visible workflows", () => {
     });
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Open…" }));
-    await clickWorkspaceAction(user, "Export DOCX…");
+    await chooseSaveAsFormat(user, "docx");
     expect(await screen.findByText(
-      "DOCX export complete. Your DRAFT document was not changed.",
+      "Word copy created as Research notes.docx. Your current DRAFT document was not changed.",
     )).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Open…" }));
 
@@ -991,71 +976,94 @@ describe("Phase 46 visible workflows", () => {
     expect(screen.queryByText("Repeated word")).toBeNull();
   });
 
-  it("exports DOCX with visible completion and source-safety feedback", async () => {
+  it("creates a DOCX copy through Save As with visible source-safety feedback", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await clickWorkspaceAction(user, "Export DOCX…");
+    await chooseSaveAsFormat(user, "docx");
 
     const result = await screen.findByText(
-      "DOCX export complete. Your DRAFT document was not changed.",
+      "Word copy created as Research notes.docx. Your current DRAFT document was not changed.",
     );
     expect(result.closest("[data-operation-state]")?.getAttribute("data-operation-state"))
       .toBe("settled");
-    expect(commandNames()).toEqual(["create_document", "export_document"]);
+    expect(commandNames()).toEqual(["create_document", "save_document"]);
   });
+
+  it.each([
+    ["docx", "Word copy created as Research notes.docx."],
+    ["txt", "Plain-text copy created as Research notes.txt."],
+  ] as const)(
+    "keeps title and dirty state after a converted %s Save As",
+    async (format, message) => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await screen.findByText("Research notes.draft");
+      await user.type(screen.getByRole("textbox", { name: "Document editor" }), " revised");
+
+      await chooseSaveAsFormat(user, format);
+
+      expect(await screen.findByText(message, { exact: false })).toBeTruthy();
+      expect(screen.getByText("Research notes.draft")).toBeTruthy();
+      expect(screen.getByText("Unsaved changes")).toBeTruthy();
+      await waitFor(() => expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+        displayName: "Research notes.draft",
+        unsaved: true,
+      }));
+    },
+  );
 
   it.each([
     [
       "unsupported_document_content",
-      "Some document content is not supported in DOCX export. Remove that content and try again.",
+      "Some document content cannot be written to Word yet. Your DRAFT document was not changed.",
     ],
     [
       "write_failed",
-      "DRAFT could not write the DOCX file. Your DRAFT document was not changed. Choose another location and try again.",
+      "DRAFT could not finish the Word copy. Your current document was not changed.",
     ],
     [
       "package_construction_failed",
-      "DRAFT could not create a valid DOCX package. Your DRAFT document was not changed.",
+      "DRAFT could not create a valid Word copy. Your current document was not changed.",
     ],
   ] as const)("presents the typed %s DOCX export failure", async (code, message) => {
     const user = userEvent.setup();
     installDefaultCommands({
-      exportDocument: () => Promise.reject({ code: "export", cause: { code } }),
+      saveDocument: () => Promise.reject({ code: "docx_conversion", cause: { code } }),
     });
     render(<App />);
 
-    await clickWorkspaceAction(user, "Export DOCX…");
+    await chooseSaveAsFormat(user, "docx");
 
     const notice = await screen.findByText(message);
     expect(notice.closest("[data-operation-state]")?.getAttribute("data-operation-state"))
       .toBe("settled");
   });
 
-  it("prevents overlapping document actions while DOCX export is pending", async () => {
+  it("prevents overlapping document actions while a DOCX Save As is pending", async () => {
     const user = userEvent.setup();
     const pending = deferred<unknown>();
-    installDefaultCommands({ exportDocument: () => pending.promise });
+    installDefaultCommands({ saveDocument: () => pending.promise });
     render(<App />);
 
-    await clickWorkspaceAction(user, "Export DOCX…");
+    await chooseSaveAsFormat(user, "docx");
     expect(
       screen
-        .getByText("Preparing DOCX export.")
+        .getByText("Preparing a Word copy…")
         .closest("[data-operation-state]")
         ?.getAttribute("data-operation-state"),
     ).toBe("pending");
-    await assertDocumentActionsDisabled(user, "Exporting DOCX");
-    expect(commandNames()).toEqual(["create_document", "export_document"]);
+    await assertDocumentActionsDisabled(user);
+    expect(commandNames()).toEqual(["create_document", "save_document"]);
 
     await act(async () => pending.resolve({ status: "cancelled" }));
-    expect(await screen.findByText("DOCX export cancelled.")).toBeTruthy();
+    expect(await screen.findByText("Save As cancelled. Your document was not changed.")).toBeTruthy();
   });
 });
 
 function installDefaultCommands(overrides?: {
   analysis?: () => Promise<unknown>;
   createDocument?: () => Promise<unknown>;
-  exportDocument?: () => Promise<unknown>;
   externalSave?: (args: Record<string, unknown>) => Promise<unknown>;
   openDocument?: () => Promise<unknown>;
   saveDocument?: (args: Record<string, unknown>) => Promise<unknown>;
@@ -1071,12 +1079,18 @@ function installDefaultCommands(overrides?: {
         return overrides.saveDocument(args);
       }
       const request = args.request as { snapshot: { document_id: string } };
-      return {
-        status: "saved",
-        documentId: request.snapshot.document_id,
-        displayName: "Research notes.draft",
-        wasSaveAs: true,
+      const saveRequest = args.request as {
+        format?: "draft" | "docx" | "txt";
+        mode: "save" | "save_as";
+        snapshot: { document_id: string };
       };
+      if (
+        saveRequest.mode === "save_as" &&
+        (saveRequest.format === "docx" || saveRequest.format === "txt")
+      ) {
+        return convertedOutputResponse(saveRequest.format);
+      }
+      return draftSavedResponse(request.snapshot.document_id, "Research notes.draft", true);
     }
     if (command === "close_document") {
       const request = args.request as { documentId: string };
@@ -1098,11 +1112,6 @@ function installDefaultCommands(overrides?: {
     }
     if (command === "run_text_analysis") {
       return overrides?.analysis ? overrides.analysis() : { result: { findings: [] } };
-    }
-    if (command === "export_document") {
-      return overrides?.exportDocument
-        ? overrides.exportDocument()
-        : { status: "exported", bytesWritten: 2048 };
     }
     if (command === "save_external_document" && overrides?.externalSave) {
       return overrides.externalSave(args);
@@ -1272,9 +1281,34 @@ function commandNames() {
   return invokeMock.mock.calls.map(([command]) => command);
 }
 
+function draftSavedResponse(
+  documentId: string,
+  displayName: string,
+  wasSaveAs: boolean,
+) {
+  return {
+    status: "draft_saved",
+    documentId,
+    displayName,
+    wasSaveAs,
+    authoritativeIdentityChanged: wasSaveAs,
+    dirtyStateCleared: true,
+  } as const;
+}
+
+function convertedOutputResponse(format: "docx" | "txt") {
+  return {
+    status: "converted_output",
+    displayName: `Research notes.${format}`,
+    outputFormat: format,
+    bytesWritten: 2048,
+    authoritativeIdentityChanged: false,
+    dirtyStateChanged: false,
+  } as const;
+}
+
 async function assertDocumentActionsDisabled(
   user: ReturnType<typeof userEvent.setup>,
-  exportLabel: string,
 ) {
   for (const label of ["New Document", "Open…", "Save", "Close"]) {
     const button = screen.getByRole("button", { name: label }) as HTMLButtonElement;
@@ -1282,11 +1316,21 @@ async function assertDocumentActionsDisabled(
     await user.click(button);
   }
   const menu = await openWorkspaceOverflow(user);
-  for (const label of ["Save As…", "References", "Text checks", exportLabel]) {
+  for (const label of ["Save As…", "References", "Text checks"]) {
     const button = within(menu).getByText(label).closest("button") as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     await user.click(button);
   }
+}
+
+async function chooseSaveAsFormat(
+  user: ReturnType<typeof userEvent.setup>,
+  format: "draft" | "docx" | "txt",
+) {
+  await clickWorkspaceAction(user, "Save As…");
+  const dialog = screen.getByRole("dialog", { name: "Save As" });
+  await user.selectOptions(within(dialog).getByRole("combobox", { name: "File format" }), format);
+  await user.click(within(dialog).getByRole("button", { name: "Continue" }));
 }
 
 async function clickWorkspaceAction(

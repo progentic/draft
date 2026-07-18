@@ -11,8 +11,7 @@ it("presents document, operation, connectivity, and recovery state", async () =>
     <WorkspaceStatusBar
       connectivityState={{ phase: "ready", mode: "online" }}
       documentStatus="Imported, unsaved"
-      exportPending
-      operation="ready"
+      operation="saving"
       runtimeStatus={{
         buildCommit: "0123456789abcdef0123456789abcdef01234567",
         buildProfile: "release",
@@ -29,7 +28,7 @@ it("presents document, operation, connectivity, and recovery state", async () =>
     "Imported, unsaved",
   );
   expect(within(status).getByLabelText("Background operation").textContent).toContain(
-    "Exporting",
+    "Saving",
   );
   expect(within(status).getByLabelText("Application build").textContent).toBe(
     "v0.1.0 · 01234567",

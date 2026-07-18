@@ -6,7 +6,6 @@ pub(crate) mod document_close;
 pub(crate) mod document_create;
 pub(crate) mod document_open;
 pub(crate) mod document_save;
-pub(crate) mod docx_export;
 pub(crate) mod external_access;
 pub(crate) mod external_document_save;
 pub(crate) mod formatting_review;

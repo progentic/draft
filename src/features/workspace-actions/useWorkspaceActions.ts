@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DocumentSession } from "../document-session/useDocumentSession";
-import type { DocxExportState } from "../docx-export/useDocxExport";
 import {
   listenToNativeMenuActions,
   setNativeMenuState,
@@ -23,14 +22,12 @@ export interface WorkspaceActions {
 
 export function useWorkspaceActions(
   session: DocumentSession,
-  docxExport: DocxExportState,
   onTogglePanel: (panel: "references" | "text-review") => void,
 ): WorkspaceActions {
   const [feedback, setFeedback] = useState("");
-  const enabled = useActionAvailability(session, docxExport);
+  const enabled = useActionAvailability(session);
   const dispatch = useActionDispatcher(
     session,
-    docxExport,
     onTogglePanel,
     enabled,
     setFeedback,
@@ -52,12 +49,9 @@ export function useWorkspaceActions(
   };
 }
 
-function useActionAvailability(
-  session: DocumentSession,
-  docxExport: DocxExportState,
-): Record<WorkspaceAction, boolean> {
+function useActionAvailability(session: DocumentSession): Record<WorkspaceAction, boolean> {
   return useMemo(() => {
-    const ready = session.operation === "ready" && !docxExport.disabled;
+    const ready = session.operation === "ready";
     return {
       new_document: ready,
       open_document: ready,
@@ -65,42 +59,36 @@ function useActionAvailability(
       save_document: ready && session.canSave,
       save_document_as: ready && session.canSaveAs,
       save_back_to_source: ready && session.canSaveBack,
-      export_docx: ready && session.canExport,
       open_references: ready,
       run_text_checks: ready,
     };
-  }, [docxExport.disabled, session]);
+  }, [session]);
 }
 
 function useActionDispatcher(
   session: DocumentSession,
-  docxExport: DocxExportState,
   onTogglePanel: (panel: "references" | "text-review") => void,
   enabled: Record<WorkspaceAction, boolean>,
   setFeedback: (feedback: string) => void,
 ) {
   return useCallback((action: WorkspaceAction) => {
     if (!enabled[action]) {
-      setFeedback(unavailableActionMessage(action, session, docxExport));
+      setFeedback(unavailableActionMessage(action, session));
       return;
     }
     setFeedback("");
-    if (action !== "export_docx") {
-      docxExport.clearFeedback();
-    }
-    dispatchEnabledAction(action, session, docxExport, onTogglePanel);
-  }, [docxExport, enabled, onTogglePanel, session, setFeedback]);
+    dispatchEnabledAction(action, session, onTogglePanel);
+  }, [enabled, onTogglePanel, session, setFeedback]);
 }
 
 function unavailableActionMessage(
   action: WorkspaceAction,
   session: DocumentSession,
-  docxExport: DocxExportState,
 ) {
   if (action === "save_back_to_source" && session.saveBackUnavailableReason) {
     return session.saveBackUnavailableReason;
   }
-  if (session.operation !== "ready" || docxExport.disabled) {
+  if (session.operation !== "ready") {
     return "Finish the current document action first.";
   }
   return "This document action is not available in the current state.";
@@ -109,7 +97,6 @@ function unavailableActionMessage(
 function dispatchEnabledAction(
   action: WorkspaceAction,
   session: DocumentSession,
-  docxExport: DocxExportState,
   onTogglePanel: (panel: "references" | "text-review") => void,
 ) {
   const documentActions: Partial<Record<WorkspaceAction, () => void>> = {
@@ -117,9 +104,8 @@ function dispatchEnabledAction(
     open_document: session.requestOpen,
     close_document: session.requestClose,
     save_document: () => void session.save(),
-    save_document_as: () => void session.saveAs(),
+    save_document_as: session.requestSaveAs,
     save_back_to_source: session.requestSaveBack,
-    export_docx: docxExport.run,
     open_references: () => onTogglePanel("references"),
     run_text_checks: () => onTogglePanel("text-review"),
   };
@@ -167,7 +153,6 @@ function useNativeMenuState(
     canSave: enabled.save_document,
     canSaveAs: enabled.save_document_as,
     canSaveBack: enabled.save_back_to_source,
-    canExport: enabled.export_docx,
   }), [enabled]);
 
   useEffect(() => {
