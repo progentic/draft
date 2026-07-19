@@ -455,6 +455,15 @@ is table-centered and remains intentionally unsupported because DRAFT cannot
 preserve its cell structure. Neither source changed. `UX-47-010` is reopened,
 and the package remains a failed Phase 47 evidence candidate.
 
+The bounded inline-tab correction was packaged from exact implementation
+commit `d0fb10cb47a53bbdce4b08d25e7c723538aced26`. Its unsigned Apple Silicon
+executable SHA-256 is
+`67426220564242ae951c914e70a0d7cf010171136deee7257704ceb39d0a5d85`.
+Mechanical package validation passed. Human review must still confirm that the
+chapter DOCX opens with readable tab separation and that the table-centered
+tracking log receives the documented unsupported outcome without source
+mutation. This candidate closes no finding, RC row, or release gate.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
