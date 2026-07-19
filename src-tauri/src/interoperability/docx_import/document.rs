@@ -152,6 +152,7 @@ impl<'a> DocumentParser<'a> {
             b"p" => self.start_paragraph(),
             b"r" => self.start_run(),
             b"br" => self.push_break(element),
+            b"tab" if self.run.is_some() => self.push_inline_tab(),
             _ if self.in_paragraph_properties() => self.paragraph_property(name, element),
             _ if self.in_run_properties() => self.run_property(name, element),
             b"sectPr" => self.ignore_unsupported(ExternalFeature::UnsupportedDocumentStructure),
@@ -193,6 +194,12 @@ impl<'a> DocumentParser<'a> {
                 self.record_unsupported(ExternalFeature::UnsupportedDocumentStructure)
             }
         }
+    }
+
+    fn push_inline_tab(&mut self) -> Result<(), DocxImportError> {
+        self.record_unsupported(ExternalFeature::ParagraphTab)?;
+        self.current_run()?.text.push(' ');
+        Ok(())
     }
 
     fn finish_text(&mut self) -> Result<(), DocxImportError> {

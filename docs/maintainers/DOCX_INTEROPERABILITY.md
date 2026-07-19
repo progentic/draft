@@ -103,6 +103,13 @@ direct properties remain in the canonical document even when an unrelated
 source feature requires preservation. Values that would require rounding or
 clamping are classified as lossy and rejected.
 
+An inline Word `w:tab` contributes one readable space to the imported run and
+records `ParagraphTab` as source-preservable. DRAFT does not claim to preserve
+the tab stop or its visual position. Word tables remain unsupported and are
+never flattened into paragraphs. They fail before canonical document creation
+because the editor has no table model that could preserve cell and row meaning
+safely.
+
 ### Fidelity classes
 
 `ExternalFidelity` has stable ordered variants:

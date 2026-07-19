@@ -109,6 +109,40 @@ fn valid_unsupported_properties_require_source_preservation() {
 }
 
 #[test]
+fn inline_tabs_preserve_readable_text_and_require_source_preservation() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:r><w:t>Title Page</w:t><w:tab/><w:t>1</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(
+        parsed.document["content"][0]["content"],
+        json!([
+            { "type": "text", "text": "Title Page" },
+            { "type": "text", "text": " 1" }
+        ])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::UnsupportedPreservable {
+            features: vec![ExternalFeature::ParagraphTab],
+        }
+    );
+}
+
+#[test]
+fn table_documents_remain_unsupported_without_flattening() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+
+    assert_eq!(
+        parse_docx_package(&package(xml)),
+        Err(DocxImportError::unsupported(vec![
+            ExternalFeature::UnsupportedDocumentStructure,
+        ]))
+    );
+}
+
+#[test]
 fn supported_run_formatting_survives_unrelated_unsupported_properties() {
     let parsed = parse_docx_package(&package(&document_xml(
         r#"<w:pPr><w:pBdr><w:top w:val="single"/></w:pBdr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Text</w:t></w:r>"#,

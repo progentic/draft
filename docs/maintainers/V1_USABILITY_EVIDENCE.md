@@ -444,6 +444,17 @@ Mechanical validation confirmed the embedded commit identity, bundle contract,
 tracked icon, and deterministic helper. Human validation is pending. This
 record closes no finding, RC row, or release gate.
 
+Manual review of that exact artifact confirmed the Save As selector and one
+Word-copy success path, but a known-valid DOCX with SHA-256
+`0631169f684e30d87369587120cda35d5259ac2f5c3328949ffa4d880f5f6201`
+failed Open as unsupported document structure. Local tracing identified an
+ordinary inline Word tab as the terminal rejection. A second valid DOCX with
+SHA-256
+`269b9055e7dcc5a79bb86524303bafcdad176c9137e6748619963cf513b98383`
+is table-centered and remains intentionally unsupported because DRAFT cannot
+preserve its cell structure. Neither source changed. `UX-47-010` is reopened,
+and the package remains a failed Phase 47 evidence candidate.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
@@ -481,7 +492,7 @@ record closes no finding, RC row, or release gate.
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
 | UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
-| UX-47-010 | UX-0 | Closed - artifact 2dfe312b | Artifact `c3b2b54c` exposed the relationship-target parser defect. Artifact `8e974736` exposed stale export feedback. Artifact `2dfe312b`, visibly identified as implementation commit `e734cae`, opened the selected DOCX into a readable imported document. | Closed only for basic DOCX Open. Formatting fidelity moved to `UX-47-013`; unsupported, safety-limit, malformed, cancellation, recovery, `RC-07`, and `GATE-47` remain open. |
+| UX-47-010 | UX-0 | Open - artifact fa72b0c7 regression | Artifact `fa72b0c7`, visibly identified as implementation commit `27fe00ac`, rejected a known-valid paragraph DOCX because ordinary inline Word tabs were treated as unsupported document structure. The original source hash remained unchanged. | Import inline tabs as disclosed readable spacing without claiming tab-stop fidelity, rebuild and rehash the package, and repeat the packaged Open workflow before disposition. |
 | UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 | UX-47-013 | UX-0 | Open - packaged fidelity retest pending | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Candidate `1634d6d2` mechanically contains the accepted run, paragraph, and page-break corrections. | Compare the source and exported output from the exact package in Word or LibreOffice and confirm the original source hash remains unchanged without guessed semantic headings or unsupported font substitution. |

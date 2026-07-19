@@ -1207,7 +1207,7 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
   require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Closed - artifact 2dfe312b |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Open - artifact fa72b0c7 regression |' \
     "${ledger}"
   require_source_pattern '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |' \
     "${ledger}"
@@ -1229,6 +1229,10 @@ check_phase_47_manual_gate_corrections() {
     "${ledger}"
   require_file src/editor/PageBreakNode.ts
   require_rust_test supported_direct_run_properties_map_to_exact_canonical_marks \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test inline_tabs_preserve_readable_text_and_require_source_preservation \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test table_documents_remain_unsupported_without_flattening \
     src-tauri/src/interoperability/docx_import/tests.rs
   require_rust_test page_break_runs_become_canonical_blocks_and_export_back_to_docx \
     src-tauri/src/interoperability/docx_import/tests.rs

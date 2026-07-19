@@ -45,7 +45,9 @@ changed sources stay unavailable and are not overwritten.
 DOCX import retains supported explicit font family, whole-point size, bold,
 italic, underline, paragraph alignment, spacing, indentation, heading styles,
 and page breaks. Source behavior outside that subset stays in the unchanged
-original and is disclosed when the imported copy opens.
+original and is disclosed when the imported copy opens. Inline Word tabs use
+readable spacing but do not retain exact tab-stop placement. A DOCX centered on
+tables cannot currently open because DRAFT cannot preserve its cell structure.
 
 An explicit page break appears as a gap between separate page surfaces. DRAFT
 does not automatically calculate page boundaries from text flow, margins,
