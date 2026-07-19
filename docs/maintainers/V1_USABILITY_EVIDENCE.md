@@ -481,6 +481,15 @@ The permanent regressions separate source-preservable Word metadata from the
 terminal table and footnote boundaries. This audit closes no finding, RC row,
 or release gate.
 
+The metadata-compatibility replacement package was built from exact
+implementation commit `c23aa33bd661738edc6a4cb1c158618f700a9655`. Its
+unsigned Apple Silicon executable SHA-256 is
+`5f3cb6012680f454a984531578c0d0b1bdc2e8d539fb8e3a3e898b5f8275c0a6`.
+Mechanical packaging validation passed. Manual validation must still confirm
+the successful source through the packaged Open workflow and verify that the
+table- and footnote-dependent sources receive clear unsupported outcomes
+without mutation. This candidate closes no finding, RC row, or release gate.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
