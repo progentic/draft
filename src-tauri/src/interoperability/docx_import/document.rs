@@ -148,11 +148,23 @@ impl<'a> DocumentParser<'a> {
         element: &BytesStart<'_>,
     ) -> Result<(), DocxImportError> {
         match name {
+            b"rPr" if self.run.is_none() && self.in_paragraph_properties() => {
+                self.ignore_unsupported(ExternalFeature::RunFormatting)
+            }
             b"document" | b"body" | b"pPr" | b"rPr" | b"t" => Ok(()),
             b"p" => self.start_paragraph(),
             b"r" => self.start_run(),
             b"br" => self.push_break(element),
             b"tab" if self.run.is_some() => self.push_inline_tab(),
+            b"lastRenderedPageBreak" if self.run.is_some() => {
+                self.record_unsupported(ExternalFeature::PaginationControl)
+            }
+            b"hyperlink" if self.paragraph.is_some() && self.run.is_none() => {
+                self.record_unsupported(ExternalFeature::UnsupportedDocumentStructure)
+            }
+            b"proofErr" if self.paragraph.is_some() && self.run.is_none() => {
+                self.record_unsupported(ExternalFeature::RunFormatting)
+            }
             _ if self.in_paragraph_properties() => self.paragraph_property(name, element),
             _ if self.in_run_properties() => self.run_property(name, element),
             b"sectPr" => self.ignore_unsupported(ExternalFeature::UnsupportedDocumentStructure),
@@ -289,7 +301,7 @@ impl<'a> DocumentParser<'a> {
                 .record_normalization(ExternalFeature::AlternateHeadingStyleName);
             return Ok(());
         }
-        Err(unsupported(ExternalFeature::UnsupportedStyleInheritance))
+        self.record_unsupported(ExternalFeature::UnsupportedStyleInheritance)
     }
 
     fn apply_alignment(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {

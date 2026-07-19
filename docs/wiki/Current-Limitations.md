@@ -22,9 +22,11 @@ Apple Silicon target.
   malformed, unsafe, unsupported, or lossy input fails without changing the
   source file.
 - Inline Word tabs import as readable spacing, but exact tab-stop placement is
-  retained only in the unchanged source. DOCX tables are not imported because
-  DRAFT does not yet have an editable table model that can preserve cell
-  structure safely.
+  retained only in the unchanged source. Common proofing metadata, custom style
+  names, layout markers, and hyperlink wrappers retain visible text without
+  claiming full behavior. DOCX tables and footnote references are not imported
+  because DRAFT does not yet have editable models that can preserve their
+  structure safely. They are not flattened or silently removed.
 - Imported text and Markdown become unsaved DRAFT documents and cannot be saved
   back to the source format. First Save requires a new `.draft` target.
 - A supported DOCX source can be replaced only when DRAFT reports an exact or

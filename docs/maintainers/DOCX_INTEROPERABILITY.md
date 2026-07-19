@@ -93,22 +93,30 @@ or a dashed line as document content. This presentation is exact only for
 explicit page-break nodes: DRAFT does not infer pagination from content flow,
 margins, font metrics, printer geometry, or Word's automatic layout.
 
-Exact and at-least line spacing, list numbering, unsupported inherited styles,
-and unsupported document structures are typed unsupported failures. Borders,
-shading, tab stops, contextual spacing, pagination controls other than page
-breaks, run properties outside the accepted marks, theme or conflicting font
-declarations, external relationships, noncanonical styles, and additional
-package parts are classified as unsupported but source-preservable. Supported
-direct properties remain in the canonical document even when an unrelated
-source feature requires preservation. Values that would require rounding or
-clamping are classified as lossy and rejected.
+Exact and at-least line spacing, list numbering, tables, footnote references,
+and other semantic structures without a canonical DRAFT model are typed
+unsupported failures. Borders, shading, tab stops, contextual spacing,
+pagination controls other than authored page breaks, run properties outside
+the accepted marks, theme or conflicting font declarations, external
+relationships, noncanonical styles, and additional package parts are
+classified as unsupported but source-preservable. Supported direct properties remain in the canonical document
+even when an unrelated source feature requires preservation. Values that would
+require rounding or clamping are classified as lossy and rejected.
 
 An inline Word `w:tab` contributes one readable space to the imported run and
 records `ParagraphTab` as source-preservable. DRAFT does not claim to preserve
-the tab stop or its visual position. Word tables remain unsupported and are
-never flattened into paragraphs. They fail before canonical document creation
-because the editor has no table model that could preserve cell and row meaning
-safely.
+the tab stop or its visual position. Word paragraph-mark run properties,
+proofing range metadata, custom paragraph-style names, and
+`w:lastRenderedPageBreak` layout markers retain surrounding visible text and
+are recorded as source-preservable. A `w:hyperlink` wrapper retains its child
+text and supported run formatting, but link behavior remains only in the
+unchanged source.
+
+Word tables remain unsupported and are never flattened into paragraphs.
+Footnote references also remain unsupported and are never dropped from an
+otherwise successful import. Both fail before canonical document creation
+because the editor has no table or footnote model that could preserve their
+meaning safely.
 
 ### Fidelity classes
 
@@ -233,7 +241,8 @@ registry identity, or displayed filename.
 Rust unit tests cover every accepted paragraph and direct run property, absent
 defaults, canonical heading and page-break normalization, malformed and
 unsupported properties, supported formatting beside unrelated preservable
-behavior, content types, relationships, duplicate entries, path
+behavior, common Word metadata and hyperlink wrappers, terminal table and
+footnote boundaries, content types, relationships, duplicate entries, path
 traversal, package limits, compression ratio, XML depth, and deterministic
 ordering. The canonical stored-package fixture SHA-256 is
 `c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a`.

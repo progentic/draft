@@ -464,6 +464,23 @@ chapter DOCX opens with readable tab separation and that the table-centered
 tracking log receives the documented unsupported outcome without source
 mutation. This candidate closes no finding, RC row, or release gate.
 
+A broader local compatibility audit on 2026-07-19 inspected four user-supplied
+Word packages without copying them into the repository. Source hashes were
+rechecked after the audit and remained unchanged. The package with SHA-256
+`bf5b0f85ae05a624cf61029d8080e786909c221ed4f3895cf6b690cee239f18c`
+imports through the production boundary. Packages
+`4819d179d476bb08fccf6e0f80f86c68b8e8bb561e10295ce2e2bb9286cda0e7`
+and
+`e845b337581b9da8655645a1912ed93a9c3e82ce3525df75bbf373d95aa44573`
+depend on Word tables and remain typed unsupported rather than being flattened.
+Package
+`878bd5216fa31a44ced308fd46eb9660972b5b14b61efe3d17dfe2716de0b005`
+reaches a footnote reference after common Word metadata and hyperlink wrappers
+are retained; it remains typed unsupported because DRAFT has no footnote model.
+The permanent regressions separate source-preservable Word metadata from the
+terminal table and footnote boundaries. This audit closes no finding, RC row,
+or release gate.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
@@ -501,7 +518,7 @@ mutation. This candidate closes no finding, RC row, or release gate.
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
 | UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
-| UX-47-010 | UX-0 | Open - artifact fa72b0c7 regression | Artifact `fa72b0c7`, visibly identified as implementation commit `27fe00ac`, rejected a known-valid paragraph DOCX because ordinary inline Word tabs were treated as unsupported document structure. The original source hash remained unchanged. | Import inline tabs as disclosed readable spacing without claiming tab-stop fidelity, rebuild and rehash the package, and repeat the packaged Open workflow before disposition. |
+| UX-47-010 | UX-0 | Open - broader DOCX compatibility | Artifact `fa72b0c7`, visibly identified as implementation commit `27fe00ac`, rejected a known-valid paragraph DOCX because ordinary inline Word tabs were treated as unsupported document structure. The replacement parser handles tabs and common Word metadata, but the four-file audit still found two table-dependent packages and one footnote-dependent package that cannot enter the current canonical model. All source hashes remained unchanged. | Rebuild and rehash after the metadata correction, repeat the packaged Open workflow, and keep table and footnote documents typed unsupported until preservable canonical models exist. Do not flatten or silently drop their content. |
 | UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 | UX-47-013 | UX-0 | Open - packaged fidelity retest pending | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Candidate `1634d6d2` mechanically contains the accepted run, paragraph, and page-break corrections. | Compare the source and exported output from the exact package in Word or LibreOffice and confirm the original source hash remains unchanged without guessed semantic headings or unsupported font substitution. |

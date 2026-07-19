@@ -143,6 +143,45 @@ fn table_documents_remain_unsupported_without_flattening() {
 }
 
 #[test]
+fn footnote_references_remain_unsupported_without_flattening() {
+    let xml = document_xml(r#"<w:r><w:t>Body</w:t><w:footnoteReference w:id="1"/></w:r>"#);
+
+    assert_eq!(
+        parse_docx_package(&package(&xml)),
+        Err(DocxImportError::unsupported(vec![
+            ExternalFeature::UnsupportedDocumentStructure,
+        ]))
+    );
+}
+
+#[test]
+fn common_word_metadata_keeps_visible_text_and_requires_source_preservation() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:pPr><w:pStyle w:val="BodyText"/><w:rPr><w:rFonts w:ascii="Aptos"/></w:rPr></w:pPr><w:proofErr w:type="spellStart"/><w:hyperlink w:anchor="source"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>Linked</w:t><w:lastRenderedPageBreak/><w:t> text</w:t></w:r></w:hyperlink><w:proofErr w:type="spellEnd"/>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(
+        parsed.document["content"][0]["content"],
+        json!([
+            { "type": "text", "text": "Linked" },
+            { "type": "text", "text": " text" }
+        ])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::UnsupportedPreservable {
+            features: vec![
+                ExternalFeature::PaginationControl,
+                ExternalFeature::RunFormatting,
+                ExternalFeature::UnsupportedDocumentStructure,
+                ExternalFeature::UnsupportedStyleInheritance,
+            ],
+        }
+    );
+}
+
+#[test]
 fn supported_run_formatting_survives_unrelated_unsupported_properties() {
     let parsed = parse_docx_package(&package(&document_xml(
         r#"<w:pPr><w:pBdr><w:top w:val="single"/></w:pBdr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Text</w:t></w:r>"#,
@@ -298,20 +337,15 @@ fn exact_and_at_least_line_rules_are_unsupported_not_malformed() {
 }
 
 #[test]
-fn unsupported_style_and_list_indentation_are_distinct_valid_features() {
-    for (property, feature) in [
-        (
-            r#"<w:pStyle w:val="CustomBody"/>"#,
-            ExternalFeature::UnsupportedStyleInheritance,
-        ),
-        (r#"<w:numPr/>"#, ExternalFeature::ListIndentation),
-    ] {
-        let xml = document_xml(&format!("<w:pPr>{property}</w:pPr>"));
-        assert_eq!(
-            parse_docx_package(&package(&xml)),
-            Err(DocxImportError::unsupported(vec![feature]))
-        );
-    }
+fn list_indentation_remains_unsupported() {
+    let xml = document_xml(r#"<w:pPr><w:numPr/></w:pPr>"#);
+
+    assert_eq!(
+        parse_docx_package(&package(&xml)),
+        Err(DocxImportError::unsupported(vec![
+            ExternalFeature::ListIndentation,
+        ]))
+    );
 }
 
 #[test]

@@ -950,7 +950,9 @@ check_docx_import_contract() {
     package_semantics_classify_valid_uneditable_behavior
     optional_relationship_and_style_parts_are_not_required
     exact_and_at_least_line_rules_are_unsupported_not_malformed
-    unsupported_style_and_list_indentation_are_distinct_valid_features
+    list_indentation_remains_unsupported
+    common_word_metadata_keeps_visible_text_and_requires_source_preservation
+    footnote_references_remain_unsupported_without_flattening
     malformed_properties_fail_without_fidelity_guessing
     unrepresentable_bounds_are_lossy_and_never_clamped
     exported_supported_paragraph_data_reimports_exactly
@@ -1207,7 +1209,7 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
   require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Open - artifact fa72b0c7 regression |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Open - broader DOCX compatibility |' \
     "${ledger}"
   require_source_pattern '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |' \
     "${ledger}"
@@ -1233,6 +1235,10 @@ check_phase_47_manual_gate_corrections() {
   require_rust_test inline_tabs_preserve_readable_text_and_require_source_preservation \
     src-tauri/src/interoperability/docx_import/tests.rs
   require_rust_test table_documents_remain_unsupported_without_flattening \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test footnote_references_remain_unsupported_without_flattening \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test common_word_metadata_keeps_visible_text_and_requires_source_preservation \
     src-tauri/src/interoperability/docx_import/tests.rs
   require_rust_test page_break_runs_become_canonical_blocks_and_export_back_to_docx \
     src-tauri/src/interoperability/docx_import/tests.rs

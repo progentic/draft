@@ -1118,7 +1118,7 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |'
   require_document_text "${ledger}" \
-    '| UX-47-010 | UX-0 | Open - artifact fa72b0c7 regression |'
+    '| UX-47-010 | UX-0 | Open - broader DOCX compatibility |'
   require_document_text "${ledger}" \
     '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |'
   require_document_text "${ledger}" \
@@ -1147,10 +1147,18 @@ check_phase_47_manual_correction_documentation() {
     'Word tables remain unsupported and are'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     'never flattened into paragraphs'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Footnote references also remain unsupported and are never dropped'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    "A \`w:hyperlink\` wrapper retains its child"
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
     'fn inline_tabs_preserve_readable_text_and_require_source_preservation'
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
     'fn table_documents_remain_unsupported_without_flattening'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn footnote_references_remain_unsupported_without_flattening'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn common_word_metadata_keeps_visible_text_and_requires_source_preservation'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     'does not infer pagination from content flow'
   require_document_text docs/maintainers/WORKSPACE_UI.md \
