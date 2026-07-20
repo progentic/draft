@@ -49,6 +49,8 @@ import as end notes, and unrepresented list numbering imports as plain
 paragraphs. These are disclosed lossy approximations rather than table,
 footnote, or list support. The unchanged original retains the source structure,
 and Save Back to Source remains unavailable for the imported copy.
+If an unfamiliar safe Word wrapper prevents detailed formatting conversion,
+DRAFT can recover visible content as the same kind of disclosed lossy copy.
 
 An explicit page break appears as a gap between separate page surfaces. DRAFT
 does not automatically calculate page boundaries from text flow, margins,

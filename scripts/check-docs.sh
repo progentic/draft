@@ -1140,6 +1140,10 @@ check_phase_47_manual_correction_documentation() {
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     'direct properties remain in the canonical document'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Import has two tiers.'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'a second bounded parser recovers'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     "An inline Word \`w:tab\` contributes one readable space"
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     "records \`ParagraphTab\` as source-preservable"
@@ -1161,6 +1165,10 @@ check_phase_47_manual_correction_documentation() {
     'fn footnote_references_import_as_disclosed_end_notes'
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
     'fn common_word_metadata_keeps_visible_text_and_requires_source_preservation'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn unfamiliar_valid_wrappers_recover_readable_text_as_lossy'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn external_payload_without_readable_text_remains_denied'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     'does not infer pagination from content flow'
   require_document_text docs/maintainers/WORKSPACE_UI.md \

@@ -941,6 +941,7 @@ check_docx_import_contract() {
   local source_write_dialog_tests='src/features/external-source-save/SaveBackToSourceDialog.test.tsx'
   local package_path='src-tauri/src/interoperability/docx_import/package.rs'
   local document_path='src-tauri/src/interoperability/docx_import/document.rs'
+  local readable_path='src-tauri/src/interoperability/docx_import/readable.rs'
   local footnotes_path='src-tauri/src/interoperability/docx_import/footnotes.rs'
   local table_path='src-tauri/src/interoperability/docx_import/table.rs'
   local test_path='src-tauri/src/interoperability/docx_import/tests.rs'
@@ -952,7 +953,7 @@ check_docx_import_contract() {
     supported_run_formatting_survives_unrelated_unsupported_properties
     package_semantics_classify_valid_uneditable_behavior
     optional_relationship_and_style_parts_are_not_required
-    exact_and_at_least_line_rules_are_unsupported_not_malformed
+    exact_and_at_least_line_rules_import_with_disclosed_normalization
     list_indentation_imports_as_disclosed_plain_paragraphs
     common_word_metadata_keeps_visible_text_and_requires_source_preservation
     footnote_references_import_as_disclosed_end_notes
@@ -960,7 +961,10 @@ check_docx_import_contract() {
     table_cells_import_as_disclosed_readable_rows
     lossy_table_import_preserves_source_bytes
     malformed_properties_fail_without_fidelity_guessing
-    unrepresentable_bounds_are_lossy_and_never_clamped
+    unrepresentable_bounds_import_with_disclosed_normalization
+    unfamiliar_valid_wrappers_recover_readable_text_as_lossy
+    drawing_text_recovers_without_claiming_format_fidelity
+    external_payload_without_readable_text_remains_denied
     exported_supported_paragraph_data_reimports_exactly
     package_and_xml_safety_fail_with_closed_reasons
     malformed_package_contracts_are_not_reported_as_unsafe_content
@@ -984,6 +988,7 @@ check_docx_import_contract() {
   require_file "${source_write_dialog_tests}"
   require_file "${package_path}"
   require_file "${document_path}"
+  require_file "${readable_path}"
   require_file "${footnotes_path}"
   require_file "${table_path}"
   require_file "${test_path}"
@@ -1006,6 +1011,9 @@ check_docx_import_contract() {
   require_rust_test lossy_import_requires_save_as_after_edits "${provenance_path}"
   require_source_pattern 'record_lossy(ExternalFeature::TableStructure)' "${document_path}"
   require_source_pattern 'record_lossy(ExternalFeature::Footnote)' "${document_path}"
+  require_source_pattern 'parse_readable_document' "${readable_path}"
+  require_source_pattern 'MAX_IMPORTED_NODES' "${readable_path}"
+  require_source_pattern 'LossyImportDenied' src-tauri/src/interoperability/docx_import/mod.rs
   require_source_pattern '" | "' "${table_path}"
   require_source_pattern '| "lossy";' src/ipc/externalDocument.ts
   require_source_pattern 'pub(crate) async fn save_external_document(' \

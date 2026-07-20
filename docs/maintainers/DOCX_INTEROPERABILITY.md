@@ -25,6 +25,13 @@ import includes a closed fidelity result. Unsupported but valid behavior is
 disclosed and requires retaining the untouched source rather than pretending
 the imported copy is exact.
 
+Import has two tiers. The detailed parser preserves supported run and paragraph
+formatting. If a safe, well-formed package contains a valid Word wrapper that
+the detailed model does not understand, a second bounded parser recovers
+visible text, paragraph boundaries, page breaks, tables, and referenced notes
+as a disclosed lossy copy. Safety, malformed-package, and no-readable-content
+failures never enter that fallback.
+
 Internal OPC relationship targets are resolved from the part that owns the
 relationship. A target such as `../customXml/item1.xml` is valid from
 `word/document.xml` because it remains inside the package root. Absolute,
@@ -56,6 +63,9 @@ export.
 - Table cells and referenced footnote text remain readable through deterministic
   lossy conversion. DRAFT does not claim table editing, footnote layout, or
   same-format replacement for that imported copy.
+- Safe Word content outside the detailed formatting model can open through a
+  bounded readable fallback. That result preserves readable content rather
+  than detailed formatting, is always `lossy`, and cannot replace the source.
 - An untouched source reports `no_changes`; edited exact content is eligible
   for the bounded writer, while normalized content requires explicit consent.
 - Unsupported source behavior, missing provenance, unknown fidelity, a missing
@@ -97,14 +107,17 @@ or a dashed line as document content. This presentation is exact only for
 explicit page-break nodes: DRAFT does not infer pagination from content flow,
 margins, font metrics, printer geometry, or Word's automatic layout.
 
-Exact and at-least line spacing and other unrepresentable paragraph values
-remain typed unsupported or lossy failures. Borders, shading, tab stops, contextual spacing,
+Exact and at-least line spacing retain readable content with a disclosed lossy
+default. Automatic line spacing is rounded to the nearest supported
+five-hundredths, and spacing or indentation outside the canonical bounds is
+clamped to the nearest supported value. Borders, shading, tab stops, contextual spacing,
 pagination controls other than authored page breaks, run properties outside
 the accepted marks, theme or conflicting font declarations, external
 relationships, noncanonical styles, and additional package parts are
 classified as unsupported but source-preservable. Supported direct properties remain in the canonical document
-even when an unrelated source feature requires preservation. Values that would
-require rounding or clamping are classified as lossy and rejected.
+even when an unrelated source feature requires preservation. Every rounded,
+clamped, or defaulted value is classified as lossy, leaves the source unchanged,
+and disables Save Back to Source.
 
 An inline Word `w:tab` contributes one readable space to the imported run and
 records `ParagraphTab` as source-preservable. DRAFT does not claim to preserve
@@ -215,6 +228,7 @@ doctypes, unknown entities, and exceeded limits fail before registry mutation.
 | Mid | `DocumentRegistry::open_imported_external` | Own one live external-source registration without a native save target. |
 | Low | `interoperability::docx_import::package` | Validates ZIP, parts, relationships, content types, and XML bounds. |
 | Low | `interoperability::docx_import::document` | Maps the accepted XML subset into canonical Tiptap JSON. |
+| Low | `interoperability::docx_import::readable` | Recovers bounded visible content after a valid unsupported structure prevents detailed conversion. |
 | Low | `interoperability::docx_import::table` | Converts bounded table rows and cells into disclosed readable paragraphs. |
 | Low | `interoperability::docx_import::footnotes` | Extracts bounded referenced notes for disclosed end-note conversion. |
 | Low | `docx_trace` | Emits opt-in path-free Open, import, and export stage diagnostics for local failure investigation. |
@@ -240,10 +254,10 @@ eligibility result.
   safety reason. User copy identifies package, XML, or document-size limits and
   suggests reducing large embedded content without exposing internal package
   details.
-- A valid feature that cannot enter the canonical model or a bounded readable
-  approximation returns `unsupported_external_feature`.
-- A value that would require undisclosed approximation returns
-  `lossy_import_denied`.
+- A valid feature that cannot enter the detailed model is retried through the
+  bounded readable parser.
+- A safe external payload with no recoverable visible content returns
+  `lossy_import_denied` rather than opening as an empty document.
 - A failed canonical envelope conversion returns `invalid_canonical_document`.
 - A missing, unreadable, or oversized source fails before registration.
 - A missing or externally changed source denies same-format replacement.
@@ -260,7 +274,9 @@ Rust unit tests cover every accepted paragraph and direct run property, absent
 defaults, canonical heading and page-break normalization, malformed and
 unsupported properties, supported formatting beside unrelated preservable
 behavior, common Word metadata and hyperlink wrappers, readable lossy table
-rows, referenced end notes, list normalization, content types, relationships, duplicate entries, path
+rows, referenced end notes, list normalization, disclosed paragraph-value
+rounding and clamping, unfamiliar wrapper recovery, drawing text recovery,
+no-readable-content denial, content types, relationships, duplicate entries, path
 traversal, package limits, compression ratio, XML depth, and deterministic
 ordering. The canonical stored-package fixture SHA-256 is
 `c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a`.

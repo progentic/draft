@@ -371,7 +371,7 @@ fn optional_relationship_and_style_parts_are_not_required() {
 }
 
 #[test]
-fn exact_and_at_least_line_rules_are_unsupported_not_malformed() {
+fn exact_and_at_least_line_rules_import_with_disclosed_normalization() {
     for (rule, feature) in [
         ("exact", ExternalFeature::ExactLineSpacing),
         ("atLeast", ExternalFeature::AtLeastLineSpacing),
@@ -379,10 +379,14 @@ fn exact_and_at_least_line_rules_are_unsupported_not_malformed() {
         let xml = document_xml(&format!(
             r#"<w:pPr><w:spacing w:lineRule="{rule}" w:line="240"/></w:pPr>"#
         ));
+        let parsed = parse_docx_package(&package(&xml)).unwrap();
         assert_eq!(
-            parse_docx_package(&package(&xml)),
-            Err(DocxImportError::unsupported(vec![feature]))
+            parsed.fidelity,
+            ExternalFidelity::Lossy {
+                features: vec![feature],
+            }
         );
+        assert!(parsed.document["content"][0].get("attrs").is_none());
     }
 }
 
@@ -415,19 +419,87 @@ fn malformed_properties_fail_without_fidelity_guessing() {
 }
 
 #[test]
-fn unrepresentable_bounds_are_lossy_and_never_clamped() {
-    for property in [
-        r#"<w:spacing w:lineRule="auto" w:line="241"/>"#,
-        r#"<w:spacing w:before="2881"/>"#,
-        r#"<w:ind w:left="2881"/>"#,
-        r#"<w:ind w:firstLine="1441"/>"#,
+fn unrepresentable_bounds_import_with_disclosed_normalization() {
+    for (property, feature, pointer, expected) in [
+        (
+            r#"<w:spacing w:lineRule="auto" w:line="241"/>"#,
+            ExternalFeature::UnsupportedDocumentStructure,
+            "/lineSpacingHundredths",
+            100,
+        ),
+        (
+            r#"<w:spacing w:before="2881"/>"#,
+            ExternalFeature::UnsupportedDocumentStructure,
+            "/spaceBeforeTwips",
+            2_880,
+        ),
+        (
+            r#"<w:ind w:left="2881"/>"#,
+            ExternalFeature::ListIndentation,
+            "/leftIndentTwips",
+            2_880,
+        ),
+        (
+            r#"<w:ind w:firstLine="1441"/>"#,
+            ExternalFeature::ListIndentation,
+            "/specialIndent/twips",
+            1_440,
+        ),
     ] {
         let xml = document_xml(&format!("<w:pPr>{property}</w:pPr>"));
-        assert!(matches!(
-            parse_docx_package(&package(&xml)),
-            Err(DocxImportError::LossyImportDenied { .. })
-        ));
+        let parsed = parse_docx_package(&package(&xml)).unwrap();
+        assert_eq!(
+            parsed.fidelity,
+            ExternalFidelity::Lossy {
+                features: vec![feature],
+            }
+        );
+        assert_eq!(
+            paragraph_style(&parsed.document)
+                .pointer(pointer)
+                .and_then(Value::as_u64),
+            Some(expected)
+        );
     }
+}
+
+#[test]
+fn unfamiliar_valid_wrappers_recover_readable_text_as_lossy() {
+    let xml =
+        document_xml(r#"<w:customWrapper><w:r><w:t>Recovered text</w:t></w:r></w:customWrapper>"#);
+    let source = package(&xml);
+    let original = source.clone();
+    let parsed = parse_docx_package(&source).unwrap();
+
+    assert_eq!(document_text(&parsed.document), "Recovered text");
+    assert_eq!(source, original);
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::UnsupportedDocumentStructure],
+        }
+    );
+}
+
+#[test]
+fn drawing_text_recovers_without_claiming_format_fidelity() {
+    let xml = document_xml(
+        r#"<w:r><w:drawing><w:txbxContent><w:p><w:r><w:t>Text box</w:t></w:r></w:p></w:txbxContent></w:drawing></w:r>"#,
+    );
+    let parsed = parse_docx_package(&package(&xml)).unwrap();
+
+    assert_eq!(document_text(&parsed.document), "Text box");
+    assert!(matches!(parsed.fidelity, ExternalFidelity::Lossy { .. }));
+}
+
+#[test]
+fn external_payload_without_readable_text_remains_denied() {
+    let xml = document_xml(r#"<w:altChunk r:id="rId9"/>"#);
+
+    assert!(matches!(
+        parse_docx_package(&package(&xml)),
+        Err(DocxImportError::LossyImportDenied { .. })
+    ));
 }
 
 #[test]

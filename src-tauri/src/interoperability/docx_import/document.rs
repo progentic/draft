@@ -11,13 +11,14 @@ use crate::documents::paragraph_format::{
     MAX_SPECIAL_INDENT_TWIPS, MIN_LINE_SPACING_HUNDREDTHS, PARAGRAPH_STYLE_SCHEMA_VERSION,
 };
 use crate::documents::text_format::{FontFamily, FontSizePoints};
+use crate::docx_trace;
 
 use super::{
     DocxImportError, ExternalFeature, ExternalSafetyReason, FidelityAccumulator,
     footnotes::FootnoteCatalog, table::TableBuilder,
 };
 
-const MAX_IMPORTED_NODES: usize = 100_000;
+pub(super) const MAX_IMPORTED_NODES: usize = 100_000;
 const SUPPORTED_ALIGNMENT: [&str; 4] = ["left", "center", "right", "both"];
 const VALID_UNSUPPORTED_ALIGNMENT: [&str; 5] =
     ["distribute", "end", "highKashida", "lowKashida", "start"];
@@ -84,7 +85,8 @@ impl<'a> DocumentParser<'a> {
         if self.ignored_depth > 0 {
             self.ignored_depth += 1;
         } else {
-            self.handle_element(&name, element)?;
+            self.handle_element(&name, element)
+                .inspect_err(|error| trace_element_rejection(&name, error))?;
         }
         self.stack.push(name_string(&name)?);
         Ok(())
@@ -95,7 +97,8 @@ impl<'a> DocumentParser<'a> {
         if self.ignored_depth > 0 {
             return Ok(());
         }
-        self.handle_element(&name, element)?;
+        self.handle_element(&name, element)
+            .inspect_err(|error| trace_element_rejection(&name, error))?;
         self.handle_empty_content(&name)?;
         self.ignored_depth = 0;
         Ok(())
@@ -175,10 +178,19 @@ impl<'a> DocumentParser<'a> {
             b"rPr" if self.run.is_none() && self.in_paragraph_properties() => {
                 self.ignore_unsupported(ExternalFeature::RunFormatting)
             }
+            b"sdt" | b"sdtContent" => {
+                self.record_unsupported(ExternalFeature::UnsupportedDocumentStructure)
+            }
+            b"sdtPr" | b"sdtEndPr" => {
+                self.ignore_unsupported(ExternalFeature::UnsupportedDocumentStructure)
+            }
             b"document" | b"body" | b"pPr" | b"rPr" | b"t" => Ok(()),
             b"p" => self.start_paragraph(),
             b"r" => self.start_run(),
             b"br" => self.push_break(element),
+            b"drawing" | b"pict" | b"object" if self.run.is_some() => {
+                Err(unsupported(ExternalFeature::UnsupportedDocumentStructure))
+            }
             b"footnoteReference" if self.run.is_some() => self.push_footnote_reference(element),
             b"tab" if self.run.is_some() => self.push_inline_tab(),
             b"lastRenderedPageBreak" if self.run.is_some() => {
@@ -381,12 +393,8 @@ impl<'a> DocumentParser<'a> {
         }
     }
 
-    fn reject_unknown_structure(&self, name: &[u8]) -> Result<(), DocxImportError> {
-        if self.paragraph.is_some() || matches!(name, b"hyperlink" | b"sdt" | b"altChunk") {
-            Err(unsupported(ExternalFeature::UnsupportedDocumentStructure))
-        } else {
-            Err(DocxImportError::malformed())
-        }
+    fn reject_unknown_structure(&self, _name: &[u8]) -> Result<(), DocxImportError> {
+        Err(unsupported(ExternalFeature::UnsupportedDocumentStructure))
     }
 
     fn apply_paragraph_style(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
@@ -424,7 +432,9 @@ impl<'a> DocumentParser<'a> {
             return Ok(());
         }
         if VALID_UNSUPPORTED_ALIGNMENT.contains(&value.as_str()) {
-            return Err(unsupported(ExternalFeature::UnsupportedDocumentStructure));
+            self.fidelity
+                .record_lossy(ExternalFeature::UnsupportedDocumentStructure);
+            return Ok(());
         }
         Err(DocxImportError::malformed())
     }
@@ -432,18 +442,34 @@ impl<'a> DocumentParser<'a> {
     fn apply_spacing(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
         self.current_paragraph()?.mark_once("spacing")?;
         let attributes = attributes(element)?;
-        reject_spacing_extensions(&attributes)?;
-        let paragraph = self.current_paragraph()?;
-        paragraph.style.apply_spacing(&attributes)?;
+        let has_extensions = has_spacing_extensions(&attributes);
+        let line_rule_feature = unsupported_line_rule(&attributes);
+        let approximated = self.current_paragraph()?.style.apply_spacing(&attributes)?;
+        if has_extensions {
+            self.fidelity
+                .record_lossy(ExternalFeature::ContextualSpacing);
+        }
+        if let Some(feature) = line_rule_feature {
+            self.fidelity.record_lossy(feature);
+        } else if approximated {
+            self.fidelity
+                .record_lossy(ExternalFeature::UnsupportedDocumentStructure);
+        }
         Ok(())
     }
 
     fn apply_indentation(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
         self.current_paragraph()?.mark_once("ind")?;
         let attributes = attributes(element)?;
-        reject_indent_extensions(&attributes)?;
-        let paragraph = self.current_paragraph()?;
-        paragraph.style.apply_indentation(&attributes)
+        let has_extensions = has_indent_extensions(&attributes);
+        let approximated = self
+            .current_paragraph()?
+            .style
+            .apply_indentation(&attributes)?;
+        if has_extensions || approximated {
+            self.fidelity.record_lossy(ExternalFeature::ListIndentation);
+        }
+        Ok(())
     }
 
     fn apply_page_break_before(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
@@ -609,6 +635,14 @@ fn footnote_block(id: &str, text: &str) -> Value {
         }
     }
     json!({ "type": "paragraph", "content": content })
+}
+
+fn trace_element_rejection(name: &[u8], error: &DocxImportError) {
+    let name = std::str::from_utf8(name).unwrap_or("invalid_xml_name");
+    docx_trace::emit(
+        "document_element_rejected",
+        format_args!("element={name} error={error:?}"),
+    );
 }
 
 fn require_canonical_node_count(blocks: &[Value]) -> Result<(), DocxImportError> {
@@ -824,72 +858,89 @@ impl ParagraphStyleBuilder {
     fn apply_spacing(
         &mut self,
         attributes: &HashMap<String, String>,
-    ) -> Result<(), DocxImportError> {
+    ) -> Result<bool, DocxImportError> {
+        let mut approximated = false;
         if let Some(value) = attributes.get("before") {
-            self.space_before_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            let imported = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.space_before_twips = imported.value;
+            approximated |= imported.approximated;
             self.touched = true;
         }
         if let Some(value) = attributes.get("after") {
-            self.space_after_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            let imported = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.space_after_twips = imported.value;
+            approximated |= imported.approximated;
             self.touched = true;
         }
-        self.apply_line_spacing(attributes)
+        Ok(approximated | self.apply_line_spacing(attributes)?)
     }
 
     fn apply_line_spacing(
         &mut self,
         attributes: &HashMap<String, String>,
-    ) -> Result<(), DocxImportError> {
+    ) -> Result<bool, DocxImportError> {
         let Some(line) = attributes.get("line") else {
-            return Ok(());
+            return Ok(false);
         };
         match attributes
             .get("lineRule")
             .map(String::as_str)
             .unwrap_or("auto")
         {
-            "auto" => self.line_spacing_hundredths = automatic_line_spacing(line)?,
-            "exact" => return Err(unsupported(ExternalFeature::ExactLineSpacing)),
-            "atLeast" => return Err(unsupported(ExternalFeature::AtLeastLineSpacing)),
-            _ => return Err(DocxImportError::malformed()),
+            "auto" => {
+                let imported = automatic_line_spacing(line)?;
+                self.line_spacing_hundredths = imported.value;
+                self.touched = true;
+                Ok(imported.approximated)
+            }
+            "exact" | "atLeast" => Ok(true),
+            _ => Err(DocxImportError::malformed()),
         }
-        self.touched = true;
-        Ok(())
     }
 
     fn apply_indentation(
         &mut self,
         attributes: &HashMap<String, String>,
-    ) -> Result<(), DocxImportError> {
+    ) -> Result<bool, DocxImportError> {
+        let mut approximated = false;
         if let Some(value) = attributes.get("left") {
-            self.left_indent_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            let imported = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.left_indent_twips = imported.value;
+            approximated |= imported.approximated;
             self.touched = true;
         }
         if let Some(value) = attributes.get("right") {
-            self.right_indent_twips = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            let imported = bounded_twips(value, MAX_PARAGRAPH_SPACING_TWIPS)?;
+            self.right_indent_twips = imported.value;
+            approximated |= imported.approximated;
             self.touched = true;
         }
-        self.apply_special_indent(attributes)
+        Ok(approximated | self.apply_special_indent(attributes)?)
     }
 
     fn apply_special_indent(
         &mut self,
         attributes: &HashMap<String, String>,
-    ) -> Result<(), DocxImportError> {
+    ) -> Result<bool, DocxImportError> {
+        let mut approximated = false;
         if attributes.contains_key("firstLine") && attributes.contains_key("hanging") {
             return Err(DocxImportError::malformed());
         }
         if let Some(value) = attributes.get("firstLine") {
+            let imported = bounded_twips(value, MAX_SPECIAL_INDENT_TWIPS)?;
             self.special_kind = "first_line";
-            self.special_twips = bounded_twips(value, MAX_SPECIAL_INDENT_TWIPS)?;
+            self.special_twips = imported.value;
+            approximated |= imported.approximated;
             self.touched = true;
         }
         if let Some(value) = attributes.get("hanging") {
+            let imported = bounded_twips(value, MAX_SPECIAL_INDENT_TWIPS)?;
             self.special_kind = "hanging";
-            self.special_twips = bounded_twips(value, MAX_SPECIAL_INDENT_TWIPS)?;
+            self.special_twips = imported.value;
+            approximated |= imported.approximated;
             self.touched = true;
         }
-        Ok(())
+        Ok(approximated)
     }
 
     fn to_json(&self) -> Value {
@@ -979,55 +1030,53 @@ fn attributes(element: &BytesStart<'_>) -> Result<HashMap<String, String>, DocxI
     Ok(values)
 }
 
-fn reject_spacing_extensions(attributes: &HashMap<String, String>) -> Result<(), DocxImportError> {
+fn has_spacing_extensions(attributes: &HashMap<String, String>) -> bool {
     let allowed = ["after", "before", "line", "lineRule"];
-    if attributes
+    !attributes
         .keys()
         .all(|name| allowed.contains(&name.as_str()))
-    {
-        Ok(())
-    } else {
-        Err(unsupported(ExternalFeature::ContextualSpacing))
-    }
 }
 
-fn reject_indent_extensions(attributes: &HashMap<String, String>) -> Result<(), DocxImportError> {
+fn has_indent_extensions(attributes: &HashMap<String, String>) -> bool {
     let allowed = ["firstLine", "hanging", "left", "right"];
-    if attributes
+    !attributes
         .keys()
         .all(|name| allowed.contains(&name.as_str()))
-    {
-        Ok(())
-    } else {
-        Err(unsupported(ExternalFeature::ListIndentation))
+}
+
+fn unsupported_line_rule(attributes: &HashMap<String, String>) -> Option<ExternalFeature> {
+    match attributes.get("lineRule").map(String::as_str) {
+        Some("exact") => Some(ExternalFeature::ExactLineSpacing),
+        Some("atLeast") => Some(ExternalFeature::AtLeastLineSpacing),
+        _ => None,
     }
 }
 
-fn automatic_line_spacing(value: &str) -> Result<u64, DocxImportError> {
+struct ImportedBoundedValue {
+    value: u64,
+    approximated: bool,
+}
+
+fn automatic_line_spacing(value: &str) -> Result<ImportedBoundedValue, DocxImportError> {
     let units = unsigned_integer(value)?;
-    let scaled = units.checked_mul(100).ok_or_else(lossy_line_spacing)?;
-    if scaled % 240 != 0 {
-        return Err(lossy_line_spacing());
-    }
-    let hundredths = scaled / 240;
-    let in_range =
-        (MIN_LINE_SPACING_HUNDREDTHS..=MAX_LINE_SPACING_HUNDREDTHS).contains(&hundredths);
-    if in_range && hundredths.is_multiple_of(LINE_SPACING_INCREMENT) {
-        Ok(hundredths)
-    } else {
-        Err(lossy_line_spacing())
-    }
+    let scaled = u128::from(units) * 100;
+    let rounded_hundredths = ((scaled + 120) / 240).min(u128::from(u64::MAX)) as u64;
+    let bounded =
+        rounded_hundredths.clamp(MIN_LINE_SPACING_HUNDREDTHS, MAX_LINE_SPACING_HUNDREDTHS);
+    let canonical = ((bounded + (LINE_SPACING_INCREMENT / 2)) / LINE_SPACING_INCREMENT)
+        * LINE_SPACING_INCREMENT;
+    Ok(ImportedBoundedValue {
+        value: canonical,
+        approximated: scaled % 240 != 0 || canonical != rounded_hundredths,
+    })
 }
 
-fn bounded_twips(value: &str, maximum: u64) -> Result<u64, DocxImportError> {
+fn bounded_twips(value: &str, maximum: u64) -> Result<ImportedBoundedValue, DocxImportError> {
     let twips = unsigned_integer(value)?;
-    if twips <= maximum {
-        Ok(twips)
-    } else {
-        Err(DocxImportError::lossy(vec![
-            ExternalFeature::UnsupportedDocumentStructure,
-        ]))
-    }
+    Ok(ImportedBoundedValue {
+        value: twips.min(maximum),
+        approximated: twips > maximum,
+    })
 }
 
 fn unsigned_integer(value: &str) -> Result<u64, DocxImportError> {
@@ -1077,10 +1126,6 @@ fn name_string(name: &[u8]) -> Result<String, DocxImportError> {
 
 fn unsupported(feature: ExternalFeature) -> DocxImportError {
     DocxImportError::unsupported(vec![feature])
-}
-
-fn lossy_line_spacing() -> DocxImportError {
-    DocxImportError::lossy(vec![ExternalFeature::UnsupportedDocumentStructure])
 }
 
 fn unsafe_xml_entity() -> DocxImportError {

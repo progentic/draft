@@ -490,17 +490,20 @@ validation still needed to confirm the successful source and the terminal
 table/footnote behavior. The correction below supersedes that expected
 disposition. This candidate closes no finding, RC row, or release gate.
 
-The current correction replaces those terminal table and footnote outcomes
-with a source-preserving readable-copy path. Table rows become paragraphs with
-explicit cell separators, referenced footnotes become end notes, and
-unrepresented list numbering becomes plain paragraph content. The typed result
-is `lossy`; Save Back to Source remains unavailable, while Save As to `.draft`
-or a separate DOCX copy remains available. Focused Rust and frontend tests pass.
-A read-only local probe of the four previously audited packages plus three
-additional known-valid Word documents reached a canonical imported document in
-all seven cases. None of those user files entered the repository or changed on
-disk. This is mechanical evidence only; a new package hash and human Open
-retest remain required, and no finding or gate closes here.
+The current correction replaces terminal valid-structure outcomes with a
+source-preserving readable-copy path. The detailed parser retains supported
+formatting and discloses bounded paragraph-value approximation. A second
+bounded parser recovers visible content when an unfamiliar safe Word wrapper
+prevents detailed conversion. Table rows become paragraphs with explicit cell
+separators, referenced footnotes become end notes, and unrepresented list
+numbering becomes plain paragraph content. The typed result is `lossy`; Save
+Back to Source remains unavailable, while Save As to `.draft` or a separate
+DOCX copy remains available. Focused Rust tests pass. A temporary read-only
+local diagnostic probe reached a canonical document for all 103 non-lock DOCX
+paths in the available corpus. The probe was removed, no user document entered
+the repository, and no source changed on disk. This is mechanical evidence
+only; a new package hash and human Open retest remain required, and no finding
+or gate closes here.
 
 ### Findings And Dispositions
 
@@ -539,7 +542,7 @@ retest remain required, and no finding or gate closes here.
 | UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
 | UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
 | UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
-| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending | Artifact `fa72b0c7`, visibly identified as implementation commit `27fe00ac`, rejected a known-valid paragraph DOCX because ordinary inline Word tabs were treated as unsupported document structure. Later local audits found two table-dependent packages and one footnote-dependent package. The current correction imports their visible content through a disclosed lossy copy, denies Save Back, and leaves all seven locally probed source files unchanged. | Rebuild and rehash the corrected package, repeat Open against the table- and footnote-dependent sources, confirm readable content and the lossy notice, and verify Save Back remains unavailable without closing broader fidelity or release gates. |
+| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending | Artifact `fa72b0c7`, visibly identified as implementation commit `27fe00ac`, rejected a known-valid paragraph DOCX because ordinary inline Word tabs were treated as unsupported document structure. Later packages exposed valid tables, notes, content controls, drawings, automatic spacing values, and unfamiliar Word wrappers. The current correction keeps detailed formatting where supported, otherwise imports recoverable visible content through a disclosed lossy copy, denies Save Back, and reached a canonical document for all 103 non-lock paths in a temporary read-only local corpus probe without changing any source. | Rebuild and rehash the corrected package, repeat Open against representative detailed and fallback sources, confirm readable content and the lossy notice, and verify Save Back remains unavailable without closing broader fidelity or release gates. |
 | UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
 | UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
 | UX-47-013 | UX-0 | Open - packaged fidelity retest pending | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Candidate `1634d6d2` mechanically contains the accepted run, paragraph, and page-break corrections. | Compare the source and exported output from the exact package in Word or LibreOffice and confirm the original source hash remains unchanged without guessed semantic headings or unsupported font substitution. |

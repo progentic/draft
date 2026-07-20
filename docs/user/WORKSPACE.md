@@ -49,8 +49,10 @@ original and is disclosed when the imported copy opens. Inline Word tabs use
 readable spacing but do not retain exact tab-stop placement. Common Word
 proofing metadata, custom style names, layout markers, and hyperlink wrappers
 retain their visible text, but unsupported behavior remains only in the
-unchanged source. A DOCX that depends on tables or footnotes cannot currently
-open because DRAFT cannot preserve those structures safely.
+unchanged source. Table cells open as readable row text, referenced footnotes
+open as end notes, and unfamiliar safe Word wrappers can fall back to a
+readable copy. These lossy copies preserve the unchanged source and cannot use
+Save Back to Source.
 
 An explicit page break appears as a gap between separate page surfaces. DRAFT
 does not automatically calculate page boundaries from text flow, margins,

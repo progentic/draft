@@ -10,6 +10,7 @@ use super::fidelity::{
 mod document;
 mod footnotes;
 mod package;
+mod readable;
 mod table;
 
 pub(crate) const MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024;
@@ -43,10 +44,6 @@ pub(crate) fn parse_docx_package(bytes: &[u8]) -> Result<ParsedDocx, DocxImportE
     }
     let package = package::read_package(bytes).inspect_err(trace_package_decision)?;
     docx_trace::emit("package_limit_decision", format_args!("result=accepted"));
-    let mut fidelity = FidelityAccumulator::default();
-    for feature in package.features {
-        fidelity.record_unsupported(feature);
-    }
     docx_trace::emit(
         "document_xml_parse",
         format_args!("status=started bytes={}", package.document_xml.len()),
@@ -56,16 +53,52 @@ pub(crate) fn parse_docx_package(bytes: &[u8]) -> Result<ParsedDocx, DocxImportE
         "footnote_parse",
         format_args!("status=completed notes={}", footnotes.len()),
     );
-    let document = document::parse_document(&package.document_xml, &footnotes, &mut fidelity)?;
+    let (document, fidelity) =
+        parse_canonical_document(&package.document_xml, &footnotes, &package.features)?;
     docx_trace::emit("document_xml_parse", format_args!("status=completed"));
     docx_trace::emit(
         "paragraph_conversion",
         format_args!("blocks={}", canonical_block_count(&document)),
     );
-    Ok(ParsedDocx {
-        document,
-        fidelity: fidelity.finish(),
-    })
+    Ok(ParsedDocx { document, fidelity })
+}
+
+fn parse_canonical_document(
+    xml: &[u8],
+    footnotes: &footnotes::FootnoteCatalog,
+    package_features: &[ExternalFeature],
+) -> Result<(Value, ExternalFidelity), DocxImportError> {
+    let mut fidelity = seeded_fidelity(package_features);
+    match document::parse_document(xml, footnotes, &mut fidelity) {
+        Ok(document) => Ok((document, fidelity.finish())),
+        Err(error) if error.permits_readable_fallback() => {
+            docx_trace::emit(
+                "document_xml_parse",
+                format_args!("status=readable_fallback error={error:?}"),
+            );
+            parse_readable_fallback(xml, footnotes, package_features)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn parse_readable_fallback(
+    xml: &[u8],
+    footnotes: &footnotes::FootnoteCatalog,
+    package_features: &[ExternalFeature],
+) -> Result<(Value, ExternalFidelity), DocxImportError> {
+    let mut fidelity = seeded_fidelity(package_features);
+    fidelity.record_lossy(ExternalFeature::UnsupportedDocumentStructure);
+    let document = readable::parse_readable_document(xml, footnotes, &mut fidelity)?;
+    Ok((document, fidelity.finish()))
+}
+
+fn seeded_fidelity(features: &[ExternalFeature]) -> FidelityAccumulator {
+    let mut fidelity = FidelityAccumulator::default();
+    for feature in features {
+        fidelity.record_unsupported(*feature);
+    }
+    fidelity
 }
 
 fn trace_package_decision(error: &DocxImportError) {
@@ -102,6 +135,13 @@ impl DocxImportError {
         Self::LossyImportDenied {
             fidelity: ExternalFidelity::Lossy { features },
         }
+    }
+
+    fn permits_readable_fallback(&self) -> bool {
+        matches!(
+            self,
+            Self::UnsupportedExternalFeature { .. } | Self::LossyImportDenied { .. }
+        )
     }
 }
 

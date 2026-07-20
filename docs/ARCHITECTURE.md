@@ -912,10 +912,12 @@ default `paragraphStyle` object because absence is the canonical default.
 This bounded unit imports the accepted DOCX paragraph subset and disclosed
 readable approximations through a Rust-owned ZIP/XML reader. Table cells become
 row text, referenced footnotes become end notes, and unrepresented list
-numbering becomes plain paragraph content. The result is explicitly lossy and
-cannot be saved back to the source. The reader classifies exact, normalized,
-preservable, unsupported, lossy, malformed, and unsafe input without clamping
-or exposing format structures above the converter. External provenance and source
+numbering becomes plain paragraph content. Values outside canonical paragraph
+bounds can be rounded, clamped, or defaulted only as an explicitly disclosed
+lossy import that cannot be saved back to the source. A second bounded parser
+recovers visible content when valid Word wrappers prevent detailed conversion.
+The reader classifies exact, normalized, preservable, unsupported, lossy,
+malformed, and unsafe input without exposing format structures above the converter. External provenance and source
 fingerprints remain in the registry; the frontend receives a path-free typed
 summary. Opening, closing, cancellation, failed import, and failed Save leave
 the original bytes unchanged.
