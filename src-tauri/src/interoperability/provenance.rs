@@ -254,6 +254,20 @@ mod tests {
     }
 
     #[test]
+    fn lossy_import_requires_save_as_after_edits() {
+        let original = envelope("Original");
+        let fidelity = ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::TableStructure],
+        };
+        let provenance = imported_provenance(&original, fidelity);
+
+        assert_eq!(
+            provenance.save_disposition(&envelope("Edited"), CurrentSource::Bytes(b"source")),
+            SameFormatSaveDisposition::DeniedUnsupportedSourceBehavior
+        );
+    }
+
+    #[test]
     fn missing_and_changed_sources_fail_before_writer_policy() {
         let original = envelope("Original");
         let provenance = imported_provenance(&original, ExternalFidelity::Exact);

@@ -8,6 +8,7 @@ export type ExternalFeature =
   | "contextual_spacing"
   | "exact_line_spacing"
   | "external_relationship"
+  | "footnote"
   | "list_indentation"
   | "package_part"
   | "pagination_control"
@@ -15,6 +16,7 @@ export type ExternalFeature =
   | "paragraph_shading"
   | "paragraph_tab"
   | "run_formatting"
+  | "table_structure"
   | "unsupported_document_structure"
   | "unsupported_style_inheritance";
 
@@ -51,7 +53,11 @@ export type ExternalFidelity =
 export type ImportedExternalFidelity = Extract<
   ExternalFidelity,
   {
-    classification: "exact" | "canonically_normalized" | "unsupported_preservable";
+    classification:
+      | "exact"
+      | "canonically_normalized"
+      | "unsupported_preservable"
+      | "lossy";
   }
 >;
 
@@ -80,6 +86,7 @@ const EXTERNAL_FEATURES: ExternalFeature[] = [
   "contextual_spacing",
   "exact_line_spacing",
   "external_relationship",
+  "footnote",
   "list_indentation",
   "package_part",
   "pagination_control",
@@ -87,6 +94,7 @@ const EXTERNAL_FEATURES: ExternalFeature[] = [
   "paragraph_shading",
   "paragraph_tab",
   "run_formatting",
+  "table_structure",
   "unsupported_document_structure",
   "unsupported_style_inheritance",
 ];
@@ -181,7 +189,9 @@ function isImportedExternalFidelity(value: unknown): value is ImportedExternalFi
     isExternalFidelity(value) &&
     (value.classification === "exact" ||
       value.classification === "canonically_normalized" ||
-      value.classification === "unsupported_preservable")
+      value.classification === "unsupported_preservable" ||
+      value.classification === "lossy") &&
+    (value.classification === "exact" || value.features.length > 0)
   );
 }
 

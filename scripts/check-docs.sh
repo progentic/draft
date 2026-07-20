@@ -1118,7 +1118,7 @@ check_phase_47_manual_correction_documentation() {
   require_document_text "${ledger}" \
     '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |'
   require_document_text "${ledger}" \
-    '| UX-47-010 | UX-0 | Open - broader DOCX compatibility |'
+    '| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending |'
   require_document_text "${ledger}" \
     '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |'
   require_document_text "${ledger}" \
@@ -1144,19 +1144,21 @@ check_phase_47_manual_correction_documentation() {
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     "records \`ParagraphTab\` as source-preservable"
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
-    'Word tables remain unsupported and are'
+    'Word tables import as a disclosed readable approximation'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
-    'never flattened into paragraphs'
+    "cells are separated by \` | \`"
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
-    'Footnote references also remain unsupported and are never dropped'
+    'Referenced footnotes import as numbered markers'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Save Back to Source is unavailable'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
     "A \`w:hyperlink\` wrapper retains its child"
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
     'fn inline_tabs_preserve_readable_text_and_require_source_preservation'
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
-    'fn table_documents_remain_unsupported_without_flattening'
+    'fn table_cells_import_as_disclosed_readable_rows'
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
-    'fn footnote_references_remain_unsupported_without_flattening'
+    'fn footnote_references_import_as_disclosed_end_notes'
   require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
     'fn common_word_metadata_keeps_visible_text_and_requires_source_preservation'
   require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \

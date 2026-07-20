@@ -86,7 +86,8 @@ guidance lives in `docs/wiki/Troubleshooting.md`:
 | Citation cannot be resolved or read | Keep the citation unchanged. Restart DRAFT only when the visible message directs it. |
 | Native menu action or state is unavailable | Use the matching document action in the visible toolbar. |
 | DOCX import is malformed or unsafe | Keep the source unchanged and open a trusted, valid copy. |
-| DOCX import is unsupported or lossy | Preserve the source and use a supported format; DRAFT does not claim safe round-trip editing. |
+| DOCX import uses a readable lossy conversion | Keep the unchanged source, save the editable copy as DRAFT, and do not imply table, footnote, list, or same-format editing support. |
+| DOCX import remains unsupported or requires an unsafe approximation | Preserve the source and use a supported format; DRAFT does not claim safe round-trip editing. |
 | DOCX import requires source preservation | Save to DRAFT or use Save As for a separate Word copy; do not treat the imported source as a save target. |
 | Save As target is invalid or conflicts with the chosen format | Keep the document unchanged, choose the intended DRAFT, Word, or text format again, and use a simple matching filename. |
 | Word or text conversion is unsupported or exceeds a limit | Keep the document unchanged, address the stated content limit when possible, and retry the same Save As format. |

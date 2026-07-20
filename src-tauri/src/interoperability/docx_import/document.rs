@@ -12,7 +12,10 @@ use crate::documents::paragraph_format::{
 };
 use crate::documents::text_format::{FontFamily, FontSizePoints};
 
-use super::{DocxImportError, ExternalFeature, ExternalSafetyReason, FidelityAccumulator};
+use super::{
+    DocxImportError, ExternalFeature, ExternalSafetyReason, FidelityAccumulator,
+    footnotes::FootnoteCatalog, table::TableBuilder,
+};
 
 const MAX_IMPORTED_NODES: usize = 100_000;
 const SUPPORTED_ALIGNMENT: [&str; 4] = ["left", "center", "right", "both"];
@@ -21,29 +24,36 @@ const VALID_UNSUPPORTED_ALIGNMENT: [&str; 5] =
 
 pub(super) fn parse_document(
     xml: &[u8],
+    footnotes: &FootnoteCatalog,
     fidelity: &mut FidelityAccumulator,
 ) -> Result<Value, DocxImportError> {
-    DocumentParser::new(fidelity).parse(xml)
+    DocumentParser::new(footnotes, fidelity).parse(xml)
 }
 
 struct DocumentParser<'a> {
     fidelity: &'a mut FidelityAccumulator,
+    footnote_ids: Vec<String>,
+    footnotes: &'a FootnoteCatalog,
     blocks: Vec<Value>,
     paragraph: Option<ParagraphBuilder>,
     run: Option<RunBuilder>,
     stack: Vec<String>,
+    table: Option<TableBuilder>,
     ignored_depth: usize,
     nodes: usize,
 }
 
 impl<'a> DocumentParser<'a> {
-    fn new(fidelity: &'a mut FidelityAccumulator) -> Self {
+    fn new(footnotes: &'a FootnoteCatalog, fidelity: &'a mut FidelityAccumulator) -> Self {
         Self {
             fidelity,
+            footnote_ids: Vec::new(),
+            footnotes,
             blocks: Vec::new(),
             paragraph: None,
             run: None,
             stack: Vec::new(),
+            table: None,
             ignored_depth: 0,
             nodes: 0,
         }
@@ -104,6 +114,9 @@ impl<'a> DocumentParser<'a> {
             b"t" => self.finish_text(),
             b"r" => self.finish_run(),
             b"p" => self.finish_paragraph(),
+            b"tc" => self.finish_table_cell(),
+            b"tr" => self.finish_table_row(),
+            b"tbl" => self.finish_table(),
             _ => Ok(()),
         }
     }
@@ -131,14 +144,17 @@ impl<'a> DocumentParser<'a> {
         Ok(())
     }
 
-    fn finish(self) -> Result<Value, DocxImportError> {
+    fn finish(mut self) -> Result<Value, DocxImportError> {
         if !self.stack.is_empty()
             || self.ignored_depth != 0
             || self.paragraph.is_some()
             || self.run.is_some()
+            || self.table.is_some()
         {
             return Err(DocxImportError::malformed());
         }
+        self.append_footnotes()?;
+        require_canonical_node_count(&self.blocks)?;
         Ok(json!({ "type": "doc", "content": self.blocks }))
     }
 
@@ -148,6 +164,14 @@ impl<'a> DocumentParser<'a> {
         element: &BytesStart<'_>,
     ) -> Result<(), DocxImportError> {
         match name {
+            b"tbl" => self.start_table(),
+            b"tr" if self.table.is_some() => self.start_table_row(),
+            b"tc" if self.table.is_some() => self.start_table_cell(),
+            b"tblPr" | b"tblGrid" | b"tblPrEx" | b"trPr" | b"tcPr"
+                if self.table.is_some() && self.paragraph.is_none() =>
+            {
+                self.ignore_lossy(ExternalFeature::TableStructure)
+            }
             b"rPr" if self.run.is_none() && self.in_paragraph_properties() => {
                 self.ignore_unsupported(ExternalFeature::RunFormatting)
             }
@@ -155,6 +179,7 @@ impl<'a> DocumentParser<'a> {
             b"p" => self.start_paragraph(),
             b"r" => self.start_run(),
             b"br" => self.push_break(element),
+            b"footnoteReference" if self.run.is_some() => self.push_footnote_reference(element),
             b"tab" if self.run.is_some() => self.push_inline_tab(),
             b"lastRenderedPageBreak" if self.run.is_some() => {
                 self.record_unsupported(ExternalFeature::PaginationControl)
@@ -176,6 +201,9 @@ impl<'a> DocumentParser<'a> {
         match name {
             b"p" => self.finish_paragraph(),
             b"r" => self.finish_run(),
+            b"tc" => self.finish_table_cell(),
+            b"tr" => self.finish_table_row(),
+            b"tbl" => self.finish_table(),
             _ => Ok(()),
         }
     }
@@ -187,6 +215,29 @@ impl<'a> DocumentParser<'a> {
         self.increment_nodes()?;
         self.paragraph = Some(ParagraphBuilder::default());
         Ok(())
+    }
+
+    fn start_table(&mut self) -> Result<(), DocxImportError> {
+        if self.table.is_some() || self.paragraph.is_some() || self.run.is_some() {
+            return Err(unsupported(ExternalFeature::TableStructure));
+        }
+        self.fidelity.record_lossy(ExternalFeature::TableStructure);
+        self.table = Some(TableBuilder::default());
+        Ok(())
+    }
+
+    fn start_table_row(&mut self) -> Result<(), DocxImportError> {
+        self.table
+            .as_mut()
+            .ok_or_else(DocxImportError::malformed)?
+            .start_row()
+    }
+
+    fn start_table_cell(&mut self) -> Result<(), DocxImportError> {
+        self.table
+            .as_mut()
+            .ok_or_else(DocxImportError::malformed)?
+            .start_cell()
     }
 
     fn start_run(&mut self) -> Result<(), DocxImportError> {
@@ -214,6 +265,24 @@ impl<'a> DocumentParser<'a> {
         Ok(())
     }
 
+    fn push_footnote_reference(&mut self, element: &BytesStart<'_>) -> Result<(), DocxImportError> {
+        let values = attributes(element)?;
+        let id = values
+            .get("id")
+            .filter(|_| values.len() == 1)
+            .cloned()
+            .ok_or_else(DocxImportError::malformed)?;
+        if self.footnotes.text(&id).is_none() {
+            return Err(DocxImportError::malformed());
+        }
+        self.fidelity.record_lossy(ExternalFeature::Footnote);
+        self.current_run()?.text.push_str(&format!("[{id}]"));
+        if !self.footnote_ids.contains(&id) {
+            self.footnote_ids.push(id);
+        }
+        Ok(())
+    }
+
     fn finish_text(&mut self) -> Result<(), DocxImportError> {
         self.flush_text_node()
     }
@@ -233,7 +302,44 @@ impl<'a> DocumentParser<'a> {
             .paragraph
             .take()
             .ok_or_else(DocxImportError::malformed)?;
-        self.blocks.extend(paragraph.into_blocks());
+        let blocks = paragraph.into_blocks();
+        match self.table.as_mut() {
+            Some(table) => table.push_blocks(blocks),
+            None => {
+                self.blocks.extend(blocks);
+                Ok(())
+            }
+        }
+    }
+
+    fn finish_table_cell(&mut self) -> Result<(), DocxImportError> {
+        self.table
+            .as_mut()
+            .ok_or_else(DocxImportError::malformed)?
+            .finish_cell()
+    }
+
+    fn finish_table_row(&mut self) -> Result<(), DocxImportError> {
+        self.table
+            .as_mut()
+            .ok_or_else(DocxImportError::malformed)?
+            .finish_row()
+    }
+
+    fn finish_table(&mut self) -> Result<(), DocxImportError> {
+        let table = self.table.take().ok_or_else(DocxImportError::malformed)?;
+        self.blocks.extend(table.finish()?);
+        Ok(())
+    }
+
+    fn append_footnotes(&mut self) -> Result<(), DocxImportError> {
+        for id in std::mem::take(&mut self.footnote_ids) {
+            let text = self
+                .footnotes
+                .text(&id)
+                .ok_or_else(DocxImportError::malformed)?;
+            self.blocks.push(footnote_block(&id, text));
+        }
         Ok(())
     }
 
@@ -255,8 +361,8 @@ impl<'a> DocumentParser<'a> {
             b"keepNext" | b"keepLines" | b"widowControl" => {
                 self.record_unsupported(ExternalFeature::PaginationControl)
             }
-            b"numPr" => Err(unsupported(ExternalFeature::ListIndentation)),
-            _ => Err(unsupported(ExternalFeature::UnsupportedDocumentStructure)),
+            b"numPr" => self.ignore_lossy(ExternalFeature::ListIndentation),
+            _ => self.ignore_unsupported(ExternalFeature::UnsupportedDocumentStructure),
         }
     }
 
@@ -276,8 +382,7 @@ impl<'a> DocumentParser<'a> {
     }
 
     fn reject_unknown_structure(&self, name: &[u8]) -> Result<(), DocxImportError> {
-        if self.paragraph.is_some() || matches!(name, b"hyperlink" | b"tbl" | b"sdt" | b"altChunk")
-        {
+        if self.paragraph.is_some() || matches!(name, b"hyperlink" | b"sdt" | b"altChunk") {
             Err(unsupported(ExternalFeature::UnsupportedDocumentStructure))
         } else {
             Err(DocxImportError::malformed())
@@ -473,6 +578,12 @@ impl<'a> DocumentParser<'a> {
         Ok(())
     }
 
+    fn ignore_lossy(&mut self, feature: ExternalFeature) -> Result<(), DocxImportError> {
+        self.fidelity.record_lossy(feature);
+        self.ignored_depth = 1;
+        Ok(())
+    }
+
     fn increment_nodes(&mut self) -> Result<(), DocxImportError> {
         self.nodes += 1;
         if self.nodes > MAX_IMPORTED_NODES {
@@ -483,6 +594,46 @@ impl<'a> DocumentParser<'a> {
             Ok(())
         }
     }
+}
+
+fn footnote_block(id: &str, text: &str) -> Value {
+    let mut content = vec![json!({ "type": "text", "text": format!("[{id}]") })];
+    for (index, line) in text.lines().enumerate() {
+        if index > 0 {
+            content.push(json!({ "type": "hardBreak" }));
+        } else if !line.is_empty() {
+            content.push(json!({ "type": "text", "text": " " }));
+        }
+        if !line.is_empty() {
+            content.push(json!({ "type": "text", "text": line }));
+        }
+    }
+    json!({ "type": "paragraph", "content": content })
+}
+
+fn require_canonical_node_count(blocks: &[Value]) -> Result<(), DocxImportError> {
+    let nodes = blocks.iter().try_fold(0_usize, |count, block| {
+        count.checked_add(canonical_node_count(block))
+    });
+    if nodes.is_some_and(|count| count <= MAX_IMPORTED_NODES) {
+        Ok(())
+    } else {
+        Err(DocxImportError::unsafe_input(
+            ExternalSafetyReason::XmlNodeCount,
+        ))
+    }
+}
+
+fn canonical_node_count(node: &Value) -> usize {
+    1_usize.saturating_add(
+        node.get("content")
+            .and_then(Value::as_array)
+            .map_or(0, |content| {
+                content.iter().fold(0_usize, |count, child| {
+                    count.saturating_add(canonical_node_count(child))
+                })
+            }),
+    )
 }
 
 #[derive(Default)]

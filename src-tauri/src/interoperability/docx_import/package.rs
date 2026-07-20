@@ -19,25 +19,30 @@ const CONTENT_TYPES_PATH: &str = "[Content_Types].xml";
 const ROOT_RELATIONSHIPS_PATH: &str = "_rels/.rels";
 const DOCUMENT_PATH: &str = "word/document.xml";
 const DOCUMENT_RELATIONSHIPS_PATH: &str = "word/_rels/document.xml.rels";
+const FOOTNOTES_PATH: &str = "word/footnotes.xml";
 const STYLES_PATH: &str = "word/styles.xml";
 const REQUIRED_PARTS: [&str; 3] = [CONTENT_TYPES_PATH, ROOT_RELATIONSHIPS_PATH, DOCUMENT_PATH];
-const KNOWN_PARTS: [&str; 5] = [
+const KNOWN_PARTS: [&str; 6] = [
     CONTENT_TYPES_PATH,
     ROOT_RELATIONSHIPS_PATH,
     DOCUMENT_PATH,
     DOCUMENT_RELATIONSHIPS_PATH,
+    FOOTNOTES_PATH,
     STYLES_PATH,
 ];
 const OFFICE_DOCUMENT_RELATIONSHIP: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
 const STYLES_RELATIONSHIP: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles";
+const FOOTNOTES_RELATIONSHIP: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes";
 const DOCUMENT_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml";
 
 pub(super) struct DocxPackage {
     pub(super) document_xml: Vec<u8>,
     pub(super) features: Vec<ExternalFeature>,
+    pub(super) footnotes_xml: Option<Vec<u8>>,
 }
 
 pub(super) fn read_package(bytes: &[u8]) -> Result<DocxPackage, DocxImportError> {
@@ -238,6 +243,7 @@ fn validate_parts(parts: &HashMap<String, Vec<u8>>) -> Result<DocxPackage, DocxI
     Ok(DocxPackage {
         document_xml: parts[DOCUMENT_PATH].clone(),
         features,
+        footnotes_xml: parts.get(FOOTNOTES_PATH).cloned(),
     })
 }
 
@@ -392,6 +398,9 @@ fn validate_document_relationships(xml: &[u8]) -> Result<bool, DocxImportError> 
         }
         let target = resolve_relationship_target(DOCUMENT_PATH, &relationship.target)?;
         if relationship.kind == STYLES_RELATIONSHIP && target != STYLES_PATH {
+            return Err(unsafe_error(ExternalSafetyReason::RelationshipTarget));
+        }
+        if relationship.kind == FOOTNOTES_RELATIONSHIP && target != FOOTNOTES_PATH {
             return Err(unsafe_error(ExternalSafetyReason::RelationshipTarget));
         }
     }

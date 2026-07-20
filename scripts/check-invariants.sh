@@ -273,13 +273,14 @@ check_python_boundary() {
 }
 
 check_command_errors() {
-  # The two owned DOCX parser files return typed errors around
+  # The three owned DOCX parser files return typed errors around
   # HashMap<String, String>; the nested comma otherwise matches the flat
   # Result<_, String> detector. The DOCX contract below verifies their exact
   # typed boundary, so no broader interoperability path is excluded.
   assert_no_matches "INV-02 generic Rust command errors" \
     '\banyhow::Error\b|Box\s*<\s*dyn\s+(?:std::)?error::Error|Result\s*<[^;\n]+,\s*(?:String|serde_json::Value)\s*>' \
     --glob '!src-tauri/src/interoperability/docx_import/document.rs' \
+    --glob '!src-tauri/src/interoperability/docx_import/footnotes.rs' \
     --glob '!src-tauri/src/interoperability/docx_import/package.rs' \
     src-tauri/src
 
@@ -940,6 +941,8 @@ check_docx_import_contract() {
   local source_write_dialog_tests='src/features/external-source-save/SaveBackToSourceDialog.test.tsx'
   local package_path='src-tauri/src/interoperability/docx_import/package.rs'
   local document_path='src-tauri/src/interoperability/docx_import/document.rs'
+  local footnotes_path='src-tauri/src/interoperability/docx_import/footnotes.rs'
+  local table_path='src-tauri/src/interoperability/docx_import/table.rs'
   local test_path='src-tauri/src/interoperability/docx_import/tests.rs'
   local required_tests=(
     supported_paragraph_properties_map_to_canonical_data
@@ -950,9 +953,12 @@ check_docx_import_contract() {
     package_semantics_classify_valid_uneditable_behavior
     optional_relationship_and_style_parts_are_not_required
     exact_and_at_least_line_rules_are_unsupported_not_malformed
-    list_indentation_remains_unsupported
+    list_indentation_imports_as_disclosed_plain_paragraphs
     common_word_metadata_keeps_visible_text_and_requires_source_preservation
-    footnote_references_remain_unsupported_without_flattening
+    footnote_references_import_as_disclosed_end_notes
+    missing_footnote_content_fails_before_document_creation
+    table_cells_import_as_disclosed_readable_rows
+    lossy_table_import_preserves_source_bytes
     malformed_properties_fail_without_fidelity_guessing
     unrepresentable_bounds_are_lossy_and_never_clamped
     exported_supported_paragraph_data_reimports_exactly
@@ -978,6 +984,8 @@ check_docx_import_contract() {
   require_file "${source_write_dialog_tests}"
   require_file "${package_path}"
   require_file "${document_path}"
+  require_file "${footnotes_path}"
+  require_file "${table_path}"
   require_file "${test_path}"
   require_file src/ipc/externalDocument.ts
   require_file src/ipc/externalDocument.test.ts
@@ -990,8 +998,16 @@ check_docx_import_contract() {
   require_source_pattern 'pub(crate) fn import_docx_source(' "${policy_path}"
   require_rust_test oversized_source_fails_before_package_parsing "${policy_path}"
   require_source_pattern 'pub enum ExternalFidelity' "${fidelity_path}"
+  require_source_pattern 'Footnote,' "${fidelity_path}"
+  require_source_pattern 'TableStructure,' "${fidelity_path}"
+  require_source_pattern 'Self::Lossy' "${fidelity_path}"
   require_source_pattern 'pub enum SameFormatSaveDisposition' "${provenance_path}"
   require_source_pattern 'pub(crate) fn normalization_features(' "${provenance_path}"
+  require_rust_test lossy_import_requires_save_as_after_edits "${provenance_path}"
+  require_source_pattern 'record_lossy(ExternalFeature::TableStructure)' "${document_path}"
+  require_source_pattern 'record_lossy(ExternalFeature::Footnote)' "${document_path}"
+  require_source_pattern '" | "' "${table_path}"
+  require_source_pattern '| "lossy";' src/ipc/externalDocument.ts
   require_source_pattern 'pub(crate) async fn save_external_document(' \
     "${source_write_command}"
   require_source_pattern 'write_document_atomically' "${source_write_path}"
@@ -1209,7 +1225,7 @@ check_phase_47_manual_gate_corrections() {
   require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
   require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
     "${ledger}"
-  require_source_pattern '| UX-47-010 | UX-0 | Open - broader DOCX compatibility |' \
+  require_source_pattern '| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending |' \
     "${ledger}"
   require_source_pattern '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |' \
     "${ledger}"
@@ -1234,9 +1250,9 @@ check_phase_47_manual_gate_corrections() {
     src-tauri/src/interoperability/docx_import/tests.rs
   require_rust_test inline_tabs_preserve_readable_text_and_require_source_preservation \
     src-tauri/src/interoperability/docx_import/tests.rs
-  require_rust_test table_documents_remain_unsupported_without_flattening \
+  require_rust_test table_cells_import_as_disclosed_readable_rows \
     src-tauri/src/interoperability/docx_import/tests.rs
-  require_rust_test footnote_references_remain_unsupported_without_flattening \
+  require_rust_test footnote_references_import_as_disclosed_end_notes \
     src-tauri/src/interoperability/docx_import/tests.rs
   require_rust_test common_word_metadata_keeps_visible_text_and_requires_source_preservation \
     src-tauri/src/interoperability/docx_import/tests.rs

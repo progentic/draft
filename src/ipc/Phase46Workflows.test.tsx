@@ -663,6 +663,40 @@ describe("Phase 46 visible workflows", () => {
     expect(screen.queryByText(/\/Users|word\/document\.xml|same-format/i)).toBeNull();
   });
 
+  it("opens lossy DOCX content as a disclosed source-preserving copy", async () => {
+    const user = userEvent.setup();
+    installDefaultCommands({
+      openDocument: async () => ({
+        status: "imported_external",
+        envelope: importedDocxEnvelope(),
+        external: {
+          ...externalSummary(),
+          fidelity: {
+            classification: "lossy",
+            features: ["footnote", "table_structure"],
+          },
+          sameFormatSave: "denied_unsupported_source_behavior",
+        },
+      }),
+    });
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Open…" }));
+
+    expect(
+      await screen.findByText(
+        "DOCX imported as a readable copy. Tables, footnotes, lists, or other unsupported structures were normalized. The original was not changed. Save as a DRAFT document to continue.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Source unchanged")).toBeTruthy();
+    const menu = await openWorkspaceOverflow(user);
+    expect(within(menu).getByText("Save Back to Source").closest("button")).toHaveProperty(
+      "disabled",
+      true,
+    );
+    expect(screen.queryByText(/\/Users|word\/document\.xml/i)).toBeNull();
+  });
+
   it.each([
     [
       "malformed_package",

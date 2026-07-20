@@ -44,8 +44,11 @@ sources remain unavailable.
 
 DOCX import retains supported explicit font family, whole-point size, bold,
 italic, underline, paragraph alignment, spacing, indentation, heading styles,
-and page breaks. If the source also contains behavior DRAFT cannot represent,
-the notice explains that those features remain only in the unchanged original.
+and page breaks. Table cells import as readable row text, referenced footnotes
+import as end notes, and unrepresented list numbering imports as plain
+paragraphs. These are disclosed lossy approximations rather than table,
+footnote, or list support. The unchanged original retains the source structure,
+and Save Back to Source remains unavailable for the imported copy.
 
 An explicit page break appears as a gap between separate page surfaces. DRAFT
 does not automatically calculate page boundaries from text flow, margins,

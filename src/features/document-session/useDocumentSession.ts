@@ -610,6 +610,9 @@ function openSuccessMessage(result: Extract<
       ? "Markdown imported as literal editable text. DRAFT does not parse or preview Markdown. Save as a DRAFT document to keep your work."
       : "Text imported. Save as a DRAFT document to keep your work.";
   }
+  if (result.external.fidelity.classification === "lossy") {
+    return "DOCX imported as a readable copy. Tables, footnotes, lists, or other unsupported structures were normalized. The original was not changed. Save as a DRAFT document to continue.";
+  }
   return result.external.fidelity.classification === "unsupported_preservable"
     ? "DOCX imported. Supported text and paragraph formatting was retained. Some source features remain only in the original. Save as a DRAFT document to edit a copy."
     : "DOCX opened. Save creates a DRAFT document; Save Back to Source replaces the DOCX only after confirmation.";

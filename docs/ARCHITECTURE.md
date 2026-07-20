@@ -909,10 +909,13 @@ boundary accepts version 1 and returns canonical version 2 state. The first
 successful explicit save writes version 2; migration never invents an all-
 default `paragraphStyle` object because absence is the canonical default.
 
-This bounded unit imports the accepted DOCX paragraph subset through a
-Rust-owned ZIP/XML reader. It classifies exact, normalized, preservable,
-unsupported, lossy, malformed, and unsafe input without clamping or exposing
-format structures above the converter. External provenance and source
+This bounded unit imports the accepted DOCX paragraph subset and disclosed
+readable approximations through a Rust-owned ZIP/XML reader. Table cells become
+row text, referenced footnotes become end notes, and unrepresented list
+numbering becomes plain paragraph content. The result is explicitly lossy and
+cannot be saved back to the source. The reader classifies exact, normalized,
+preservable, unsupported, lossy, malformed, and unsafe input without clamping
+or exposing format structures above the converter. External provenance and source
 fingerprints remain in the registry; the frontend receives a path-free typed
 summary. Opening, closing, cancellation, failed import, and failed Save leave
 the original bytes unchanged.

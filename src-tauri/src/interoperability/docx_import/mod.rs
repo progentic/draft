@@ -8,7 +8,9 @@ use super::fidelity::{
 };
 
 mod document;
+mod footnotes;
 mod package;
+mod table;
 
 pub(crate) const MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024;
 pub(crate) const MAX_DOCX_IMPORT_XML_BYTES: usize = 8 * 1024 * 1024;
@@ -49,7 +51,12 @@ pub(crate) fn parse_docx_package(bytes: &[u8]) -> Result<ParsedDocx, DocxImportE
         "document_xml_parse",
         format_args!("status=started bytes={}", package.document_xml.len()),
     );
-    let document = document::parse_document(&package.document_xml, &mut fidelity)?;
+    let footnotes = footnotes::FootnoteCatalog::parse(package.footnotes_xml.as_deref())?;
+    docx_trace::emit(
+        "footnote_parse",
+        format_args!("status=completed notes={}", footnotes.len()),
+    );
+    let document = document::parse_document(&package.document_xml, &footnotes, &mut fidelity)?;
     docx_trace::emit("document_xml_parse", format_args!("status=completed"));
     docx_trace::emit(
         "paragraph_conversion",

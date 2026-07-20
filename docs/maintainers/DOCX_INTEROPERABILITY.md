@@ -19,10 +19,11 @@ export proves only that DRAFT can create a new package from its own model.
 ## Solution
 
 Rust reads the selected package under fixed limits, validates its paths and
-relationships, and converts only the accepted paragraph subset into the
-canonical document model. Every successful import includes a closed fidelity
-result. Unsupported but valid behavior is disclosed and requires retaining the
-untouched source rather than pretending the imported copy is exact.
+relationships, and converts the accepted paragraph subset plus bounded
+readable approximations into the canonical document model. Every successful
+import includes a closed fidelity result. Unsupported but valid behavior is
+disclosed and requires retaining the untouched source rather than pretending
+the imported copy is exact.
 
 Internal OPC relationship targets are resolved from the part that owns the
 relationship. A target such as `../customXml/item1.xml` is valid from
@@ -52,6 +53,9 @@ export.
 - Text, accepted run marks, page breaks, and accepted paragraph properties
   remain editable. Unsupported run, style, or package behavior is disclosed and
   remains available only in the untouched source.
+- Table cells and referenced footnote text remain readable through deterministic
+  lossy conversion. DRAFT does not claim table editing, footnote layout, or
+  same-format replacement for that imported copy.
 - An untouched source reports `no_changes`; edited exact content is eligible
   for the bounded writer, while normalized content requires explicit consent.
 - Unsupported source behavior, missing provenance, unknown fidelity, a missing
@@ -93,9 +97,8 @@ or a dashed line as document content. This presentation is exact only for
 explicit page-break nodes: DRAFT does not infer pagination from content flow,
 margins, font metrics, printer geometry, or Word's automatic layout.
 
-Exact and at-least line spacing, list numbering, tables, footnote references,
-and other semantic structures without a canonical DRAFT model are typed
-unsupported failures. Borders, shading, tab stops, contextual spacing,
+Exact and at-least line spacing and other unrepresentable paragraph values
+remain typed unsupported or lossy failures. Borders, shading, tab stops, contextual spacing,
 pagination controls other than authored page breaks, run properties outside
 the accepted marks, theme or conflicting font declarations, external
 relationships, noncanonical styles, and additional package parts are
@@ -112,11 +115,22 @@ are recorded as source-preservable. A `w:hyperlink` wrapper retains its child
 text and supported run formatting, but link behavior remains only in the
 unchanged source.
 
-Word tables remain unsupported and are never flattened into paragraphs.
-Footnote references also remain unsupported and are never dropped from an
-otherwise successful import. Both fail before canonical document creation
-because the editor has no table or footnote model that could preserve their
-meaning safely.
+Word tables import as a disclosed readable approximation. Each source row
+becomes one canonical paragraph, cells are separated by ` | `, and additional
+paragraphs inside a cell use hard breaks. Supported run marks remain attached
+to their text. The conversion does not preserve cell geometry, borders,
+merging, widths, or table semantics, so the result is `lossy`, the original is
+left unchanged, and Save Back to Source is unavailable.
+
+Referenced footnotes import as numbered markers in the body and readable end
+notes appended in first-reference order. DRAFT does not preserve Word's
+footnote placement, separator behavior, or automatic numbering, so this result
+is also `lossy` and source-preserving. A reference whose bounded footnote part
+is missing or malformed still fails before canonical document creation.
+
+List numbering without a canonical list mapping imports as plain paragraph
+content and is disclosed as lossy. DRAFT never presents these approximations
+as native table, footnote, or list support.
 
 ### Fidelity classes
 
@@ -145,8 +159,8 @@ same external path. It reports no native source path for the imported handle.
 unsupported, read-only, missing-provenance, unknown-fidelity,
 writer-unavailable, missing-source, and changed-source outcomes. Exact imports
 receive exact writer support. Canonically normalized imports receive writer
-support that requires explicit acceptance. Unsupported-preservable imports
-remain read-only.
+support that requires explicit acceptance. Unsupported-preservable and lossy
+imports remain read-only.
 
 `save_external_document` is separate from native `.draft` Save and derived-copy
 DOCX export. It compiles a complete replacement in memory, rechecks that source
@@ -176,6 +190,8 @@ external source identity and basename display name.
 | Compression ratio | 100:1 |
 | XML depth | 64 |
 | Imported canonical nodes | 100,000 |
+| Footnotes | 4,096 |
+| Extracted footnote text | 1 MiB |
 
 `DRAFT_DOCX_TRACE` is unset by default. Setting it for a local diagnostic run
 emits path-free Open command, dialog-selection, source-classification,
@@ -199,6 +215,8 @@ doctypes, unknown entities, and exceeded limits fail before registry mutation.
 | Mid | `DocumentRegistry::open_imported_external` | Own one live external-source registration without a native save target. |
 | Low | `interoperability::docx_import::package` | Validates ZIP, parts, relationships, content types, and XML bounds. |
 | Low | `interoperability::docx_import::document` | Maps the accepted XML subset into canonical Tiptap JSON. |
+| Low | `interoperability::docx_import::table` | Converts bounded table rows and cells into disclosed readable paragraphs. |
+| Low | `interoperability::docx_import::footnotes` | Extracts bounded referenced notes for disclosed end-note conversion. |
 | Low | `docx_trace` | Emits opt-in path-free Open, import, and export stage diagnostics for local failure investigation. |
 | Presentation | `src/ipc/externalDocument.ts` | Validates the path-free DTO and rejects unknown or unstable variants. |
 | Presentation | `src/ipc/externalDocumentSave.ts` | Validates eligibility, save, cancellation, denial, and bounded recovery outcomes. |
@@ -222,8 +240,8 @@ eligibility result.
   safety reason. User copy identifies package, XML, or document-size limits and
   suggests reducing large embedded content without exposing internal package
   details.
-- A valid feature that cannot enter the canonical model returns
-  `unsupported_external_feature`.
+- A valid feature that cannot enter the canonical model or a bounded readable
+  approximation returns `unsupported_external_feature`.
 - A value that would require undisclosed approximation returns
   `lossy_import_denied`.
 - A failed canonical envelope conversion returns `invalid_canonical_document`.
@@ -241,8 +259,8 @@ registry identity, or displayed filename.
 Rust unit tests cover every accepted paragraph and direct run property, absent
 defaults, canonical heading and page-break normalization, malformed and
 unsupported properties, supported formatting beside unrelated preservable
-behavior, common Word metadata and hyperlink wrappers, terminal table and
-footnote boundaries, content types, relationships, duplicate entries, path
+behavior, common Word metadata and hyperlink wrappers, readable lossy table
+rows, referenced end notes, list normalization, content types, relationships, duplicate entries, path
 traversal, package limits, compression ratio, XML depth, and deterministic
 ordering. The canonical stored-package fixture SHA-256 is
 `c284d54886d21d2fda1d0fa51099ac2db65cbaf830ce133d8f6608c21c4bf35a`.

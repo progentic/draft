@@ -131,27 +131,77 @@ fn inline_tabs_preserve_readable_text_and_require_source_preservation() {
 }
 
 #[test]
-fn table_documents_remain_unsupported_without_flattening() {
-    let xml = r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+fn table_cells_import_as_disclosed_readable_rows() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/></w:tblPr><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Alpha</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Beta</w:t></w:r></w:p><w:p><w:r><w:rPr><w:i/></w:rPr><w:t>Gamma</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+    let parsed = parse_docx_package(&package(xml)).unwrap();
 
     assert_eq!(
-        parse_docx_package(&package(xml)),
-        Err(DocxImportError::unsupported(vec![
-            ExternalFeature::UnsupportedDocumentStructure,
-        ]))
+        parsed.document["content"],
+        json!([{
+            "type": "paragraph",
+            "content": [
+                { "type": "text", "text": "Alpha", "marks": [{ "type": "bold" }] },
+                { "type": "text", "text": " | " },
+                { "type": "text", "text": "Beta" },
+                { "type": "hardBreak" },
+                { "type": "text", "text": "Gamma", "marks": [{ "type": "italic" }] }
+            ]
+        }])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::TableStructure],
+        }
     );
 }
 
 #[test]
-fn footnote_references_remain_unsupported_without_flattening() {
+fn footnote_references_import_as_disclosed_end_notes() {
     let xml = document_xml(r#"<w:r><w:t>Body</w:t><w:footnoteReference w:id="1"/></w:r>"#);
+    let footnotes = r#"<?xml version="1.0" encoding="UTF-8"?><w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:id="1"><w:p><w:r><w:footnoteRef/></w:r><w:r><w:t>Footnote text.</w:t></w:r></w:p></w:footnote></w:footnotes>"#;
+    let parsed = parse_docx_package(&package_with_footnotes(&xml, footnotes)).unwrap();
+
+    assert_eq!(
+        parsed.document["content"],
+        json!([
+            { "type": "paragraph", "content": [
+                { "type": "text", "text": "Body" },
+                { "type": "text", "text": "[1]" }
+            ] },
+            { "type": "paragraph", "content": [
+                { "type": "text", "text": "[1]" },
+                { "type": "text", "text": " " },
+                { "type": "text", "text": "Footnote text." }
+            ] }
+        ])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::Footnote],
+        }
+    );
+}
+
+#[test]
+fn missing_footnote_content_fails_before_document_creation() {
+    let xml = document_xml(r#"<w:r><w:t>Body</w:t><w:footnoteReference w:id="7"/></w:r>"#);
 
     assert_eq!(
         parse_docx_package(&package(&xml)),
-        Err(DocxImportError::unsupported(vec![
-            ExternalFeature::UnsupportedDocumentStructure,
-        ]))
+        Err(DocxImportError::malformed())
     );
+}
+
+#[test]
+fn lossy_table_import_preserves_source_bytes() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+    let source = package(xml);
+    let original = source.clone();
+
+    assert!(parse_docx_package(&source).is_ok());
+    assert_eq!(source, original);
 }
 
 #[test]
@@ -337,14 +387,14 @@ fn exact_and_at_least_line_rules_are_unsupported_not_malformed() {
 }
 
 #[test]
-fn list_indentation_remains_unsupported() {
+fn list_indentation_imports_as_disclosed_plain_paragraphs() {
     let xml = document_xml(r#"<w:pPr><w:numPr/></w:pPr>"#);
 
     assert_eq!(
-        parse_docx_package(&package(&xml)),
-        Err(DocxImportError::unsupported(vec![
-            ExternalFeature::ListIndentation,
-        ]))
+        parse_docx_package(&package(&xml)).unwrap().fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::ListIndentation],
+        }
     );
 }
 
@@ -408,6 +458,15 @@ fn package_and_xml_safety_fail_with_closed_reasons() {
     let escaping_document_rels = DOCUMENT_RELS.replace("styles.xml", "../../outside.xml");
     assert_unsafe(
         package_with_document_relationships(&escaping_document_rels),
+        ExternalSafetyReason::RelationshipTarget,
+    );
+
+    let escaping_footnote_rels = DOCUMENT_RELS.replace(
+        "</Relationships>",
+        r#"<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="../../outside.xml"/></Relationships>"#,
+    );
+    assert_unsafe(
+        package_with_document_relationships(&escaping_footnote_rels),
         ExternalSafetyReason::RelationshipTarget,
     );
 }
@@ -585,6 +644,21 @@ fn package_with_document_relationships(document_relationships: &str) -> Vec<u8> 
             "word/_rels/document.xml.rels",
             document_relationships.as_bytes(),
         ),
+        ("word/styles.xml", STYLES.as_bytes()),
+    ])
+}
+
+fn package_with_footnotes(document_xml: &str, footnotes_xml: &str) -> Vec<u8> {
+    let relationships = DOCUMENT_RELS.replace(
+        "</Relationships>",
+        r#"<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/></Relationships>"#,
+    );
+    package_with_parts(vec![
+        ("[Content_Types].xml", CONTENT_TYPES.as_bytes()),
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/document.xml", document_xml.as_bytes()),
+        ("word/_rels/document.xml.rels", relationships.as_bytes()),
+        ("word/footnotes.xml", footnotes_xml.as_bytes()),
         ("word/styles.xml", STYLES.as_bytes()),
     ])
 }

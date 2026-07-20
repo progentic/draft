@@ -18,15 +18,17 @@ Apple Silicon target.
   without changing the source file.
 - DRAFT can read a bounded DOCX paragraph subset, including supported headings,
   alignment, line spacing, paragraph spacing, and indentation. Valid DOCX
-  features outside that subset are disclosed as requiring source preservation;
-  malformed, unsafe, unsupported, or lossy input fails without changing the
-  source file.
+  features outside that subset are disclosed as requiring source preservation
+  or readable lossy conversion. Malformed, unsafe, or still-unrepresentable
+  input fails without changing the source file.
 - Inline Word tabs import as readable spacing, but exact tab-stop placement is
   retained only in the unchanged source. Common proofing metadata, custom style
   names, layout markers, and hyperlink wrappers retain visible text without
-  claiming full behavior. DOCX tables and footnote references are not imported
-  because DRAFT does not yet have editable models that can preserve their
-  structure safely. They are not flattened or silently removed.
+  claiming full behavior. DOCX table cells import as readable row paragraphs,
+  referenced footnotes import as end notes, and unrepresented list numbering
+  imports as plain paragraphs. These conversions are explicitly lossy: DRAFT
+  does not provide native table, footnote, or complete list editing, and the
+  unchanged original remains the only copy with the full Word structure.
 - Imported text and Markdown become unsaved DRAFT documents and cannot be saved
   back to the source format. First Save requires a new `.draft` target.
 - A supported DOCX source can be replaced only when DRAFT reports an exact or

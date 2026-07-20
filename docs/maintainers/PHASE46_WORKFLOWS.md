@@ -75,8 +75,9 @@ basename plus transient Unsaved state without receiving the selected path.
 Open returns one typed origin outcome. `opened_draft` carries a validated
 native envelope whose path remains registered in Rust. `imported_text` carries
 a new unsaved Rust-owned envelope created from a bounded UTF-8 `.txt` or `.md`
-source. `imported_external` carries the canonical supported subset of a DOCX
-document plus path-free fidelity and save-policy metadata. Imported content has
+source. `imported_external` carries the canonical supported subset or disclosed
+readable approximation of a DOCX document plus path-free fidelity and
+save-policy metadata. Imported content has
 no native save target, and the first Save selects a new `.draft` target.
 `cancelled` leaves content, selection, title, dirty state, and origin unchanged.
 Markdown syntax remains literal text; CRLF and LF line endings become
@@ -171,7 +172,8 @@ workflow can honor it:
 - stale text results direct the user to run the same check again;
 - unavailable text runtime is reported as unavailable, without a fictitious
   install or provider action;
-- unsupported DOCX content directs the user to edit the document and retry;
+- a readable lossy DOCX copy directs the user to keep the original and Save As,
+  while still-unrepresentable content directs the user to use a supported format;
 - citation-bearing Word output explains that citations are not currently
   included and that the DRAFT source remains unchanged; and
 - unknown transport or payload failures use a bounded retry message.

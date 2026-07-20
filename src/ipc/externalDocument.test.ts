@@ -60,6 +60,13 @@ describe("external document DTO validation", () => {
         fidelity: { classification: "lossy", features: [] },
       }),
     ).toBe(false);
+    expect(
+      isExternalDocumentSummary({
+        ...summary,
+        fidelity: { classification: "lossy", features: ["footnote", "table_structure"] },
+        sameFormatSave: "denied_unsupported_source_behavior",
+      }),
+    ).toBe(true);
   });
 
   it("accepts only stable supported normalization lists", () => {

@@ -73,11 +73,13 @@ a success, cancellation, limitation, or failure message, record the visible
 build commit and do not treat the operation as successful.
 
 If a DOCX message says the file is malformed or unsafe, keep the original file
-unchanged and open a trusted, valid copy. If DRAFT reports an unsupported or
-lossy feature, preserve the original and edit through a supported format rather
-than assuming DRAFT can round-trip it. A source-preservation notice means DRAFT
-opened the supported content but cannot safely save changes back to that DOCX.
-Save to `.draft` or export a separate DOCX copy instead.
+unchanged and open a trusted, valid copy. A readable-copy notice means DRAFT
+normalized table cells, referenced footnotes, lists, or another unsupported
+structure so the visible text can be edited. Preserve the original because the
+copy does not retain complete Word structure and cannot be saved back safely.
+A source-preservation notice means the same save restriction applies even when
+the visible content did not require approximation. Save to `.draft` or export
+a separate DOCX copy instead.
 
 **Save Back to Source** always shows a confirmation before replacing a DOCX.
 Choose **Keep source** to cancel without accepting saved state. If DRAFT says
