@@ -1,3 +1,4 @@
+pub(crate) mod application_open;
 pub(crate) mod citation_resolution;
 pub(crate) mod connectivity;
 pub(crate) mod diagnostic_snapshot;
@@ -5,7 +6,6 @@ pub(crate) mod document_close;
 pub(crate) mod document_create;
 pub(crate) mod document_open;
 pub(crate) mod document_save;
-pub(crate) mod docx_export;
 pub(crate) mod external_access;
 pub(crate) mod external_document_save;
 pub(crate) mod formatting_review;
@@ -13,4 +13,5 @@ pub(crate) mod native_menu;
 pub(crate) mod reference_library;
 pub(crate) mod runtime_status;
 pub(crate) mod text_analysis;
+pub(crate) mod window_title;
 pub(crate) mod worker_cancellation;

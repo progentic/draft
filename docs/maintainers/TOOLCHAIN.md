@@ -68,8 +68,9 @@ reader enables only the `deflate` feature needed for common DOCX packages and
 enforces package, entry, compression, XML, relationship, and structure limits
 before producing canonical document data. Compilation is bounded and completes
 before the shared atomic writer touches a `.docx` target. Phase 46 exposes the
-export service; Phase 47 adds the read-only DOCX import boundary without adding
-same-format save.
+export service; Phase 47 adds bounded DOCX import and a separate confirmed
+same-format source-replacement boundary. Rust retains source paths and
+fingerprints throughout both operations.
 
 One `cfg(test)` critical-path module composes the existing document lifecycle,
 reference store, citation resolution, and DOCX exporter. It widens no

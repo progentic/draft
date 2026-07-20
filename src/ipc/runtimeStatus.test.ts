@@ -8,18 +8,24 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { getRuntimeStatus } from "./runtimeStatus";
 
+const BUILD = {
+  buildCommit: "0123456789abcdef0123456789abcdef01234567",
+  buildProfile: "release" as const,
+  version: "0.1.0",
+};
+
 describe("getRuntimeStatus", () => {
   beforeEach(() => {
     invokeMock.mockReset();
   });
 
   it("invokes the registered command with its typed request envelope", async () => {
-    invokeMock.mockResolvedValue({ version: "0.1.0" });
+    invokeMock.mockResolvedValue(BUILD);
 
     const result = await getRuntimeStatus();
 
     expect(invokeMock).toHaveBeenCalledWith("get_runtime_status", { request: {} });
-    expect(result).toEqual({ status: "ready", version: "0.1.0" });
+    expect(result).toEqual({ status: "ready", ...BUILD });
   });
 
   it("rejects an invalid response shape", async () => {
@@ -31,7 +37,11 @@ describe("getRuntimeStatus", () => {
     });
   });
 
-  it.each(["invalid_application_version", "event_delivery_failed"] as const)(
+  it.each([
+    "event_delivery_failed",
+    "invalid_application_version",
+    "invalid_build_metadata",
+  ] as const)(
     "preserves the %s command-specific error code",
     async (code) => {
       invokeMock.mockRejectedValue({ code });

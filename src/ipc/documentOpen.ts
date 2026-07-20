@@ -19,7 +19,11 @@ export type OpenDocumentClientError =
 
 export type OpenDocumentResult =
   | { status: "opened_draft"; envelope: DocumentEnvelopeSnapshot }
-  | { status: "imported_text"; envelope: DocumentEnvelopeSnapshot }
+  | {
+      status: "imported_text";
+      envelope: DocumentEnvelopeSnapshot;
+      format: "markdown" | "plain_text";
+    }
   | {
       status: "imported_external";
       envelope: DocumentEnvelopeSnapshot;
@@ -39,13 +43,13 @@ const COMMAND_ARGUMENTS: OpenDocumentArguments = { request: {} };
 export async function openDocument(): Promise<OpenDocumentResult> {
   try {
     const response = await invokeCommand<unknown>(COMMAND_NAME, COMMAND_ARGUMENTS);
-    return resultFromResponse(response);
+    return openDocumentResultFromResponse(response);
   } catch (error: unknown) {
     return { status: "error", error: clientErrorFrom(error) };
   }
 }
 
-function resultFromResponse(response: unknown): OpenDocumentResult {
+export function openDocumentResultFromResponse(response: unknown): OpenDocumentResult {
   if (isCancelledResponse(response)) {
     return { status: "cancelled" };
   }
@@ -54,8 +58,12 @@ function resultFromResponse(response: unknown): OpenDocumentResult {
     return { status: "opened_draft", envelope: response.envelope };
   }
 
-  if (isDocumentResponse(response, "imported_text")) {
-    return { status: "imported_text", envelope: response.envelope };
+  if (isImportedTextResponse(response)) {
+    return {
+      status: "imported_text",
+      envelope: response.envelope,
+      format: response.format,
+    };
   }
 
   if (isImportedExternalResponse(response)) {
@@ -83,6 +91,20 @@ function isImportedExternalResponse(value: unknown): value is {
   );
 }
 
+function isImportedTextResponse(value: unknown): value is {
+  status: "imported_text";
+  envelope: DocumentEnvelopeSnapshot;
+  format: "markdown" | "plain_text";
+} {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === 3 &&
+    value.status === "imported_text" &&
+    isDocumentEnvelopeSnapshot(value.envelope) &&
+    (value.format === "markdown" || value.format === "plain_text")
+  );
+}
+
 function clientErrorFrom(error: unknown): OpenDocumentClientError {
   if (isOpenDocumentCommandError(error)) {
     return { type: "command", error };
@@ -97,9 +119,9 @@ function isCancelledResponse(value: unknown): value is { status: "cancelled" } {
 
 function isDocumentResponse(
   value: unknown,
-  status: "imported_text" | "opened_draft",
+  status: "opened_draft",
 ): value is {
-  status: "imported_text" | "opened_draft";
+  status: "opened_draft";
   envelope: DocumentEnvelopeSnapshot;
 } {
   return (

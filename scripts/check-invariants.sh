@@ -27,7 +27,9 @@ main() {
   check_text_analysis_contract
   check_formatting_contract
   check_docx_export_contract
+  check_save_as_format_contract
   check_docx_import_contract
+  check_phase_47_manual_gate_corrections
   check_document_envelope_contract
   check_reference_record_contract
   check_reference_store_contract
@@ -232,7 +234,7 @@ check_error_presentation_contract() {
     'errorPresentation' \
     --glob '!src/features/error-ux/errorPresentation.ts' \
     --glob '!src/features/error-ux/errorPresentation.test.ts' \
-    --glob '!src/components/DocumentInspector.tsx' \
+    --glob '!src/components/WorkspaceStatusBar.tsx' \
     --glob '!src/features/connectivity/ConnectivityModeControl.tsx' \
     --glob '!src/features/formatting-review/FormattingReviewPanel.tsx' \
     --glob '!src/editor/CitationNode.ts' src
@@ -271,13 +273,14 @@ check_python_boundary() {
 }
 
 check_command_errors() {
-  # The two owned DOCX parser files return typed errors around
+  # The three owned DOCX parser files return typed errors around
   # HashMap<String, String>; the nested comma otherwise matches the flat
   # Result<_, String> detector. The DOCX contract below verifies their exact
   # typed boundary, so no broader interoperability path is excluded.
   assert_no_matches "INV-02 generic Rust command errors" \
     '\banyhow::Error\b|Box\s*<\s*dyn\s+(?:std::)?error::Error|Result\s*<[^;\n]+,\s*(?:String|serde_json::Value)\s*>' \
     --glob '!src-tauri/src/interoperability/docx_import/document.rs' \
+    --glob '!src-tauri/src/interoperability/docx_import/footnotes.rs' \
     --glob '!src-tauri/src/interoperability/docx_import/package.rs' \
     src-tauri/src
 
@@ -849,9 +852,7 @@ check_docx_export_authority() {
   local model_path="$1"
   local package_path="$2"
   local command_path
-  local frontend_path
   local command_scan_paths=()
-  local frontend_scan_paths=()
 
   assert_no_matches "Phase 32 persistence or direct filesystem authority" \
     '\brusqlite\b|\bReferenceStore\b|\bDocumentRegistry\b|(?:std|tokio)::fs|\bOpenOptions\b|\bFile::create\b' \
@@ -865,28 +866,64 @@ check_docx_export_authority() {
     'format!\s*\(' "${model_path}" "${package_path}"
   for command_path in src-tauri/src/commands/*.rs; do
     case "${command_path}" in
-      src-tauri/src/commands/docx_export.rs|src-tauri/src/commands/mod.rs) ;;
+      src-tauri/src/commands/document_save.rs|src-tauri/src/commands/mod.rs) ;;
       *) command_scan_paths[${#command_scan_paths[@]}]="${command_path}" ;;
     esac
   done
-  while IFS= read -r frontend_path; do
-    case "${frontend_path}" in
-      # Phase 48 permits the closed action identifier only in its typed event,
-      # shared dispatcher, visible command, and colocated tests.
-      src/ipc/docxExport.ts|src/ipc/docxExport.test.ts|src/ipc/Phase46Workflows.test.tsx|src/features/docx-export/useDocxExport.ts|src/ipc/nativeMenu.ts|src/ipc/nativeMenu.test.ts|src/components/WorkspaceCommandBar.tsx|src/components/WorkspaceCommandBar.test.tsx|src/features/workspace-actions/useWorkspaceActions.ts) ;;
-      *) frontend_scan_paths[${#frontend_scan_paths[@]}]="${frontend_path}" ;;
-    esac
-  done < <(rg --files src)
   assert_no_matches "Phase 46 unowned application or command export authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
     src-tauri/src/application "${command_scan_paths[@]}"
   assert_no_matches "Phase 46 unowned frontend DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' \
-    "${frontend_scan_paths[@]}"
-  require_source_pattern 'export_docx(document, &target)' src-tauri/src/commands/docx_export.rs
-  require_source_pattern 'export async function exportDocument' src/ipc/docxExport.ts
+    src
+  require_source_pattern 'compile_docx(&document)' src-tauri/src/commands/document_save.rs
+  require_source_pattern 'write_docx_artifact(&artifact, &target)' \
+    src-tauri/src/commands/document_save.rs
+  require_source_pattern 'export function saveDocumentAs' src/ipc/documentSave.ts
   assert_no_matches "Phase 32 Python DOCX authority" \
     '\bDocxArtifact\b|\bDocxExport\b|\bcompile_docx\b|\bexport_docx\b' python
+}
+
+check_save_as_format_contract() {
+  local rust_format='src-tauri/src/documents/save_as.rs'
+  local rust_command='src-tauri/src/commands/document_save.rs'
+  local text_export='src-tauri/src/exports/plain_text.rs'
+  local client='src/ipc/documentSave.ts'
+  local dialog='src/features/document-session/SaveAsDialog.tsx'
+  local workflow_tests='src/ipc/Phase46Workflows.test.tsx'
+
+  require_file "${rust_format}"
+  require_file "${text_export}"
+  require_file "${dialog}"
+  require_file src/features/document-session/SaveAsDialog.test.tsx
+  require_source_pattern 'const OUTPUT_EXTENSIONS: [&str; 3] = ["draft", "docx", "txt"];' \
+    "${rust_format}"
+  require_source_pattern 'for rejected in ["pdf", "md", "DOCX", "", "unknown"]' \
+    "${rust_format}"
+  require_source_pattern 'export const SAVE_AS_FORMATS = ["draft", "docx", "txt"] as const;' \
+    "${client}"
+  require_source_pattern 'SAVE_AS_FORMATS.map' "${dialog}"
+  require_source_pattern 'SaveAsFormat::Draft => save_as_draft' "${rust_command}"
+  require_source_pattern 'SaveAsFormat::Docx => save_as_docx' "${rust_command}"
+  require_source_pattern 'SaveAsFormat::Txt => save_as_text' "${rust_command}"
+  require_source_pattern 'authoritative_identity_changed: false' "${rust_command}"
+  require_source_pattern 'dirty_state_changed: false' "${rust_command}"
+  require_source_pattern 'value.authoritativeIdentityChanged === false' "${client}"
+  require_source_pattern 'value.dirtyStateChanged === false' "${client}"
+  require_rust_test converted_outputs_do_not_rebind_registered_draft "${rust_command}"
+  require_rust_test draft_save_as_rebinds_only_after_atomic_persistence "${rust_command}"
+  require_rust_test plain_text_flattening_is_deterministic_and_visible_only "${text_export}"
+  require_source_pattern 'offers only the three supported formats and excludes PDF' \
+    src/features/document-session/SaveAsDialog.test.tsx
+  require_source_pattern 'creates a DOCX copy through Save As with visible source-safety feedback' \
+    "${workflow_tests}"
+  assert_no_matches 'standalone DOCX command or frontend workflow' \
+    '\b(?:export_document|useDocxExport|exportDocument|file\.export_docx)\b' \
+    src-tauri/src src
+  assert_no_matches 'Save As path authority exposed to React' \
+    '\b(?:sourcePath|targetPath|absolutePath|filePath)\b' \
+    "${client}" "${dialog}"
+  printf 'PASS Phase 47 typed Save As format contract\n'
 }
 
 check_docx_import_contract() {
@@ -898,21 +935,36 @@ check_docx_import_contract() {
   local source_write_command='src-tauri/src/commands/external_document_save.rs'
   local source_write_client='src/ipc/externalDocumentSave.ts'
   local source_write_client_tests='src/ipc/externalDocumentSave.test.ts'
+  local source_write_hook='src/features/external-source-save/useExternalSourceSave.ts'
+  local source_write_hook_tests='src/features/external-source-save/useExternalSourceSave.test.tsx'
+  local source_write_dialog='src/features/external-source-save/SaveBackToSourceDialog.tsx'
+  local source_write_dialog_tests='src/features/external-source-save/SaveBackToSourceDialog.test.tsx'
   local package_path='src-tauri/src/interoperability/docx_import/package.rs'
   local document_path='src-tauri/src/interoperability/docx_import/document.rs'
+  local readable_path='src-tauri/src/interoperability/docx_import/readable.rs'
+  local footnotes_path='src-tauri/src/interoperability/docx_import/footnotes.rs'
+  local table_path='src-tauri/src/interoperability/docx_import/table.rs'
   local test_path='src-tauri/src/interoperability/docx_import/tests.rs'
   local required_tests=(
     supported_paragraph_properties_map_to_canonical_data
     absent_paragraph_properties_remain_absent
     alternate_heading_name_is_canonically_normalized
     valid_unsupported_properties_require_source_preservation
-    nested_unsupported_properties_remain_preservable
+    supported_run_formatting_survives_unrelated_unsupported_properties
     package_semantics_classify_valid_uneditable_behavior
     optional_relationship_and_style_parts_are_not_required
-    exact_and_at_least_line_rules_are_unsupported_not_malformed
-    unsupported_style_and_list_indentation_are_distinct_valid_features
+    exact_and_at_least_line_rules_import_with_disclosed_normalization
+    list_indentation_imports_as_disclosed_plain_paragraphs
+    common_word_metadata_keeps_visible_text_and_requires_source_preservation
+    footnote_references_import_as_disclosed_end_notes
+    missing_footnote_content_fails_before_document_creation
+    table_cells_import_as_disclosed_readable_rows
+    lossy_table_import_preserves_source_bytes
     malformed_properties_fail_without_fidelity_guessing
-    unrepresentable_bounds_are_lossy_and_never_clamped
+    unrepresentable_bounds_import_with_disclosed_normalization
+    unfamiliar_valid_wrappers_recover_readable_text_as_lossy
+    drawing_text_recovers_without_claiming_format_fidelity
+    external_payload_without_readable_text_remains_denied
     exported_supported_paragraph_data_reimports_exactly
     package_and_xml_safety_fail_with_closed_reasons
     malformed_package_contracts_are_not_reported_as_unsafe_content
@@ -930,8 +982,15 @@ check_docx_import_contract() {
   require_file "${source_write_command}"
   require_file "${source_write_client}"
   require_file "${source_write_client_tests}"
+  require_file "${source_write_hook}"
+  require_file "${source_write_hook_tests}"
+  require_file "${source_write_dialog}"
+  require_file "${source_write_dialog_tests}"
   require_file "${package_path}"
   require_file "${document_path}"
+  require_file "${readable_path}"
+  require_file "${footnotes_path}"
+  require_file "${table_path}"
   require_file "${test_path}"
   require_file src/ipc/externalDocument.ts
   require_file src/ipc/externalDocument.test.ts
@@ -944,7 +1003,19 @@ check_docx_import_contract() {
   require_source_pattern 'pub(crate) fn import_docx_source(' "${policy_path}"
   require_rust_test oversized_source_fails_before_package_parsing "${policy_path}"
   require_source_pattern 'pub enum ExternalFidelity' "${fidelity_path}"
+  require_source_pattern 'Footnote,' "${fidelity_path}"
+  require_source_pattern 'TableStructure,' "${fidelity_path}"
+  require_source_pattern 'Self::Lossy' "${fidelity_path}"
   require_source_pattern 'pub enum SameFormatSaveDisposition' "${provenance_path}"
+  require_source_pattern 'pub(crate) fn normalization_features(' "${provenance_path}"
+  require_rust_test lossy_import_requires_save_as_after_edits "${provenance_path}"
+  require_source_pattern 'record_lossy(ExternalFeature::TableStructure)' "${document_path}"
+  require_source_pattern 'record_lossy(ExternalFeature::Footnote)' "${document_path}"
+  require_source_pattern 'parse_readable_document' "${readable_path}"
+  require_source_pattern 'MAX_IMPORTED_NODES' "${readable_path}"
+  require_source_pattern 'LossyImportDenied' src-tauri/src/interoperability/docx_import/mod.rs
+  require_source_pattern '" | "' "${table_path}"
+  require_source_pattern '| "lossy";' src/ipc/externalDocument.ts
   require_source_pattern 'pub(crate) async fn save_external_document(' \
     "${source_write_command}"
   require_source_pattern 'write_document_atomically' "${source_write_path}"
@@ -959,6 +1030,12 @@ check_docx_import_contract() {
     "${source_write_tests}"
   require_rust_test source_change_after_compilation_is_denied_before_replacement \
     "${source_write_tests}"
+  require_rust_test imported_source_changed_after_confirmation_is_denied_without_mutation \
+    "${source_write_tests}"
+  require_rust_test imported_normalization_names_the_required_transformation \
+    "${source_write_tests}"
+  require_rust_test stale_normalized_source_returns_denial_without_obsolete_normalizations \
+    "${source_write_tests}"
   require_rust_test pre_replacement_failure_preserves_source_and_registry \
     "${source_write_tests}"
   require_rust_test durability_failure_rolls_back_replacement \
@@ -967,6 +1044,20 @@ check_docx_import_contract() {
     "${source_write_tests}"
   require_rust_test registry_commit_failure_rolls_back_source \
     "${source_write_tests}"
+  require_rust_test eligibility_inspection_never_writes_or_mutates_registry \
+    "${source_write_tests}"
+  require_rust_test eligibility_rejects_unrepresentable_content_without_writing \
+    "${source_write_tests}"
+  require_rust_test exact_and_normalized_replacements_open_in_macos_text_reader \
+    "${source_write_tests}"
+  require_rust_test exact_and_normalized_replacements_render_in_configured_compatible_reader \
+    "${source_write_tests}"
+  require_source_pattern 'normalizations: ExternalNormalizationFeature[]' \
+    "${source_write_client}"
+  require_source_pattern "Alternate heading style names will use DRAFT’s standard heading names." \
+    "${source_write_dialog}"
+  require_source_pattern '            Replace' "${source_write_dialog}"
+  require_source_pattern '            Cancel' "${source_write_dialog}"
   require_source_pattern 'MAX_DOCX_IMPORT_PACKAGE_BYTES: usize = 16 * 1024 * 1024' \
     src-tauri/src/interoperability/docx_import/mod.rs
   require_source_pattern 'MAX_DOCX_IMPORT_XML_BYTES: usize = 8 * 1024 * 1024' \
@@ -985,7 +1076,7 @@ check_docx_import_contract() {
     src/ipc/externalDocument.test.ts
   require_source_pattern 'returns path-free DOCX fidelity from the Rust import boundary' \
     src/ipc/documentOpen.test.ts
-  require_source_pattern 'treats a path-free DOCX import as registered but unsaved' \
+  require_source_pattern 'keeps path-free DOCX source identity separate from DRAFT Save' \
     src/ipc/Phase46Workflows.test.tsx
   require_source_pattern 'discloses unsupported DOCX behavior without exposing source authority' \
     src/ipc/Phase46Workflows.test.tsx
@@ -1000,15 +1091,61 @@ check_docx_import_contract() {
     src/ipc/externalDocument.ts "${source_write_client}"
   assert_no_matches "frontend external source path or fingerprint input" \
     '\bsourcePath\b|\bsourceFingerprint\b|\btargetPath\b|\babsolutePath\b' \
-    "${source_write_client}" "${source_write_client_tests}"
+    "${source_write_client}" "${source_write_client_tests}" \
+    "${source_write_hook}" "${source_write_hook_tests}" \
+    "${source_write_dialog}" "${source_write_dialog_tests}"
   assert_no_matches "frontend same-format save decision authority" \
     '\bsameFormatSave\b|\ballowed_exact\b|\ballowed_after_accepted_normalization\b|\bdenied_(?:unsupported_source_behavior|read_only|missing_provenance|fidelity_unknown|writer_unavailable|source_missing|source_changed)\b' \
     --glob '!**/*.test.ts' --glob '!**/*.test.tsx' \
     --glob '!src/ipc/externalDocument.ts' \
-    --glob '!src/ipc/externalDocumentSave.ts' src
-  assert_no_matches "visible external source-write consumer before workflow evidence" \
+    --glob '!src/ipc/externalDocumentSave.ts' \
+    --glob '!src/features/external-source-save/useExternalSourceSave.ts' \
+    --glob '!src/features/external-source-save/SaveBackToSourceDialog.tsx' src
+  assert_no_matches "external source-write client outside its owned workflow" \
     'externalDocumentSave|saveExternalDocument' \
+    --glob '!src/features/external-source-save/useExternalSourceSave.ts' \
+    --glob '!src/features/external-source-save/useExternalSourceSave.test.tsx' \
     src/app src/components src/features src/editor
+  require_source_pattern 'saveExternalDocument(snapshot, "inspect")' \
+    "${source_write_hook}"
+  require_source_pattern 'result.status !== "cancelled"' "${source_write_hook}"
+  require_source_pattern 'action="save_back_to_source"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'save_back_to_source: session.requestSaveBack' \
+    src/features/workspace-actions/useWorkspaceActions.ts
+  require_source_pattern '<SaveBackToSourceDialog' src/app/DraftWorkspace.tsx
+  require_source_pattern 'inspects and confirms exact replacement without exposing a path' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'requires explicit acceptance for normalized replacement' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'cancels through the typed boundary without accepting saved state' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'blocks stale external sources with bounded recovery' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'blocks a source changed after confirmation without accepting saved state' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'preserves modified state and offers bounded retry after a safe write failure' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'blocks retry when the source final state is uncertain' \
+    "${source_write_hook_tests}"
+  require_source_pattern 'confirms exact Save Back and preserves the external display identity' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'routes native Save Back through the same exact confirmation workflow' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'cancels normalized Save Back without changing editor state' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'rejects an externally changed source without losing current edits' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'rejects a source changed after confirmation without losing current edits' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'preserves source identity and edits after a replacement write failure' \
+    src/ipc/Phase46Workflows.test.tsx
+  require_source_pattern 'gives toolbar and native Save Back the same stale-source disposition' \
+    src/features/workspace-actions/useWorkspaceActions.test.tsx
+  require_source_pattern 'format: TextImportFormat' \
+    src-tauri/src/documents/persistence.rs
+  require_source_pattern 'format: "markdown" | "plain_text"' \
+    src/ipc/documentOpen.ts
 
   require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
   require_source_pattern '| UX-46-011 | UX-1 | Open |' \
@@ -1020,6 +1157,146 @@ check_docx_import_contract() {
   require_source_pattern '| GATE-47 | Roadmap gate | Open |' \
     docs/maintainers/RELEASE_CANDIDATE.md
   printf 'PASS Phase 47 bounded DOCX import and fidelity contract\n'
+}
+
+check_phase_47_manual_gate_corrections() {
+  local runtime='src-tauri/src/application/runtime_status.rs'
+  local application_queue='src-tauri/src/application/open_requests.rs'
+  local application_command='src-tauri/src/commands/application_open.rs'
+  local application_client='src/ipc/applicationOpen.ts'
+  local operation_notice='src/components/WorkspaceOperationNotice.tsx'
+  local workflow_tests='src/ipc/Phase46Workflows.test.tsx'
+  local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
+
+  require_file "${runtime}"
+  require_file "${application_queue}"
+  require_file "${application_command}"
+  require_file "${application_client}"
+  require_file "${operation_notice}"
+  require_file src-tauri/Info.plist
+
+  require_rust_test packaged_build_identity_requires_a_full_lowercase_commit \
+    "${runtime}"
+  require_rust_test build_profile_is_closed "${runtime}"
+  require_rust_test one_file_url_is_queued_without_exposing_it \
+    "${application_queue}"
+  require_rust_test multiple_or_non_file_urls_fail_closed \
+    "${application_queue}"
+  require_rust_test dismissal_consumes_one_request_without_opening_it \
+    "${application_command}"
+
+  require_source_pattern 'DRAFT_BUILD_COMMIT' src-tauri/build.rs
+  require_source_pattern 'require_clean_worktree' scripts/package-macos.sh
+  require_source_pattern 'require_embedded_build_identity' scripts/package-macos.sh
+  require_source_pattern 'buildCommit: string' src/ipc/runtimeStatus.ts
+  require_source_pattern 'buildProfile: "debug" | "release"' \
+    src/ipc/runtimeStatus.ts
+  require_source_pattern 'status.buildCommit.slice(0, 8)' \
+    src/components/WorkspaceStatusBar.tsx
+  require_source_pattern 'about_metadata()' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'env!("DRAFT_BUILD_PROFILE")' src-tauri/src/desktop_menu.rs
+  assert_no_matches 'build identity stays out of document inspector' \
+    '\b(?:RuntimeConnectionState|runtimeStatus|buildCommit|buildProfile|Core v)\b' \
+    src/components/DocumentInspector.tsx
+
+  require_source_pattern 'const COMMAND_NAME = "open_application_document"' \
+    "${application_client}"
+  require_source_pattern 'const EVENT_NAME = "draft://application-open"' \
+    "${application_client}"
+  require_source_pattern 'opens one queued document without sending a path' \
+    src/ipc/applicationOpen.test.ts
+  require_source_pattern 'opens a queued macOS DRAFT document through the path-free session boundary' \
+    "${workflow_tests}"
+  assert_no_matches 'frontend macOS application-open path authority' \
+    '\b(?:sourcePath|targetPath|absolutePath|PathBuf|fileUrl)\b|file://' \
+    "${application_client}" src/features/document-session/useDocumentSession.ts
+
+  require_source_pattern 'role="status"' "${operation_notice}"
+  require_source_pattern 'aria-live="polite"' "${operation_notice}"
+  require_source_pattern '| "choosing_save_format"' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'Preparing a Word copy' \
+    src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'shows a pending state before a selected DOCX resolves' \
+    "${workflow_tests}"
+  require_source_pattern 'creates a DOCX copy through Save As with visible source-safety feedback' \
+    "${workflow_tests}"
+  require_source_pattern 'presents the typed %s DOCX export failure' \
+    "${workflow_tests}"
+  require_source_pattern 'opens the Word fixture after clearing a settled export notice' \
+    "${workflow_tests}"
+  require_rust_test word_fixture_reaches_the_typed_open_response \
+    src-tauri/src/commands/document_open.rs
+
+  require_source_pattern 'com.progentic.draft.document' src-tauri/tauri.conf.json
+  require_source_pattern 'com.progentic.draft.document' src-tauri/Info.plist
+  require_source_pattern 'CFBundleTypeIconFile' src-tauri/Info.plist
+  require_source_pattern '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-012 | UX-1 | Open - manual retest pending |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-013 | UX-0 | Open - packaged fidelity retest pending |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-014 | UX-1 | Closed - artifact 1634d6d2 |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-015 | UX-1 | Open - partial artifact pass |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-016 | UX-1 | Open - packaged retest pending |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-017 | UX-1 | Open - packaged failure; governance required |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-018 | UX-2 | Open - future workspace scope |' \
+    "${ledger}"
+  require_source_pattern '| UX-47-019 | UX-2 | Open - future governed capability |' \
+    "${ledger}"
+  require_file src/editor/PageBreakNode.ts
+  require_rust_test supported_direct_run_properties_map_to_exact_canonical_marks \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test inline_tabs_preserve_readable_text_and_require_source_preservation \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test table_cells_import_as_disclosed_readable_rows \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test footnote_references_import_as_disclosed_end_notes \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test common_word_metadata_keeps_visible_text_and_requires_source_preservation \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_rust_test page_break_runs_become_canonical_blocks_and_export_back_to_docx \
+    src-tauri/src/interoperability/docx_import/tests.rs
+  require_source_pattern 'name: "pageBreak"' src/editor/PageBreakNode.ts
+  require_source_pattern 'background: var(--workspace);' src/styles.css
+  require_source_pattern 'renders explicit page breaks as full page-surface gaps' \
+    tests/frontend/styles.test.ts
+  assert_no_matches 'page-break punctuation presentation regression' \
+    'border-(?:top|bottom):[^;]*dashed|content:[^;]*(?:-{3,}|Page break)' \
+    src/styles.css
+  require_source_pattern 'DocxBlock::PageBreak' src-tauri/src/exports/docx_package.rs
+  require_source_pattern 'rendered font/paragraph/page-break import' \
+    docs/maintainers/DOCX_INTEROPERABILITY.md
+  require_source_pattern '| RC-07 | Release blocker | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_source_pattern '| GATE-47 | Roadmap gate | Open |' \
+    docs/maintainers/RELEASE_CANDIDATE.md
+  require_source_pattern "| \`INV-17\` | Proposed |" docs/INVARIANTS.md
+  require_file src-tauri/src/commands/window_title.rs
+  require_file src/ipc/windowTitle.ts
+  require_file src/features/window-title/useWindowTitle.ts
+  require_source_pattern 'commands::window_title::set_window_title' src-tauri/src/lib.rs
+  require_source_pattern 'const COMMAND_NAME = "set_window_title"' src/ipc/windowTitle.ts
+  require_source_pattern 'title_contract_is_bounded_and_path_free' \
+    src-tauri/src/commands/window_title.rs
+  require_rust_test native_document_title_formats_are_stable \
+    src-tauri/src/commands/window_title.rs
+  require_source_pattern 'save_dialog_suggestions_preserve_basename_identity' \
+    src-tauri/src/commands/document_save.rs
+  assert_no_matches 'window-title path authority' \
+    '\b(?:sourcePath|targetPath|absolutePath|PathBuf|fileUrl)\b|file://' \
+    src/ipc/windowTitle.ts src/features/window-title/useWindowTitle.ts
+
+  printf 'PASS Phase 47 failed-package correction boundaries\n'
 }
 
 check_document_envelope_contract() {
@@ -1301,13 +1578,15 @@ check_external_browser_handoff_contract() {
   require_source_pattern 'https://doi.org' "${domain_path}"
   require_source_pattern 'https://scholar.google.com/scholar' "${domain_path}"
   require_source_pattern 'const COMMAND_NAME = "open_external_access"' "${frontend_path}"
-  # Phase 28 owns one direct Python process launch under the worker boundary;
-  # it is not a browser launch path and remains governed by its own scans.
+  # Phase 28 owns one direct Python worker launch. The exact Phase 47 test path
+  # invokes macOS textutil only to prove generated DOCX packages can be opened.
+  # Neither exclusion grants production browser or process authority.
   assert_no_matches "Phase 23 alternate Rust browser launch" \
     'tauri_plugin_opener::open_url|\bopen::(?:that|with)|\bwebbrowser::|Command::new' \
     --glob '!system_browser.rs' \
     --glob '!**/workers/python/runner.rs' \
-    --glob '!**/workers/python/runner_tests.rs' src-tauri/src
+    --glob '!**/workers/python/runner_tests.rs' \
+    --glob '!**/documents/external_save_tests.rs' src-tauri/src
   assert_no_matches "Phase 23 frontend opener authority" \
     '@tauri-apps/plugin-opener|\bwindow\.open\s*\(|target\s*=\s*[\x22\x27]_blank' src
   assert_no_matches "Phase 23 opener plugin registration" \
@@ -1583,13 +1862,17 @@ check_adr_003_accepted_guard() {
   require_source_pattern 'file.close_document' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.save_document' src-tauri/src/desktop_menu.rs
   require_source_pattern 'file.save_document_as' src-tauri/src/desktop_menu.rs
-  require_source_pattern 'file.export_docx' src-tauri/src/desktop_menu.rs
+  require_source_pattern 'file.save_back_to_source' src-tauri/src/desktop_menu.rs
+  assert_no_matches 'ADR-003 retired standalone DOCX menu action' \
+    'file\.export_docx' src-tauri/src/desktop_menu.rs
   require_source_pattern 'commands::native_menu::set_native_menu_state' src-tauri/src/lib.rs
   require_source_pattern 'listenToNativeMenuActions' \
     src/features/workspace-actions/useWorkspaceActions.ts
   require_source_pattern 'setNativeMenuState' \
     src/features/workspace-actions/useWorkspaceActions.ts
   require_source_pattern 'action="save_document_as"' \
+    src/components/WorkspaceCommandBar.tsx
+  require_source_pattern 'action="save_back_to_source"' \
     src/components/WorkspaceCommandBar.tsx
   require_source_pattern 'props.actions.dispatch(props.action)' \
     src/components/WorkspaceCommandBar.tsx
@@ -1965,14 +2248,14 @@ check_async_native_dialog_boundary() {
     src-tauri/src
   require_source_pattern 'pub(crate) async fn select_open_document(' "${dialog_path}"
   require_source_pattern 'pub(crate) async fn select_save_document(' "${dialog_path}"
-  require_source_pattern 'pub(crate) async fn select_export_docx(' "${dialog_path}"
+  require_source_pattern 'pub(crate) async fn select_save_as_output(' "${dialog_path}"
   require_source_pattern '.pick_file(move |selected|' "${dialog_path}"
   require_source_pattern '.save_file(move |selected|' "${dialog_path}"
   require_source_pattern 'pub(crate) async fn open_document(' \
     src-tauri/src/commands/document_open.rs
   require_source_pattern 'pub(crate) async fn save_document(' \
     src-tauri/src/commands/document_save.rs
-  require_source_pattern 'select_save_document(&app_handle)' \
+  require_source_pattern 'select_save_document(app_handle, &suggested)' \
     src-tauri/src/commands/document_save.rs
   assert_no_matches 'Save command avoids open dialog selector' \
     'select_open_document' \
@@ -1981,10 +2264,12 @@ check_async_native_dialog_boundary() {
     src-tauri/src/documents/persistence.rs
   require_source_pattern 'was_save_as: bool' \
     src-tauri/src/documents/persistence.rs
-  require_source_pattern 'displayName: string; wasSaveAs: boolean' \
+  require_source_pattern 'status: "draft_saved"' \
     src/ipc/documentSave.ts
-  require_source_pattern 'pub(crate) async fn export_document(' \
-    src-tauri/src/commands/docx_export.rs
+  require_source_pattern 'status: "converted_output"' \
+    src/ipc/documentSave.ts
+  require_source_pattern 'authoritativeIdentityChanged: false' \
+    src/ipc/documentSave.ts
   printf 'PASS async Rust-owned native dialog contract\n'
 }
 
@@ -2060,9 +2345,9 @@ check_document_write_boundary() {
 
   # These exact test files write only temporary fixtures. The Python runner's
   # write_all targets piped child stdin, and the DOCX package writer plus its
-  # colocated import fixtures target in-memory ZipWriter instances. None writes
-  # a filesystem path. Production document, intake, job, and export mutation
-  # remain denied by separate source scans.
+  # colocated import and external-save fixtures target in-memory ZipWriter
+  # instances. None writes a filesystem path. Production document, intake,
+  # job, and export mutation remain denied by separate source scans.
   assert_no_matches "INV-09 direct document target writes" \
     '\b(?:fs::write|fs::rename|fs::copy|File::create|File::options|OpenOptions::new)\s*\(|\.write_all\s*\(' \
     --glob "!${atomic_writer_path}" \
@@ -2071,6 +2356,7 @@ check_document_write_boundary() {
     --glob '!src-tauri/src/references/store_tests.rs' \
     --glob '!src-tauri/src/exports/docx_package.rs' \
     --glob '!src-tauri/src/interoperability/docx_import/tests.rs' \
+    --glob '!src-tauri/src/documents/external_save_tests.rs' \
     --glob '!src-tauri/src/workers/python/runner.rs' src-tauri/src
   require_source_pattern '.tempfile_in(parent)' "${atomic_writer_path}"
   require_source_pattern '.sync_all()' "${atomic_writer_path}"
@@ -2096,8 +2382,9 @@ check_frontend_document_file_boundary() {
     "${document_identity_paths[@]}"
   require_source_pattern 'DocumentEnvelope::create_initial()' \
     src-tauri/src/commands/document_create.rs
-  require_source_pattern 'type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft"' \
+  require_source_pattern 'type DocumentOrigin = SaveDocumentOrigin;' \
     src/features/document-session/useDocumentSession.ts
+  require_source_pattern 'export type SaveDocumentOrigin =' src/ipc/documentSave.ts
   require_source_pattern 'origin: result.status' \
     src/features/document-session/useDocumentSession.ts
   require_source_pattern 'origin: "opened_draft" as const' \

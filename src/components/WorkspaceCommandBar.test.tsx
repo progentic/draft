@@ -43,7 +43,7 @@ it("supports overflow keyboard navigation and restores trigger focus", async () 
     within(menu).getByRole("menuitem", { name: "Save As…" }),
   ));
   await user.keyboard("{ArrowDown}");
-  expect(document.activeElement).toBe(within(menu).getByRole("menuitem", { name: "Export DOCX…" }));
+  expect(document.activeElement).toBe(within(menu).getByRole("menuitemcheckbox", { name: "References" }));
   await user.keyboard("{End}");
   expect(document.activeElement).toBe(within(menu).getByRole("menuitemcheckbox", { name: "Text checks" }));
   await user.keyboard("{Escape}");
@@ -64,9 +64,27 @@ it("skips disabled overflow actions and exposes active panel state", async () =>
 
   expect((saveAs as HTMLButtonElement).disabled).toBe(true);
   await waitFor(() => expect(document.activeElement).toBe(
-    within(menu).getByRole("menuitem", { name: "Export DOCX…" }),
+    within(menu).getByRole("menuitemcheckbox", { name: "References" }),
   ));
   expect(references.getAttribute("aria-checked")).toBe("true");
+});
+
+it("shows source replacement only for external documents with a bounded reason", async () => {
+  const user = userEvent.setup();
+  const actions = workspaceActions({ save_back_to_source: false });
+  actions.sourceSave = {
+    visible: true,
+    unavailableReason: "The source has no changes to save back.",
+  };
+  renderCommandBar(actions);
+
+  await user.click(screen.getByRole("button", { name: "More document actions" }));
+  const sourceSave = screen.getByRole("menuitem", {
+    name: /Save Back to Source\. Unavailable: The source has no changes/,
+  }) as HTMLButtonElement;
+
+  expect(sourceSave.disabled).toBe(true);
+  expect(sourceSave.title).toBe("The source has no changes to save back.");
 });
 
 function renderCommandBar(
@@ -74,11 +92,7 @@ function renderCommandBar(
   activePanel: "references" | "text-review" | null = null,
 ) {
   return render(
-    <WorkspaceCommandBar
-      actions={actions}
-      activePanel={activePanel}
-      exportLabel="Export DOCX…"
-    />,
+    <WorkspaceCommandBar actions={actions} activePanel={activePanel} />,
   );
 }
 
@@ -93,11 +107,12 @@ function workspaceActions(
       close_document: true,
       save_document: true,
       save_document_as: true,
-      export_docx: true,
+      save_back_to_source: false,
       open_references: true,
       run_text_checks: true,
       ...patch,
     },
     feedback: "",
+    sourceSave: { unavailableReason: "", visible: false },
   };
 }

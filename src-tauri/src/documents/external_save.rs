@@ -23,6 +23,7 @@ use crate::{
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum ExternalSaveDecision {
+    Inspect,
     SaveExact,
     AcceptNormalization,
     Cancel,
@@ -35,6 +36,12 @@ pub(crate) enum ExternalSaveDecision {
     rename_all_fields = "camelCase"
 )]
 pub(crate) enum SaveExternalDocumentOutcome {
+    Eligibility {
+        document_id: DocumentId,
+        display_name: String,
+        disposition: SameFormatSaveDisposition,
+        normalizations: Vec<crate::interoperability::fidelity::ExternalFeature>,
+    },
     Saved {
         document_id: DocumentId,
         display_name: String,
@@ -205,6 +212,9 @@ fn choose_plan(
     disposition: SameFormatSaveDisposition,
     decision: ExternalSaveDecision,
 ) -> Result<ExternalSavePlan, SaveExternalDocumentError> {
+    if decision == ExternalSaveDecision::Inspect {
+        return eligibility_plan(&envelope, &provenance, disposition);
+    }
     match disposition {
         SameFormatSaveDisposition::NoChanges => Ok(unchanged_plan(&envelope, &provenance)),
         SameFormatSaveDisposition::AllowedExact => {
@@ -219,6 +229,40 @@ fn choose_plan(
             Ok(confirmation_plan(&envelope, disposition))
         }
         _ => Ok(denied_plan(&envelope, disposition)),
+    }
+}
+
+fn eligibility_plan(
+    envelope: &DocumentEnvelope,
+    provenance: &ExternalSourceProvenance,
+    disposition: SameFormatSaveDisposition,
+) -> Result<ExternalSavePlan, SaveExternalDocumentError> {
+    if matches!(
+        disposition,
+        SameFormatSaveDisposition::AllowedExact
+            | SameFormatSaveDisposition::AllowedAfterAcceptedNormalization
+    ) {
+        compile_docx(envelope).map_err(|cause| SaveExternalDocumentError::Compilation { cause })?;
+    }
+    Ok(ExternalSavePlan::Complete(
+        SaveExternalDocumentOutcome::Eligibility {
+            document_id: envelope.document_id(),
+            display_name: provenance.display_name().to_owned(),
+            disposition,
+            normalizations: eligibility_normalizations(provenance, disposition),
+        },
+    ))
+}
+
+fn eligibility_normalizations(
+    provenance: &ExternalSourceProvenance,
+    disposition: SameFormatSaveDisposition,
+) -> Vec<crate::interoperability::fidelity::ExternalFeature> {
+    match disposition {
+        SameFormatSaveDisposition::AllowedAfterAcceptedNormalization => {
+            provenance.normalization_features()
+        }
+        _ => Vec::new(),
     }
 }
 

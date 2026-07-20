@@ -66,13 +66,52 @@ export type SaveDocumentCommandError =
   | {
       code:
         | "unsupported_file_location"
+        | "invalid_operation"
+        | "unsupported_format"
         | "invalid_target"
         | "serialization_failed"
         | "durability_uncertain";
     }
+  | { code: "save_as_target"; cause: SaveAsTargetError }
   | { code: "write_failed"; cause: AtomicDocumentWriteError }
   | { code: "invalid_envelope"; cause: DocumentEnvelopeError }
-  | { code: "registry"; cause: DocumentRegistryError };
+  | { code: "registry"; cause: DocumentRegistryError }
+  | { code: "docx_conversion"; cause: DocxExportError }
+  | { code: "plain_text_conversion"; cause: PlainTextExportError };
+
+export type SaveAsTargetError = {
+  code:
+    | "invalid_file_name"
+    | "conflicting_extension"
+    | "extension_mismatch"
+    | "target_is_directory";
+};
+
+export type DocxExportError = {
+  code:
+    | "artifact_too_large"
+    | "durability_uncertain"
+    | "invalid_document_structure"
+    | "invalid_target"
+    | "nesting_too_deep"
+    | "package_construction_failed"
+    | "source_too_large"
+    | "too_many_nodes"
+    | "unsupported_citation"
+    | "unsupported_document_content"
+    | "write_failed";
+};
+
+export type PlainTextExportError = {
+  code:
+    | "durability_uncertain"
+    | "invalid_document_structure"
+    | "invalid_target"
+    | "nesting_too_deep"
+    | "output_too_large"
+    | "too_many_nodes"
+    | "write_failed";
+};
 
 export function isOpenDocumentCommandError(value: unknown): value is OpenDocumentCommandError {
   if (!isRecord(value) || typeof value.code !== "string") {
@@ -144,9 +183,11 @@ export function isSaveDocumentCommandError(value: unknown): value is SaveDocumen
 
   return (
     isFieldlessSaveError(value) ||
+    isSaveAsTargetFailure(value) ||
     isWriteFailure(value) ||
     isInvalidEnvelopeError(value) ||
-    isRegistryCommandError(value)
+    isRegistryCommandError(value) ||
+    isConversionFailure(value)
   );
 }
 
@@ -167,9 +208,74 @@ function isFieldlessSaveError(value: Record<string, unknown>): boolean {
   return (
     hasOnlyCode(value) &&
     (value.code === "unsupported_file_location" ||
+      value.code === "invalid_operation" ||
+      value.code === "unsupported_format" ||
       value.code === "invalid_target" ||
       value.code === "serialization_failed" ||
       value.code === "durability_uncertain")
+  );
+}
+
+function isSaveAsTargetFailure(
+  value: Record<string, unknown>,
+): value is { code: "save_as_target"; cause: SaveAsTargetError } {
+  return (
+    value.code === "save_as_target" &&
+    hasCodeAndCause(value) &&
+    isSaveAsTargetError(value.cause)
+  );
+}
+
+function isSaveAsTargetError(value: unknown): value is SaveAsTargetError {
+  return (
+    isRecord(value) &&
+    hasOnlyCode(value) &&
+    (value.code === "invalid_file_name" ||
+      value.code === "conflicting_extension" ||
+      value.code === "extension_mismatch" ||
+      value.code === "target_is_directory")
+  );
+}
+
+function isConversionFailure(
+  value: Record<string, unknown>,
+): value is
+  | { code: "docx_conversion"; cause: DocxExportError }
+  | { code: "plain_text_conversion"; cause: PlainTextExportError } {
+  if (!hasCodeAndCause(value)) return false;
+  if (value.code === "docx_conversion") return isDocxExportError(value.cause);
+  return value.code === "plain_text_conversion" && isPlainTextExportError(value.cause);
+}
+
+export function isDocxExportError(value: unknown): value is DocxExportError {
+  return (
+    isRecord(value) &&
+    typeof value.code === "string" &&
+    (value.code === "artifact_too_large" ||
+      value.code === "durability_uncertain" ||
+      value.code === "invalid_document_structure" ||
+      value.code === "invalid_target" ||
+      value.code === "nesting_too_deep" ||
+      value.code === "package_construction_failed" ||
+      value.code === "source_too_large" ||
+      value.code === "too_many_nodes" ||
+      value.code === "unsupported_citation" ||
+      value.code === "unsupported_document_content" ||
+      value.code === "write_failed")
+  );
+}
+
+function isPlainTextExportError(value: unknown): value is PlainTextExportError {
+  return (
+    isRecord(value) &&
+    typeof value.code === "string" &&
+    (value.code === "durability_uncertain" ||
+      value.code === "invalid_document_structure" ||
+      value.code === "invalid_target" ||
+      value.code === "nesting_too_deep" ||
+      value.code === "output_too_large" ||
+      value.code === "too_many_nodes" ||
+      value.code === "write_failed")
   );
 }
 

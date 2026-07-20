@@ -18,6 +18,7 @@ pub enum ExternalFeature {
     ContextualSpacing,
     ExactLineSpacing,
     ExternalRelationship,
+    Footnote,
     ListIndentation,
     PackagePart,
     PaginationControl,
@@ -25,6 +26,7 @@ pub enum ExternalFeature {
     ParagraphShading,
     ParagraphTab,
     RunFormatting,
+    TableStructure,
     UnsupportedDocumentStructure,
     UnsupportedStyleInheritance,
 }
@@ -65,6 +67,7 @@ pub enum ExternalFidelity {
 
 #[derive(Default)]
 pub(crate) struct FidelityAccumulator {
+    lossy: BTreeSet<ExternalFeature>,
     normalized: BTreeSet<ExternalFeature>,
     unsupported: BTreeSet<ExternalFeature>,
 }
@@ -78,7 +81,18 @@ impl FidelityAccumulator {
         self.unsupported.insert(feature);
     }
 
-    pub(crate) fn finish(self) -> ExternalFidelity {
+    pub(crate) fn record_lossy(&mut self, feature: ExternalFeature) {
+        self.lossy.insert(feature);
+    }
+
+    pub(crate) fn finish(mut self) -> ExternalFidelity {
+        if !self.lossy.is_empty() {
+            self.lossy.append(&mut self.normalized);
+            self.lossy.append(&mut self.unsupported);
+            return ExternalFidelity::Lossy {
+                features: self.lossy.into_iter().collect(),
+            };
+        }
         if !self.unsupported.is_empty() {
             return ExternalFidelity::UnsupportedPreservable {
                 features: self.unsupported.into_iter().collect(),
@@ -95,7 +109,10 @@ impl FidelityAccumulator {
 
 impl ExternalFidelity {
     pub(crate) fn is_source_preservation_required(&self) -> bool {
-        matches!(self, Self::UnsupportedPreservable { .. })
+        matches!(
+            self,
+            Self::UnsupportedPreservable { .. } | Self::Lossy { .. }
+        )
     }
 
     pub(crate) fn is_exact(&self) -> bool {
@@ -156,5 +173,34 @@ mod tests {
             accumulator.finish(),
             ExternalFidelity::UnsupportedPreservable { .. }
         ));
+    }
+
+    #[test]
+    fn lossy_features_take_precedence_and_retain_all_disclosures() {
+        let mut accumulator = FidelityAccumulator::default();
+        accumulator.record_normalization(ExternalFeature::PaginationControl);
+        accumulator.record_unsupported(ExternalFeature::RunFormatting);
+        accumulator.record_lossy(ExternalFeature::TableStructure);
+
+        assert_eq!(
+            accumulator.finish(),
+            ExternalFidelity::Lossy {
+                features: vec![
+                    ExternalFeature::PaginationControl,
+                    ExternalFeature::RunFormatting,
+                    ExternalFeature::TableStructure,
+                ],
+            }
+        );
+    }
+
+    #[test]
+    fn lossy_fidelity_requires_source_preservation() {
+        assert!(
+            ExternalFidelity::Lossy {
+                features: vec![ExternalFeature::Footnote],
+            }
+            .is_source_preservation_required()
+        );
     }
 }

@@ -117,7 +117,7 @@ enum AvailabilityStatus {
 pub(crate) fn current_diagnostic_snapshot() -> Result<DiagnosticSnapshot, DiagnosticSnapshotError> {
     let status =
         current_runtime_status().map_err(|_| DiagnosticSnapshotError::InvalidApplicationVersion)?;
-    diagnostic_snapshot(status.into_version())
+    diagnostic_snapshot(status.version().to_owned())
 }
 
 fn diagnostic_snapshot(

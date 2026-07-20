@@ -11,6 +11,13 @@ vi.mock("@tauri-apps/api/event", () => ({
 
 import { listenToRuntimeStatus } from "./runtimeStatusEvents";
 
+const READY_EVENT = {
+  type: "ready",
+  buildCommit: "0123456789abcdef0123456789abcdef01234567",
+  buildProfile: "release",
+  version: "0.1.0",
+} as const;
+
 describe("listenToRuntimeStatus", () => {
   let eventHandler: RawEventHandler | undefined;
 
@@ -29,11 +36,11 @@ describe("listenToRuntimeStatus", () => {
     const onError = vi.fn();
 
     const stop = await listenToRuntimeStatus(onEvent, onError);
-    eventHandler?.({ payload: { type: "ready", version: "0.1.0" } });
+    eventHandler?.({ payload: READY_EVENT });
     stop();
 
     expect(listenMock).toHaveBeenCalledWith("draft://runtime-status", expect.any(Function));
-    expect(onEvent).toHaveBeenCalledWith({ type: "ready", version: "0.1.0" });
+    expect(onEvent).toHaveBeenCalledWith(READY_EVENT);
     expect(onError).not.toHaveBeenCalled();
     expect(stopMock).toHaveBeenCalledOnce();
   });

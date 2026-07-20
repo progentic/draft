@@ -79,6 +79,7 @@ fn unicode_headings_breaks_and_marks_render_without_raw_markup() {
     assert!(xml.contains("<w:sz w:val=\"34\"/>"));
     assert!(xml.contains("<w:szCs w:val=\"34\"/>"));
     assert!(xml.contains("<w:br/>"));
+    assert!(xml.contains("<w:br w:type=\"page\"/>"));
     assert_source_order(&xml, &["Heading text", "Café", "After break"]);
 }
 
@@ -449,6 +450,7 @@ fn rich_envelope() -> DocumentEnvelope {
             "attrs": { "level": 2 },
             "content": [{ "type": "text", "text": "Heading text" }]
         }),
+        json!({ "type": "pageBreak" }),
         paragraph(vec![
             json!({
                 "type": "text",

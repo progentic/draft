@@ -12,6 +12,7 @@ use crate::documents::{
     registry::{DocumentRegistry, DocumentRegistryError},
     text_import::{TextImportError, import_text_document},
 };
+use crate::docx_trace;
 use crate::interoperability::provenance::ExternalDocumentSummary;
 use crate::interoperability::{ExternalDocumentImportError, import_docx_source};
 
@@ -33,7 +34,6 @@ pub(crate) enum OpenDocumentError {
 #[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "code", rename_all = "snake_case")]
 pub(crate) enum SaveDocumentError {
-    UnsupportedFileLocation,
     InvalidTarget,
     InvalidEnvelope { cause: DocumentEnvelopeError },
     SerializationFailed,
@@ -50,6 +50,7 @@ pub(crate) enum OpenDocumentOutcome {
     },
     ImportedText {
         envelope: DocumentEnvelope,
+        format: TextImportFormat,
     },
     ImportedExternal {
         envelope: DocumentEnvelope,
@@ -58,10 +59,17 @@ pub(crate) enum OpenDocumentOutcome {
     Cancelled,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum TextImportFormat {
+    PlainText,
+    Markdown,
+}
+
 #[derive(Clone, Copy)]
 enum OpenSourceKind {
     Draft,
-    Text,
+    Text(TextImportFormat),
     Docx,
 }
 
@@ -96,6 +104,10 @@ pub(crate) fn open_document(
         return Ok(OpenDocumentOutcome::Cancelled);
     };
     let source_kind = classify_open_source(&source_path)?;
+    docx_trace::emit(
+        "open_source_classified",
+        format_args!("kind={}", open_source_kind_name(source_kind)),
+    );
     let _file_operation = lock_file_operation(registry).map_err(map_open_registry_error)?;
     open_source(registry, source_path, source_kind)
 }
@@ -107,8 +119,17 @@ fn open_source(
 ) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     match source_kind {
         OpenSourceKind::Draft => open_draft_document(registry, source_path),
-        OpenSourceKind::Text => import_text_source(&source_path),
+        OpenSourceKind::Text(format) => import_text_source(&source_path, format),
         OpenSourceKind::Docx => import_docx_document(registry, &source_path),
+    }
+}
+
+fn open_source_kind_name(source_kind: OpenSourceKind) -> &'static str {
+    match source_kind {
+        OpenSourceKind::Draft => "draft",
+        OpenSourceKind::Text(TextImportFormat::PlainText) => "plain_text",
+        OpenSourceKind::Text(TextImportFormat::Markdown) => "markdown",
+        OpenSourceKind::Docx => "docx",
     }
 }
 
@@ -121,6 +142,15 @@ fn import_docx_document(
     registry
         .open_imported_external(imported.envelope.clone(), imported.provenance)
         .map_err(|cause| OpenDocumentError::Registry { cause })?;
+    docx_trace::emit(
+        "frontend_payload_ready",
+        format_args!(
+            "status=imported_external blocks={}",
+            imported.envelope.document()["content"]
+                .as_array()
+                .map_or(0, Vec::len)
+        ),
+    );
     Ok(OpenDocumentOutcome::ImportedExternal {
         envelope: imported.envelope,
         external: imported.summary,
@@ -138,9 +168,12 @@ fn open_draft_document(
     Ok(OpenDocumentOutcome::OpenedDraft { envelope })
 }
 
-fn import_text_source(source_path: &Path) -> Result<OpenDocumentOutcome, OpenDocumentError> {
+fn import_text_source(
+    source_path: &Path,
+    format: TextImportFormat,
+) -> Result<OpenDocumentOutcome, OpenDocumentError> {
     import_text_document(source_path)
-        .map(|envelope| OpenDocumentOutcome::ImportedText { envelope })
+        .map(|envelope| OpenDocumentOutcome::ImportedText { envelope, format })
         .map_err(map_text_import_error)
 }
 
@@ -148,8 +181,12 @@ fn classify_open_source(path: &Path) -> Result<OpenSourceKind, OpenDocumentError
     match path.extension().and_then(|extension| extension.to_str()) {
         Some(extension) if extension.eq_ignore_ascii_case("draft") => Ok(OpenSourceKind::Draft),
         Some(extension) if extension.eq_ignore_ascii_case("json") => Ok(OpenSourceKind::Draft),
-        Some(extension) if extension.eq_ignore_ascii_case("txt") => Ok(OpenSourceKind::Text),
-        Some(extension) if extension.eq_ignore_ascii_case("md") => Ok(OpenSourceKind::Text),
+        Some(extension) if extension.eq_ignore_ascii_case("txt") => {
+            Ok(OpenSourceKind::Text(TextImportFormat::PlainText))
+        }
+        Some(extension) if extension.eq_ignore_ascii_case("md") => {
+            Ok(OpenSourceKind::Text(TextImportFormat::Markdown))
+        }
         Some(extension) if extension.eq_ignore_ascii_case("docx") => Ok(OpenSourceKind::Docx),
         _ => Err(OpenDocumentError::UnsupportedFileType),
     }
@@ -580,6 +617,27 @@ mod tests {
     }
 
     #[test]
+    fn word_authored_docx_opens_and_exports_through_production_boundaries() {
+        let source = word_docx_fixture();
+        let source_bytes = fs::read(&source).unwrap();
+        let target = TestDocumentPath::with_extension("word-round-trip", "docx");
+        let registry = DocumentRegistry::new();
+
+        let (envelope, _) =
+            imported_external(open_document(&registry, Some(source.clone())).unwrap());
+        export_docx(&envelope, target.path()).unwrap();
+        let exported = import_docx_source(target.path()).unwrap();
+
+        assert_eq!(document_text(envelope.document()), word_fixture_text());
+        assert_eq!(
+            document_text(exported.envelope.document()),
+            word_fixture_text()
+        );
+        assert_eq!(fs::read(source).unwrap(), source_bytes);
+        assert_eq!(registry.source_path(envelope.document_id()), Ok(None));
+    }
+
+    #[test]
     fn duplicate_docx_source_is_rejected_without_mutation() {
         let source = TestDocumentPath::with_extension("docx-duplicate-source", "docx");
         let source_bytes = docx_source_bytes("Imported");
@@ -797,8 +855,15 @@ mod tests {
         let source_bytes = b"First line\nSecond line\n";
         source.write(source_bytes);
         let registry = DocumentRegistry::new();
-        let envelope =
-            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let outcome = open_document(&registry, Some(source.path().to_owned())).unwrap();
+        assert!(matches!(
+            &outcome,
+            OpenDocumentOutcome::ImportedText {
+                format: TextImportFormat::PlainText,
+                ..
+            }
+        ));
+        let envelope = imported_envelope(outcome);
         let document_id = envelope.document_id();
         let snapshot = serde_json::to_value(&envelope).unwrap();
 
@@ -823,8 +888,15 @@ mod tests {
         let source_bytes = b"Imported source";
         source.write(source_bytes);
         let registry = DocumentRegistry::new();
-        let envelope =
-            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let outcome = open_document(&registry, Some(source.path().to_owned())).unwrap();
+        assert!(matches!(
+            &outcome,
+            OpenDocumentOutcome::ImportedText {
+                format: TextImportFormat::PlainText,
+                ..
+            }
+        ));
+        let envelope = imported_envelope(outcome);
         let snapshot = serde_json::to_value(&envelope).unwrap();
         save_document(&registry, snapshot.clone(), || {
             Ok(Some(target.path().to_owned()))
@@ -848,8 +920,15 @@ mod tests {
         let source_bytes = b"# Heading\n\n**literal emphasis**\n- source item";
         source.write(source_bytes);
         let registry = DocumentRegistry::new();
-        let envelope =
-            imported_envelope(open_document(&registry, Some(source.path().to_owned())).unwrap());
+        let outcome = open_document(&registry, Some(source.path().to_owned())).unwrap();
+        assert!(matches!(
+            &outcome,
+            OpenDocumentOutcome::ImportedText {
+                format: TextImportFormat::Markdown,
+                ..
+            }
+        ));
+        let envelope = imported_envelope(outcome);
 
         assert_eq!(envelope.title(), "research-notes.md");
         assert_eq!(
@@ -1443,6 +1522,33 @@ mod tests {
             .to_vec()
     }
 
+    fn word_docx_fixture() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/docx/word-custom-xml.docx")
+    }
+
+    fn word_fixture_text() -> &'static str {
+        "DRAFT DOCX Round Trip\nThis document was created in Microsoft Word for DRAFT interoperability testing.\nThe visible content must survive import and export."
+    }
+
+    fn document_text(document: &Value) -> String {
+        document["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(block_text)
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn block_text(block: &Value) -> String {
+        block["content"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|node| node["text"].as_str())
+            .collect()
+    }
+
     fn imported_external(
         outcome: OpenDocumentOutcome,
     ) -> (DocumentEnvelope, ExternalDocumentSummary) {
@@ -1523,7 +1629,7 @@ mod tests {
 
     fn imported_envelope(outcome: OpenDocumentOutcome) -> DocumentEnvelope {
         match outcome {
-            OpenDocumentOutcome::ImportedText { envelope } => envelope,
+            OpenDocumentOutcome::ImportedText { envelope, .. } => envelope,
             OpenDocumentOutcome::OpenedDraft { .. } => panic!("text source must import"),
             OpenDocumentOutcome::ImportedExternal { .. } => panic!("text source must import"),
             OpenDocumentOutcome::Cancelled => panic!("explicit text source must not cancel"),

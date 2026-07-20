@@ -60,6 +60,22 @@ not establish the contract. The corrected unsigned macOS build declares
 `CFBundleIconFile = icon.icns`, and the packaged resource is byte-for-byte
 identical to `src-tauri/icons/icon.icns`.
 
+The bundle also registers `.draft` as the owned `DRAFT Document` type with the
+exported identifier `com.progentic.draft.document`. The document type uses the
+same `icon.icns` artwork as the application. macOS can therefore route a
+double-clicked `.draft` file to DRAFT without making the WebView aware of its
+path. The Rust run-event queue retains the path until the typed document-open
+boundary consumes it.
+
+Product SemVer remains governed separately from validation-artifact identity.
+`scripts/package-macos.sh` requires a clean worktree, reads the exact
+40-character Git commit, and supplies it to the Rust build as
+`DRAFT_BUILD_COMMIT`. Cargo also embeds the `release` profile. The running
+workspace's bottom-right status item shows the product version and short
+commit; native About DRAFT also shows the profile. The complete commit remains
+embedded for mechanical comparison. No timestamp is embedded, so this
+mechanism does not introduce a reproducibility exception.
+
 `bundle.active` is `true`, and `bundle.targets` contains only `app`. Other Tauri
 bundle targets are not part of the Phase 42 package contract.
 
@@ -90,7 +106,10 @@ ignored `DRAFT.app`, runs the pinned Tauri build, and verifies:
 - `CFBundleIdentifier = com.progentic.draft`;
 - `CFBundleExecutable = draft`;
 - `Info.plist` contains `CFBundleIconFile = icon.icns`;
+- `Info.plist` declares the owned `.draft` document type and exported UTI;
 - the executable is a native Apple Silicon Mach-O binary;
+- the executable contains the exact clean-worktree Git commit used for the
+  package;
 - the embedded and tracked `.icns` files match byte-for-byte; and
 - the packaged `python/draft_helpers` files are present;
 - `/usr/bin/python3` is available on the supported host; and
@@ -123,6 +142,16 @@ If the packaged helper probe fails, confirm the bundle contains the complete
 `Resources/python/draft_helpers` package and that `/usr/bin/python3` satisfies
 the documented Python 3.9 minimum. Do not add a downloaded runtime or restore
 the invoking shell environment.
+
+If Finder opens a `.draft` file in another application, first inspect the built
+bundle's `CFBundleDocumentTypes` and `UTExportedTypeDeclarations`. A correct
+bundle can still require Launch Services to refresh after replacing an older
+copy. Do not work around registration by returning the selected path to React.
+
+If the visible short commit does not match the package under review, discard
+that validation session. The executable SHA-256 remains the evidence artifact
+identity, while the embedded commit proves which clean repository revision
+produced it.
 
 Do not commit files from `src-tauri/target/`. The unsigned app is reproducible
 build output, not a published release artifact.

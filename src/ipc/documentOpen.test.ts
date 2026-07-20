@@ -26,13 +26,34 @@ describe("openDocument", () => {
   });
 
   it("distinguishes an unsaved Rust-created text import", async () => {
-    invokeMock.mockResolvedValue({ status: "imported_text", envelope: envelope() });
+    invokeMock.mockResolvedValue({
+      status: "imported_text",
+      envelope: envelope(),
+      format: "markdown",
+    });
 
     await expect(openDocument()).resolves.toEqual({
       status: "imported_text",
       envelope: envelope(),
+      format: "markdown",
     });
   });
+
+  it.each([undefined, "future_format", "md", null])(
+    "rejects an imported text response with format %s",
+    async (format) => {
+      invokeMock.mockResolvedValue({
+        status: "imported_text",
+        envelope: envelope(),
+        ...(format === undefined ? {} : { format }),
+      });
+
+      await expect(openDocument()).resolves.toEqual({
+        status: "error",
+        error: { type: "invalid-response" },
+      });
+    },
+  );
 
   it("returns path-free DOCX fidelity from the Rust import boundary", async () => {
     invokeMock.mockResolvedValue({

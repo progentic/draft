@@ -16,7 +16,7 @@ describe("saveExternalDocument", () => {
     invokeMock.mockReset();
   });
 
-  it.each(["save_exact", "accept_normalization", "cancel"] as const)(
+  it.each(["inspect", "save_exact", "accept_normalization", "cancel"] as const)(
     "sends the path-free %s decision through the typed command",
     async (decision) => {
       invokeMock.mockResolvedValue({
@@ -35,6 +35,61 @@ describe("saveExternalDocument", () => {
       );
     },
   );
+
+  it.each([
+    ["no_changes", [], "none"],
+    ["allowed_exact", [], "none"],
+    [
+      "allowed_after_accepted_normalization",
+      ["alternate_heading_style_name"],
+      "confirm_normalization",
+    ],
+    ["denied_unsupported_source_behavior", [], "save_as_draft"],
+    ["denied_source_changed", [], "reopen_source"],
+  ] as const)(
+    "maps %s eligibility with typed normalization data",
+    async (disposition, normalizations, recovery) => {
+      invokeMock.mockResolvedValue({
+        status: "eligibility",
+        documentId: DOCUMENT_ID,
+        displayName: "paper.docx",
+        disposition,
+        normalizations,
+      });
+
+      await expect(saveExternalDocument(envelope(), "inspect")).resolves.toEqual({
+        status: "eligibility",
+        documentId: DOCUMENT_ID,
+        displayName: "paper.docx",
+        disposition,
+        normalizations,
+        recovery,
+      });
+    },
+  );
+
+  it.each([
+    ["allowed_exact", ["alternate_heading_style_name"]],
+    ["allowed_after_accepted_normalization", []],
+    ["allowed_after_accepted_normalization", ["future_normalization"]],
+  ])("rejects a %s eligibility response with unmapped normalization data", async (
+    disposition,
+    normalizations,
+  ) => {
+    invokeMock.mockResolvedValue({
+      status: "eligibility",
+      documentId: DOCUMENT_ID,
+      displayName: "paper.docx",
+      disposition,
+      normalizations,
+    });
+
+    await expect(saveExternalDocument(envelope(), "inspect")).resolves.toEqual({
+      status: "error",
+      error: { type: "invalid-response" },
+      recovery: "reopen_source",
+    });
+  });
 
   it.each([
     ["allowed_exact", "save_exact"],
@@ -185,6 +240,20 @@ describe("saveExternalDocument", () => {
 
   it.each([
     {
+      status: "eligibility",
+      documentId: DOCUMENT_ID,
+      displayName: "/private/paper.docx",
+      disposition: "allowed_exact",
+      normalizations: [],
+    },
+    {
+      status: "eligibility",
+      documentId: DOCUMENT_ID,
+      displayName: "paper.docx",
+      disposition: "future_disposition",
+      normalizations: [],
+    },
+    {
       status: "saved",
       documentId: DOCUMENT_ID,
       displayName: "/private/paper.docx",
@@ -217,7 +286,7 @@ describe("saveExternalDocument", () => {
     ).resolves.toEqual({
       status: "error",
       error: { type: "invalid-response" },
-      recovery: "retry",
+      recovery: "reopen_source",
     });
   });
 
@@ -237,7 +306,7 @@ describe("saveExternalDocument", () => {
     ).resolves.toEqual({
       status: "error",
       error: { type: "invalid-response" },
-      recovery: "retry",
+      recovery: "reopen_source",
     });
   });
 
@@ -249,7 +318,7 @@ describe("saveExternalDocument", () => {
     ).resolves.toEqual({
       status: "error",
       error: { type: "transport" },
-      recovery: "retry",
+      recovery: "reopen_source",
     });
   });
 });

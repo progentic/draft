@@ -17,3 +17,20 @@ describe("workspace motion policy", () => {
     );
   });
 });
+
+describe("explicit page-break presentation", () => {
+  it("renders explicit page breaks as full page-surface gaps", () => {
+    expect(styles).toMatch(
+      /\.draft-editor \[data-draft-page-break\] \{[^}]*display: block;[^}]*height: 34px;[^}]*background: var\(--workspace\);[^}]*border-top: 1px solid[^}]*border-bottom: 1px solid[^}]*box-shadow:/su,
+    );
+    expect(styles).not.toMatch(
+      /\.draft-editor \[data-draft-page-break\] \{[^}]*border-top: 1px dashed/su,
+    );
+  });
+
+  it("keeps the page gap full width at normal and narrow editor padding", () => {
+    expect(styles).toContain("--page-edge-offset: 73px;");
+    expect(styles).toContain("--page-edge-offset: 53px;");
+    expect(styles).toContain("--page-edge-offset: 24px;");
+  });
+});

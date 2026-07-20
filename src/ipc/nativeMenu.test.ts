@@ -19,7 +19,7 @@ const MENU_STATE: NativeMenuState = {
   canClose: false,
   canSave: false,
   canSaveAs: false,
-  canExport: false,
+  canSaveBack: false,
 };
 
 describe("native menu client", () => {
@@ -65,7 +65,7 @@ describe("native menu client", () => {
     "close_document",
     "save_document",
     "save_document_as",
-    "export_docx",
+    "save_back_to_source",
   ] as const)("delivers the closed %s action", async (action) => {
     const unlisten = vi.fn();
     let deliver: ((event: { payload: unknown }) => void) | undefined;

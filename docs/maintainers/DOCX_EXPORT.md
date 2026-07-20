@@ -12,17 +12,20 @@ Phase 32 adds a Rust-only DOCX compiler and atomic export service for one
 validated immutable `DocumentEnvelope`. It creates a derived artifact and never
 makes DOCX the source of truth.
 
-Phase 46 adds one typed Tauri command, Rust-owned native export dialog,
-frontend wrapper, and visible control. It adds no export history, persistence,
-worker, Python helper, network call, citation renderer, PDF path, or broad
-style-manual claim.
+Phase 46 first exposed the exporter through a dedicated command. Phase 47 now
+routes DOCX copies through the unified typed Save As command and a
+format-constrained Rust-owned dialog. The former standalone command, hook, and
+menu action are removed. This adds no export history, persistence, worker,
+Python helper, network call, citation renderer, PDF path, or broad style-manual
+claim.
 
 ## Strict Document Subset
 
-The compiler accepts a `doc` root containing ordered `paragraph` and `heading`
-blocks. Headings accept levels 1 through 6. Inline content accepts `text` and
-`hardBreak`; text accepts `bold`, `italic`, `underline`, `fontFamily`, and
-`fontSize` marks.
+The compiler accepts a `doc` root containing ordered `paragraph`, `heading`,
+and canonical `pageBreak` blocks. Headings accept levels 1 through 6. Inline
+content accepts `text` and `hardBreak`; text accepts `bold`, `italic`,
+`underline`, `fontFamily`, and `fontSize` marks. A `pageBreak` emits one
+explicit `w:br w:type="page"` run inside its own paragraph.
 
 Font family accepts only `arial`, `avenir_next`, `baskerville`, `courier_new`,
 `georgia`, `helvetica`, `menlo`, `palatino`, `times_new_roman`, `trebuchet_ms`,
@@ -36,14 +39,15 @@ Alignment maps to `w:jc`; automatic line spacing and space before/after map to
 `w:spacing`; left/right and first-line or hanging indentation map to `w:ind`.
 All explicit values are emitted deterministically. A block without
 `paragraphStyle` emits no default paragraph override. The bounded DOCX importer
-uses the inverse mapping for accepted paragraph values, but same-format save
-remains unavailable. Import and export are separate policies; this exporter
-does not authorize overwriting an imported DOCX. See
+uses the inverse mapping for accepted paragraph values. Import and export are
+separate policies; this exporter does not authorize overwriting an imported
+DOCX. The independent Save Back workflow applies its own fidelity, source-
+identity, confirmation, and rollback policy. See
 `docs/maintainers/DOCX_INTEROPERABILITY.md`.
 
-Empty paragraphs and headings, Unicode text, source order, paragraph boundaries,
-heading levels, hard breaks, and supported marks are preserved. XML-invalid
-control characters fail before package construction.
+Empty paragraphs and headings, Unicode text, source order, paragraph
+boundaries, heading levels, hard and page breaks, and supported marks are
+preserved. XML-invalid control characters fail before package construction.
 
 Unknown fields, nodes, attributes, marks, duplicate marks, and malformed shapes
 fail with a typed structural path containing indexes only. Citation nodes return
@@ -95,6 +99,11 @@ Compilation failure leaves a prior target unchanged. Real create/replace tests
 prove that export changes only the `.docx` target while source DRAFT bytes remain
 unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 
+The Save As command validates the current envelope, calls `compile_docx`, and
+uses the owned atomic artifact writer. Its `converted_output` response contains
+only the output basename, format, and byte count. It explicitly reports that
+document authority and dirty state did not change.
+
 ## Abstraction Hierarchy
 
 | Layer | Function or type | Responsibility |
@@ -108,7 +117,7 @@ unchanged. The exporter never reads from or writes to `DocumentRegistry`.
 ## Verification
 
 Focused Rust tests cover stable safe entries, archive reopening,
-deterministic bytes, XML parsing, Unicode, headings, hard breaks, supported
+deterministic bytes, XML parsing, Unicode, headings, hard and page breaks, supported
 marks, every family mapping, mixed family and size run properties, paragraph
 property mapping, default-by-absence, empty
 blocks, unknown and malformed content, citation rejection, source
@@ -132,8 +141,8 @@ package that reopens with the final text and leaves the DRAFT source unchanged.
 The strict subset does not support arbitrary fonts or sizes, citations, bibliographies, lists, tables,
 links, images, equations, notes, comments, tracked changes, headers, footers,
 page numbers, templates, unsupported paragraph rules, layout controls, or complete APA/MLA/Chicago rendering.
-Unsupported content fails the whole export. The visible Phase 46 flow is
-documented in `PHASE46_WORKFLOWS.md`.
+Unsupported content fails the whole export. The visible Save As flow is
+documented in `PHASE46_WORKFLOWS.md` and `DOCUMENT_SAVE_LOAD.md`.
 
 ## Configuration Index
 

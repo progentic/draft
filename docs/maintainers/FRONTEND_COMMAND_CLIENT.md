@@ -21,7 +21,8 @@ transport failures out of presentation components.
 | Mid | `getRuntimeStatus` | Owns the command name, request envelope, response validation, and error classification. |
 | Mid | `cancelWorker` | Owns the cancellation command contract and bounded result mapping. |
 | Mid | `openDocument` | Validates Rust-loaded envelopes without receiving a path. |
-| Mid | `saveDocument` | Sends one explicit snapshot and validates save outcomes. |
+| Mid | `saveDocument` | Sends one explicit snapshot plus path-free display/origin metadata and validates save outcomes. |
+| Mid | `setWindowTitle` | Mirrors basename and Unsaved presentation through one strict native-title command. |
 | Mid | `resolveCitation` | Validates resolution responses and typed citation failures. |
 | Mid | `openExternalAccess` | Requests one Rust-validated default-browser handoff. |
 | Mid | `runFormattingReview` | Validates one closed formatting response and typed failures. |
@@ -96,14 +97,15 @@ validated event drives the ready-state transition. `useRuntimeStatus` exposes
 one of three transient states:
 
 - `checking`
-- `ready` with the Rust application version
+- `ready` with the Rust application version, build commit, and build profile
 - `unavailable` with the complete bounded client or event error
 
-The document inspector displays `Connecting to core`, `Core v<version>`, or a
-bounded unavailable label. Invalid application metadata and event-delivery
-failure remain distinct through the session state so the interface can explain
-the actual failure. This state is not persisted and does not make the frontend
-authoritative for runtime metadata.
+The document inspector displays `Connecting to core`, the product version plus
+short build commit and profile, or a bounded unavailable label. Invalid version,
+invalid build metadata, and event-delivery failure remain distinct through the
+session state so the interface can explain the actual failure. This state is
+not persisted and does not make the frontend authoritative for runtime
+metadata.
 
 A standalone Vite browser does not have a Tauri runtime and therefore reports
 the core as unavailable. The desktop application resolves the registered Rust
@@ -117,9 +119,11 @@ extends the save error guard with typed atomic-write and durability failures.
 It validates opened envelopes, cancellation, nested domain failures, and
 transport failures.
 
-`saveDocument` sends exactly one typed envelope snapshot. It sends no path and
-does not inspect Tiptap live state. The caller must construct the immutable
-snapshot explicitly. Phase 46 adds `closeDocument` and integrates New, Open,
+`saveDocument` sends exactly one typed envelope snapshot, one basename display
+name, and the closed lifecycle origin previously returned by Rust. It sends no
+path and does not inspect Tiptap live state. Rust uses the extra path-free data
+only to derive a native `.draft` filename suggestion. The caller must construct
+the immutable snapshot explicitly. Phase 46 adds `closeDocument` and integrates New, Open,
 Save, and Close through `useDocumentSession`, including dirty-state decisions
 and registry-handle release. A successful save response carries the document
 ID, a basename-only display name, and a `wasSaveAs` flag. The client rejects
@@ -199,9 +203,11 @@ so Phase 38 adds no visible diagnostics or support workflow. See
 ## Phase 46 workflow wrappers
 
 Phase 46 adds strict clients for `create_document`, `close_document`, `add_reference`,
-`list_references`, `run_text_analysis`, and `export_document`, and extends the
+`list_references`, and `run_text_analysis`, and extends the
 existing Open client with exact `opened_draft`, `imported_text`, and `cancelled`
-outcomes. Each client owns
+outcomes. `imported_text` includes a closed `plain_text` or `markdown` value so
+the visible workflow can disclose literal Markdown behavior without inferring
+from a filename. Each client owns
 one command constant, sends one bounded request envelope, validates an unknown
 response, and preserves only its closed command errors.
 
@@ -213,27 +219,65 @@ absolute or relative paths, raw XML, source bytes, and extra fields make the
 entire response invalid. Nested DOCX command failures retain their typed
 malformed, unsafe, unsupported, and lossy distinctions without raw details.
 
-`externalDocumentSave.ts` adds the currently unwired same-format writer client.
-It sends one current envelope and one closed decision without a path or
-fingerprint. Strict response validation preserves saved, unchanged,
-confirmation-required, denied, cancelled, invalid-response, and transport
-outcomes. Every denial and typed error maps exhaustively to one bounded recovery
-category: confirm known normalization, Save As `.draft`, reopen the source,
-retry, or no available recovery. The wrapper strips nested compiler details to
-stable codes and is not imported by any component, hook, or session state.
+`documentSave.ts` now owns both ordinary DRAFT Save and the closed Save As
+choice. Its exact format set is `draft`, `docx`, and `txt`. A `draft_saved`
+result may update authoritative identity and clears dirty state only after Rust
+confirms persistence. A `converted_output` result contains a basename, format,
+and byte count while requiring both authority and dirty state to remain
+unchanged. `SaveAsDialog` presents the choice but receives no path and cannot
+add a format. PDF is not part of this boundary.
+
+`externalDocumentSave.ts` owns the same-format writer client. It sends one
+current envelope and one closed inspect, exact-save, normalization-acceptance,
+or cancellation decision without a path or fingerprint. Strict response
+validation preserves eligibility, saved, unchanged, confirmation-required,
+denied, cancelled, invalid-response, and transport outcomes. Every denial and
+typed error maps exhaustively to one bounded recovery category: confirm known
+normalization, Save As `.draft`, reopen the source, retry, or no available
+recovery. The eligibility response includes a closed list of known canonical
+normalizations. The wrapper rejects a normalized disposition with a missing or
+unknown transformation instead of showing a generic consent dialog, and it
+strips nested compiler details to stable codes.
+An invalid response or transport failure cannot prove whether replacement
+finished, so it requires reopening the source rather than offering immediate
+retry.
+
+`applicationOpen.ts` owns the path-free macOS application-open boundary. Its
+event validator accepts only `available` or `queue_unavailable`; its command
+sends only `open` or `dismiss`. A successful open reuses the normal
+`OpenDocumentResult` validator. The wrapper rejects extra fields and never
+receives the queued file URL, path, fingerprint, or raw source bytes.
+
+`useDocumentSession` drains the queue only when the current lifecycle is ready.
+Unsaved content uses the existing save/discard/keep-editing decision before the
+queued request is consumed. Open pending, success, cancellation, and failure
+copy appears in the conditional workspace operation notice.
+
+`useExternalSourceSave` is the only production consumer. It rejects stale
+editor generations, exposes only exact or accepted-normalization confirmation,
+and preserves modified state after cancellation or failure. The confirmation
+dialog and shared workspace dispatcher never receive source paths,
+fingerprints, XML, or package bytes.
 
 ## Native menu wrappers
 
 `nativeMenu.ts` owns both Phase 48 native boundaries. It validates the closed
 six-action `draft://native-menu-action` event before feature code receives it,
-and it sends the path-free six-boolean request for `set_native_menu_state`.
+and it sends the path-free six-boolean request for
+`set_native_menu_state`.
 Malformed events, malformed responses, the closed `menu_update_failed` error,
 and unknown transport failures remain distinct.
 
 `useWorkspaceActions` consumes this wrapper. Native and visible actions use the
 same dispatcher, and that dispatcher checks current availability before calling
-the existing document-session or DOCX-export operation. The wrapper exposes no
+the existing document-session operation. The wrapper exposes no
 filesystem path or native menu object to React.
+
+`windowTitle.ts` owns the separate `set_window_title` client. Its request is
+limited to an optional basename and Unsaved boolean; its strict response and
+closed errors cannot change document identity or persistence. `useWindowTitle`
+mirrors session presentation after new, import, edit, save, close, and reopen
+transitions.
 
 The create client accepts no identity or content input; Rust returns the
 validated blank initial envelope. The Open client receives no path and never

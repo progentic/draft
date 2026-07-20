@@ -4,19 +4,44 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { closeDocument } from "../../ipc/documentClose";
 import { createUnsavedDocument } from "../../ipc/documentCreate";
+import {
+  dismissApplicationOpenRequest,
+  listenToApplicationOpenRequests,
+  takeApplicationOpenRequest,
+  type ApplicationOpenClientError,
+} from "../../ipc/applicationOpen";
 import type { DocumentEnvelopeSnapshot } from "../../ipc/documentEnvelope";
 import { openDocument } from "../../ipc/documentOpen";
-import { saveDocument } from "../../ipc/documentSave";
-import type { SaveDocumentMode } from "../../ipc/documentSave";
+import { saveDocument, saveDocumentAs } from "../../ipc/documentSave";
+import type {
+  SaveAsFormat,
+  SaveDocumentOrigin,
+  SaveDocumentResult,
+} from "../../ipc/documentSave";
+import type { ExternalDocumentSummary } from "../../ipc/externalDocument";
+import {
+  useExternalSourceSave,
+  type ExternalSourceSaveConfirmation,
+} from "../external-source-save/useExternalSourceSave";
 
-export type PendingDocumentAction = "close" | "new" | "open";
-export type DocumentOperation = "closing" | "creating" | "opening" | "ready" | "saving";
+export type PendingDocumentAction = "close" | "new" | "open" | "open_requested";
+export type DocumentOperation =
+  | "checking_source"
+  | "closing"
+  | "choosing_save_format"
+  | "confirming_source_save"
+  | "creating"
+  | "opening"
+  | "ready"
+  | "saving"
+  | "saving_source";
 
-type DocumentOrigin = "imported_external" | "imported_text" | "new" | "opened_draft";
+type DocumentOrigin = SaveDocumentOrigin;
 
 interface DocumentIdentity {
   displayName: string;
   documentId: string;
+  external: ExternalDocumentSummary | null;
   origin: DocumentOrigin;
   persisted: boolean;
   registered: boolean;
@@ -25,9 +50,9 @@ interface DocumentIdentity {
 
 export interface DocumentSession {
   canClose: boolean;
-  canExport: boolean;
   canSave: boolean;
   canSaveAs: boolean;
+  canSaveBack: boolean;
   documentId: string | null;
   feedback: string;
   operation: DocumentOperation;
@@ -35,12 +60,20 @@ export interface DocumentSession {
   requestClose: () => void;
   requestNew: () => void;
   requestOpen: () => void;
+  requestSaveBack: () => void;
   resolvePendingAction: (decision: "cancel" | "discard" | "save") => void;
+  requestSaveAs: () => void;
+  resolveSaveAs: (format: SaveAsFormat | "cancel") => void;
+  resolveSaveBack: (decision: "cancel" | "confirm") => void;
   save: () => Promise<boolean>;
-  saveAs: () => Promise<boolean>;
+  saveAsOpen: boolean;
+  saveBackConfirmation: ExternalSourceSaveConfirmation | null;
+  saveBackUnavailableReason: string;
+  saveBackVisible: boolean;
   snapshot: () => DocumentEnvelopeSnapshot | null;
   statusLabel: string;
   title: string;
+  unsaved: boolean;
 }
 
 const EMPTY_DOCUMENT: JSONContent = { type: "doc", content: [] };
@@ -50,11 +83,18 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
   const identityRef = useRef(identity);
   const initializationStarted = useRef(false);
   const [dirty, setDirty] = useState(false);
+  const [revision, setRevision] = useState(0);
   const [operation, setOperation] = useState<DocumentOperation>("creating");
   const [feedback, setFeedback] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingDocumentAction | null>(null);
+  const [applicationOpenPending, setApplicationOpenPending] = useState(false);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const saveAsGeneration = useRef(0);
 
-  useEffect(() => subscribeToDocumentUpdates(editor, setDirty, setIdentity), [editor]);
+  useEffect(
+    () => subscribeToDocumentUpdates(editor, setDirty, setIdentity, setRevision),
+    [editor],
+  );
   useEffect(() => {
     if (editor && !initializationStarted.current) {
       initializationStarted.current = true;
@@ -70,28 +110,38 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
   useEffect(() => {
     identityRef.current = identity;
   }, [identity]);
+  useEffect(
+    () => attachApplicationOpenListener(setApplicationOpenPending, setFeedback),
+    [],
+  );
 
   const snapshot = useCallback(
     () => currentSnapshot(editor, identity),
     [editor, identity],
   );
 
-  const persist = useCallback(async (mode: SaveDocumentMode) => {
+  const persist = useCallback(async () => {
     const current = snapshot();
-    if (!current) {
+    const currentIdentity = identityRef.current;
+    if (!current || !currentIdentity) {
       setFeedback("Create or open a document before saving.");
       return false;
     }
     setOperation("saving");
-    const result = await saveDocument(current, mode);
+    const result = await saveDocument(
+      current,
+      currentIdentity.displayName,
+      currentIdentity.origin,
+    );
     setOperation("ready");
-    if (result.status !== "saved") {
+    if (result.status !== "draft_saved") {
       setFeedback(saveFailureMessage(result));
       return false;
     }
     const savedIdentity = {
       displayName: result.displayName,
       documentId: result.documentId,
+      external: null,
       origin: "opened_draft" as const,
       persisted: true,
       registered: true,
@@ -103,8 +153,69 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     setFeedback(`Saved as ${result.displayName}.`);
     return true;
   }, [snapshot]);
-  const save = useCallback(() => persist("save"), [persist]);
-  const saveAs = useCallback(() => persist("save_as"), [persist]);
+  const save = useCallback(() => persist(), [persist]);
+  const applySaveAs = useCallback(async (format: SaveAsFormat) => {
+    const current = snapshot();
+    const currentIdentity = identityRef.current;
+    if (!current || !currentIdentity) {
+      setOperation("ready");
+      setFeedback("Create or open a document before using Save As.");
+      return;
+    }
+    const generation = ++saveAsGeneration.current;
+    setOperation("saving");
+    setFeedback(saveAsPendingMessage(format));
+    const result = await saveDocumentAs(
+      current,
+      currentIdentity.displayName,
+      currentIdentity.origin,
+      format,
+    );
+    if (!currentSaveAsResponse(generation, saveAsGeneration.current, currentIdentity.documentId, identityRef.current)) {
+      return;
+    }
+    setOperation("ready");
+    applySaveAsResult(result, currentIdentity, setIdentity, setDirty, setFeedback, identityRef);
+  }, [snapshot]);
+  const requestSaveAs = useCallback(() => {
+    if (!identityRef.current) {
+      setFeedback("Create or open a document before using Save As.");
+      return;
+    }
+    setFeedback("");
+    setOperation("choosing_save_format");
+    setSaveAsOpen(true);
+  }, []);
+  const resolveSaveAs = useCallback((format: SaveAsFormat | "cancel") => {
+    setSaveAsOpen(false);
+    if (format === "cancel") {
+      setOperation("ready");
+      setFeedback("Save As cancelled. Your document was not changed.");
+      return;
+    }
+    void applySaveAs(format);
+  }, [applySaveAs]);
+  const markExternalSaved = useCallback((documentId: string, displayName: string) => {
+    const current = identityRef.current;
+    if (!current?.external || current.documentId !== documentId) return;
+    const savedIdentity = {
+      ...current,
+      displayName,
+    };
+    identityRef.current = savedIdentity;
+    setIdentity(savedIdentity);
+    setDirty(false);
+  }, []);
+  const sourceSave = useExternalSourceSave({
+    external: identity?.external ?? null,
+    modified: identity?.origin === "imported_external" && dirty,
+    operation,
+    revision,
+    snapshot,
+    onFeedback: setFeedback,
+    onOperation: setOperation,
+    onSaved: markExternalSaved,
+  });
 
   const executeAction = useCallback(
     async (action: PendingDocumentAction) => {
@@ -121,6 +232,17 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       }
       if (action === "open") {
         await openIntoSession(
+          editor,
+          identityRef.current,
+          setIdentity,
+          setDirty,
+          setOperation,
+          setFeedback,
+        );
+        return;
+      }
+      if (action === "open_requested") {
+        await openRequestedIntoSession(
           editor,
           identityRef.current,
           setIdentity,
@@ -154,20 +276,44 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
     (decision: "cancel" | "discard" | "save") => {
       const action = pendingAction;
       setPendingAction(null);
-      if (!action || decision === "cancel") {
+      if (!action) {
         return;
       }
-      void continuePendingAction(action, decision, save, executeAction);
+      if (decision === "cancel") {
+        if (action === "open_requested") {
+          void dismissApplicationOpenRequest().then((dismissed) => {
+            setFeedback(
+              dismissed
+                ? "Requested document open cancelled."
+                : "DRAFT could not cancel the requested document. Finish editing, then use Open.",
+            );
+          });
+        }
+        return;
+      }
+      void continuePendingAction(action, decision, save, executeAction).then((completed) => {
+        if (!completed && action === "open_requested") {
+          setApplicationOpenPending(true);
+        }
+      });
     },
     [executeAction, pendingAction, save],
   );
 
+  useEffect(() => {
+    if (!applicationOpenPending || operation !== "ready" || pendingAction) {
+      return;
+    }
+    setApplicationOpenPending(false);
+    request("open_requested");
+  }, [applicationOpenPending, operation, pendingAction, request]);
+
   return useMemo(
     () => ({
       canClose: identity !== null && operation === "ready",
-      canExport: identity !== null && operation === "ready",
       canSave: identity !== null && operation === "ready",
       canSaveAs: identity !== null && operation === "ready",
+      canSaveBack: sourceSave.enabled,
       documentId: identity?.documentId ?? null,
       feedback,
       operation,
@@ -175,14 +321,22 @@ export function useDocumentSession(editor: Editor | null): DocumentSession {
       requestClose: () => request("close"),
       requestNew: () => request("new"),
       requestOpen: () => request("open"),
+      requestSaveAs,
+      requestSaveBack: sourceSave.request,
       resolvePendingAction,
+      resolveSaveAs,
+      resolveSaveBack: sourceSave.resolve,
       save,
-      saveAs,
+      saveAsOpen,
+      saveBackConfirmation: sourceSave.confirmation,
+      saveBackUnavailableReason: sourceSave.unavailableReason,
+      saveBackVisible: sourceSave.visible,
       snapshot,
       statusLabel: documentStatus(identity, dirty, operation),
       title: identity?.displayName ?? "No document open",
+      unsaved: identity !== null && (!identity.persisted || dirty),
     }),
-    [dirty, feedback, identity, operation, pendingAction, request, resolvePendingAction, save, saveAs, snapshot],
+    [dirty, feedback, identity, operation, pendingAction, request, requestSaveAs, resolvePendingAction, resolveSaveAs, save, saveAsOpen, snapshot, sourceSave],
   );
 }
 
@@ -193,21 +347,88 @@ async function continuePendingAction(
   execute: (action: PendingDocumentAction) => Promise<void>,
 ) {
   if (decision === "save" && !(await save())) {
-    return;
+    return false;
   }
   await execute(action);
+  return true;
+}
+
+function currentSaveAsResponse(
+  requestedGeneration: number,
+  currentGeneration: number,
+  requestedDocumentId: string,
+  currentIdentity: DocumentIdentity | null,
+) {
+  return (
+    requestedGeneration === currentGeneration &&
+    requestedDocumentId === currentIdentity?.documentId
+  );
+}
+
+function applySaveAsResult(
+  result: SaveDocumentResult,
+  current: DocumentIdentity,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setFeedback: (feedback: string) => void,
+  identityRef: React.MutableRefObject<DocumentIdentity | null>,
+) {
+  if (result.status === "draft_saved") {
+    applyDraftSaveResult(result, current, setIdentity, setDirty, identityRef);
+    setFeedback(`Saved as ${result.displayName}.`);
+    return;
+  }
+  if (result.status === "converted_output") {
+    setFeedback(convertedOutputMessage(result.outputFormat, result.displayName));
+    return;
+  }
+  setFeedback(saveAsFailureMessage(result));
+}
+
+function applyDraftSaveResult(
+  result: Extract<SaveDocumentResult, { status: "draft_saved" }>,
+  current: DocumentIdentity,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  identityRef: React.MutableRefObject<DocumentIdentity | null>,
+) {
+  const savedIdentity = {
+    displayName: result.displayName,
+    documentId: result.documentId,
+    external: null,
+    origin: "opened_draft" as const,
+    persisted: true,
+    registered: true,
+    title: current.title,
+  };
+  identityRef.current = savedIdentity;
+  setIdentity(savedIdentity);
+  setDirty(false);
+}
+
+function convertedOutputMessage(format: "docx" | "txt", displayName: string) {
+  const kind = format === "docx" ? "Word" : "plain-text";
+  return `${kind} copy created as ${displayName}. Your current DRAFT document was not changed.`;
+}
+
+function saveAsPendingMessage(format: SaveAsFormat) {
+  if (format === "draft") return "Saving a DRAFT document…";
+  if (format === "docx") return "Preparing a Word copy…";
+  return "Preparing a plain-text copy…";
 }
 
 function subscribeToDocumentUpdates(
   editor: Editor | null,
   setDirty: (dirty: boolean) => void,
   setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setRevision: React.Dispatch<React.SetStateAction<number>>,
 ) {
   if (!editor) {
     return;
   }
   const handleUpdate = () => {
     setDirty(true);
+    setRevision((revision) => revision + 1);
     setIdentity((identity) =>
       identity
         ? { ...identity, title: documentTitle(editor.getJSON(), identity.title) }
@@ -232,7 +453,63 @@ async function openIntoSession(
     return;
   }
   setOperation("opening");
+  setFeedback("Opening document…");
   const result = await openDocument();
+  await applyOpenResult(
+    result,
+    editor,
+    current,
+    setIdentity,
+    setDirty,
+    setOperation,
+    setFeedback,
+  );
+}
+
+async function openRequestedIntoSession(
+  editor: Editor | null,
+  current: DocumentIdentity | null,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  if (!editor) {
+    return;
+  }
+  setOperation("opening");
+  setFeedback("Opening requested DRAFT document…");
+  const request = await takeApplicationOpenRequest();
+  if (request.status === "none") {
+    setOperation("ready");
+    setFeedback("");
+    return;
+  }
+  if (request.status === "error") {
+    setOperation("ready");
+    setFeedback(applicationOpenFailureMessage(request.error));
+    return;
+  }
+  await applyOpenResult(
+    request.result,
+    editor,
+    current,
+    setIdentity,
+    setDirty,
+    setOperation,
+    setFeedback,
+  );
+}
+
+async function applyOpenResult(
+  result: Awaited<ReturnType<typeof openDocument>>,
+  editor: Editor,
+  current: DocumentIdentity | null,
+  setIdentity: React.Dispatch<React.SetStateAction<DocumentIdentity | null>>,
+  setDirty: (dirty: boolean) => void,
+  setOperation: (operation: DocumentOperation) => void,
+  setFeedback: (feedback: string) => void,
+) {
   if (!isSuccessfulOpen(result)) {
     setOperation("ready");
     setFeedback(openFailureMessage(result));
@@ -255,14 +532,57 @@ async function openIntoSession(
         ? result.external.displayName
         : result.envelope.title,
     documentId: result.envelope.document_id,
+    external: result.status === "imported_external" ? result.external : null,
     origin: result.status,
     persisted,
     registered,
     title: result.envelope.title,
   });
-  setDirty(!persisted);
+  setDirty(result.status === "imported_text");
   setOperation("ready");
   setFeedback(openSuccessMessage(result));
+}
+
+function attachApplicationOpenListener(
+  setPending: (pending: boolean) => void,
+  setFeedback: (feedback: string) => void,
+) {
+  let disposed = false;
+  let stop: (() => void) | undefined;
+  void listenToApplicationOpenRequests(
+    () => setPending(true),
+    () => setFeedback("DRAFT could not receive the requested document. Use Open instead."),
+  ).then((listener) => {
+    if (disposed) {
+      listener();
+      return;
+    }
+    stop = listener;
+    setPending(true);
+  }).catch(() => {
+    if (!disposed) {
+      setFeedback("DRAFT could not receive documents from macOS. Use Open instead.");
+    }
+  });
+  return () => {
+    disposed = true;
+    stop?.();
+  };
+}
+
+function applicationOpenFailureMessage(error: ApplicationOpenClientError) {
+  if (error.type === "open") {
+    return openCommandFailureMessage(error.error);
+  }
+  if (error.type === "command") {
+    if (error.code === "multiple_files_unsupported") {
+      return "Open one DRAFT document at a time.";
+    }
+    if (error.code === "unsupported_file_location") {
+      return "DRAFT could not use the requested file location. Use Open instead.";
+    }
+  }
+  return "DRAFT could not open the requested document. Use Open to try again.";
 }
 
 function isSuccessfulOpen(
@@ -286,11 +606,16 @@ function openSuccessMessage(result: Extract<
     return "DRAFT document opened.";
   }
   if (result.status === "imported_text") {
-    return "Text imported. Save as a DRAFT document to keep your work.";
+    return result.format === "markdown"
+      ? "Markdown imported as literal editable text. DRAFT does not parse or preview Markdown. Save as a DRAFT document to keep your work."
+      : "Text imported. Save as a DRAFT document to keep your work.";
+  }
+  if (result.external.fidelity.classification === "lossy") {
+    return "DOCX imported as a readable copy. Tables, footnotes, lists, or other unsupported structures were normalized. The original was not changed. Save as a DRAFT document to continue.";
   }
   return result.external.fidelity.classification === "unsupported_preservable"
-    ? "DOCX imported with unsupported formatting. Save as a DRAFT document to edit a copy; the original stays unchanged."
-    : "DOCX imported. Save as a DRAFT document to keep edits; the original stays unchanged.";
+    ? "DOCX imported. Supported text and paragraph formatting was retained. Some source features remain only in the original. Save as a DRAFT document to edit a copy."
+    : "DOCX opened. Save creates a DRAFT document; Save Back to Source replaces the DOCX only after confirmation.";
 }
 
 async function initializeDocumentSession(
@@ -388,6 +713,7 @@ function loadCreatedDocument(
   setIdentity({
     displayName: envelope.title,
     documentId: envelope.document_id,
+    external: null,
     origin: "new",
     persisted: false,
     registered: false,
@@ -457,6 +783,18 @@ function documentStatus(
   operation: DocumentOperation,
 ) {
   if (operation !== "ready") {
+    if (operation === "choosing_save_format") {
+      return "Choosing format";
+    }
+    if (operation === "checking_source") {
+      return "Checking source";
+    }
+    if (operation === "confirming_source_save") {
+      return "Waiting for confirmation";
+    }
+    if (operation === "saving_source") {
+      return "Saving to source";
+    }
     if (operation === "saving") {
       return "Saving";
     }
@@ -468,10 +806,10 @@ function documentStatus(
   if (!identity) {
     return "No document open";
   }
-  if (
-    (identity.origin === "imported_text" || identity.origin === "imported_external") &&
-    !identity.persisted
-  ) {
+  if (identity.origin === "imported_external") {
+    return dirty ? "Source modified" : "Source unchanged";
+  }
+  if (identity.origin === "imported_text" && !identity.persisted) {
     return "Imported, unsaved";
   }
   if (dirty) {
@@ -540,7 +878,7 @@ function docxImportFailureMessage(
     case "malformed_package":
       return "That DOCX file is malformed. The original was not changed.";
     case "unsafe_package":
-      return "That DOCX file exceeds DRAFT’s safety limits. The original was not changed.";
+      return "That DOCX exceeds DRAFT’s supported package, XML, or document-size limits. The original was not changed. Try a smaller document or remove large embedded content.";
     case "unsupported_external_feature":
       return "That DOCX file contains structure DRAFT cannot import safely. The original was not changed.";
     case "lossy_import_denied":
@@ -552,12 +890,102 @@ function saveFailureMessage(result: Awaited<ReturnType<typeof saveDocument>>) {
   if (result.status === "cancelled") {
     return "Save cancelled. Your document remains unsaved.";
   }
-  if (
-    result.status === "error" &&
-    result.error.type === "command" &&
-    result.error.error.code === "invalid_target"
-  ) {
-    return "Choose a .draft file name. Your document remains unsaved.";
+  if (result.status === "error" && result.error.type === "command") {
+    return saveCommandFailureMessage(result.error.error, "draft");
   }
   return "DRAFT could not save the document. Your open document has not been replaced.";
+}
+
+function saveAsFailureMessage(result: SaveDocumentResult) {
+  if (result.status === "cancelled") {
+    return "Save As cancelled. Your document was not changed.";
+  }
+  if (result.status === "error" && result.error.type === "command") {
+    return saveCommandFailureMessage(result.error.error, "selected");
+  }
+  return "DRAFT could not finish Save As. Your document and previous files were not changed.";
+}
+
+function saveCommandFailureMessage(
+  error: import("../../ipc/documentErrors").SaveDocumentCommandError,
+  target: "draft" | "selected",
+) {
+  switch (error.code) {
+    case "unsupported_file_location":
+      return "Choose a writable file location and try again.";
+    case "invalid_operation":
+    case "unsupported_format":
+      return "That Save As format is not available. Choose DRAFT, Word, or Plain Text.";
+    case "invalid_target":
+      return target === "draft"
+        ? "Choose a .draft file name. Your document remains unsaved."
+        : "Choose a valid file name and try Save As again.";
+    case "save_as_target":
+      return saveAsTargetFailureMessage(error.cause.code);
+    case "invalid_envelope":
+      return "This document contains invalid content and was not written.";
+    case "serialization_failed":
+      return "DRAFT could not prepare the document for saving. No file was changed.";
+    case "registry":
+      return "This document is no longer available for saving. Reopen it and try again.";
+    case "write_failed":
+      return "DRAFT could not replace the selected file. Your document and prior file remain unchanged.";
+    case "durability_uncertain":
+      return "The DRAFT file was written, but macOS could not confirm durable storage. Check the file before continuing.";
+    case "docx_conversion":
+      return docxSaveAsFailureMessage(error.cause.code);
+    case "plain_text_conversion":
+      return plainTextSaveAsFailureMessage(error.cause.code);
+  }
+}
+
+function saveAsTargetFailureMessage(
+  code: import("../../ipc/documentErrors").SaveAsTargetError["code"],
+) {
+  if (code === "extension_mismatch" || code === "conflicting_extension") {
+    return "The file extension does not match the selected format. Correct the file name and try again.";
+  }
+  if (code === "target_is_directory") {
+    return "Choose a file name, not a folder, and try again.";
+  }
+  return "Choose a valid file name and try Save As again.";
+}
+
+function docxSaveAsFailureMessage(
+  code: import("../../ipc/documentErrors").DocxExportError["code"],
+) {
+  if (code === "unsupported_citation") {
+    return "Word output does not currently include citations. Remove citations and try again; your DRAFT document was not changed.";
+  }
+  if (code === "unsupported_document_content") {
+    return "Some document content cannot be written to Word yet. Your DRAFT document was not changed.";
+  }
+  if (
+    code === "source_too_large" ||
+    code === "artifact_too_large" ||
+    code === "too_many_nodes" ||
+    code === "nesting_too_deep"
+  ) {
+    return "This document exceeds the Word output limits. Reduce its size or nesting and try again.";
+  }
+  if (code === "write_failed" || code === "durability_uncertain") {
+    return "DRAFT could not finish the Word copy. Your current document was not changed.";
+  }
+  return "DRAFT could not create a valid Word copy. Your current document was not changed.";
+}
+
+function plainTextSaveAsFailureMessage(
+  code: import("../../ipc/documentErrors").PlainTextExportError["code"],
+) {
+  if (
+    code === "output_too_large" ||
+    code === "too_many_nodes" ||
+    code === "nesting_too_deep"
+  ) {
+    return "This document exceeds the plain-text output limits. Reduce its size or nesting and try again.";
+  }
+  if (code === "write_failed" || code === "durability_uncertain") {
+    return "DRAFT could not finish the plain-text copy. Your current document was not changed.";
+  }
+  return "DRAFT could not create a plain-text copy from this document. Your current document was not changed.";
 }

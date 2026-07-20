@@ -7,7 +7,7 @@ export type NativeMenuAction =
   | "close_document"
   | "save_document"
   | "save_document_as"
-  | "export_docx";
+  | "save_back_to_source";
 
 export interface NativeMenuState {
   canNew: boolean;
@@ -15,7 +15,7 @@ export interface NativeMenuState {
   canClose: boolean;
   canSave: boolean;
   canSaveAs: boolean;
-  canExport: boolean;
+  canSaveBack: boolean;
 }
 
 export type NativeMenuClientError =
@@ -34,7 +34,7 @@ const ACTIONS: readonly NativeMenuAction[] = [
   "close_document",
   "save_document",
   "save_document_as",
-  "export_docx",
+  "save_back_to_source",
 ];
 
 export async function listenToNativeMenuActions(

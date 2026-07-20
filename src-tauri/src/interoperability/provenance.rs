@@ -110,6 +110,13 @@ impl ExternalSourceProvenance {
         &self.display_name
     }
 
+    pub(crate) fn normalization_features(&self) -> Vec<super::fidelity::ExternalFeature> {
+        match &self.fidelity {
+            ExternalFidelity::CanonicallyNormalized { features } => features.clone(),
+            _ => Vec::new(),
+        }
+    }
+
     pub(crate) fn save_disposition(
         &self,
         envelope: &DocumentEnvelope,
@@ -237,6 +244,20 @@ mod tests {
         let original = envelope("Original");
         let fidelity = ExternalFidelity::UnsupportedPreservable {
             features: vec![ExternalFeature::ParagraphBorder],
+        };
+        let provenance = imported_provenance(&original, fidelity);
+
+        assert_eq!(
+            provenance.save_disposition(&envelope("Edited"), CurrentSource::Bytes(b"source")),
+            SameFormatSaveDisposition::DeniedUnsupportedSourceBehavior
+        );
+    }
+
+    #[test]
+    fn lossy_import_requires_save_as_after_edits() {
+        let original = envelope("Original");
+        let fidelity = ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::TableStructure],
         };
         let provenance = imported_provenance(&original, fidelity);
 

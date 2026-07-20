@@ -25,7 +25,9 @@ implementation choices that can change without altering one of those contracts.
 | :--- | :--- | :--- | :--- |
 | Product name | `DRAFT` | `src-tauri/tauri.conf.json` | Desktop display and bundle name. |
 | Application version | `0.1.0` | `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `package.json` | Pre-release compatibility line; not evidence of a published release. |
+| Package build identity | Exact 40-character lowercase Git commit plus `release` profile | `src-tauri/build.rs`, `scripts/package-macos.sh` | Distinguishes clean validation packages without changing SemVer or embedding a timestamp. Local non-package builds use `development`. |
 | Bundle identifier | `com.progentic.draft` | `src-tauri/tauri.conf.json` | Platform application identity. |
+| DRAFT document UTI | `com.progentic.draft.document` | `src-tauri/tauri.conf.json`, `src-tauri/Info.plist` | Owned macOS `.draft` document association using the DRAFT icon and Editor role. |
 | Rust toolchain | `1.96.0` | `rust-toolchain.toml`, `src-tauri/Cargo.toml` | Pinned compiler, rustfmt, and clippy baseline. |
 | Node engine | `>=22.12.0` | `package.json` | Supported local runtime floor. GitHub Actions currently verifies Node 24. |
 | npm version | `11.16.0` | `package.json` | Locked package-manager contract. |
@@ -50,7 +52,7 @@ implementation choices that can change without altering one of those contracts.
 | Desktop icon paths | `32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico` | `src-tauri/tauri.conf.json` | Exact assets embedded by the app package path. |
 | Canonical icon source | `assets/DRAFT_Logo.png`; SHA-256 `ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043` | `scripts/check-packaging.sh` | Sole source artwork for Tauri and in-window icon derivatives. |
 | `DOCUMENT_EXTENSIONS` | `draft`, `json` | `documents/dialog.rs` | Native open-dialog extension filters. |
-| `DEFAULT_DOCUMENT_FILE_NAME` | `Untitled.draft` | `documents/dialog.rs` | Initial native save-dialog name. |
+| `DEFAULT_NEW_DOCUMENT_STEM` | `Untitled` | `commands/document_save.rs` | Native Save/Save As suggestion stem for a new document; Rust adds the selected DRAFT, DOCX, or text extension. |
 
 ## Schemas And Persistence
 
@@ -113,6 +115,9 @@ database, Python, or credential-store probe. See
 | `PROVIDER_REQUEST_INTERVAL` | 1 second | `network/client.rs` | Minimum interval per metadata provider. |
 | `MAX_METADATA_RESPONSE_BYTES` | 1 MiB | `network/client.rs` | Maximum retained metadata response. |
 | `MAX_TEXT_IMPORT_BYTES` | 8 MiB | `documents/text_import.rs` | Maximum `.txt` or `.md` source read before a typed rejection. |
+| `MAX_TEXT_OUTPUT_BYTES` | 16 MiB | `exports/plain_text.rs` | Maximum deterministic UTF-8 Save As artifact before filesystem work. |
+| `MAX_TEXT_NODES` | 100,000 | `exports/plain_text.rs` | Maximum structural nodes traversed for one plain-text copy. |
+| `MAX_TEXT_DEPTH` | 64 | `exports/plain_text.rs` | Maximum structural nesting traversed for one plain-text copy. |
 | `MAX_RATE_LIMIT_BACKOFF` | 60 seconds | `network/client.rs` | Maximum bounded HTTP 429 delay. |
 | `STABLE_WRITE_DEBOUNCE` | 1 second | `imports/pdf.rs` | Required quiet period before watched PDF confirmation. |
 | `MAX_EXTERNAL_URL_LENGTH` | 2,048 characters | `research/external_access.rs` | Maximum accepted browser-handoff URL. |
@@ -189,6 +194,9 @@ period. It cannot detect an unreported same-size in-place modification.
 | `MAX_DOCX_IMPORT_UNCOMPRESSED_BYTES` | 64 MiB | `interoperability/docx_import/mod.rs` | Maximum total declared uncompressed package bytes. |
 | `MAX_DOCX_IMPORT_XML_DEPTH` | 64 | `interoperability/docx_import/mod.rs` | Maximum XML element depth before unsafe rejection. |
 | `MAX_DOCX_IMPORT_COMPRESSION_RATIO` | 100:1 | `interoperability/docx_import/mod.rs` | Maximum accepted per-entry uncompressed-to-compressed ratio. |
+| `MAX_FOOTNOTES` | 4,096 | `interoperability/docx_import/footnotes.rs` | Maximum distinct non-reserved footnotes accepted for readable conversion. |
+| `MAX_FOOTNOTE_TEXT_BYTES` | 1 MiB | `interoperability/docx_import/footnotes.rs` | Maximum combined visible footnote text accepted before an XML-size rejection. |
+| `DRAFT_DOCX_TRACE` | Unset | `docx_trace.rs` | Opt-in local stderr trace of path-free Open command, dialog, source-classification, typed-result, import, and export stages plus counts, sizes, and closed failure categories. No text, XML, source names, or paths are emitted. |
 
 DOCX compilation supports paragraphs, headings, text, hard breaks, the closed
 bold, italic, and underline marks, and the canonical font-family and font-size

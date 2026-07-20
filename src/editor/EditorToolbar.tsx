@@ -130,7 +130,7 @@ function FontTools(props: { editor: Editor | null; state: ToolbarState }) {
         {FONT_FAMILIES.map((family) => (
           <option key={family.id} value={family.id}>{family.label}</option>
         ))}
-        <option value={RESET_FONT_VALUE}>Use document font</option>
+        <option value={RESET_FONT_VALUE}>Reset to document font</option>
       </select>
       <select
         className="font-tools__size"
@@ -145,7 +145,7 @@ function FontTools(props: { editor: Editor | null; state: ToolbarState }) {
         {fontSizeOptions().map((points) => (
           <option key={points} value={points}>{points} pt</option>
         ))}
-        <option value={RESET_FONT_VALUE}>Use document size</option>
+        <option value={RESET_FONT_VALUE}>Reset to document size</option>
       </select>
     </div>
   );

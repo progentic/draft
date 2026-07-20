@@ -11,7 +11,7 @@ pub(crate) struct NativeMenuStateRequest {
     can_close: bool,
     can_save: bool,
     can_save_as: bool,
-    can_export: bool,
+    can_save_back: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -42,7 +42,7 @@ impl From<NativeMenuStateRequest> for NativeMenuAvailability {
             can_close: request.can_close,
             can_save: request.can_save,
             can_save_as: request.can_save_as,
-            can_export: request.can_export,
+            can_save_back: request.can_save_back,
         }
     }
 }
@@ -78,7 +78,7 @@ mod tests {
             "canClose": false,
             "canSave": false,
             "canSaveAs": false,
-            "canExport": false
+            "canSaveBack": false
         }))
         .unwrap();
 
@@ -90,7 +90,7 @@ mod tests {
                 "canClose": false,
                 "canSave": false,
                 "canSaveAs": false,
-                "canExport": false,
+                "canSaveBack": false,
                 "path": "/private/document.draft"
             }))
             .is_err()

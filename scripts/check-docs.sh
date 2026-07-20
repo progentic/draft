@@ -33,6 +33,7 @@ main() {
   check_error_ux_documentation
   check_critical_path_documentation
   check_packaging_documentation
+  check_phase_47_manual_correction_documentation
   check_data_migration_documentation
   check_release_candidate_documentation
   check_v1_analysis_decision_state
@@ -295,7 +296,7 @@ check_v1_usability_documentation() {
   require_document_text docs/wiki/Current-Limitations.md \
     'whole point sizes from 8 through 72'
   require_document_text docs/wiki/Current-Limitations.md \
-    "Same-format DOCX save and round-trip fidelity are not currently supported."
+    "Complete same-format DOCX round-trip fidelity is not currently supported."
 }
 
 check_adr_003_accepted_state() {
@@ -689,6 +690,9 @@ check_coverage_symbols() {
     'src-tauri/src/lib.rs|run'
     'src/app/DraftWorkspace.tsx|DraftWorkspace'
     'src-tauri/src/commands/runtime_status.rs|get_runtime_status'
+    'src-tauri/src/commands/application_open.rs|open_application_document'
+    'src/ipc/applicationOpen.ts|takeApplicationOpenRequest'
+    'src/components/WorkspaceOperationNotice.tsx|WorkspaceOperationNotice'
     'src-tauri/src/workers/cancellation.rs|WorkerCancellationRegistry'
     'src-tauri/src/documents/envelope.rs|DocumentEnvelope'
     'src-tauri/src/documents/registry.rs|DocumentRegistry'
@@ -721,7 +725,9 @@ check_coverage_symbols() {
     'src-tauri/src/commands/document_create.rs|create_document'
     'src-tauri/src/commands/reference_library.rs|add_reference'
     'src-tauri/src/commands/text_analysis.rs|run_text_analysis'
-    'src-tauri/src/commands/docx_export.rs|export_document'
+    'src-tauri/src/commands/document_save.rs|save_document'
+    'src-tauri/src/documents/save_as.rs|SaveAsFormat'
+    'src-tauri/src/exports/plain_text.rs|compile_plain_text'
     'src/features/document-session/useDocumentSession.ts|useDocumentSession'
     'src-tauri/src/desktop_menu.rs|NativeMenuItems'
     'src-tauri/src/commands/native_menu.rs|set_native_menu_state'
@@ -814,7 +820,7 @@ check_configuration_index() {
     MAX_DOCX_IMPORT_XML_DEPTH
     MAX_DOCX_IMPORT_COMPRESSION_RATIO
     DOCUMENT_EXTENSIONS
-    DEFAULT_DOCUMENT_FILE_NAME
+    DEFAULT_NEW_DOCUMENT_STEM
   )
   local symbol
 
@@ -936,7 +942,7 @@ check_formatting_export_alignment() {
   require_document_text "${command}" 'run_formatting_review'
   require_document_text "${client}" 'runFormattingReview'
   require_document_text "${review}" 'stale result cannot'
-  require_document_text "${docx}" 'frontend wrapper, and visible control'
+  require_document_text "${docx}" 'unified typed Save As command'
   require_document_text "${pdf}" 'PDF export remains mechanically absent'
   require_document_text docs/wiki/Workspace.md 'not certify complete style-manual compliance'
   require_document_text docs/wiki/Current-Limitations.md 'citation-style declarations'
@@ -960,14 +966,16 @@ check_docx_interoperability_documentation() {
   require_document_text "${guide}" "\`ExternalFidelity\` has stable ordered variants"
   require_document_text "${guide}" "\`SameFormatSaveDisposition\` distinguishes"
   require_document_text "${guide}" 'source path, source SHA-256, imported'
-  require_document_text "${guide}" 'same-format writer has no visible consumer'
+  require_document_text "${guide}" 'Packaged human validation'
   require_document_text "${guide}" 'restores the original bytes'
   require_document_text docs/maintainers/COMMAND_BOUNDARY.md 'save_external_document'
   require_document_text docs/maintainers/FRONTEND_COMMAND_CLIENT.md 'externalDocumentSave.ts'
   require_document_text "${limits}" 'MAX_DOCX_IMPORT_COMPRESSION_RATIO'
   require_document_text docs/wiki/Workspace.md "supported paragraph subset from a \`.docx\` file"
   require_document_text docs/wiki/Troubleshooting.md 'A source-preservation notice means'
-  require_document_text docs/wiki/Current-Limitations.md 'Same-format DOCX save and round-trip fidelity are not currently supported.'
+  require_document_text docs/wiki/Current-Limitations.md 'Complete same-format DOCX round-trip fidelity is not currently supported.'
+  require_document_text docs/wiki/Workspace.md '**Save Back to Source** appears only for a DOCX source.'
+  require_document_text docs/wiki/Troubleshooting.md '**Save Back to Source** always shows a confirmation'
   require_document_text "${ledger}" '| UX-46-011 | UX-1 | Open |'
   require_document_text "${ledger}" '| UX-46-014 | UX-1 | Open |'
   require_document_text "${release}" '| RC-07 | Release blocker | Open |'
@@ -1058,8 +1066,9 @@ check_critical_path_documentation() {
   require_document_text "${guide}" "\`UnsupportedCitation\`"
   require_document_text "${guide}" 'package reopens'
   require_document_text "${guide}" 'adds no application command'
-  require_document_text docs/ARCHITECTURE.md 'implemented application through Phase 46'
-  require_document_text docs/user/WORKSPACE.md '## Export DOCX'
+  require_document_text docs/ARCHITECTURE.md \
+    'implemented application through the current Phase 47 checkpoint'
+  require_document_text docs/user/WORKSPACE.md '## Save As And Converted Copies'
 }
 
 check_packaging_documentation() {
@@ -1072,12 +1081,112 @@ check_packaging_documentation() {
   require_document_text "${guide}" 'CFBundleIdentifier = com.progentic.draft'
   require_document_text "${guide}" 'assets/DRAFT_Logo.png'
   require_document_text "${guide}" 'ce7cc5a5df592ac11873ff0f49d9c150e5a3a64e0c0ef9ffd1e05162da5fb043'
+  require_document_text "${guide}" 'com.progentic.draft.document'
+  require_document_text "${guide}" 'DRAFT_BUILD_COMMIT'
   require_document_text "${guide}" 'It does not produce a signed installer'
   require_document_text "${configuration}" "| Bundle activation | \`true\` |"
   require_document_text "${configuration}" "| Bundle targets | \`app\` only |"
   require_document_text "${configuration}" '| Canonical icon source |'
   require_document_text docs/wiki/Current-Limitations.md 'a published download'
   require_document_text README.md 'Versioned downloads will be published on the'
+}
+
+check_phase_47_manual_correction_documentation() {
+  local ledger='docs/maintainers/V1_USABILITY_EVIDENCE.md'
+  local release='docs/maintainers/RELEASE_CANDIDATE.md'
+
+  require_document_text docs/maintainers/COMMAND_BOUNDARY.md \
+    '## macOS application-open command'
+  require_document_text docs/maintainers/COMMAND_BOUNDARY.md \
+    '"buildCommit": "0123456789abcdef0123456789abcdef01234567"'
+  require_document_text docs/maintainers/FRONTEND_COMMAND_CLIENT.md \
+    "\`applicationOpen.ts\` owns the path-free macOS application-open boundary."
+  require_document_text docs/maintainers/DOCUMENT_SAVE_LOAD.md \
+    "The macOS package registers \`.draft\` as \`com.progentic.draft.document\`."
+  require_document_text docs/maintainers/CONFIGURATION.md \
+    '| Package build identity |'
+  require_document_text docs/maintainers/ERROR_MESSAGES.md \
+    "\`invalid_build_metadata\`"
+  require_document_text docs/user/WORKSPACE.md \
+    "A \`.draft\` file is DRAFT's structured editable source"
+  require_document_text docs/wiki/Workspace.md \
+    'temporary notice below the document controls'
+  require_document_text docs/wiki/Troubleshooting.md \
+    '## Application Build Could Not Be Verified'
+  require_document_text docs/wiki/Troubleshooting.md \
+    '## A DRAFT File Opens In Another Application'
+  require_document_text "${ledger}" \
+    '| UX-47-009 | UX-1 | Open - failed artifact proves identity only |'
+  require_document_text "${ledger}" \
+    '| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending |'
+  require_document_text "${ledger}" \
+    '| UX-47-011 | UX-0 | Closed - artifact 8e974736 |'
+  require_document_text "${ledger}" \
+    '| UX-47-012 | UX-1 | Open - manual retest pending |'
+  require_document_text "${ledger}" \
+    '| UX-47-013 | UX-0 | Open - packaged fidelity retest pending |'
+  require_document_text "${ledger}" \
+    '| UX-47-014 | UX-1 | Closed - artifact 1634d6d2 |'
+  require_document_text "${ledger}" \
+    '| UX-47-015 | UX-1 | Open - partial artifact pass |'
+  require_document_text "${ledger}" \
+    '| UX-47-016 | UX-1 | Open - packaged retest pending |'
+  require_document_text "${ledger}" \
+    '| UX-47-017 | UX-1 | Open - packaged failure; governance required |'
+  require_document_text "${ledger}" \
+    '| UX-47-018 | UX-2 | Open - future workspace scope |'
+  require_document_text "${ledger}" \
+    '| UX-47-019 | UX-2 | Open - future governed capability |'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'direct properties remain in the canonical document'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Import has two tiers.'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'a second bounded parser recovers'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    "An inline Word \`w:tab\` contributes one readable space"
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    "records \`ParagraphTab\` as source-preservable"
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Word tables import as a disclosed readable approximation'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    "cells are separated by \` | \`"
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Referenced footnotes import as numbered markers'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'Save Back to Source is unavailable'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    "A \`w:hyperlink\` wrapper retains its child"
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn inline_tabs_preserve_readable_text_and_require_source_preservation'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn table_cells_import_as_disclosed_readable_rows'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn footnote_references_import_as_disclosed_end_notes'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn common_word_metadata_keeps_visible_text_and_requires_source_preservation'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn unfamiliar_valid_wrappers_recover_readable_text_as_lossy'
+  require_document_text src-tauri/src/interoperability/docx_import/tests.rs \
+    'fn external_payload_without_readable_text_remains_denied'
+  require_document_text docs/maintainers/DOCX_INTEROPERABILITY.md \
+    'does not infer pagination from content flow'
+  require_document_text docs/maintainers/WORKSPACE_UI.md \
+    '## Explicit Page Surfaces'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    'About DRAFT shows the product version'
+  require_document_text docs/maintainers/NATIVE_DESKTOP_WORKFLOW.md \
+    'Untitled.draft'
+  require_document_text docs/wiki/Workspace.md \
+    'DOCX import retains supported explicit font family'
+  require_document_text docs/wiki/Workspace.md \
+    'gap between separate page surfaces'
+  require_document_text docs/wiki/Current-Limitations.md \
+    'Spelling highlights, suggestions, ignore rules, and correction controls'
+  require_document_text docs/wiki/Current-Limitations.md \
+    'Save As offers DRAFT, Word, and plain-text output.'
+  require_document_text "${release}" '| RC-07 | Release blocker | Open |'
+  require_document_text "${release}" '| GATE-47 | Roadmap gate | Open |'
 }
 
 check_readme_scope() {

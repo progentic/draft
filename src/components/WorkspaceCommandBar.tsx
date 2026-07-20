@@ -3,7 +3,7 @@ import type { Dispatch, KeyboardEvent, RefObject, SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
-  Download,
+  FileCheck2,
   FilePlus2,
   FolderOpen,
   MoreHorizontal,
@@ -21,7 +21,6 @@ import type {
 interface WorkspaceCommandBarProps {
   activePanel: "references" | "text-review" | null;
   actions: WorkspaceActions;
-  exportLabel: string;
 }
 
 export function WorkspaceCommandBar(props: WorkspaceCommandBarProps) {
@@ -116,13 +115,16 @@ function OverflowMenu(
         label="Save As…"
         onClose={props.onClose}
       />
-      <OverflowItem
-        action="export_docx"
-        actions={props.actions}
-        icon={Download}
-        label={props.exportLabel}
-        onClose={props.onClose}
-      />
+      {props.actions.sourceSave.visible ? (
+        <OverflowItem
+          action="save_back_to_source"
+          actions={props.actions}
+          disabledReason={props.actions.sourceSave.unavailableReason}
+          icon={FileCheck2}
+          label="Save Back to Source"
+          onClose={props.onClose}
+        />
+      ) : null}
       <span className="workspace-overflow__separator" role="separator" />
       <OverflowItem
         action="open_references"
@@ -177,6 +179,7 @@ function OverflowItem(props: {
   action: WorkspaceAction;
   actions: WorkspaceActions;
   checked?: boolean;
+  disabledReason?: string;
   icon: LucideIcon;
   label: string;
   onClose: (restoreFocus: boolean) => void;
@@ -189,14 +192,27 @@ function OverflowItem(props: {
       type="button"
       role={role}
       aria-checked={props.checked}
+      aria-label={overflowAccessibleLabel(props)}
       tabIndex={-1}
       disabled={!props.actions.enabled[props.action]}
+      title={props.disabledReason || props.label}
       onClick={() => runOverflowAction(props)}
     >
       <Icon aria-hidden="true" size={16} strokeWidth={1.9} />
       <span>{props.label}</span>
     </button>
   );
+}
+
+function overflowAccessibleLabel(props: {
+  actions: WorkspaceActions;
+  action: WorkspaceAction;
+  disabledReason?: string;
+  label: string;
+}) {
+  return !props.actions.enabled[props.action] && props.disabledReason
+    ? `${props.label}. Unavailable: ${props.disabledReason}`
+    : props.label;
 }
 
 function runOverflowAction(props: {

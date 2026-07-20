@@ -29,17 +29,22 @@ returns:
 
 ```json
 {
+  "buildCommit": "0123456789abcdef0123456789abcdef01234567",
+  "buildProfile": "release",
   "version": "0.1.0"
 }
 ```
 
-The response version comes from Rust package metadata. The frontend does not
-supply or decide it.
+The response version comes from Rust package metadata. Packaging supplies the
+exact clean-worktree Git commit, and Cargo supplies the closed `debug` or
+`release` profile. A local non-package build uses `development` as its commit
+marker. The frontend does not supply or decide any of these values.
 
 The command-specific error codes are:
 
 ```json
 { "code": "invalid_application_version" }
+{ "code": "invalid_build_metadata" }
 { "code": "event_delivery_failed" }
 ```
 
@@ -48,6 +53,21 @@ event cannot reach current frontend listeners.
 
 No generic string, `anyhow::Error`, `serde_json::Value`, or boxed error crosses
 the IPC boundary.
+
+## macOS application-open command
+
+Phase 47 adds `open_application_document` for `.draft` files delivered by the
+macOS application run loop. The request contains only the closed `open` or
+`dismiss` disposition. It never contains a path. Rust consumes one queued path,
+routes it through the existing document-open implementation, and returns the
+same typed open outcome nested inside `opened`. `none` and `dismissed` are
+successful no-mutation outcomes.
+
+The path-free `draft://application-open` event tells React only that a request
+is available. Typed errors distinguish an unavailable queue, multiple files,
+an unsupported file URL, and the existing bounded document-open causes. The
+frontend can preserve unsaved-work decisions without receiving source-path
+authority.
 
 ## Worker cancellation command
 
@@ -71,10 +91,13 @@ The complete lifecycle is documented in
 
 Phase 13 adds `open_document` and `save_document`. `open_document` accepts an
 empty request because Rust owns native file selection. `save_document` accepts
-one untrusted `snapshot` value and a closed `save` or `save_as` mode; Rust
-validates the envelope before registry or filesystem work. Normal Save selects
-a target only when none is registered. Save As always selects a replacement
-target and preserves the prior file.
+one untrusted `snapshot`, a closed `save` or `save_as` mode, a basename display
+name, the closed lifecycle origin previously returned by Rust, and an optional
+closed format for Save As. Rust validates the envelope and derives each native
+filename suggestion before registry or filesystem work. Normal Save selects a
+DRAFT target only when none is registered. Save As accepts exactly `draft`,
+`docx`, or `txt`: DRAFT may rebind after atomic persistence, while DOCX and text
+are converted copies that preserve document authority and dirty state.
 
 Both commands return typed opened/saved/cancelled responses and bounded nested
 errors. Phase 14 adds typed atomic-write stages and a distinct
@@ -83,13 +106,26 @@ fails. The commands expose no path field to the frontend. The full lifecycle
 and atomic-write behavior are documented in
 `docs/maintainers/DOCUMENT_SAVE_LOAD.md`.
 
+## Native window-title command
+
+`set_window_title` accepts only an optional basename display name and one
+transient Unsaved boolean. Rust rejects blank, path-like, control-character, or
+oversized names before calling the native window API. It returns only
+`{ "applied": true }`; typed errors distinguish invalid title input from a
+platform update failure.
+
+The command mirrors presentation state. It cannot receive a filesystem path,
+change a save target, register a document, or persist content. Clean,
+modified, imported, and new title formats are pinned in Rust and frontend
+interaction tests.
+
 ## Native menu state command
 
-Phase 48 adds `set_native_menu_state`. It accepts exactly six booleans for New,
-Open, Close, Save, Save As, and DOCX export availability. The request contains
-no path, content, document ID, or arbitrary action name. Rust applies the state
-to the menu items it created and returns `{ "applied": true }` or the closed
-`menu_update_failed` error.
+Phase 48 adds `set_native_menu_state`. It accepts exactly six booleans for
+New, Open, Close, Save, Save As, and Save Back to Source
+availability. The request contains no path, content, document ID, or arbitrary
+action name. Rust applies the state to the menu items it created and returns
+`{ "applied": true }` or the closed `menu_update_failed` error.
 
 Native selection travels in the other direction as a bounded
 `draft://native-menu-action` event. The event is not trusted until the typed
@@ -171,9 +207,7 @@ Phase 46 adds six typed commands for existing Rust-owned capabilities:
   bounded summary;
 - `list_references` returns bounded reference summaries without stored payloads;
 - `run_text_analysis` validates one immutable text snapshot and returns the
-  five accepted local heuristic finding types; and
-- `export_document` validates the current envelope, asks Rust for a DOCX target,
-  and delegates to the existing atomic exporter.
+  five accepted local heuristic finding types.
 
 The commands expose no filesystem path, database row, full reference payload,
 Python process configuration, helper stderr, or export implementation detail.
@@ -212,6 +246,7 @@ for contract validation but no component or hook invokes it yet.
 | Mid | `cancel_worker` | Validates the worker ID and maps cancellation outcomes to command DTOs. |
 | Mid | `open_document` | Selects a file in Rust and delegates validated loading. |
 | Mid | `save_document` | Accepts an explicit snapshot and delegates atomic persistence. |
+| Mid | `set_window_title` | Applies validated basename and Unsaved presentation to the native window. |
 | Mid | `set_native_menu_state` | Applies path-free transient availability to Rust-owned native items. |
 | Mid | `resolve_citation` | Validates attrs and delegates local reference resolution. |
 | Mid | `open_external_access` | Validates a research destination and delegates one system-browser launch. |
@@ -224,7 +259,7 @@ for contract validation but no component or hook invokes it yet.
 | Mid | `add_reference` | Validates and persists one manual reference through the managed store. |
 | Mid | `list_references` | Returns bounded summaries from the managed reference store. |
 | Mid | `run_text_analysis` | Validates one snapshot and delegates to the fixed packaged local helper. |
-| Mid | `export_document` | Selects a DOCX target in Rust and delegates atomic export. |
+| Mid | `save_document` | Applies ordinary DRAFT Save or one closed DRAFT/DOCX/text Save As policy. |
 | Mid | `save_external_document` | Applies the closed same-format policy to one Rust-owned external source. |
 | Mid | `current_runtime_status` | Builds Rust-owned application status from compiled metadata. |
 | Mid | `WorkerCancellationRegistry` | Owns transient worker identity and cancellation state. |

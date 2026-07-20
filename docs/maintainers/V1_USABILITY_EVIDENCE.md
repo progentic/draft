@@ -192,6 +192,104 @@ remains open. This historical artifact predates ADR-004's accepted Phase 47
 model implementation and contains no paragraph controls. `RC-08`, `GATE-48`,
 and every other RC and GATE row remain open.
 
+## Phase 47 Visible Source-Save Manual Gate
+
+- Implementation commit: `a60f877148cf9a430fc801d0570362b8c4882788`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `910a204fd94cfa892fe634f7da6ffbddb6047b8b0edc69c8c07d78a139ac9f44`
+- Mechanical result: package construction and the complete local verifier passed.
+- Human result: failed on 2026-07-13.
+
+The direct session produced three passing observations: exact replacement
+reopened in the tested reader, cancellation preserved the current state, and
+visible recovery messages exposed neither paths nor raw XML. These observations
+do not close the workflow because normalized replacement, stale-source
+protection, native/overflow parity, and complete compatible-reader evidence
+failed.
+
+| Area | Result | Evidence |
+| :--- | :--- | :--- |
+| Exact replacement | Pass | The tested exact source was replaced and reopened without exposing source authority to the frontend. |
+| Normalized replacement | Fail | The package did not provide a usable warning-and-consent path backed by output that passed compatible-reader validation. |
+| Cancellation | Pass | Cancelling preserved the source, document identity, and modified state in the tested flow. |
+| Stale-source protection | Fail | External modification did not surface the required typed rejection during the manual workflow. |
+| Safe recovery copy | Pass | The observed messages contained no source path, fingerprint, or raw XML. |
+| Native and overflow parity | Fail | The two entry points did not demonstrate equivalent Save Back behavior and disabled states. |
+| Compatible-reader evidence | Fail | The complete exact and normalized output set did not pass the required compatible-reader gate. |
+
+This is a failed release gate. Any correction requires a new commit, rebuilt
+package, new executable hash, and complete retest. `INV-17`, `UX-46-024`, every
+RC row, and every GATE row remain open.
+
+The uncommitted correction candidate names the one supported heading-style
+normalization, uses explicit Replace and Cancel choices, carries the closed
+normalization list through strict IPC validation, and proves stale rejection
+from real DOCX import through the immediate pre-write fingerprint check. The
+Rust eligibility DTO now omits obsolete normalization metadata when a
+normalized source has become stale, allowing the typed denial to remain valid
+at the frontend boundary. The
+shared dispatcher now presents the same busy or stale reason for overflow and
+native actions. Local text extraction and a configured LibreOffice 26.8
+headless conversion reopened exact and accepted-normalized replacements; the
+test records source and replacement hashes. These are mechanical corrections,
+not packaged-human evidence, and close no row.
+
+### Phase 47 Replacement Retest Candidate
+
+- Implementation commit: `0b357d436fce614c132b4f5692dda9f321656e85`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `cb36338524e042291fd2e2ac34bf8c09c855e461cb22ede451e2c92584415e83`
+- Package result: construction and mechanical packaging checks passed.
+- Human result: failed on 2026-07-13.
+
+The configured compatible-reader test used LibreOfficeDev 26.8 in headless
+conversion mode. The exact source SHA-256 was
+`74c38bdd8940a1524baa2c25394aaae4a29ea1ed742e8255dd31ba56e1fb05c1`;
+the normalized source SHA-256 was
+`0a42b331afc608253cca854a77ae6fa65149d0fcc7a0aeb2490d61ce36530a0f`.
+Both accepted replacements produced SHA-256
+`4009080983f73aa047b15862e80245d7d7918117cb782459d2a98429669443ea`,
+differed from their source, and converted to nonempty PDF output. This proves
+bounded package acceptance by the configured reader, not visual fidelity or
+the packaged user workflow.
+
+The manual session invalidated this package as a Phase 47 evidence candidate
+before the complete source-save retest could finish. The running app exposed
+only product version `0.1.0`, so a reviewer could not confirm the expected
+build from inside DRAFT. A selected DOCX did not produce a visible open result,
+and DOCX export did not produce visible completion or recovery. Native `.draft`
+files still lacked a DRAFT association and document identity. The executable
+hash remains authoritative historical identity, but this package closes no
+row.
+
+The next package still requires the complete manual gate: visible build
+identity, DOCX open and export disposition, normalized warning and cancellation,
+stale-source rejection before replacement, native and overflow parity,
+busy-state denial, exact and normalized compatible-reader inspection, Markdown
+disclosure, DOCX safety recovery, reset-label review, and `.draft` double-click
+handling. No row may close from mechanical evidence alone.
+
+### Phase 47 Build-Identity And Document-Association Retest Candidate
+
+- Implementation commit: `7ec149de8fcf71b0e3670687dbc0246e439ff09f`
+- Packaged application: unsigned macOS Apple Silicon `DRAFT.app`
+- Executable SHA-256: `c3b2b54c8ce6c50fef1bd093b210b94d4925a51ca556d9ba4b2602200da881e0`
+- Package result: construction and mechanical packaging checks passed.
+- Human result: pending.
+
+The package embeds the full implementation commit, and the running workspace
+is expected to show short commit `7ec149de` with profile `release`. Its
+`Info.plist` owns `.draft` as `com.progentic.draft.document` with Editor role,
+Owner rank, and `icon.icns`. The packaged and tracked icon hashes both equal
+`fd07d079de1dd38bdc84eb222ab8ee90d856d488aad7f0550860c8a369b94236`.
+These checks establish artifact provenance and bundle registration only. They
+do not prove visible build identity, DOCX outcomes, Launch Services behavior,
+or double-click opening.
+
+Manual review must still run the complete gate against this exact executable.
+No prior artifact evidence transfers to this candidate, and this mechanical
+record closes no finding, invariant, RC row, or roadmap gate.
+
 ### Replacement Artifact Product-Boundary Review
 
 Owner review of the replacement artifact found that the mechanically valid
@@ -206,7 +304,9 @@ v1 product requirement because headings, emphasis, lists, quotations, links,
 code, and separators are not parsed into document structure. Phase 47 now has
 mechanical coverage for a bounded DOCX paragraph import, closed fidelity
 categories, Rust-owned source provenance, and no-edit source preservation.
-Same-format DOCX save, compatible-reader fidelity evidence, RTF, and
+The visible same-format DOCX path now has typed eligibility, confirmation,
+source-conflict denial, rollback, and local macOS reader-open evidence. Its
+packaged human evidence, broader compatible-reader fidelity evidence, RTF, and
 OpenDocument import remain absent. Legacy binary `.doc` remains a distinct
 unsupported format and is not treated as equivalent to DOCX.
 
@@ -237,6 +337,174 @@ stopped after Save caused an unrecoverable beach ball and force-quit. Later
 sessions produced the additional partial and product-boundary findings above.
 No untested task is counted as passed.
 
+### Phase 47 P0 DOCX Workflow Blocker
+
+Artifact `c3b2b54c` displayed the expected `7ec149de` release build identity,
+but the primary DOCX workflow still failed. Opening a normal Word package left
+the editor unusable behind a generic safety-limit message, and Export did not
+produce a usable output or terminal disposition during the same session.
+That artifact established the historical P0: **DOCX primary workflow is
+non-functional in the packaged application**. Later artifacts split that
+failure into independently reviewed Open, export, and fidelity outcomes.
+
+A Word-authored 12,031-byte fixture reproduced the import failure as the closed
+internal reason `RelationshipTarget`. Word correctly resolves
+`../customXml/item1.xml` from `word/document.xml`; DRAFT incorrectly treated the
+raw target as package-root traversal. The correction resolves targets from
+their owning part while continuing to reject root escape. Production-path
+tests now open the Word fixture, create a canonical document, export atomically,
+reopen the result, preserve the source, and produce visible text that matches
+in LibreOffice. These are correction tests, not packaged-human closure evidence.
+
+Replacement artifact `8e974736` ran commit `14363903` in the release profile.
+Manual review confirmed that DOCX export completed with visible success, but
+DOCX Open still did not produce an imported document. The post-close workspace
+showed `No document open` while retaining the settled `DOCX export complete`
+notice. That stale export notice outranked the active document-session outcome
+and made the later Open disposition impossible to observe. The exact Word
+fixture reaches a valid three-paragraph `imported_external` response in Rust.
+The correction clears settled export feedback before non-export document
+actions and renders that exact response through the real Open action in the
+workspace test. A replacement packaged Open run remains required.
+
+The replacement candidate was built from exact implementation commit
+`e734cae26068636edb574ff6217837c08ba4e4c0`. Its packaged executable SHA-256 is
+`2dfe312b446051946102ce40a074ac86e468dc074299af34802e90bf0c23d326`.
+Mechanical package validation confirmed the embedded commit identity, Apple
+Silicon executable, helper, icon, and bundle metadata. Manual review confirmed
+that DOCX Open now creates a readable imported document, closing only the basic
+Open failure in `UX-47-010`. The same session found that explicit Times New
+Roman 12-point text, bold and italic spans, paragraph appearance, page breaks,
+and source-recognizable academic formatting were flattened. Basic Open passes;
+source-format fidelity and the overall Phase 47 Open gate fail.
+
+The correction under review preserves the accepted explicit run and paragraph
+properties, represents page breaks as canonical blocks, re-exports those
+blocks, and proves the typed result renders through the actual workspace Open
+action. The replacement fidelity candidate was built from exact implementation
+commit `dc1d5d6b65e17ef8f6ebbfbb37ad886f64e1acbf`. Its packaged executable
+SHA-256 is
+`91fe1ba93dc2e1ea08a4096e9c3b863b460d481f2a00ee024f2bf477f78f40cc`.
+Mechanical package validation confirmed the embedded commit identity, Apple
+Silicon executable, helper, icon, and bundle metadata. No human fidelity or
+compatible-reader result has been recorded for this candidate. `UX-47-013`,
+`RC-07`, `GATE-47`, and all release gates remain open until the exact package
+passes the compatible-reader and human fidelity workflow.
+
+Direct review of that exact candidate later confirmed that supported run and
+paragraph formatting was substantially retained, but the application still
+showed one continuous white canvas with a dashed page-break marker instead of
+separate page surfaces. The same session found build metadata in the document
+inspector, no visible Unsaved state beside the document title, and weak native
+Save filename suggestions. These are partial product-boundary results, not
+fidelity or release closure evidence.
+
+The correction under review renders only explicit canonical `pageBreak` nodes
+as separate page surfaces. It does not infer page boundaries from content
+flow, margins, font metrics, or printer geometry. It also moves exact build
+identity to About DRAFT and the bottom-right status bar, synchronizes
+basename-only clean and Unsaved titles with the native window, and lets Rust
+derive bounded `.draft` Save suggestions from the typed document origin.
+
+The replacement presentation candidate was built from exact head
+`f7f19c35d8cf8071ee17fbd80a23b2f631635a34`. Its packaged executable SHA-256
+is `1634d6d24642705bb2f20cd01af3d7426da63c63473cf06c86c7c744a5594244`.
+Mechanical validation confirmed the embedded commit identity, Apple Silicon
+executable, deterministic helper, tracked icon, document registration, and
+bundle metadata. Human review confirmed that imported DOCX page breaks render
+with separate page-surface spacing, the bottom-right build identity is correct,
+and About DRAFT shows the expected version and build edition. That closes only
+the explicit page-surface defect. Clean and Unsaved title transitions, Save
+suggestions, cancellation, post-save identity, and complete fidelity remain
+pending.
+
+The same review confirmed that Save As does not offer `.draft`, `.docx`, and
+`.txt` format choices and that DOCX output remains a separate Export action.
+That is a failed multi-format workflow result, not a failure of the existing
+atomic DOCX exporter. This candidate does not implement format selection,
+future sidebar placeholders, spelling, or inferred pagination. PDF remains
+unavailable under accepted ADR-001 and cannot be added to this workflow without
+its prerequisite rendering policies and a separately accepted implementation
+boundary. `UX-47-013` and `UX-47-015` through `UX-47-019`, `RC-07`, `GATE-47`,
+and all release gates remain open.
+
+The current PR candidate replaces that failed workflow mechanically. One typed
+Save As selector offers exactly DRAFT, Word, and plain text. DRAFT output may
+rebind only after atomic persistence; Word and text are converted copies that
+preserve document identity and dirty state. The standalone DOCX command and
+menu action are removed. This is implementation evidence only. `UX-47-017`
+remains open until a newly hashed package proves selection, filename handling,
+cancellation, failure recovery, and non-rebinding converted output.
+
+That replacement package was built from exact implementation commit
+`27fe00ac9cd83cb58107a8f978761a311dfdd1d3`. Its Apple Silicon executable
+SHA-256 is
+`fa72b0c71414f135cfba40f6216e50d0efb8f371bc8b8421341cf939c2319898`.
+Mechanical validation confirmed the embedded commit identity, bundle contract,
+tracked icon, and deterministic helper. Human validation is pending. This
+record closes no finding, RC row, or release gate.
+
+Manual review of that exact artifact confirmed the Save As selector and one
+Word-copy success path, but a known-valid DOCX with SHA-256
+`0631169f684e30d87369587120cda35d5259ac2f5c3328949ffa4d880f5f6201`
+failed Open as unsupported document structure. Local tracing identified an
+ordinary inline Word tab as the terminal rejection. A second valid DOCX with
+SHA-256
+`269b9055e7dcc5a79bb86524303bafcdad176c9137e6748619963cf513b98383`
+is table-centered and remains intentionally unsupported because DRAFT cannot
+preserve its cell structure. Neither source changed. `UX-47-010` is reopened,
+and the package remains a failed Phase 47 evidence candidate.
+
+The bounded inline-tab correction was packaged from exact implementation
+commit `d0fb10cb47a53bbdce4b08d25e7c723538aced26`. Its unsigned Apple Silicon
+executable SHA-256 is
+`67426220564242ae951c914e70a0d7cf010171136deee7257704ceb39d0a5d85`.
+Mechanical package validation passed. Human review must still confirm that the
+chapter DOCX opens with readable tab separation and that the table-centered
+tracking log receives the documented unsupported outcome without source
+mutation. This candidate closes no finding, RC row, or release gate.
+
+A broader local compatibility audit on 2026-07-19 inspected four user-supplied
+Word packages without copying them into the repository. Source hashes were
+rechecked after the audit and remained unchanged. The package with SHA-256
+`bf5b0f85ae05a624cf61029d8080e786909c221ed4f3895cf6b690cee239f18c`
+imports through the production boundary. Packages
+`4819d179d476bb08fccf6e0f80f86c68b8e8bb561e10295ce2e2bb9286cda0e7`
+and
+`e845b337581b9da8655645a1912ed93a9c3e82ce3525df75bbf373d95aa44573`
+depend on Word tables and remain typed unsupported rather than being flattened.
+Package
+`878bd5216fa31a44ced308fd46eb9660972b5b14b61efe3d17dfe2716de0b005`
+reaches a footnote reference after common Word metadata and hyperlink wrappers
+are retained; it remains typed unsupported because DRAFT has no footnote model.
+The permanent regressions separate source-preservable Word metadata from the
+terminal table and footnote boundaries. This audit closes no finding, RC row,
+or release gate.
+
+The metadata-compatibility replacement package was built from exact
+implementation commit `c23aa33bd661738edc6a4cb1c158618f700a9655`. Its
+unsigned Apple Silicon executable SHA-256 is
+`5f3cb6012680f454a984531578c0d0b1bdc2e8d539fb8e3a3e898b5f8275c0a6`.
+Mechanical packaging validation passed. At that artifact boundary, manual
+validation still needed to confirm the successful source and the terminal
+table/footnote behavior. The correction below supersedes that expected
+disposition. This candidate closes no finding, RC row, or release gate.
+
+The current correction replaces terminal valid-structure outcomes with a
+source-preserving readable-copy path. The detailed parser retains supported
+formatting and discloses bounded paragraph-value approximation. A second
+bounded parser recovers visible content when an unfamiliar safe Word wrapper
+prevents detailed conversion. Table rows become paragraphs with explicit cell
+separators, referenced footnotes become end notes, and unrepresented list
+numbering becomes plain paragraph content. The typed result is `lossy`; Save
+Back to Source remains unavailable, while Save As to `.draft` or a separate
+DOCX copy remains available. Focused Rust tests pass. A temporary read-only
+local diagnostic probe reached a canonical document for all 103 non-lock DOCX
+paths in the available corpus. The probe was removed, no user document entered
+the repository, and no source changed on disk. This is mechanical evidence
+only; a new package hash and human Open retest remain required, and no finding
+or gate closes here.
+
 ### Findings And Dispositions
 
 | ID | Severity | Status | Evidence | Disposition |
@@ -251,10 +519,10 @@ No untested task is counted as passed.
 | UX-46-008 | UX-2 | Open | The replacement artifact contained the tracked bundle icon, but the application icon did not render correctly in the visible packaged window chrome. | Keep bundle-icon validation separate from visible branding; inspect the title-bar/header asset path and validate the corrected packaged window in light and dark appearance. |
 | UX-46-009 | UX-1 | Open | File, research, review, and export controls share one sparse command row without sufficient grouping or predictable desktop-editor hierarchy, and native macOS menu integration does not exist. | Move this release-blocking workflow problem to a governed desktop UI phase with grouped controls, native menus, state-sensitive enablement, responsive overflow, and shared action dispatch. |
 | UX-46-010 | UX-1 | Open | Markdown opens as literal source, so headings, emphasis, lists, quotations, links, code, and separators are not represented as editable document structure. | Define and implement a bounded Markdown parser/serializer contract in the governed interoperability phase; unsupported constructs must fail or disclose loss rather than disappear. |
-| UX-46-011 | UX-1 | Open | Phase 47 mechanically implements bounded DOCX paragraph import, closed fidelity categories, source preservation, and typed failure behavior. Packaged and compatible-reader evidence is not complete, and same-format save is unavailable. | Keep open until the accepted interoperability contract has complete fixture, compatible-reader, packaged, and human evidence for the supported subset and explicit unsupported-content behavior. |
+| UX-46-011 | UX-1 | Open | Phase 47 mechanically implements bounded DOCX paragraph import, closed fidelity categories, source preservation, and typed failure behavior. The `a60f877` packaged gate did not establish reliable normalized or complete compatible-reader output. | Keep open until the accepted interoperability contract has reproducible fixtures, compatible-reader, packaged, and human evidence for the supported subset and explicit unsupported-content behavior. |
 | UX-46-012 | UX-2 | Open | RTF import and save are unavailable. | The interoperability decision must either implement a bounded RTF subset or accept an explicit v1 deferral with user guidance. |
 | UX-46-013 | UX-2 | Open | OpenDocument import and save are unavailable. | The interoperability decision must either implement bounded ODT support or accept an explicit v1 deferral with user guidance. |
-| UX-46-014 | UX-1 | Open | Phase 47 now records Rust-owned DOCX source identity, fingerprints, fidelity, writer capability, and deterministic save disposition while exposing only path-free presentation data. The current DOCX writer capability is unavailable, so imported content saves only to `.draft` and export creates a separate copy. | Keep open until a governed same-format writer and overwrite policy, source-conflict checks, lossiness disclosure, compatible-reader tests, and packaged evidence exist. Mechanical provenance alone does not authorize round-trip save. |
+| UX-46-014 | UX-1 | Open | Phase 47 exposes one path-free Save Back workflow over the Rust-owned DOCX identity, fingerprint, fidelity, and writer boundary. The `a60f877` package passed exact replacement, cancellation, and safe-copy observations, but failed normalized consent, stale-source presentation, entry-point parity, and complete reader evidence. | Keep open until a replacement package proves confirmation, cancellation, stale-source denial, failure recovery, source identity, display-name behavior, and compatible-reader fidelity. |
 | UX-46-015 | UX-2 | Open | Command spacing, grouping, editor canvas composition, and outline layout do not meet the intended desktop-product quality threshold. | Address visual hierarchy and layout in the governed desktop UI phase, then validate normal, narrow, scaled, keyboard, and reduced-motion states from the packaged app. |
 | UX-46-016 | UX-1 | Open | Manual review confirmed that the native File menu does not expose New Document, Open, Close, Save, Save As, and Export in expected desktop-document order with state-aware shortcuts. | Phase 48 must implement one shared dispatcher for native and visible commands, standard macOS shortcuts, and document-state enablement before packaged retest. |
 | UX-46-017 | UX-1 | Open | Manual review confirmed that the visible menu icon remains stale and toolbar grouping does not consistently separate document lifecycle commands from research and analysis commands. | Phase 48 must replace the stale icon, align labels and icons, remove conflicting command locations, and validate the resulting hierarchy in the packaged app. |
@@ -265,6 +533,26 @@ No untested task is counted as passed.
 | UX-46-022 | UX-1 | Closed | Exact artifact `75373ffb` passed direct review of the compact top bar, icon-only common actions, overflow behavior, shortcuts, focus, state-sensitive enablement, shared dispatch, and narrow-window behavior. | Closed for the over-labeled Phase 48 command-bar defect. The documented v3 workspace remains a later design target. |
 | UX-46-023 | UX-2 | Closed | Exact artifact `75373ffb` kept document, connectivity, operation, and recovery state in the bottom status bar during direct packaged review. | Closed for the Phase 48 header-status placement defect. Later status-bar refinements remain subject to the v3 target and release validation. |
 | UX-46-024 | UX-1 | Open - implementation and evidence pending | Manual review found that the editor lacks the paragraph controls required for alignment, line and paragraph spacing, and indentation. ADR-004 is accepted, and Phase 47 implements the canonical data, migration, persistence, editor-preservation, and DOCX-export foundation. | Keep the finding open until commands, mixed-selection and reset behavior, external-format fidelity, visible controls, accessibility, and packaged manual evidence satisfy the accepted contract. The model foundation alone does not close the finding. |
+| UX-47-001 | UX-1 | Open | Artifact `910a204f` did not provide a usable normalized-replacement warning and consent flow backed by compatible-reader output. | Enumerate the known normalization, present explicit Replace and Cancel choices, preserve state on cancellation, and prove accepted output without silent unsupported-content removal. |
+| UX-47-002 | UX-0 | Open | External modification did not surface the required stale-source rejection in artifact `910a204f`. | Prove the real import-to-registry fingerprint, immediate pre-write recheck, source and registry non-mutation, and path-free reopen guidance in automated and packaged evidence. |
+| UX-47-003 | UX-1 | Open | Native and overflow Save Back entry points did not demonstrate equivalent exact, normalized, busy, stale, cancellation, and denial behavior. | Route both through one state-aware dispatcher and one typed eligibility result, then retest both surfaces. |
+| UX-47-004 | UX-0 | Open | Normalized output and the complete exact/normalized set did not pass compatible-reader validation. | Record the reader, deterministic source hash, replacement hash, observed rendering result, and source mutation disposition for both supported classes. |
+| UX-47-005 | UX-2 | Open - partial correction pending package | The reset option now says `Reset to document font` or `Reset to document size`; missing-font fallback policy remains undefined. | Retest the corrected labels in the replacement package; keep substitution or unavailable-font handling blocked until a deterministic fidelity policy is accepted and implemented. |
+| UX-47-006 | UX-2 | Open - correction pending package | Rust now returns a closed Markdown import format and the visible notice says Markdown remains literal text without parsing or preview. | Retest the notice and source preservation in the replacement package without adding parsing behavior. |
+| UX-47-007 | UX-2 | Open - correction pending package | The DOCX safety rejection now identifies package, XML, or document-size limits and suggests reducing large embedded content without exposing internal detail. | Retest the bounded recovery copy while retaining the exact typed safety reason only in maintainer and test evidence. |
+| UX-47-008 | UX-2 | Open | Native `.draft` files use a generic desktop identity and have no friendly application association. The structured JSON envelope is not intended as a prose format. | Assign file-association and icon work to the desktop packaging boundary; do not redesign `.draft` as plain text or claim human-readable source formatting. |
+| UX-47-009 | UX-1 | Open - failed artifact proves identity only | Artifact `c3b2b54c` visibly reported commit `7ec149de` and release profile, proving that the newer package was running. The same artifact failed the primary DOCX workflow and cannot close a Phase 47 finding. | Confirm the visible version, short commit, profile, and executable hash again on the corrected replacement package. |
+| UX-47-010 | UX-0 | Open - packaged lossy-import retest pending | Artifact `fa72b0c7`, visibly identified as implementation commit `27fe00ac`, rejected a known-valid paragraph DOCX because ordinary inline Word tabs were treated as unsupported document structure. Later packages exposed valid tables, notes, content controls, drawings, automatic spacing values, and unfamiliar Word wrappers. The current correction keeps detailed formatting where supported, otherwise imports recoverable visible content through a disclosed lossy copy, denies Save Back, and reached a canonical document for all 103 non-lock paths in a temporary read-only local corpus probe without changing any source. | Rebuild and rehash the corrected package, repeat Open against representative detailed and fallback sources, confirm readable content and the lossy notice, and verify Save Back remains unavailable without closing broader fidelity or release gates. |
+| UX-47-011 | UX-0 | Closed - artifact 8e974736 | Artifact `8e974736`, visibly identified as commit `14363903` in the release profile, produced a DOCX export and displayed the success disposition. The existing atomic round-trip reopens the output and matches visible text in LibreOffice. | Closed for the packaged export failure observed on `c3b2b54c`. This does not close DOCX Open, source-replacement evidence, `RC-07`, `GATE-47`, or any release gate. |
+| UX-47-012 | UX-1 | Open - manual retest pending | The `.draft` envelope remained a generic JSON document with no verified DRAFT desktop association or double-click workflow. | Replacement package `c3b2b54c` declares the owned UTI and icon and routes activation through Rust; confirm Finder identity and double-click opening. |
+| UX-47-013 | UX-0 | Open - packaged fidelity retest pending | Artifact `2dfe312b` opened readable DOCX text but flattened explicit Times New Roman 12-point runs, bold and italic spans, paragraph appearance, page breaks, and source-recognizable academic formatting. Candidate `1634d6d2` mechanically contains the accepted run, paragraph, and page-break corrections. | Compare the source and exported output from the exact package in Word or LibreOffice and confirm the original source hash remains unchanged without guessed semantic headings or unsupported font substitution. |
+| UX-47-014 | UX-1 | Closed - artifact 1634d6d2 | Artifact `91fe1ba9` rendered an explicit page break as a dashed marker inside one continuous page surface. Direct review of artifact `1634d6d2` confirmed that imported canonical page breaks now render with visible spacing between distinct page surfaces. | Closed only for explicit canonical page-break presentation. DRAFT still does not infer pagination from layout, content flow, fonts, margins, or printer geometry, and complete DOCX fidelity remains open. |
+| UX-47-015 | UX-1 | Open - partial artifact pass | Artifact `91fe1ba9` did not place Unsaved beside the document name and kept build identity in the document inspector. Direct review of artifact `1634d6d2` confirmed the bottom-right build identity and About DRAFT version/build edition, but did not complete clean and Unsaved title-transition evidence. | Retest basename plus Unsaved state in both in-window and native titles across new, imported, saved, modified, cancelled, and reopened states. |
+| UX-47-016 | UX-1 | Open - packaged retest pending | Save and Save As did not consistently suggest the current document basename; imported and new sessions could fall back to an unhelpful Untitled name. Candidate `1634d6d2` mechanically contains the Rust-owned suggestion correction. | Retest existing, imported, and new suggestions, state preservation on cancellation, and immediate basename updates after success. |
+| UX-47-017 | UX-1 | Open - packaged failure; governance required | Direct review of artifact `1634d6d2` confirmed that Save As had no `.draft`, `.docx`, or `.txt` selector. The current PR candidate implements that exact closed selector and retires the standalone DOCX action, but has no replacement-package evidence. | Retest all three choices, cancellation, invalid targets, visible completion, and authority/dirty-state preservation. PDF remains excluded by ADR-001 until its rendering prerequisites and a separate implementation boundary are accepted. |
+| UX-47-018 | UX-2 | Open - future workspace scope | The proposed research and analysis sidebar regions are not present. | Keep unsupported capabilities absent until their commands and contracts exist. A later accepted workspace implementation may use clearly disabled placeholders without implying availability. |
+| UX-47-019 | UX-2 | Open - future governed capability | DRAFT has no spelling highlight, suggestion, or correction workflow. | Define dictionary source, locale, privacy, document-mark, ignore, correction, undo, accessibility, and failure behavior before implementation. |
 
-Every RC and GATE row remains open. Closing these three bounded findings does not
-close a release blocker or roadmap gate.
+Every RC and GATE row remains open. Closing the isolated Open and export
+failures does not close source-format fidelity, a release blocker, or a roadmap
+gate.

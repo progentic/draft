@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { RuntimeConnectionState } from "./runtimeStatusSession";
 
-type StateHandler = (state: { phase: "ready"; version: string }) => void;
+type StateHandler = (state: RuntimeConnectionState) => void;
 
 const startRuntimeStatusSessionMock = vi.hoisted(() => vi.fn());
 const stopMock = vi.hoisted(() => vi.fn());
@@ -30,8 +31,18 @@ describe("useRuntimeStatus", () => {
     expect(result.current).toEqual({ phase: "checking" });
 
     await waitFor(() => expect(startRuntimeStatusSessionMock).toHaveBeenCalledOnce());
-    act(() => stateHandler?.({ phase: "ready", version: "0.1.0" }));
-    expect(result.current).toEqual({ phase: "ready", version: "0.1.0" });
+    act(() => stateHandler?.({
+      buildCommit: "0123456789abcdef0123456789abcdef01234567",
+      buildProfile: "release",
+      phase: "ready",
+      version: "0.1.0",
+    }));
+    expect(result.current).toEqual({
+      buildCommit: "0123456789abcdef0123456789abcdef01234567",
+      buildProfile: "release",
+      phase: "ready",
+      version: "0.1.0",
+    });
 
     await act(async () => Promise.resolve());
     unmount();

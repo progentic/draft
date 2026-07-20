@@ -8,7 +8,10 @@ use std::{
 
 use serde::Serialize;
 
-use crate::documents::envelope::{DocumentEnvelope, DocumentEnvelopeError};
+use crate::{
+    documents::envelope::{DocumentEnvelope, DocumentEnvelopeError},
+    docx_trace,
+};
 
 pub(crate) mod docx_import;
 pub mod fidelity;
@@ -37,13 +40,19 @@ pub(crate) enum ExternalDocumentImportError {
 pub(crate) fn import_docx_source(
     source_path: &Path,
 ) -> Result<ImportedExternalDocument, ExternalDocumentImportError> {
+    docx_trace::emit("file_selected", format_args!("kind=docx"));
     let canonical_source = canonicalize_source(source_path)?;
     let source_bytes = read_bounded_source(&canonical_source)?;
+    docx_trace::emit("file_size", format_args!("bytes={}", source_bytes.len()));
     let parsed = parse_docx_package(&source_bytes)?;
     let display_name = display_name(source_path)?;
     let title = document_title(source_path, &display_name);
     let envelope = DocumentEnvelope::create_imported(title, parsed.document)
         .map_err(|cause| ExternalDocumentImportError::InvalidCanonicalDocument { cause })?;
+    docx_trace::emit(
+        "canonical_document_created",
+        format_args!("schema={}", envelope.schema_version()),
+    );
     let provenance = ExternalSourceProvenance::imported_docx(
         canonical_source,
         display_name,

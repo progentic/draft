@@ -3,6 +3,9 @@ use tauri::{
     menu::{Menu, MenuBuilder, MenuEvent, MenuItem, MenuItemBuilder, SubmenuBuilder},
 };
 
+#[cfg(any(target_os = "macos", test))]
+use tauri::menu::{AboutMetadata, AboutMetadataBuilder};
+
 use crate::events::native_menu::{NativeMenuEvent, emit_native_menu_action};
 
 #[derive(Clone, Copy)]
@@ -34,11 +37,10 @@ const FILE_MENU_SPECS: [FileMenuSpec; 6] = [
         "CmdOrCtrl+Shift+S",
         false,
     ),
-    file_item(
-        NativeMenuEvent::ExportDocx,
-        "Export DOCX…",
-        "CmdOrCtrl+Shift+E",
-        true,
+    file_item_without_shortcut(
+        NativeMenuEvent::SaveBackToSource,
+        "Save Back to Source",
+        false,
     ),
 ];
 
@@ -56,6 +58,19 @@ const fn file_item(
     }
 }
 
+const fn file_item_without_shortcut(
+    action: NativeMenuEvent,
+    label: &'static str,
+    starts_group: bool,
+) -> FileMenuSpec {
+    FileMenuSpec {
+        action,
+        label,
+        accelerator: None,
+        starts_group,
+    }
+}
+
 pub(crate) struct NativeMenuItems {
     entries: Vec<(NativeMenuEvent, MenuItem<Wry>)>,
 }
@@ -67,7 +82,7 @@ pub(crate) struct NativeMenuAvailability {
     pub(crate) can_close: bool,
     pub(crate) can_save: bool,
     pub(crate) can_save_as: bool,
-    pub(crate) can_export: bool,
+    pub(crate) can_save_back: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -132,7 +147,7 @@ impl NativeMenuAvailability {
             NativeMenuEvent::CloseDocument => self.can_close,
             NativeMenuEvent::SaveDocument => self.can_save,
             NativeMenuEvent::SaveDocumentAs => self.can_save_as,
-            NativeMenuEvent::ExportDocx => self.can_export,
+            NativeMenuEvent::SaveBackToSource => self.can_save_back,
         }
     }
 }
@@ -155,7 +170,7 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
     #[cfg(target_os = "macos")]
     let builder = {
         let application = SubmenuBuilder::new(app, "DRAFT")
-            .about(None)
+            .about(Some(about_metadata()))
             .separator()
             .hide()
             .hide_others()
@@ -168,6 +183,31 @@ fn build_application_menu(app: &AppHandle, items: &NativeMenuItems) -> tauri::Re
     #[cfg(not(target_os = "macos"))]
     let builder = MenuBuilder::new(app);
     builder.item(&file).item(&edit).item(&window).build()
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn about_metadata() -> AboutMetadata<'static> {
+    AboutMetadataBuilder::new()
+        .name(Some("DRAFT"))
+        .version(Some(build_identity()))
+        .copyright(Some("Copyright © 2026 DRAFT contributors · MIT License"))
+        .credits(Some("DRAFT is open source under the MIT License."))
+        .build()
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn build_identity() -> String {
+    format!(
+        "{} · {} · {}",
+        env!("CARGO_PKG_VERSION"),
+        short_build_commit(env!("DRAFT_BUILD_COMMIT")),
+        env!("DRAFT_BUILD_PROFILE")
+    )
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn short_build_commit(commit: &str) -> &str {
+    commit.get(..8).unwrap_or(commit)
 }
 
 fn build_file_menu(
@@ -191,7 +231,7 @@ fn action_id(action: NativeMenuEvent) -> &'static str {
         NativeMenuEvent::CloseDocument => "file.close_document",
         NativeMenuEvent::SaveDocument => "file.save_document",
         NativeMenuEvent::SaveDocumentAs => "file.save_document_as",
-        NativeMenuEvent::ExportDocx => "file.export_docx",
+        NativeMenuEvent::SaveBackToSource => "file.save_back_to_source",
     }
 }
 
@@ -242,10 +282,10 @@ mod tests {
                     false
                 ),
                 (
-                    "file.export_docx",
-                    "Export DOCX…",
-                    Some("CmdOrCtrl+Shift+E"),
-                    true
+                    "file.save_back_to_source",
+                    "Save Back to Source",
+                    None,
+                    false
                 ),
             ]
         );
@@ -280,7 +320,7 @@ mod tests {
             can_close: true,
             can_save: false,
             can_save_as: true,
-            can_export: false,
+            can_save_back: false,
         };
 
         assert!(request.enabled(NativeMenuEvent::NewDocument));
@@ -288,6 +328,27 @@ mod tests {
         assert!(request.enabled(NativeMenuEvent::CloseDocument));
         assert!(!request.enabled(NativeMenuEvent::SaveDocument));
         assert!(request.enabled(NativeMenuEvent::SaveDocumentAs));
-        assert!(!request.enabled(NativeMenuEvent::ExportDocx));
+        assert!(!request.enabled(NativeMenuEvent::SaveBackToSource));
+    }
+
+    #[test]
+    fn about_metadata_contains_exact_build_identity() {
+        let metadata = about_metadata();
+        let expected_identity = build_identity();
+        assert_eq!(metadata.name.as_deref(), Some("DRAFT"));
+        assert_eq!(
+            metadata.version.as_deref(),
+            Some(expected_identity.as_str())
+        );
+        assert!(
+            metadata
+                .version
+                .as_deref()
+                .is_some_and(|version| version.contains(env!("DRAFT_BUILD_PROFILE")))
+        );
+        assert_eq!(
+            metadata.credits.as_deref(),
+            Some("DRAFT is open source under the MIT License.")
+        );
     }
 }

@@ -50,6 +50,27 @@ fn absent_paragraph_properties_remain_absent() {
 }
 
 #[test]
+fn word_authored_fixture_imports_visible_content() {
+    let bytes = include_bytes!("../../../tests/fixtures/docx/word-custom-xml.docx");
+    let digest = format!("{:x}", Sha256::digest(bytes));
+    let parsed = parse_docx_package(bytes).expect("Word-authored fixture should import");
+
+    assert_eq!(
+        digest,
+        "9929f84423e135a5100ab43b8c454a6734d78cfaf41eea1e4274e707c0d1cbe6"
+    );
+    assert_eq!(
+        document_text(&parsed.document),
+        [
+            "DRAFT DOCX Round Trip",
+            "This document was created in Microsoft Word for DRAFT interoperability testing.",
+            "The visible content must survive import and export.",
+        ]
+        .join("\n")
+    );
+}
+
+#[test]
 fn alternate_heading_name_is_canonically_normalized() {
     let parsed = parse_docx_package(&package(&document_xml(
         r#"<w:pPr><w:pStyle w:val="Heading 2"/></w:pPr><w:r><w:t>Heading</w:t></w:r>"#,
@@ -88,7 +109,130 @@ fn valid_unsupported_properties_require_source_preservation() {
 }
 
 #[test]
-fn nested_unsupported_properties_remain_preservable() {
+fn inline_tabs_preserve_readable_text_and_require_source_preservation() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:r><w:t>Title Page</w:t><w:tab/><w:t>1</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(
+        parsed.document["content"][0]["content"],
+        json!([
+            { "type": "text", "text": "Title Page" },
+            { "type": "text", "text": " 1" }
+        ])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::UnsupportedPreservable {
+            features: vec![ExternalFeature::ParagraphTab],
+        }
+    );
+}
+
+#[test]
+fn table_cells_import_as_disclosed_readable_rows() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/></w:tblPr><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Alpha</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Beta</w:t></w:r></w:p><w:p><w:r><w:rPr><w:i/></w:rPr><w:t>Gamma</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+    let parsed = parse_docx_package(&package(xml)).unwrap();
+
+    assert_eq!(
+        parsed.document["content"],
+        json!([{
+            "type": "paragraph",
+            "content": [
+                { "type": "text", "text": "Alpha", "marks": [{ "type": "bold" }] },
+                { "type": "text", "text": " | " },
+                { "type": "text", "text": "Beta" },
+                { "type": "hardBreak" },
+                { "type": "text", "text": "Gamma", "marks": [{ "type": "italic" }] }
+            ]
+        }])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::TableStructure],
+        }
+    );
+}
+
+#[test]
+fn footnote_references_import_as_disclosed_end_notes() {
+    let xml = document_xml(r#"<w:r><w:t>Body</w:t><w:footnoteReference w:id="1"/></w:r>"#);
+    let footnotes = r#"<?xml version="1.0" encoding="UTF-8"?><w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:id="1"><w:p><w:r><w:footnoteRef/></w:r><w:r><w:t>Footnote text.</w:t></w:r></w:p></w:footnote></w:footnotes>"#;
+    let parsed = parse_docx_package(&package_with_footnotes(&xml, footnotes)).unwrap();
+
+    assert_eq!(
+        parsed.document["content"],
+        json!([
+            { "type": "paragraph", "content": [
+                { "type": "text", "text": "Body" },
+                { "type": "text", "text": "[1]" }
+            ] },
+            { "type": "paragraph", "content": [
+                { "type": "text", "text": "[1]" },
+                { "type": "text", "text": " " },
+                { "type": "text", "text": "Footnote text." }
+            ] }
+        ])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::Footnote],
+        }
+    );
+}
+
+#[test]
+fn missing_footnote_content_fails_before_document_creation() {
+    let xml = document_xml(r#"<w:r><w:t>Body</w:t><w:footnoteReference w:id="7"/></w:r>"#);
+
+    assert_eq!(
+        parse_docx_package(&package(&xml)),
+        Err(DocxImportError::malformed())
+    );
+}
+
+#[test]
+fn lossy_table_import_preserves_source_bytes() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+    let source = package(xml);
+    let original = source.clone();
+
+    assert!(parse_docx_package(&source).is_ok());
+    assert_eq!(source, original);
+}
+
+#[test]
+fn common_word_metadata_keeps_visible_text_and_requires_source_preservation() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:pPr><w:pStyle w:val="BodyText"/><w:rPr><w:rFonts w:ascii="Aptos"/></w:rPr></w:pPr><w:proofErr w:type="spellStart"/><w:hyperlink w:anchor="source"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>Linked</w:t><w:lastRenderedPageBreak/><w:t> text</w:t></w:r></w:hyperlink><w:proofErr w:type="spellEnd"/>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(
+        parsed.document["content"][0]["content"],
+        json!([
+            { "type": "text", "text": "Linked" },
+            { "type": "text", "text": " text" }
+        ])
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::UnsupportedPreservable {
+            features: vec![
+                ExternalFeature::PaginationControl,
+                ExternalFeature::RunFormatting,
+                ExternalFeature::UnsupportedDocumentStructure,
+                ExternalFeature::UnsupportedStyleInheritance,
+            ],
+        }
+    );
+}
+
+#[test]
+fn supported_run_formatting_survives_unrelated_unsupported_properties() {
     let parsed = parse_docx_package(&package(&document_xml(
         r#"<w:pPr><w:pBdr><w:top w:val="single"/></w:pBdr><w:tabs><w:tab w:val="left" w:pos="720"/></w:tabs></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Text</w:t></w:r>"#,
     )))
@@ -96,13 +240,88 @@ fn nested_unsupported_properties_remain_preservable() {
 
     assert_eq!(parsed.document["content"][0]["content"][0]["text"], "Text");
     assert_eq!(
+        parsed.document["content"][0]["content"][0]["marks"],
+        json!([{ "type": "bold" }])
+    );
+    assert_eq!(
         parsed.fidelity,
         ExternalFidelity::UnsupportedPreservable {
             features: vec![
                 ExternalFeature::ParagraphBorder,
                 ExternalFeature::ParagraphTab,
-                ExternalFeature::RunFormatting,
             ],
+        }
+    );
+}
+
+#[test]
+fn supported_direct_run_properties_map_to_exact_canonical_marks() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/><w:b/><w:i/><w:u w:val="single"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>Formatted</w:t></w:r><w:r><w:rPr><w:b w:val="0"/><w:i w:val="false"/></w:rPr><w:t> plain</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(parsed.fidelity, ExternalFidelity::Exact);
+    assert_eq!(
+        parsed.document["content"][0]["content"],
+        json!([
+            {
+                "type": "text",
+                "text": "Formatted",
+                "marks": [
+                    { "type": "bold" },
+                    { "type": "italic" },
+                    { "type": "underline" },
+                    { "type": "fontFamily", "attrs": { "family": "times_new_roman" } },
+                    { "type": "fontSize", "attrs": { "points": 12 } }
+                ]
+            },
+            { "type": "text", "text": " plain" }
+        ])
+    );
+}
+
+#[test]
+fn page_break_runs_become_canonical_blocks_and_export_back_to_docx() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:r><w:t>Before</w:t><w:br w:type="page"/><w:t>After</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(parsed.fidelity, ExternalFidelity::Exact);
+    assert_eq!(
+        parsed.document["content"],
+        json!([
+            { "type": "paragraph", "content": [{ "type": "text", "text": "Before" }] },
+            { "type": "pageBreak" },
+            { "type": "paragraph", "content": [{ "type": "text", "text": "After" }] }
+        ])
+    );
+
+    let artifact = compile_docx(&envelope_with_document(parsed.document)).unwrap();
+    let reparsed = parse_docx_package(artifact.as_bytes()).unwrap();
+    assert_eq!(reparsed.fidelity, ExternalFidelity::Exact);
+    assert_eq!(
+        reparsed.document["content"][1],
+        json!({ "type": "pageBreak" })
+    );
+}
+
+#[test]
+fn page_break_before_is_a_disclosed_canonical_normalization() {
+    let parsed = parse_docx_package(&package(&document_xml(
+        r#"<w:pPr><w:pageBreakBefore/></w:pPr><w:r><w:t>Next page</w:t></w:r>"#,
+    )))
+    .unwrap();
+
+    assert_eq!(
+        parsed.document["content"][0],
+        json!({ "type": "pageBreak" })
+    );
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::CanonicallyNormalized {
+            features: vec![ExternalFeature::PaginationControl],
         }
     );
 }
@@ -152,7 +371,7 @@ fn optional_relationship_and_style_parts_are_not_required() {
 }
 
 #[test]
-fn exact_and_at_least_line_rules_are_unsupported_not_malformed() {
+fn exact_and_at_least_line_rules_import_with_disclosed_normalization() {
     for (rule, feature) in [
         ("exact", ExternalFeature::ExactLineSpacing),
         ("atLeast", ExternalFeature::AtLeastLineSpacing),
@@ -160,28 +379,27 @@ fn exact_and_at_least_line_rules_are_unsupported_not_malformed() {
         let xml = document_xml(&format!(
             r#"<w:pPr><w:spacing w:lineRule="{rule}" w:line="240"/></w:pPr>"#
         ));
+        let parsed = parse_docx_package(&package(&xml)).unwrap();
         assert_eq!(
-            parse_docx_package(&package(&xml)),
-            Err(DocxImportError::unsupported(vec![feature]))
+            parsed.fidelity,
+            ExternalFidelity::Lossy {
+                features: vec![feature],
+            }
         );
+        assert!(parsed.document["content"][0].get("attrs").is_none());
     }
 }
 
 #[test]
-fn unsupported_style_and_list_indentation_are_distinct_valid_features() {
-    for (property, feature) in [
-        (
-            r#"<w:pStyle w:val="CustomBody"/>"#,
-            ExternalFeature::UnsupportedStyleInheritance,
-        ),
-        (r#"<w:numPr/>"#, ExternalFeature::ListIndentation),
-    ] {
-        let xml = document_xml(&format!("<w:pPr>{property}</w:pPr>"));
-        assert_eq!(
-            parse_docx_package(&package(&xml)),
-            Err(DocxImportError::unsupported(vec![feature]))
-        );
-    }
+fn list_indentation_imports_as_disclosed_plain_paragraphs() {
+    let xml = document_xml(r#"<w:pPr><w:numPr/></w:pPr>"#);
+
+    assert_eq!(
+        parse_docx_package(&package(&xml)).unwrap().fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::ListIndentation],
+        }
+    );
 }
 
 #[test]
@@ -201,19 +419,87 @@ fn malformed_properties_fail_without_fidelity_guessing() {
 }
 
 #[test]
-fn unrepresentable_bounds_are_lossy_and_never_clamped() {
-    for property in [
-        r#"<w:spacing w:lineRule="auto" w:line="241"/>"#,
-        r#"<w:spacing w:before="2881"/>"#,
-        r#"<w:ind w:left="2881"/>"#,
-        r#"<w:ind w:firstLine="1441"/>"#,
+fn unrepresentable_bounds_import_with_disclosed_normalization() {
+    for (property, feature, pointer, expected) in [
+        (
+            r#"<w:spacing w:lineRule="auto" w:line="241"/>"#,
+            ExternalFeature::UnsupportedDocumentStructure,
+            "/lineSpacingHundredths",
+            100,
+        ),
+        (
+            r#"<w:spacing w:before="2881"/>"#,
+            ExternalFeature::UnsupportedDocumentStructure,
+            "/spaceBeforeTwips",
+            2_880,
+        ),
+        (
+            r#"<w:ind w:left="2881"/>"#,
+            ExternalFeature::ListIndentation,
+            "/leftIndentTwips",
+            2_880,
+        ),
+        (
+            r#"<w:ind w:firstLine="1441"/>"#,
+            ExternalFeature::ListIndentation,
+            "/specialIndent/twips",
+            1_440,
+        ),
     ] {
         let xml = document_xml(&format!("<w:pPr>{property}</w:pPr>"));
-        assert!(matches!(
-            parse_docx_package(&package(&xml)),
-            Err(DocxImportError::LossyImportDenied { .. })
-        ));
+        let parsed = parse_docx_package(&package(&xml)).unwrap();
+        assert_eq!(
+            parsed.fidelity,
+            ExternalFidelity::Lossy {
+                features: vec![feature],
+            }
+        );
+        assert_eq!(
+            paragraph_style(&parsed.document)
+                .pointer(pointer)
+                .and_then(Value::as_u64),
+            Some(expected)
+        );
     }
+}
+
+#[test]
+fn unfamiliar_valid_wrappers_recover_readable_text_as_lossy() {
+    let xml =
+        document_xml(r#"<w:customWrapper><w:r><w:t>Recovered text</w:t></w:r></w:customWrapper>"#);
+    let source = package(&xml);
+    let original = source.clone();
+    let parsed = parse_docx_package(&source).unwrap();
+
+    assert_eq!(document_text(&parsed.document), "Recovered text");
+    assert_eq!(source, original);
+    assert_eq!(
+        parsed.fidelity,
+        ExternalFidelity::Lossy {
+            features: vec![ExternalFeature::UnsupportedDocumentStructure],
+        }
+    );
+}
+
+#[test]
+fn drawing_text_recovers_without_claiming_format_fidelity() {
+    let xml = document_xml(
+        r#"<w:r><w:drawing><w:txbxContent><w:p><w:r><w:t>Text box</w:t></w:r></w:p></w:txbxContent></w:drawing></w:r>"#,
+    );
+    let parsed = parse_docx_package(&package(&xml)).unwrap();
+
+    assert_eq!(document_text(&parsed.document), "Text box");
+    assert!(matches!(parsed.fidelity, ExternalFidelity::Lossy { .. }));
+}
+
+#[test]
+fn external_payload_without_readable_text_remains_denied() {
+    let xml = document_xml(r#"<w:altChunk r:id="rId9"/>"#);
+
+    assert!(matches!(
+        parse_docx_package(&package(&xml)),
+        Err(DocxImportError::LossyImportDenied { .. })
+    ));
 }
 
 #[test]
@@ -240,6 +526,21 @@ fn package_and_xml_safety_fail_with_closed_reasons() {
     let unsafe_rels = ROOT_RELS.replace("word/document.xml", "../document.xml");
     let bytes = package_with_overrides(&document_xml(""), Some(&unsafe_rels));
     assert_unsafe(bytes, ExternalSafetyReason::RelationshipTarget);
+
+    let escaping_document_rels = DOCUMENT_RELS.replace("styles.xml", "../../outside.xml");
+    assert_unsafe(
+        package_with_document_relationships(&escaping_document_rels),
+        ExternalSafetyReason::RelationshipTarget,
+    );
+
+    let escaping_footnote_rels = DOCUMENT_RELS.replace(
+        "</Relationships>",
+        r#"<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="../../outside.xml"/></Relationships>"#,
+    );
+    assert_unsafe(
+        package_with_document_relationships(&escaping_footnote_rels),
+        ExternalSafetyReason::RelationshipTarget,
+    );
 }
 
 #[test]
@@ -339,18 +640,22 @@ const DOCUMENT_CONTENT_TYPE_FOR_TESTS: &str =
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml";
 
 fn styled_envelope() -> DocumentEnvelope {
+    envelope_with_document(json!({
+        "type": "doc",
+        "content": [{
+            "type": "paragraph",
+            "attrs": { "paragraphStyle": supported_style() },
+            "content": [{ "type": "text", "text": "Round trip" }]
+        }]
+    }))
+}
+
+fn envelope_with_document(document: Value) -> DocumentEnvelope {
     DocumentEnvelope::from_json_value(json!({
         "schema_version": DOCUMENT_ENVELOPE_SCHEMA_VERSION,
         "document_id": DOCUMENT_ID,
         "title": "Round trip",
-        "document": {
-            "type": "doc",
-            "content": [{
-                "type": "paragraph",
-                "attrs": { "paragraphStyle": supported_style() },
-                "content": [{ "type": "text", "text": "Round trip" }]
-            }]
-        }
+        "document": document
     }))
     .unwrap()
 }
@@ -370,6 +675,16 @@ fn supported_style() -> Value {
 
 fn paragraph_style(document: &Value) -> &Value {
     &document["content"][0]["attrs"]["paragraphStyle"]
+}
+
+fn document_text(document: &Value) -> String {
+    document["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|block| block["content"][0]["text"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn document_xml(paragraph_content: &str) -> String {
@@ -401,6 +716,21 @@ fn package_with_document_relationships(document_relationships: &str) -> Vec<u8> 
             "word/_rels/document.xml.rels",
             document_relationships.as_bytes(),
         ),
+        ("word/styles.xml", STYLES.as_bytes()),
+    ])
+}
+
+fn package_with_footnotes(document_xml: &str, footnotes_xml: &str) -> Vec<u8> {
+    let relationships = DOCUMENT_RELS.replace(
+        "</Relationships>",
+        r#"<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/></Relationships>"#,
+    );
+    package_with_parts(vec![
+        ("[Content_Types].xml", CONTENT_TYPES.as_bytes()),
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/document.xml", document_xml.as_bytes()),
+        ("word/_rels/document.xml.rels", relationships.as_bytes()),
+        ("word/footnotes.xml", footnotes_xml.as_bytes()),
         ("word/styles.xml", STYLES.as_bytes()),
     ])
 }

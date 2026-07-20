@@ -45,6 +45,10 @@ const RUNTIME_COMMAND_MESSAGES = {
     "Unsupported application version",
     "DRAFT received an unsupported application version.",
   ),
+  invalid_build_metadata: terminal(
+    "Build identity is unavailable",
+    "DRAFT could not verify this application build.",
+  ),
   event_delivery_failed: retryable(
     "Core status update failed",
     "DRAFT could not deliver the core status event.",

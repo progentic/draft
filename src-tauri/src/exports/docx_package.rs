@@ -196,7 +196,16 @@ fn write_block(writer: &mut XmlWriter, block: &DocxBlock) -> Result<(), DocxExpo
             style,
             content,
         } => write_paragraph(writer, Some(*level), *style, content),
+        DocxBlock::PageBreak => write_page_break(writer),
     }
+}
+
+fn write_page_break(writer: &mut XmlWriter) -> Result<(), DocxExportError> {
+    start(writer, "w:p", &[])?;
+    start(writer, "w:r", &[])?;
+    empty(writer, "w:br", &[("w:type", "page")])?;
+    end(writer, "w:r")?;
+    end(writer, "w:p")
 }
 
 fn write_paragraph(

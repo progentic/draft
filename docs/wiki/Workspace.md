@@ -3,13 +3,16 @@
 ## Create And Save A Document
 
 Use the compact document controls at the top of the workspace for common
-actions. Additional commands, including Save As, export, References, and Text
-checks, are available from the **More** (`…`) menu. The same document actions
-are also available from the macOS **File** menu.
+actions. Additional commands, including Save As, Save Back to Source when
+available, References, and Text checks, are available from the **More**
+(`…`) menu. The same document actions are also available from the macOS
+**File** menu.
 
-DRAFT shows the document name near the top of the workspace. Save state,
-import state, connectivity, active operations, and concise feedback appear in
-the status bar at the bottom.
+DRAFT shows the document name and `Unsaved` state near the top of the
+workspace. Detailed document state, connectivity, active operations, and a
+compact build identity appear in the status bar at the bottom.
+A temporary notice below the document controls reports the pending, completed,
+cancelled, or failed result of Open, Save, and Save As.
 
 When New, Open, or Close would replace or discard unsaved work, choose **Save
 and continue**, **Discard changes**, or **Keep editing**. DRAFT does not
@@ -18,18 +21,48 @@ changes explicitly.
 
 **New Document** opens a blank page with the cursor ready. **Open…** loads a DRAFT
 document, imports a UTF-8 `.txt` or `.md` file as editable text, or reads the
-supported paragraph subset from a `.docx` file. Imported content shows its
-source filename and `Imported, unsaved`; the filename does not become a save
-location. The first Save asks for a new `.draft` destination, and the original
-text, Markdown, or DOCX file remains unchanged. After Save succeeds, the header
-shows the selected `.draft` filename. Later saves reuse that target without
-reopening the dialog. Markdown syntax is kept as literal text. DOCX import
-reports when valid content requires source preservation or cannot be represented
-safely.
+supported paragraph subset from a `.docx` file. Text and Markdown imports show
+their source filename and `Imported, unsaved`; the filename does not become a
+save location. Their first Save asks for a new `.draft` destination. After Save
+succeeds, the header shows the selected `.draft` filename and later saves reuse
+that target. Markdown syntax is kept as literal text, not parsed or previewed,
+and the original `.txt` or `.md` source is never overwritten.
 
-**Save As…** chooses a new `.draft` target while preserving the previous file.
-After it succeeds, later Save operations use the new target. Cancellation or a
-failed write leaves the current filename and file unchanged.
+A `.draft` file is DRAFT's structured editable source rather than plain text.
+It stores document identity and formatting with the writing. The macOS package
+associates `.draft` with DRAFT so a double-click uses the same Open workflow;
+the interface does not receive or display the file's full path.
+
+An opened DOCX remains associated with its Rust-owned source identity. Ordinary
+**Save** creates a `.draft` document. **Save As…** can create a new DRAFT
+document, a separate Word copy, or a separate plain-text copy.
+**Save Back to Source** appears only for a DOCX source. It checks whether
+the current content and source can be replaced safely, shows an overwrite or
+normalization warning, lists each known normalization, and requires Replace or
+Cancel confirmation. Unsupported, lossy, missing, or externally changed
+sources remain unavailable.
+
+DOCX import retains supported explicit font family, whole-point size, bold,
+italic, underline, paragraph alignment, spacing, indentation, heading styles,
+and page breaks. Table cells import as readable row text, referenced footnotes
+import as end notes, and unrepresented list numbering imports as plain
+paragraphs. These are disclosed lossy approximations rather than table,
+footnote, or list support. The unchanged original retains the source structure,
+and Save Back to Source remains unavailable for the imported copy.
+If an unfamiliar safe Word wrapper prevents detailed formatting conversion,
+DRAFT can recover visible content as the same kind of disclosed lossy copy.
+
+An explicit page break appears as a gap between separate page surfaces. DRAFT
+does not automatically calculate page boundaries from text flow, margins,
+fonts, or printer settings, so content without an explicit break remains on
+one continuous surface.
+
+**Save As…** offers **DRAFT document**, **Word document**, and **Plain text**.
+A DRAFT result becomes the active document only after the atomic write
+succeeds. Word and plain-text results are copies; they do not change the active
+filename or clear unsaved edits. Cancellation or failure preserves the current
+document. Rust suggests the current basename with the selected extension, an
+imported source basename, or a bounded `Untitled` name.
 
 ## Write And Format
 
@@ -88,17 +121,20 @@ select that passage. DRAFT never applies an edit from a text finding.
 The checks run locally without a provider, credentials, or network
 transmission. If the document changes during a run, check it again.
 
-## Export DOCX
+## Save As And Converted Copies
 
-Choose **Export DOCX…** and select a destination. Wait for the completion
-message. Export does not change the DRAFT source.
+Choose **Save As…**, select **Word document**, and choose a destination. Wait
+for the completion message. The Word copy does not change the DRAFT source or
+active document identity. **Plain text** creates bounded UTF-8 output containing
+visible text, stable list markers, block quotes, page breaks, and citation keys
+without rich formatting.
 
 The supported subset includes the eleven named font families and whole point
 sizes from 8 through 72. DRAFT does not silently discard unsupported content.
-Export either preserves supported content or reports a clear failure or
+Conversion either preserves supported content or reports a clear failure or
 limitation. Citation nodes are not currently included in DOCX output. Documents
-containing citation nodes must be reviewed before export, and DRAFT may reject
-the export rather than omit them silently. PDF export remains unavailable
+containing citation nodes must be reviewed before conversion, and DRAFT may
+reject the copy rather than omit them silently. PDF export remains unavailable
 pending its separate review and implementation path.
 
 ## Work Offline
@@ -106,7 +142,7 @@ pending its separate review and implementation path.
 Use the connectivity control in the bottom status bar to switch the current
 session between online and offline modes. New metadata requests and research
 links are blocked before external work begins. Local editing, review,
-references, saving, and export remain available.
+references, saving, and converted copies remain available.
 
 The setting resets to online when DRAFT restarts and is not an operating-system
 network indicator.
@@ -118,10 +154,10 @@ network indicator.
 - Command-W: Close
 - Command-S: Save
 - Shift-Command-S: Save As
-- Shift-Command-E: Export DOCX
+- Save Back to Source: no shortcut
 
 Actions that cannot run in the current document state are disabled. While a
-document or export operation is pending, competing actions remain unavailable.
+document or save operation is pending, competing actions remain unavailable.
 
 Press Tab to move through the document controls, formatting controls, editor,
 panels, and bottom status bar. Icon-only controls expose accessible names and
@@ -131,8 +167,9 @@ last enabled action, and Escape to return focus to **More**.
 
 In the formatting toolbar, use Left Arrow and Right Arrow to move, Home for the
 first enabled control, and End for the last. Disabled controls are skipped.
-Panels and the bottom status bar announce pending, completed, empty, failed,
-and recovery states.
+Panels and the conditional operation notice announce pending, completed,
+empty, failed, and recovery states. The bottom-right status item shows compact
+`v<version> · <commit>` identity; About DRAFT also shows the build profile.
 
 See [Troubleshooting](Troubleshooting) for message-specific recovery and
 [Current limitations](Current-Limitations) for the complete current boundary.

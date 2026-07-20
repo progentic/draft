@@ -48,13 +48,22 @@ For `.draft` and `.json`, Rust:
 Malformed, invalid, or duplicate files never replace an existing registry
 entry.
 
+The macOS package registers `.draft` as `com.progentic.draft.document`. When
+Finder or another desktop surface asks DRAFT to open one file, the Rust run
+loop places its file URL in a private queue and emits only a path-free
+availability event. React applies the existing unsaved-work policy, then asks
+Rust to open or dismiss that queued request. Rust converts and consumes the
+path and reuses the same validation, migration, registration, and typed outcome
+as the native Open dialog. Multiple URLs and non-file URLs fail closed.
+
 For `.txt` and `.md`, Rust reads at most 8 MiB of UTF-8, creates a new validated
-unsaved envelope, and returns `imported_text`. Every LF-delimited line becomes
-one paragraph; a terminal CR is removed so CRLF input behaves consistently.
-Markdown punctuation remains literal text. The response title contains only
-the source filename. Rust does not register or return the source path, and the
-source bytes are never changed. Invalid UTF-8, oversized input, unreadable
-files, and unsupported extensions fail before registration or persistence.
+unsaved envelope, and returns `imported_text` with the closed `plain_text` or
+`markdown` format. Every LF-delimited line becomes one paragraph; a terminal
+CR is removed so CRLF input behaves consistently. Markdown punctuation remains
+literal text. The response title contains only the source filename. Rust does
+not register or return the source path, and the source bytes are never changed.
+Invalid UTF-8, oversized input, unreadable files, and unsupported extensions
+fail before registration or persistence.
 
 For `.docx`, Rust validates a bounded ZIP/XML package and converts only the
 accepted paragraph subset. Validation, fidelity classification, and canonical
@@ -94,10 +103,11 @@ Successful first Save transitions an imported or new origin to
 
 ## Save Command
 
-`save_document` receives one explicit `snapshot` JSON value. Rust never reaches
-into the WebView or Tiptap instance for live state. The visible frontend client
-serializes the current editor state and places it in the envelope before
-invoking the command.
+`save_document` receives one explicit `snapshot` JSON value plus the
+basename-only display name and closed lifecycle origin previously returned by
+Rust. Rust never reaches into the WebView or Tiptap instance for live state.
+The visible frontend client serializes the current editor state and places it
+in the envelope before invoking the command.
 
 Rust validates the entire snapshot before opening a dialog or writing. A known
 document reuses the source path retained by the registry. An unsaved or new
@@ -110,6 +120,11 @@ A newly selected target must use the `.draft` extension. Rust enforces this
 before writer invocation; the native dialog filter is not treated as the
 authority. Existing compatible `.json` documents may continue saving only to
 their already registered path.
+
+Rust derives the native filename suggestion from the path-free lifecycle data.
+An existing `.draft` keeps its basename, an imported DOCX/TXT/MD basename gains
+the `.draft` extension, and a new document uses `Untitled.draft`. The suggestion
+does not become a save target until the user confirms the native dialog.
 
 A read-only preflight decides whether a target dialog is required. The actual
 save path validates again while holding the existing lifecycle lock, so the
@@ -198,21 +213,27 @@ Open success is also explicit: `opened_draft` means Rust retained a native
 save target; `imported_text` means the returned envelope has no registration or
 target; `imported_external` means Rust retained source provenance but granted
 no native `.draft` save target; `cancelled` means no session state changed. An
-independent, currently unwired same-format DOCX command may use the external
-registration only when its closed fidelity and fingerprint rules allow it.
+independent same-format DOCX command may use the external registration only
+when its closed fidelity and fingerprint rules allow it. The visible Save Back
+workflow requests typed eligibility and explicit confirmation; it never turns
+the external source into a native `.draft` target.
 
 Save requests include a closed mode: `save` or `save_as`. Normal Save reuses an
-existing Rust-owned target and selects a target only for a new or imported
-document. Save As always opens the Rust-owned save panel. A successful Save As
-writes the selected `.draft` file atomically, preserves the old file, rebinds
-the registry to the new target, and returns only the document ID, basename
-display name, and `wasSaveAs: true`. Cancellation or failure leaves the current
-target, display name, and dirty state unchanged.
+existing Rust-owned target and selects a DRAFT target only for a new or imported
+document. Save As requires one closed `draft`, `docx`, or `txt` format before
+Rust opens a format-constrained save panel. A successful DRAFT Save As writes
+atomically, preserves the old file, and rebinds the registry only after the new
+target is complete. DOCX and plain-text Save As compile converted copies and
+return basename-only output data without changing the registry, document
+identity, display title, or dirty state. Cancellation or failure preserves all
+current session state.
 
 ## Frontend Boundary
 
 `src/ipc/documentCreate.ts`, `documentOpen.ts`, `documentSave.ts`, and
-`documentClose.ts` are the frontend lifecycle wrappers.
+`documentClose.ts` are the frontend lifecycle wrappers. `applicationOpen.ts`
+adds only a path-free request signal and closed open/dismiss decision for macOS
+document activation.
 `src/ipc/documentEnvelope.ts` mirrors the Rust envelope for response validation
 and request typing. Rust remains the identity and validation authority.
 `src/documents/paragraphFormatting.ts` mirrors only the accepted paragraph
@@ -228,6 +249,7 @@ The save wrapper accepts a snapshot, not a path.
 | :--- | :--- | :--- |
 | High | create/open/save/close commands | Coordinate one typed IPC request. |
 | Mid | persistence `open_document` / `save_document` / `save_document_as` | Enforce validation, registry, and lifecycle policy. |
+| Mid | `SaveAsFormat` / `compile_plain_text` | Enforce the closed output choice and deterministic plain-text conversion. |
 | Mid | `save_external_document` | Enforce same-format eligibility, source identity, atomic replacement, and rollback. |
 | Mid | `DocumentRegistry` | Own one handle, source path, and current snapshot. |
 | Low | dialog helpers / JSON / atomic writer | Perform native API, parsing, and filesystem mechanics. |

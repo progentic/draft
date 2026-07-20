@@ -10,20 +10,34 @@ Apple Silicon target.
 - There is no autosave, crash recovery, version history, or cloud sync.
 - DRAFT opens and saves its version 2 document format. It migrates valid version
   1 DRAFT documents in memory and writes version 2 only after an explicit save.
+- `.draft` is structured JSON, not plain prose. The macOS bundle declares DRAFT
+  as the owner of that document type and supplies its icon, but double-click and
+  Launch Services behavior still require replacement-package validation.
 - DRAFT imports UTF-8 `.txt` and `.md` files as literal editable text, but it
   does not parse or preview Markdown. Unsupported or malformed input fails
   without changing the source file.
 - DRAFT can read a bounded DOCX paragraph subset, including supported headings,
   alignment, line spacing, paragraph spacing, and indentation. Valid DOCX
-  features outside that subset are disclosed as requiring source preservation;
-  malformed, unsafe, unsupported, or lossy input fails without changing the
-  source file.
-- Imported text, Markdown, and DOCX content become unsaved DRAFT documents.
-  They cannot be saved back to the source format. First Save requires a new
-  `.draft` target, Export creates a separate DOCX copy, and the original source
-  remains unchanged.
+  features outside that subset are disclosed as requiring source preservation
+  or readable lossy conversion. Malformed, unsafe, or still-unrepresentable
+  input fails without changing the source file.
+- Inline Word tabs import as readable spacing, but exact tab-stop placement is
+  retained only in the unchanged source. Common proofing metadata, custom style
+  names, layout markers, and hyperlink wrappers retain visible text without
+  claiming full behavior. DOCX table cells import as readable row paragraphs,
+  referenced footnotes import as end notes, and unrepresented list numbering
+  imports as plain paragraphs. These conversions are explicitly lossy: DRAFT
+  does not provide native table, footnote, or complete list editing, and the
+  unchanged original remains the only copy with the full Word structure.
+- Imported text and Markdown become unsaved DRAFT documents and cannot be saved
+  back to the source format. First Save requires a new `.draft` target.
+- A supported DOCX source can be replaced only when DRAFT reports an exact or
+  accepted-normalized disposition and the user confirms the warning. Lossy,
+  uncertain, unsupported, missing, or externally changed sources are not
+  replaced. Save creates a `.draft` document, while Export creates a separate
+  DOCX copy.
 - RTF, OpenDocument (`.odt`), and legacy Word (`.doc`) import are unavailable.
-  Same-format DOCX save and round-trip fidelity are not currently supported.
+  Complete same-format DOCX round-trip fidelity is not currently supported.
 - The visible workspace manages one current document at a time.
 
 ## Desktop Interface
@@ -69,14 +83,22 @@ Apple Silicon target.
 - Paragraph alignment, spacing, and indentation controls are not currently
   available. The underlying file and DOCX-export model does not make those
   controls a finished user workflow.
+- Spelling highlights, suggestions, ignore rules, and correction controls are
+  not currently available as a DRAFT-owned workflow.
+- Only explicit page-break nodes create separate page surfaces. DRAFT does not
+  automatically paginate from content flow, fonts, margins, or printer geometry.
 
 ## Export
 
-- DOCX export supports paragraphs, headings, text, hard breaks, bold, italic,
+- DOCX export supports paragraphs, headings, text, hard and page breaks, bold, italic,
   underline, bounded font-family and font-size marks, and validated paragraph
   properties within documented resource limits.
 - Unsupported content fails instead of being silently omitted.
 - Citation nodes are not currently included in DOCX output.
+- Save As offers DRAFT, Word, and plain-text output. Only DRAFT output becomes
+  the active authoritative document; Word and text are converted copies that
+  keep the current identity and unsaved state. Packaged validation of this
+  selector remains open.
 - PDF export is currently unavailable. Its rendering policy and implementation
   boundary require separate accepted work.
 

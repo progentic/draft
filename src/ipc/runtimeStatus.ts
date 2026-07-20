@@ -3,19 +3,24 @@ import { invokeCommand } from "./client";
 export type GetRuntimeStatusRequest = Record<string, never>;
 
 export interface GetRuntimeStatusResponse {
+  buildCommit: string;
+  buildProfile: "debug" | "release";
   version: string;
 }
 
 export type RuntimeStatusClientError =
   | {
       type: "command";
-      code: "invalid_application_version" | "event_delivery_failed";
+      code:
+        | "event_delivery_failed"
+        | "invalid_application_version"
+        | "invalid_build_metadata";
     }
   | { type: "invalid-response" }
   | { type: "transport" };
 
 export type RuntimeStatusResult =
-  | { status: "ready"; version: string }
+  | ({ status: "ready" } & GetRuntimeStatusResponse)
   | { status: "error"; error: RuntimeStatusClientError };
 
 type GetRuntimeStatusArguments = {
@@ -40,7 +45,7 @@ function resultFromResponse(response: unknown): RuntimeStatusResult {
     return { status: "error", error: { type: "invalid-response" } };
   }
 
-  return { status: "ready", version: response.version };
+  return { status: "ready", ...response };
 }
 
 function clientErrorFrom(error: unknown): RuntimeStatusClientError {
@@ -52,16 +57,33 @@ function clientErrorFrom(error: unknown): RuntimeStatusClientError {
 }
 
 function isCommandErrorCode(value: unknown) {
-  return value === "invalid_application_version" || value === "event_delivery_failed";
+  return (
+    value === "event_delivery_failed" ||
+    value === "invalid_application_version" ||
+    value === "invalid_build_metadata"
+  );
 }
 
-function isRuntimeStatusResponse(value: unknown): value is GetRuntimeStatusResponse {
+export function isRuntimeStatusResponse(value: unknown): value is GetRuntimeStatusResponse {
   return (
     isRecord(value) &&
-    Object.keys(value).length === 1 &&
+    Object.keys(value).length === 3 &&
+    isBuildCommit(value.buildCommit) &&
+    isBuildProfile(value.buildProfile) &&
     typeof value.version === "string" &&
     value.version.trim().length > 0
   );
+}
+
+function isBuildCommit(value: unknown) {
+  return (
+    value === "development" ||
+    (typeof value === "string" && /^[0-9a-f]{40}$/.test(value))
+  );
+}
+
+function isBuildProfile(value: unknown): value is "debug" | "release" {
+  return value === "debug" || value === "release";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -18,11 +18,15 @@ readonly APP_HELPER_INIT="${APP_HELPER_ROOT}/__init__.py"
 readonly APP_HELPER_WORKER="${APP_HELPER_ROOT}/worker.py"
 readonly SOURCE_ICON='src-tauri/icons/icon.icns'
 readonly SYSTEM_PYTHON='/usr/bin/python3'
+BUILD_COMMIT=''
 
 main() {
   cd "$(repository_root)"
-  require_tools cmp env file npm plutil rg uname
+  require_tools cmp env file git npm plutil rg strings uname
   require_supported_host
+  require_clean_worktree
+  BUILD_COMMIT="$(git rev-parse HEAD)"
+  readonly BUILD_COMMIT
   require_file package-lock.json
   require_file src-tauri/Cargo.lock
   run_step "Packaging contract" bash scripts/check-packaging.sh
@@ -51,7 +55,7 @@ clear_previous_bundle() {
 }
 
 build_application_bundle() {
-  npm run tauri -- build --bundles app --no-sign
+  env DRAFT_BUILD_COMMIT="${BUILD_COMMIT}" npm run tauri -- build --bundles app --no-sign
 }
 
 verify_application_bundle() {
@@ -64,9 +68,24 @@ verify_application_bundle() {
   require_plist_value CFBundleIdentifier com.progentic.draft
   require_plist_value CFBundleExecutable draft
   require_plist_value CFBundleIconFile icon.icns
+  require_plist_value CFBundleDocumentTypes.0.CFBundleTypeExtensions.0 draft
+  require_plist_value CFBundleDocumentTypes.0.CFBundleTypeIconFile icon.icns
+  require_plist_value CFBundleDocumentTypes.0.CFBundleTypeName 'DRAFT Document'
+  require_plist_value CFBundleDocumentTypes.0.CFBundleTypeRole Editor
+  require_plist_value CFBundleDocumentTypes.0.LSHandlerRank Owner
+  require_plist_value CFBundleDocumentTypes.0.LSItemContentTypes.0 com.progentic.draft.document
+  require_plist_value UTExportedTypeDeclarations.0.UTTypeIdentifier com.progentic.draft.document
   require_apple_silicon_executable
+  require_embedded_build_identity
   require_embedded_icon_match
   require_embedded_helper_execution
+}
+
+require_clean_worktree() {
+  if [[ -n "$(git status --porcelain)" ]]; then
+    echo 'Package construction requires a clean worktree for exact build identity' >&2
+    return 1
+  fi
 }
 
 require_plist_value() {
@@ -85,6 +104,13 @@ require_plist_value() {
 require_apple_silicon_executable() {
   if ! file "${APP_EXECUTABLE}" | rg --quiet 'Mach-O 64-bit executable arm64'; then
     echo 'Packaged executable is not a native Apple Silicon Mach-O binary' >&2
+    return 1
+  fi
+}
+
+require_embedded_build_identity() {
+  if ! strings "${APP_EXECUTABLE}" | rg --fixed-strings "${BUILD_COMMIT}" >/dev/null; then
+    echo 'Packaged executable does not contain the expected Git build identity' >&2
     return 1
   fi
 }

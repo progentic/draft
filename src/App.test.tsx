@@ -9,6 +9,9 @@ const refreshConnectivityMock = vi.hoisted(() => vi.fn());
 const createUnsavedDocumentMock = vi.hoisted(() => vi.fn());
 const listenToNativeMenuActionsMock = vi.hoisted(() => vi.fn());
 const setNativeMenuStateMock = vi.hoisted(() => vi.fn());
+const listenToApplicationOpenRequestsMock = vi.hoisted(() => vi.fn());
+const takeApplicationOpenRequestMock = vi.hoisted(() => vi.fn());
+const setWindowTitleMock = vi.hoisted(() => vi.fn());
 
 vi.mock("./ipc/documentCreate", () => ({
   createUnsavedDocument: createUnsavedDocumentMock,
@@ -27,6 +30,16 @@ vi.mock("./ipc/nativeMenu", () => ({
   setNativeMenuState: setNativeMenuStateMock,
 }));
 
+vi.mock("./ipc/applicationOpen", () => ({
+  dismissApplicationOpenRequest: vi.fn(async () => true),
+  listenToApplicationOpenRequests: listenToApplicationOpenRequestsMock,
+  takeApplicationOpenRequest: takeApplicationOpenRequestMock,
+}));
+
+vi.mock("./ipc/windowTitle", () => ({
+  setWindowTitle: setWindowTitleMock,
+}));
+
 import { App } from "./App";
 import type { RuntimeConnectionState } from "./features/runtime-status/runtimeStatusSession";
 
@@ -37,6 +50,7 @@ type RuntimeCommandFailureCode = Extract<
 
 const RUNTIME_COMMAND_FAILURE_LABELS = {
   invalid_application_version: "DRAFT received an unsupported application version.",
+  invalid_build_metadata: "DRAFT could not verify this application build.",
   event_delivery_failed: "DRAFT could not deliver the core status event.",
 } satisfies Record<RuntimeCommandFailureCode, string>;
 
@@ -48,7 +62,12 @@ describe("DRAFT workspace shell", () => {
       envelope: initialEnvelope(),
     });
     useRuntimeStatusMock.mockReset();
-    useRuntimeStatusMock.mockReturnValue({ phase: "ready", version: "0.1.0" });
+    useRuntimeStatusMock.mockReturnValue({
+      buildCommit: "0123456789abcdef0123456789abcdef01234567",
+      buildProfile: "release",
+      phase: "ready",
+      version: "0.1.0",
+    });
     setConnectivityModeMock.mockReset();
     refreshConnectivityMock.mockReset();
     useConnectivityModeMock.mockReset();
@@ -61,6 +80,12 @@ describe("DRAFT workspace shell", () => {
     listenToNativeMenuActionsMock.mockResolvedValue(vi.fn());
     setNativeMenuStateMock.mockReset();
     setNativeMenuStateMock.mockResolvedValue({ status: "applied" });
+    listenToApplicationOpenRequestsMock.mockReset();
+    listenToApplicationOpenRequestsMock.mockResolvedValue(vi.fn());
+    takeApplicationOpenRequestMock.mockReset();
+    takeApplicationOpenRequestMock.mockResolvedValue({ status: "none" });
+    setWindowTitleMock.mockReset();
+    setWindowTitleMock.mockResolvedValue({ status: "applied" });
   });
 
   it("renders the editor, navigation, and session state", async () => {
@@ -72,10 +97,18 @@ describe("DRAFT workspace shell", () => {
     expect(screen.getByRole("toolbar", { name: "Text formatting" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document outline" })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Document details" })).toBeTruthy();
-    expect(screen.getByText("Untitled document")).toBeTruthy();
+    const header = document.querySelector<HTMLElement>(".workspace-header")!;
+    expect(within(header).getByText("Untitled document")).toBeTruthy();
+    expect(within(header).getByText("Unsaved")).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Document editor" }).textContent).toBe("");
     expect(screen.getByText("Not saved")).toBeTruthy();
-    expect(await screen.findByText("Core v0.1.0")).toBeTruthy();
+    expect(await screen.findByText("v0.1.0 · 01234567")).toBeTruthy();
+    await waitFor(() => {
+      expect(setWindowTitleMock).toHaveBeenLastCalledWith({
+        displayName: "Untitled document",
+        unsaved: true,
+      });
+    });
   });
 
   it("keeps document and connectivity state in the bottom status bar", async () => {

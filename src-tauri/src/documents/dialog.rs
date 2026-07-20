@@ -4,12 +4,12 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 use tokio::sync::oneshot;
 
+use super::save_as::SaveAsFormat;
+
 const DOCUMENT_FILTER_NAME: &str = "DRAFT document";
 const DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json"];
 const OPEN_DOCUMENT_EXTENSIONS: &[&str] = &["draft", "json", "txt", "md", "docx"];
 const TEXT_DOCUMENT_EXTENSIONS: &[&str] = &["txt", "md"];
-const DEFAULT_DOCUMENT_FILE_NAME: &str = "Untitled.draft";
-const DEFAULT_DOCX_FILE_NAME: &str = "Untitled.docx";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct UnsupportedFileLocation;
@@ -36,12 +36,13 @@ pub(crate) async fn select_open_document(
 
 pub(crate) async fn select_save_document(
     app_handle: &AppHandle,
+    suggested_file_name: &str,
 ) -> Result<Option<PathBuf>, UnsupportedFileLocation> {
     let mut dialog = app_handle
         .dialog()
         .file()
         .set_title("Save DRAFT document")
-        .set_file_name(DEFAULT_DOCUMENT_FILE_NAME)
+        .set_file_name(suggested_file_name)
         .add_filter(DOCUMENT_FILTER_NAME, &["draft"]);
     if let Some(window) = app_handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);
@@ -52,15 +53,17 @@ pub(crate) async fn select_save_document(
     selected_path(selected)
 }
 
-pub(crate) async fn select_export_docx(
+pub(crate) async fn select_save_as_output(
     app_handle: &AppHandle,
+    format: SaveAsFormat,
+    suggested_file_name: &str,
 ) -> Result<Option<PathBuf>, UnsupportedFileLocation> {
     let mut dialog = app_handle
         .dialog()
         .file()
-        .set_title("Export DOCX document")
-        .set_file_name(DEFAULT_DOCX_FILE_NAME)
-        .add_filter("Word document", &["docx"]);
+        .set_title(format.dialog_title())
+        .set_file_name(suggested_file_name)
+        .add_filter(format.filter_name(), &[format.extension()]);
     if let Some(window) = app_handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);
     }

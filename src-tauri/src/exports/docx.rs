@@ -6,6 +6,7 @@ use crate::documents::{
     atomic_write::{AtomicDocumentWriteError, write_document_atomically},
     envelope::DocumentEnvelope,
 };
+use crate::docx_trace;
 
 use super::{docx_model::parse_docx_document, docx_package::build_docx_package};
 
@@ -74,7 +75,16 @@ pub fn export_docx(
     document: &DocumentEnvelope,
     target_path: &Path,
 ) -> Result<DocxExportOutcome, DocxExportError> {
-    export_docx_with_writer(document, target_path, write_document_atomically)
+    let artifact = compile_docx(document)?;
+    write_docx_artifact(&artifact, target_path)
+}
+
+/// Atomically writes one already compiled DOCX artifact.
+pub(crate) fn write_docx_artifact(
+    artifact: &DocxArtifact,
+    target_path: &Path,
+) -> Result<DocxExportOutcome, DocxExportError> {
+    write_docx_artifact_with_writer(artifact, target_path, write_document_atomically)
 }
 
 impl DocxArtifact {
@@ -150,10 +160,36 @@ fn compile_docx_with_limit(
     artifact_limit: usize,
 ) -> Result<DocxArtifact, DocxExportError> {
     let model = parse_docx_document(document.document())?;
+    docx_trace::emit("export_model_built", format_args!("status=accepted"));
     let bytes = build_docx_package(&model, artifact_limit)?;
+    docx_trace::emit(
+        "export_package_built",
+        format_args!("bytes={}", bytes.len()),
+    );
     Ok(DocxArtifact { bytes })
 }
 
+fn write_docx_artifact_with_writer<WriteArtifact>(
+    artifact: &DocxArtifact,
+    target_path: &Path,
+    write_artifact: WriteArtifact,
+) -> Result<DocxExportOutcome, DocxExportError>
+where
+    WriteArtifact: FnOnce(&Path, &[u8]) -> Result<(), AtomicDocumentWriteError>,
+{
+    require_docx_target(target_path)?;
+    write_artifact(target_path, artifact.as_bytes()).map_err(map_write_error)?;
+    docx_trace::emit(
+        "export_package_written",
+        format_args!("bytes={}", artifact.len()),
+    );
+    docx_trace::emit("export_target_promoted", format_args!("status=completed"));
+    Ok(DocxExportOutcome {
+        bytes_written: artifact.len(),
+    })
+}
+
+#[cfg(test)]
 fn export_docx_with_writer<WriteArtifact>(
     document: &DocumentEnvelope,
     target_path: &Path,
@@ -162,12 +198,8 @@ fn export_docx_with_writer<WriteArtifact>(
 where
     WriteArtifact: FnOnce(&Path, &[u8]) -> Result<(), AtomicDocumentWriteError>,
 {
-    require_docx_target(target_path)?;
     let artifact = compile_docx(document)?;
-    write_artifact(target_path, artifact.as_bytes()).map_err(map_write_error)?;
-    Ok(DocxExportOutcome {
-        bytes_written: artifact.len(),
-    })
+    write_docx_artifact_with_writer(&artifact, target_path, write_artifact)
 }
 
 fn require_docx_target(target_path: &Path) -> Result<(), DocxExportError> {

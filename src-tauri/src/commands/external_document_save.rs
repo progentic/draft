@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn request_deserialization_is_stable() {
-        for decision in ["save_exact", "accept_normalization", "cancel"] {
+        for decision in ["inspect", "save_exact", "accept_normalization", "cancel"] {
             assert!(
                 serde_json::from_value::<SaveExternalDocumentRequest>(json!({
                     "snapshot": envelope_value(),
@@ -85,6 +85,12 @@ mod tests {
     fn response_serialization_is_stable() {
         let document_id = document_id();
         let responses = [
+            SaveExternalDocumentOutcome::Eligibility {
+                document_id,
+                display_name: "paper.docx".to_owned(),
+                disposition: SameFormatSaveDisposition::AllowedExact,
+                normalizations: vec![],
+            },
             SaveExternalDocumentOutcome::Saved {
                 document_id,
                 display_name: "paper.docx".to_owned(),
@@ -108,6 +114,7 @@ mod tests {
         let value = serde_json::to_value(responses).unwrap();
 
         assert_eq!(value[0]["displayName"], "paper.docx");
+        assert_eq!(value[0]["normalizations"], json!([]));
         assert!(value.to_string().find("/private/").is_none());
         assert!(value.to_string().find("fingerprint").is_none());
     }

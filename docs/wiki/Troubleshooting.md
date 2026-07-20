@@ -29,6 +29,13 @@ Install one complete DRAFT build rather than combining files from different
 builds. Restart the application after installation. If the message remains,
 report the build source and version.
 
+## Application Build Could Not Be Verified
+
+`DRAFT could not verify this application build.` means the desktop runtime did
+not contain valid build identity. Replace it with one complete DRAFT package.
+If the message repeats, report the visible version, build commit, and profile.
+Do not use that package as manual validation evidence.
+
 ## Core Status Event Could Not Be Delivered
 
 `DRAFT could not deliver the core status event.` means startup validation ran,
@@ -56,16 +63,30 @@ If a document cannot be opened, choose a valid DRAFT document, a UTF-8 `.txt`
 or `.md` file no larger than 8 MiB, or a `.docx` file within the documented
 package limits. Other extensions, invalid UTF-8, malformed DRAFT versions, and
 invalid DOCX packages fail without changing that file. Imported content is
-unsaved; choose **Save** to select a new `.draft` destination. DRAFT never
-overwrites the imported source. DRAFT has no autosave or crash recovery, so
-discarded unsaved changes cannot be restored.
+not a native DRAFT document; choose **Save** to select a new `.draft`
+destination. DRAFT has no autosave or crash recovery, so discarded unsaved
+changes cannot be restored.
+
+Open always reports its pending and final disposition in the temporary notice
+below the document controls. If selecting a DOCX returns to the editor without
+a success, cancellation, limitation, or failure message, record the visible
+build commit and do not treat the operation as successful.
 
 If a DOCX message says the file is malformed or unsafe, keep the original file
-unchanged and open a trusted, valid copy. If DRAFT reports an unsupported or
-lossy feature, preserve the original and edit through a supported format rather
-than assuming DRAFT can round-trip it. A source-preservation notice means DRAFT
-opened the supported content but cannot safely save changes back to that DOCX.
-Save to `.draft` or export a separate DOCX copy instead.
+unchanged and open a trusted, valid copy. A readable-copy notice means DRAFT
+normalized table cells, referenced footnotes, lists, or another unsupported
+structure so the visible text can be edited. Preserve the original because the
+copy does not retain complete Word structure and cannot be saved back safely.
+A source-preservation notice means the same save restriction applies even when
+the visible content did not require approximation. Save to `.draft` or export
+a separate DOCX copy instead.
+
+**Save Back to Source** always shows a confirmation before replacing a DOCX.
+Choose **Keep source** to cancel without accepting saved state. If DRAFT says
+the source changed or is missing, reopen the source before trying again. If it
+says replacement is unavailable, use **Save As…** for a `.draft` document or
+export a new DOCX. If DRAFT cannot confirm the source's final state, reopen it
+before continuing; no message exposes a path, fingerprint, or document XML.
 
 If DRAFT cannot close a saved document, keep it open and retry **Close** before
 switching documents.
@@ -135,15 +156,28 @@ run locally.
 An invalid response or unfinished check leaves the document unchanged. Use the
 same **Check document** control to retry.
 
-## DOCX Export Failed
+## Word Save As Failed
 
-If the file location is invalid, choose **Export DOCX** again and select a
-writable `.docx` destination.
+If the file location is invalid, choose **Save As…**, select **Word document**
+again, and choose a writable `.docx` destination.
 
 Unsupported document content and resource-limit failures require editing the
 document before retrying. Citation nodes are not currently included in DOCX
-output; remove them before export when that message appears. Export failure
-does not change the DRAFT source document.
+output; remove them before saving the copy when that message appears. Failure
+does not change the DRAFT source document or active document identity.
+
+Export always reports pending and final state in the temporary notice below the
+document controls. A completed export names success; cancellation and every
+typed failure show a separate disposition. If no disposition appears, record
+the visible build commit and preserve the DRAFT source.
+
+## A DRAFT File Opens In Another Application
+
+`.draft` is a structured DRAFT source file, so seeing JSON in a text editor does
+not mean the document serialization is damaged. Install one complete DRAFT
+application bundle, then open the file with DRAFT. The package declares DRAFT
+as the owner of `com.progentic.draft.document`; macOS may need to refresh its
+application registration after an older build is replaced.
 
 Return to [Home](Home).
 ## Native Menu Is Unavailable

@@ -8,6 +8,7 @@ pub(crate) mod migration;
 pub(crate) mod paragraph_format;
 pub(crate) mod persistence;
 pub mod registry;
+pub(crate) mod save_as;
 #[cfg(test)]
 pub(crate) mod test_support;
 pub mod text_format;

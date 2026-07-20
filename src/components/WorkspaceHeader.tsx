@@ -4,6 +4,7 @@ import draftIconUrl from "../../src-tauri/icons/32x32.png";
 interface WorkspaceHeaderProps {
   isOutlineOpen: boolean;
   documentTitle: string;
+  unsaved: boolean;
   onToggleOutline: () => void;
 }
 
@@ -33,6 +34,7 @@ export function WorkspaceHeader(props: WorkspaceHeaderProps) {
       <div className="workspace-header__document">
         <FileText aria-hidden="true" size={16} strokeWidth={1.8} />
         <span>{props.documentTitle}</span>
+        {props.unsaved ? <span className="workspace-header__state">Unsaved</span> : null}
       </div>
     </header>
   );

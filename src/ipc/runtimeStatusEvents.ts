@@ -1,6 +1,9 @@
 import { listenToEvent, type StopEventListener } from "./eventClient";
+import { isRuntimeStatusResponse } from "./runtimeStatus";
 
 export interface RuntimeStatusReadyEvent {
+  buildCommit: string;
+  buildProfile: "debug" | "release";
   type: "ready";
   version: string;
 }
@@ -34,10 +37,13 @@ function deliverPayload(
 function isRuntimeStatusReadyEvent(value: unknown): value is RuntimeStatusReadyEvent {
   return (
     isRecord(value) &&
-    Object.keys(value).length === 2 &&
+    Object.keys(value).length === 4 &&
     value.type === "ready" &&
-    typeof value.version === "string" &&
-    value.version.trim().length > 0
+    isRuntimeStatusResponse({
+      buildCommit: value.buildCommit,
+      buildProfile: value.buildProfile,
+      version: value.version,
+    })
   );
 }
 

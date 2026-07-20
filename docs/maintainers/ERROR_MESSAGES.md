@@ -14,11 +14,12 @@ then offer a specific, useful message without exposing implementation details.
 
 | Surface | Rust and TypeScript failure codes | Current presentation |
 | :--- | :--- | :--- |
-| Runtime status | `invalid_application_version`, `event_delivery_failed` | Visible in the document inspector through the Phase 39 presentation policy. |
+| Runtime status | `invalid_application_version`, `invalid_build_metadata`, `event_delivery_failed` | Visible in the document inspector through the Phase 39 presentation policy. A ready state shows version, short commit, and profile. |
+| macOS application open | `multiple_files_unsupported`, `queue_unavailable`, `unsupported_file_location`, nested document-open errors | A path-free request uses the existing unsaved-work decision and visible Open outcome. The current document remains unchanged on dismissal or failure. |
 | Worker cancellation | `invalid_worker_id`, `worker_not_found`, `registry_unavailable` | No visible workflow currently consumes this wrapper. |
-| Document open | `unsupported_file_location`, `unsupported_file_type`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_text_encoding`, `text_too_large`, `invalid_envelope`, `external_import`, `registry` | The visible Open workflow preserves the current session on failure and gives bounded guidance for DRAFT, UTF-8 text, Markdown, and DOCX input. `external_import` retains closed malformed, unsafe, unsupported, and lossy DOCX categories without exposing paths or package content. |
-| Document save | `unsupported_file_location`, `invalid_target`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry` | The visible Save and Save As workflows ask for a `.draft` name when needed, preserve unsaved state or the last complete document, and retain the prior target on cancellation or failure. |
-| External DOCX source save | `invalid_envelope`, `registry`, `source_read`, `compilation`, `write_failed`, `replacement_rolled_back`, `rollback_failed`; closed save dispositions | Typed client only. Recovery distinguishes confirming known normalization, Save As `.draft`, reopening a missing or changed source, retrying a preserved failure, and no available action. No visible same-format-save workflow consumes it. |
+| Document open | `unsupported_file_location`, `unsupported_file_type`, `file_not_found`, `read_failed`, `malformed_json`, `invalid_text_encoding`, `text_too_large`, `invalid_envelope`, `external_import`, `registry` | The visible operation notice shows pending, cancelled, successful, or failed Open state while preserving the current session on failure. It gives bounded guidance for DRAFT, UTF-8 text, Markdown, and DOCX input. `external_import` retains closed malformed, unsafe, unsupported, and lossy DOCX categories without exposing paths or package content. |
+| Document save and converted copies | `unsupported_file_location`, `invalid_operation`, `unsupported_format`, `invalid_target`, `save_as_target`, `serialization_failed`, `durability_uncertain`, `write_failed`, `invalid_envelope`, `registry`, `docx_conversion`, `plain_text_conversion` | Save uses DRAFT authority. Save As offers the closed DRAFT, Word, and plain-text choices. Invalid names, conflicting extensions, unsupported content, limits, and write stages receive bounded recovery. Cancellation and failure preserve current identity and dirty state; converted-copy success does not clear either. |
+| External DOCX source save | `invalid_envelope`, `registry`, `source_read`, `compilation`, `write_failed`, `replacement_rolled_back`, `rollback_failed`; closed save dispositions | The visible Save Back workflow distinguishes confirmation, Save As `.draft`, reopening a missing or changed source, retrying a preserved failure, and no safe replacement. It exposes no path, fingerprint, XML, or raw compiler detail. |
 | Native menu state | `menu_update_failed` | The command bar remains available and visible copy directs the user to it; listener setup failures and invalid native event payloads use the same bounded recovery. |
 | Citation resolution | `invalid_citation`, `reference_not_found`, `reference_store` | The citation node renders bounded invalid, unavailable, or failed copy. No citation-management workflow exists. |
 | External access | `invalid_url`, `invalid_doi`, `invalid_search_query`, `offline`, `connectivity_unavailable`, `browser_unavailable` | No visible research workflow currently consumes this wrapper. |
@@ -55,13 +56,14 @@ follows:
 | Error | Message |
 | :--- | :--- |
 | `invalid_application_version` | DRAFT received an unsupported application version. |
+| `invalid_build_metadata` | DRAFT could not verify this application build. |
 | `event_delivery_failed` | DRAFT could not deliver the core status event. |
 | Unknown command failure | DRAFT could not read the core status. |
 | Invalid response or event payload | Core status invalid |
 | Transport failure | Core unavailable |
 
 The unknown-command message is a defensive fallback. The current command
-wrapper accepts only the two documented runtime-status command codes.
+wrapper accepts only the three documented runtime-status command codes.
 
 ## Recovery Guidance
 
@@ -71,6 +73,7 @@ guidance lives in `docs/wiki/Troubleshooting.md`:
 | Visible failure | Recovery action |
 | :--- | :--- |
 | Unsupported application version | Install one complete matching DRAFT build, restart, and report the source/version if it repeats. |
+| Invalid build metadata | Replace the application with one complete DRAFT package and report the visible version, commit, and profile if it repeats. |
 | Core status event delivery failure | Restart DRAFT and report the version and exact message if it repeats. |
 | Unknown core command failure | Restart DRAFT and report the version and exact message if it repeats. |
 | Invalid response or event payload | Restart DRAFT and report the version if the status remains invalid. |
@@ -83,8 +86,11 @@ guidance lives in `docs/wiki/Troubleshooting.md`:
 | Citation cannot be resolved or read | Keep the citation unchanged. Restart DRAFT only when the visible message directs it. |
 | Native menu action or state is unavailable | Use the matching document action in the visible toolbar. |
 | DOCX import is malformed or unsafe | Keep the source unchanged and open a trusted, valid copy. |
-| DOCX import is unsupported or lossy | Preserve the source and use a supported format; DRAFT does not claim safe round-trip editing. |
-| DOCX import requires source preservation | Save to `.draft` or export a separate DOCX copy; do not treat the imported source as a save target. |
+| DOCX import uses a readable lossy conversion | Keep the unchanged source, save the editable copy as DRAFT, and do not imply table, footnote, list, or same-format editing support. |
+| DOCX import remains unsupported or requires an unsafe approximation | Preserve the source and use a supported format; DRAFT does not claim safe round-trip editing. |
+| DOCX import requires source preservation | Save to DRAFT or use Save As for a separate Word copy; do not treat the imported source as a save target. |
+| Save As target is invalid or conflicts with the chosen format | Keep the document unchanged, choose the intended DRAFT, Word, or text format again, and use a simple matching filename. |
+| Word or text conversion is unsupported or exceeds a limit | Keep the document unchanged, address the stated content limit when possible, and retry the same Save As format. |
 
 Maintainer copy, rendered copy, and the Wiki recovery page must change together.
 Typed errors for commands with no visible workflow stay in the inventory only;

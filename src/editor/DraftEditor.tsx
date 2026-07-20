@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { CitationNode } from "./CitationNode";
 import { FontFamilyMark, FontSizeMark } from "./TextFormattingMarks";
 import { ParagraphFormatting } from "./ParagraphFormatting";
+import { PageBreakNode } from "./PageBreakNode";
 
 interface DraftEditorProps {
   editor: Editor | null;
@@ -39,12 +40,13 @@ export function useDraftEditor() {
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [1, 2, 3],
+          levels: [1, 2, 3, 4, 5, 6],
         },
       }),
       FontFamilyMark,
       FontSizeMark,
       ParagraphFormatting,
+      PageBreakNode,
       CitationNode,
     ],
   });

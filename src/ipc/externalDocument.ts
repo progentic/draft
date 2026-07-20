@@ -8,6 +8,7 @@ export type ExternalFeature =
   | "contextual_spacing"
   | "exact_line_spacing"
   | "external_relationship"
+  | "footnote"
   | "list_indentation"
   | "package_part"
   | "pagination_control"
@@ -15,8 +16,13 @@ export type ExternalFeature =
   | "paragraph_shading"
   | "paragraph_tab"
   | "run_formatting"
+  | "table_structure"
   | "unsupported_document_structure"
   | "unsupported_style_inheritance";
+
+export type ExternalNormalizationFeature =
+  | "alternate_heading_style_name"
+  | "pagination_control";
 
 export type ExternalSafetyReason =
   | "archive_entry_count"
@@ -47,7 +53,11 @@ export type ExternalFidelity =
 export type ImportedExternalFidelity = Extract<
   ExternalFidelity,
   {
-    classification: "exact" | "canonically_normalized" | "unsupported_preservable";
+    classification:
+      | "exact"
+      | "canonically_normalized"
+      | "unsupported_preservable"
+      | "lossy";
   }
 >;
 
@@ -76,6 +86,7 @@ const EXTERNAL_FEATURES: ExternalFeature[] = [
   "contextual_spacing",
   "exact_line_spacing",
   "external_relationship",
+  "footnote",
   "list_indentation",
   "package_part",
   "pagination_control",
@@ -83,6 +94,7 @@ const EXTERNAL_FEATURES: ExternalFeature[] = [
   "paragraph_shading",
   "paragraph_tab",
   "run_formatting",
+  "table_structure",
   "unsupported_document_structure",
   "unsupported_style_inheritance",
 ];
@@ -155,12 +167,31 @@ export function isExternalFidelity(value: unknown): value is ExternalFidelity {
   }
 }
 
+export function isExternalNormalizationFeatureList(
+  value: unknown,
+): value is ExternalNormalizationFeature[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return false;
+  }
+  const allowed: ExternalNormalizationFeature[] = [
+    "alternate_heading_style_name",
+    "pagination_control",
+  ];
+  const positions = value.map((feature) => allowed.indexOf(feature));
+  return positions.every(
+    (position, index) =>
+      position >= 0 && (index === 0 || positions[index - 1] < position),
+  );
+}
+
 function isImportedExternalFidelity(value: unknown): value is ImportedExternalFidelity {
   return (
     isExternalFidelity(value) &&
     (value.classification === "exact" ||
       value.classification === "canonically_normalized" ||
-      value.classification === "unsupported_preservable")
+      value.classification === "unsupported_preservable" ||
+      value.classification === "lossy") &&
+    (value.classification === "exact" || value.features.length > 0)
   );
 }
 

@@ -41,7 +41,7 @@ Relevant invariants: `INV-03`, `INV-10`, `INV-11`, and `INV-12` in `INVARIANTS.m
 
 ### 2.1 Current implementation checkpoint
 
-The implemented application through Phase 46 is
+The implemented application through the current Phase 47 checkpoint is
 deliberately smaller than the full system described in this architecture:
 
 - Rust exposes typed runtime-status, worker-cancellation, document lifecycle,
@@ -49,8 +49,9 @@ deliberately smaller than the full system described in this architecture:
   formatting-review, local text-analysis, DOCX-export, diagnostic, and
   connectivity-mode commands with command-specific contracts.
 - TypeScript calls those commands only through typed wrappers under `src/ipc/`.
-- Rust emits the typed finite `draft://runtime-status` event, and the frontend
-  validates it before React displays connection state.
+- Rust emits typed finite runtime-status, native-menu, and path-free macOS
+  application-open events. The frontend validates each before React displays
+  state or dispatches an existing action.
 - Rust owns a process-local worker cancellation registry and cooperative token.
   The internal analysis and Python-helper boundaries use registrations while
   their caller awaits completion, but no product worker starts from a Tauri
@@ -152,6 +153,10 @@ deliberately smaller than the full system described in this architecture:
   lifecycle operations are serialized, failures before replacement preserve
   prior state, and a post-replacement durability failure advances the registry
   to the complete on-disk snapshot while returning a typed error.
+- Rust also owns macOS document-activation paths. The application run loop
+  queues one `.draft` file URL, emits only path-free availability, and consumes
+  the queued path through the existing typed Open boundary after the frontend
+  applies its unsaved-work decision.
 - Rust distinguishes native DRAFT opens from bounded UTF-8 text imports. A
   `.draft` or compatible legacy `.json` selection is validated and registered
   with its durable path. A `.txt` or `.md` selection creates a new Rust-owned
@@ -163,7 +168,8 @@ deliberately smaller than the full system described in this architecture:
   workflow; citation-bearing DOCX remains an explicit typed rejection.
 - The release toolchain owns one unsigned macOS Apple Silicon `.app` package
   path. A Bash entrypoint builds the configured app target and validates its
-  plist identity, native executable, and tracked icon without signing or
+  plist identity, native executable, tracked icon, `.draft` document
+  association, and exact clean-worktree Git build identity without signing or
   publishing it.
 - React and Tiptap own transient editor, selection, panel, finding, and
   accessibility state. Explicit snapshots cross typed commands for save and
@@ -679,6 +685,9 @@ Save rules:
 - Rust does not read live state out of the frontend. It receives a snapshot.
 - Rust writes using atomic write-then-rename: write temporary file, fsync, then rename over the target path.
 - The on-disk file is always either the prior complete version or the new complete version, never a partial write.
+- Finder activation of a `.draft` file enters the same Rust validation,
+  migration, registry, and typed-result path as Open. React receives no source
+  path from the macOS run event or follow-up command.
 
 Document mutation rules:
 
@@ -711,15 +720,37 @@ keyboard shortcuts to share one state-aware frontend action dispatcher. File,
 identity, persistence, import, export, and source-path authority remain in
 Rust. Phase 48 implements the native File menu through Rust-owned menu items,
 typed events, a path-free state command, and the same frontend dispatcher used
-by the visible command bar. Save As selects and retains its replacement target
-in Rust and returns only document identity and basename display data.
+  by the visible command bar. Save As presents one closed choice of DRAFT,
+  Word, or plain text, then Rust selects and validates the format-specific
+  target. A DRAFT save rebinds the authoritative document only after atomic
+  persistence. Word and plain-text output are converted copies: they do not
+  rebind the document or clear its dirty state. Rust derives each native-panel
+  suggestion from basename-only display data and the closed lifecycle origin it
+  originally returned. The suggestion is never path authority, and React
+  receives no selected path.
 
 Phase 47 now adds a bounded Rust-owned DOCX reader and external-source
 registration. ZIP/XML validation and paragraph conversion complete before a
 live handle is registered. Rust retains the path and fingerprints; React
 receives only a basename, format, closed fidelity result, and same-format save
-disposition. Imported DOCX content has no native save target. First Save writes
-a new `.draft` file, and export writes a separate DOCX copy.
+  disposition. Imported DOCX content has no native save target. Save writes a
+  new `.draft` file, Save As can create a separate DOCX or plain-text copy, and
+  Save Back to Source is a separate confirmed source-replacement operation.
+
+The accepted import mapping preserves explicit supported font family and size,
+bold, italic, underline, paragraph alignment, spacing, indentation, semantic
+heading styles, and page breaks. Unsupported style, run, pagination, or package
+behavior is disclosed without removing supported properties from the canonical
+copy. DRAFT does not infer semantic headings from visual appearance alone.
+
+Canonical `pageBreak` nodes render as distinct page surfaces in the editor.
+This is explicit-node presentation only. DRAFT does not infer page boundaries
+from content flow, margins, font metrics, or printer geometry.
+
+Native and in-window titles mirror only the basename and transient Unsaved
+state. The typed title command cannot receive a path or mutate persistence.
+Build identity appears in native About metadata and the bottom-right status
+item; the document inspector remains document-specific.
 
 The Phase 47 source-write boundary is a third, separate Rust command. It can
 replace an exact supported-subset DOCX, or a canonically normalized DOCX after
@@ -729,9 +760,12 @@ uses the shared atomic writer, and updates provenance only after replacement
 success. Durability or registry failure triggers atomic restoration of the
 original bytes; failed restoration returns a typed uncertain-state error.
 React receives only closed dispositions, basename display data, and bounded
-recovery categories. No component currently invokes this command, so visible
-same-format Save, complete format coverage, compatible-reader comparison, and
-packaged human fidelity evidence remain absent.
+recovery categories. A single frontend-owned workflow requests non-mutating
+eligibility, shows the closed overwrite or normalization warning, and
+dispatches confirmed replacement through the shared native-menu and toolbar
+action path. Stale, missing, unsupported, or uncertain sources remain
+unavailable with bounded recovery. Complete format coverage and packaged human
+fidelity evidence remain absent.
 
 Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 
@@ -740,6 +774,12 @@ Relevant invariants: `INV-04`, `INV-09`, and `INV-11` in `INVARIANTS.md`.
 ## 12. Error Handling
 
 Every Tauri command has its own error enum. "Something went wrong" is not an acceptable terminal state for any command.
+
+Visible Open and DOCX Export operations use one conditional notice below the
+document command bar. Each attempt exposes pending and exactly one completed,
+cancelled, unsupported, safety-limit, malformed-input, or write-failure
+disposition. The bottom status bar remains reserved for compact document,
+connectivity, and active-operation state.
 
 The frontend needs typed errors so it can distinguish at least:
 
@@ -869,16 +909,23 @@ boundary accepts version 1 and returns canonical version 2 state. The first
 successful explicit save writes version 2; migration never invents an all-
 default `paragraphStyle` object because absence is the canonical default.
 
-This bounded unit imports the accepted DOCX paragraph subset through a
-Rust-owned ZIP/XML reader. It classifies exact, normalized, preservable,
-unsupported, lossy, malformed, and unsafe input without clamping or exposing
-format structures above the converter. External provenance and source
+This bounded unit imports the accepted DOCX paragraph subset and disclosed
+readable approximations through a Rust-owned ZIP/XML reader. Table cells become
+row text, referenced footnotes become end notes, and unrepresented list
+numbering becomes plain paragraph content. Values outside canonical paragraph
+bounds can be rounded, clamped, or defaulted only as an explicitly disclosed
+lossy import that cannot be saved back to the source. A second bounded parser
+recovers visible content when valid Word wrappers prevent detailed conversion.
+The reader classifies exact, normalized, preservable, unsupported, lossy,
+malformed, and unsafe input without exposing format structures above the converter. External provenance and source
 fingerprints remain in the registry; the frontend receives a path-free typed
 summary. Opening, closing, cancellation, failed import, and failed Save leave
 the original bytes unchanged.
 
-This implementation does not add paragraph controls or same-format overwrite.
-Imported DOCX work saves to a new `.draft` target, and DOCX export remains a
-separate derived-copy operation. Proposed `INV-17`, `UX-46-024`, `RC-07`, and
-`GATE-47` remain open until controls, broader interoperability, compatible-
-reader comparison, packaged workflow, and human evidence exist.
+This implementation does not add paragraph controls. Imported DOCX work can be
+saved as a new `.draft` target, exported as a separate DOCX copy, or written
+back only through the confirmed bounded source-replacement path. Proposed
+`INV-17`, `UX-46-024`, `RC-07`, and `GATE-47` remain open until controls,
+broader interoperability, packaged workflow, and complete human evidence
+exist. Local macOS reader evidence covers exact and accepted-normalized
+replacement only; it is not phase-closure evidence.

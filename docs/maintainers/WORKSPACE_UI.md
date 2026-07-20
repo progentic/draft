@@ -4,7 +4,7 @@
 
 The frontend exposes one local writing workspace with explicit document
 lifecycle, manual references and citation insertion, formatting review, five
-local text checks, DOCX export, an outline, statistics, and Rust runtime status.
+local text checks, DOCX output through Save As, an outline, statistics, and Rust runtime status.
 Rust remains authoritative for persistence, filesystem dialogs, reference
 storage, helper execution, and export.
 
@@ -20,15 +20,17 @@ been drawn.
 
 The native macOS menu bar is the complete command hierarchy. The target top
 level is File, Edit, View, Insert, Format, Tools, Citations, and Help. The target
-File menu contains New Document, Open…, Recent, Save, Save As…, Export, and Close
-Window in conventional groups. The current Phase 48 implementation guarantees
-only the accepted File actions documented under Native File Actions; Recent and
-additional menu groups remain unavailable until real commands and state rules
-exist.
+File menu contains New Document, Open…, Recent, Save, Save As…, conditional Save
+Back to Source, Export, and Close Window in conventional groups. The current
+implementation guarantees only the accepted File actions documented under
+Native File Actions; Recent and additional menu groups remain unavailable until
+real commands and state rules exist.
 
-The target window title is centered and follows `<document title> — DRAFT`, with
-`Untitled Document — DRAFT` for a new unsaved document. The title is presentation
-metadata only and cannot become path or persistence authority.
+The window title is centered and follows `<basename> — DRAFT` for a clean saved
+document and `<basename> — Unsaved — DRAFT` for modified or imported content.
+A new document uses `Untitled document — Unsaved — DRAFT`. The in-window title
+shows the same basename and Unsaved state. This is presentation metadata only
+and cannot become path or persistence authority.
 
 The in-window command strip stays smaller than the native menu. Its v3 primary
 set is New, Open, Save, and More. Close, Save As, Export, References, and Text
@@ -62,11 +64,12 @@ model-backed actions remain excluded from v1 under ADR-002 and must not appear
 active.
 
 The bottom status bar remains the only compact operational strip. It may show
-document state, active operation, runtime version, connectivity mode, and real
+document state, active operation, compact runtime identity, connectivity mode, and real
 word or character counts when space permits. Page count cannot appear until a
 pagination model exists. Active style or document mode appears only when the
 application has a real selectable state to report. Status values do not return
-to the title bar or primary command strip.
+to the primary command strip. The title may repeat only the standard Unsaved
+document state needed to identify the current native window.
 
 ### Capability Work
 
@@ -132,10 +135,10 @@ can honor; otherwise the disabled visual state is sufficient.
 | Layer | Surface | Responsibility |
 | :--- | :--- | :--- |
 | Shell | `DraftWorkspace` | Owns outline visibility, one active workflow panel, workspace composition, and placement of the bottom status bar. |
-| Header | `WorkspaceHeader` | Exposes the application identity and current document title. It does not own save, import, operation, or connectivity status. |
+| Header | `WorkspaceHeader` | Exposes application identity, basename-only document title, and transient Unsaved state. It owns no save target, import, operation, or connectivity authority. |
 | Document actions | `WorkspaceCommandBar` | Exposes compact primary document actions and an accessible overflow menu. All actions use the shared workspace dispatcher and mirror the native File menu where applicable. |
 | Shared actions | `useWorkspaceActions` | Routes toolbar and validated native-menu actions through one availability policy. |
-| Status | `WorkspaceStatusBar` | Displays document lifecycle, import state, active operation, connectivity mode, and bounded recovery information without taking durable authority. |
+| Status | `WorkspaceStatusBar` | Displays document lifecycle, import state, active operation, connectivity mode, and compact build identity without taking durable authority. |
 | Document session | `useDocumentSession`, `UnsavedChangesDialog` | Coordinates explicit snapshots, Rust-owned commands, dirty state, and recovery choices. |
 | Outline | `DocumentOutline` | Derives headings from the current Tiptap state and moves the selection. |
 | Editor | `DraftEditor`, `useDraftEditor` | Owns the transient Tiptap instance and initial document. |
@@ -143,8 +146,9 @@ can honor; otherwise the disabled visual state is sufficient.
 | Formatting review | `FormattingReviewPanel`, `useFormattingReview` | Runs bounded checks and owns transient review state and explicit actions. |
 | References | `ReferenceLibraryPanel` | Adds bounded manual records and inserts existing citation nodes. |
 | Text checks | `TextAnalysisPanel`, `textAnalysisSnapshot` | Runs five fixed checks, invalidates stale generations, and locates passages. |
-| DOCX export | `useDocxExport` | Presents Rust-owned export and source-safety results. |
-| Inspector | `DocumentInspector` | Derives session metrics and maps runtime status to visible copy. |
+| Save As output | `useDocumentSession`, `SaveAsDialog` | Presents the closed DRAFT, DOCX, or text choice and Rust-owned results. |
+| Inspector | `DocumentInspector` | Derives document word, character, and heading metrics only. |
+| Native title | `useWindowTitle`, `windowTitle.ts`, `set_window_title` | Mirrors validated basename and Unsaved state into the native window without receiving a path. |
 | Runtime session | `useRuntimeStatus`, `startRuntimeStatusSession` | Coordinates the typed command and event wrappers without adding durable state. |
 | Connectivity session | `useConnectivityMode`, `ConnectivityModeControl` | Mirrors and changes the Rust-owned online/offline session policy. |
 | Error presentation | `errorPresentation.ts` | Maps only visible typed failures to stable copy and recovery dispositions. |
@@ -235,24 +239,27 @@ Pasted HTML styling is not a font-authority path. The marks parse only
 `data-draft-font-family` and `data-draft-font-size`, then revalidate the
 canonical value before rendering.
 
-The document session stores one explicit origin: `new`, `imported_text`, or
-`opened_draft`. New and imported sessions both lack a path, but the latter
-keeps the source filename as display metadata only. The bottom status bar shows
-the imported and unsaved state. No path enters React, and only successful Save
-changes either origin to native persisted DRAFT state.
+The document session stores one explicit origin: `new`, `imported_text`,
+`imported_external`, or `opened_draft`. New and text-import sessions lack Rust
+registration. An external DOCX has Rust-owned source registration but no native
+`.draft` target. No path enters React. Save changes any non-native origin to
+persisted DRAFT state, while confirmed Save Back retains the external origin
+and basename display identity.
 
 ## Native File Actions
 
 The native File menu and visible command bar use the same action identifiers
 and `useWorkspaceActions` dispatcher. Their labels are New Document, Open…,
-Close, Save, Save As…, and Export DOCX…. The File menu uses Command-N,
-Command-O, Command-W, Command-S, Shift-Command-S, and Shift-Command-E.
+Close, Save, Save As…, and Save Back to Source. The File menu uses Command-N,
+Command-O, Command-W, Command-S, and Shift-Command-S; Save Back has no shortcut.
 
-The dispatcher derives availability from the current document operation and
-DOCX export state. It checks availability again when a native event arrives, so
+The dispatcher derives availability from the current document operation. It
+checks availability again when a native event arrives, so
 an event emitted before a state update cannot begin a stale operation. While a
-save, open, close, create, or export operation is pending, competing document
-and workflow-panel actions remain unavailable.
+save, open, close, create, or conversion operation is pending, competing
+document and workflow-panel actions remain unavailable. Starting a new
+document operation replaces settled feedback so its pending and terminal notice
+remains authoritative.
 
 Rust owns native menu objects and receives a bounded six-boolean state request.
 No path, content, or document identity enters the menu state. Invalid events or
@@ -260,16 +267,19 @@ state-update failures leave the visible toolbar available with bounded recovery
 copy. See `NATIVE_DESKTOP_WORKFLOW.md` for the complete contract.
 
 The command bar keeps New visible with a short label. Open, Save, and Close are
-icon-only controls with accessible names and tooltips. Save As, Export DOCX,
-References, and Text checks are in the More document actions menu. The menu
-skips disabled actions during keyboard navigation, supports Arrow, Home, End,
-and Escape, and returns focus to its trigger. Every item still uses the shared
-dispatcher; the compact layout adds no second command path.
+icon-only controls with accessible names and tooltips. Save As, conditional Save
+Back to Source, References, and Text checks are in the More
+document actions menu. The menu skips disabled actions during keyboard
+navigation, supports Arrow, Home, End, and Escape, and returns focus to its
+trigger. Every item still uses the shared dispatcher; the compact layout adds
+no second command path.
 
-The header is reserved for DRAFT identity and the current document name. A
+The header is reserved for DRAFT identity, the current document basename, and
+its standard Unsaved state. A
 bottom status bar presents the document lifecycle state, current background
-operation, bounded recovery message, and connectivity control. These values are
-transient presentation state and create no new persistence or network authority.
+operation, bounded recovery message, connectivity control, and compact build
+identity. These values are transient presentation state and create no new
+persistence or network authority.
 
 ## Connectivity Control
 
@@ -305,15 +315,29 @@ may scroll horizontally when its controls need more room. The workspace shell
 must not grow beyond the viewport or allow either toolbar to overlap the editor
 or status bar.
 
+## Explicit Page Surfaces
+
+DRAFT renders canonical `pageBreak` nodes as distinct page surfaces. The
+presentation uses a full-width workspace gap with visible page edges rather
+than punctuation or a dashed rule. The node remains one selectable, accessible
+separator in the canonical editor document.
+
+DRAFT does not infer page boundaries from content flow, margins, font metrics,
+or printer geometry. Content without an explicit `pageBreak` remains on one
+continuous canonical surface even when a compatible reader would paginate it.
+Automatic pagination, page counts, widows, orphans, and printer-specific layout
+remain outside this implementation.
+
 ## Visible Runtime Messages
 
 | State | Visible message | User guidance |
 | :--- | :--- | :--- |
-| Checking | `Connecting to core` | Wait for desktop startup. |
-| Ready | `Core v<version>` | No action required. |
+| Checking | `Checking build` | Wait for desktop startup. |
+| Ready | `v<version> · <commit>` | Confirm the short commit against the package under manual review; About DRAFT also shows the profile. |
 | Transport unavailable | `Core unavailable` | Use the desktop app or restart it. Browser preview has no Rust core. |
 | Invalid payload or response | `Core status invalid` | Restart DRAFT; report the version if it repeats. |
 | `invalid_application_version` | `DRAFT received an unsupported application version.` | Install a matching DRAFT build. |
+| `invalid_build_metadata` | `DRAFT could not verify this application build.` | Replace it with one complete package and report the visible build identity. |
 | `event_delivery_failed` | `DRAFT could not deliver the core status event.` | Restart DRAFT; report the failure if it repeats. |
 | Unknown command code | `DRAFT could not read the core status.` | Restart DRAFT and report the version and message. |
 
@@ -330,6 +354,11 @@ known variants remain exhaustive.
 Phase 46 feature copy remains owned by each bounded visible workflow. Messages
 contain no raw path, source text, helper output, database detail, or internal
 error name. See `PHASE46_WORKFLOWS.md`.
+
+Phase 47 uses one conditional operation notice below the document command bar
+for Open and Save As pending and terminal outcomes. The notice is absent
+when no result exists; compact document, connectivity, and active-operation
+state remains in the bottom status bar.
 
 ## Formatting Review State
 
@@ -415,7 +444,7 @@ bash scripts/verify.sh
   indentation controls are not implemented. The paragraph-formatting finding
   remains implementation- and evidence-blocked and must not become an active
   control until the accepted contract is fully implemented and tested.
-- DOCX export rejects citation nodes and other unsupported content.
+- Word Save As rejects citation nodes and other unsupported content.
 - The native File menu, compact document controls, bottom status bar, and
   tracked purple icon chain are implemented. Exact artifact `75373ffb` passed
   direct review of overflow interaction, menu parity, busy states, Save As,

@@ -7,15 +7,23 @@ import {
 } from "./documentEnvelope";
 import {
   type AtomicDocumentWriteError,
+  type DocxExportError,
   type DocumentRegistryError,
   isAtomicDocumentWriteError,
+  isDocxExportError,
   isDocumentRegistryError,
 } from "./documentErrors";
-import { type DocxExportErrorCode, isDocxExportError } from "./docxExport";
-import type { SameFormatSaveDisposition } from "./externalDocument";
+import {
+  type ExternalNormalizationFeature,
+  isExternalNormalizationFeatureList,
+  type SameFormatSaveDisposition,
+} from "./externalDocument";
 
 export type ExternalSaveDecision =
-  "save_exact" | "accept_normalization" | "cancel";
+  | "inspect"
+  | "save_exact"
+  | "accept_normalization"
+  | "cancel";
 
 export type ExternalSaveRecovery =
   | "confirm_normalization"
@@ -33,7 +41,7 @@ export type ExternalSaveCommandError =
   | { code: "invalid_envelope" }
   | { code: "registry"; cause: DocumentRegistryError["code"] }
   | { code: "source_read"; cause: "read_failed" }
-  | { code: "compilation"; cause: DocxExportErrorCode }
+  | { code: "compilation"; cause: DocxExportError["code"] }
   | { code: "write_failed"; cause: AtomicDocumentWriteError["code"] }
   | { code: "replacement_rolled_back"; cause: ExternalSaveCommitFailureCode }
   | {
@@ -48,6 +56,14 @@ export type SaveExternalDocumentError =
   | { type: "transport" };
 
 export type SaveExternalDocumentResult =
+  | {
+      status: "eligibility";
+      documentId: string;
+      displayName: string;
+      disposition: SameFormatSaveDisposition;
+      normalizations: ExternalNormalizationFeature[];
+      recovery: ExternalSaveRecovery;
+    }
   | {
       status: "saved";
       documentId: string;
@@ -94,6 +110,12 @@ export async function saveExternalDocument(
 }
 
 function resultFromResponse(response: unknown): SaveExternalDocumentResult {
+  if (isEligibilityResponse(response)) {
+    return {
+      ...response,
+      recovery: recoveryForDisposition(response.disposition),
+    };
+  }
   if (
     isSavedResponse(response) ||
     isUnchangedResponse(response) ||
@@ -108,6 +130,29 @@ function resultFromResponse(response: unknown): SaveExternalDocumentResult {
     return { ...response, recovery: recoveryForDenial(response.disposition) };
   }
   return invalidResponse();
+}
+
+function recoveryForDisposition(
+  disposition: SameFormatSaveDisposition,
+): ExternalSaveRecovery {
+  switch (disposition) {
+    case "allowed_after_accepted_normalization":
+      return "confirm_normalization";
+    case "denied_source_missing":
+    case "denied_source_changed":
+      return "reopen_source";
+    case "denied_unsupported_source_behavior":
+    case "denied_read_only":
+    case "denied_missing_provenance":
+    case "denied_fidelity_unknown":
+    case "denied_writer_unavailable":
+      return "save_as_draft";
+    case "no_changes":
+    case "allowed_exact":
+      return "none";
+    default:
+      return assertNever(disposition);
+  }
 }
 
 function failureResult(error: unknown): SaveExternalDocumentResult {
@@ -126,7 +171,7 @@ function invalidResponse(): SaveExternalDocumentResult {
   return {
     status: "error",
     error: { type: "invalid-response" },
-    recovery: "retry",
+    recovery: "reopen_source",
   };
 }
 
@@ -135,7 +180,7 @@ function transportFailure(error: unknown): SaveExternalDocumentResult {
   return {
     status: "error",
     error: { type: isMalformedCommand ? "invalid-response" : "transport" },
-    recovery: "retry",
+    recovery: "reopen_source",
   };
 }
 
@@ -321,6 +366,39 @@ function isSavedResponse(
   );
 }
 
+function isEligibilityResponse(value: unknown): value is {
+  status: "eligibility";
+  documentId: string;
+  displayName: string;
+  disposition: SameFormatSaveDisposition;
+  normalizations: ExternalNormalizationFeature[];
+} {
+  return (
+    isRecord(value) &&
+    hasExactKeys(value, [
+      "displayName",
+      "disposition",
+      "documentId",
+      "normalizations",
+      "status",
+    ]) &&
+    value.status === "eligibility" &&
+    isDocumentId(value.documentId) &&
+    isDisplayName(value.displayName) &&
+    isSameFormatSaveDisposition(value.disposition) &&
+    hasValidNormalizations(value.disposition, value.normalizations)
+  );
+}
+
+function hasValidNormalizations(
+  disposition: SameFormatSaveDisposition,
+  value: unknown,
+): value is ExternalNormalizationFeature[] {
+  return disposition === "allowed_after_accepted_normalization"
+    ? isExternalNormalizationFeatureList(value)
+    : Array.isArray(value) && value.length === 0;
+}
+
 function isUnchangedResponse(
   value: unknown,
 ): value is Extract<SaveExternalDocumentResult, { status: "unchanged" }> {
@@ -383,6 +461,17 @@ function isDeniedDisposition(
     value === "denied_writer_unavailable" ||
     value === "denied_source_missing" ||
     value === "denied_source_changed"
+  );
+}
+
+function isSameFormatSaveDisposition(
+  value: unknown,
+): value is SameFormatSaveDisposition {
+  return (
+    value === "no_changes" ||
+    value === "allowed_exact" ||
+    value === "allowed_after_accepted_normalization" ||
+    isDeniedDisposition(value)
   );
 }
 

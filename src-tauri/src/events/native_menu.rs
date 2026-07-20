@@ -12,7 +12,7 @@ pub(crate) enum NativeMenuEvent {
     CloseDocument,
     SaveDocument,
     SaveDocumentAs,
-    ExportDocx,
+    SaveBackToSource,
 }
 
 pub(crate) fn emit_native_menu_action(app: &AppHandle, event: NativeMenuEvent) {
@@ -35,6 +35,10 @@ mod tests {
         assert_eq!(
             serde_json::to_value(NativeMenuEvent::SaveDocumentAs).unwrap(),
             json!({ "action": "save_document_as" })
+        );
+        assert_eq!(
+            serde_json::to_value(NativeMenuEvent::SaveBackToSource).unwrap(),
+            json!({ "action": "save_back_to_source" })
         );
     }
 }
